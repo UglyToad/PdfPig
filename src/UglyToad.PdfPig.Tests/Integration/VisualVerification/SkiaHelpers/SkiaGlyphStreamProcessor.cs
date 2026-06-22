@@ -30,8 +30,11 @@
             filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
             parsingOptions)
         {
-            width = (int)cropBox.Bounds.Width;
-            height = (int)cropBox.Bounds.Height;
+            // The crop box is defined in unrotated default user space; account for the page
+            // rotation to get the visible dimensions of the rendering surface.
+            var visibleBounds = cropBox.GetVisibleBounds(rotation);
+            width = (int)visibleBounds.Width;
+            height = (int)visibleBounds.Height;
             yAxisFlipMatrix = SKMatrix.CreateScale(1, -1, 0, height / 2f);
         }
 

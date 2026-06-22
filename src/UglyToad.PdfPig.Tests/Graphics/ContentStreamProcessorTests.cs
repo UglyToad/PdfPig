@@ -12,13 +12,12 @@
         {
             // Normally the cropbox = mediabox, with origin 0,0
             // Take A4 as a sample page size
-            var mediaBox = new PdfRectangle(0, 0, 595, 842);
             var cropBox = new PdfRectangle(0, 0, 595, 842);
 
             // Sample glyph at the top-left corner, with size 10x20
             var glyph = new PdfRectangle(cropBox.Left, cropBox.Top - 20, cropBox.Left + 10, cropBox.Top);
 
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(0), out var m, out var i);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(0), out var m, out var i);
             var transformedGlyph = m.Transform(glyph);
             var inverseTransformedGlyph = i.Transform(transformedGlyph);
             AssertAreEqual(glyph, transformedGlyph);
@@ -26,13 +25,13 @@
         }
 
         [Fact]
-        public void InitialMatrixHandlesCropBoxOutsideMediaBox()
+        public void InitialMatrixHandlesNonOriginCropBox()
         {
-            // Normally the cropbox = mediabox, with origin 0,0
-            // Take A4 as a sample page size
-            var mediaBox = new PdfRectangle(0, 0, 595, 842);
-            var cropBox = new PdfRectangle(400, 400, 1000, 1000);
-            // The "view box" is then x=[400..595] y=[400..842], i.e. size 195x442
+            // The crop box is already clipped to the media box by the page factory (per
+            // ISO 32000-2:2020, 14.11.2), so the initial matrix is built directly from the
+            // effective crop box. Here it does not start at the origin: x=[400..595] y=[400..842],
+            // i.e. size 195x442 (e.g. an A4 media box cropped to its top-right region).
+            var cropBox = new PdfRectangle(400, 400, 595, 842);
 
             // Sample points
             var pointInsideViewBox = new PdfPoint(500, 500);
@@ -41,7 +40,7 @@
             var pointAboveViewBox = new PdfPoint(500, 1000);
             var pointRightOfViewBox = new PdfPoint(1000, 500);
 
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(0), out var m, out var i);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(0), out var m, out var i);
             var pt = m.Transform(pointInsideViewBox);
             var p0 = i.Transform(pt);
             AssertAreEqual(pointInsideViewBox, p0);
@@ -59,7 +58,7 @@
 
             // When we rotate by 180 degrees, points above/right view box 
             // should get a negative coordinate.
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(180), out m, out i);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(180), out m, out i);
             pt = m.Transform(pointInsideViewBox);
             p0 = i.Transform(pt);
             AssertAreEqual(pointInsideViewBox, p0);
@@ -79,8 +78,6 @@
         [Fact]
         public void InitialMatrixHandlesCropBoxAndRotation()
         {
-            var mediaBox = new PdfRectangle(0, 0, 595, 842);
-
             // Cropbox with bottom left at (100,200) with size 300x400
             var cropBox = new PdfRectangle(100, 200, 400, 600);
 
@@ -88,7 +85,7 @@
             var glyph = new PdfRectangle(cropBox.Left, cropBox.Top - 20, cropBox.Left + 10, cropBox.Top);
 
             // Test with 0 degrees (no rotation)
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(0), out var initialMatrix, out var inverseMatrix);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(0), out var initialMatrix, out var inverseMatrix);
             var transformedGlyph = initialMatrix.Transform(glyph);
             var inverseTransformedGlyph = inverseMatrix.Transform(transformedGlyph);
             AssertAreEqual(glyph, inverseTransformedGlyph);
@@ -98,7 +95,7 @@
             Assert.Equal(cropBox.Height, transformedGlyph.TopRight.Y, 0);
 
             // Test with 90 degrees
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(90), out initialMatrix, out inverseMatrix);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(90), out initialMatrix, out inverseMatrix);
             transformedGlyph = initialMatrix.Transform(glyph);
             inverseTransformedGlyph = inverseMatrix.Transform(transformedGlyph);
             AssertAreEqual(glyph, inverseTransformedGlyph);
@@ -108,7 +105,7 @@
             Assert.Equal(cropBox.Width - glyph.Width, transformedGlyph.TopRight.Y, 0);
 
             // Test with 180 degrees
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(180), out initialMatrix, out inverseMatrix);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(180), out initialMatrix, out inverseMatrix);
             transformedGlyph = initialMatrix.Transform(glyph);
             inverseTransformedGlyph = inverseMatrix.Transform(transformedGlyph);
             AssertAreEqual(glyph, inverseTransformedGlyph);
@@ -118,7 +115,7 @@
             Assert.Equal(0, transformedGlyph.TopRight.Y, 0);
 
             // Test with 270 degrees
-            GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(270), out initialMatrix, out inverseMatrix);
+            GetInitialTransformationMatrices(cropBox, new PageRotationDegrees(270), out initialMatrix, out inverseMatrix);
             transformedGlyph = initialMatrix.Transform(glyph);
             inverseTransformedGlyph = inverseMatrix.Transform(transformedGlyph);
             AssertAreEqual(glyph, inverseTransformedGlyph);
@@ -129,24 +126,22 @@
         }
 
         private static void GetInitialTransformationMatrices(
-            MediaBox mediaBox,
             CropBox cropBox,
             PageRotationDegrees rotation,
             out TransformationMatrix initialMatrix,
             out TransformationMatrix inverseMatrix)
         {
-            initialMatrix = OperationContextHelper.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation, new TestingLog());
+            initialMatrix = OperationContextHelper.GetInitialMatrix(UserSpaceUnit.Default, cropBox, rotation, new TestingLog());
             inverseMatrix = initialMatrix.Inverse();
         }
 
         private static void GetInitialTransformationMatrices(
-            PdfRectangle mediaBox,
             PdfRectangle cropBox,
             PageRotationDegrees rotation,
             out TransformationMatrix initialMatrix,
             out TransformationMatrix inverseMatrix)
         {
-            GetInitialTransformationMatrices(new MediaBox(mediaBox), new CropBox(cropBox), rotation, out initialMatrix, out inverseMatrix);
+            GetInitialTransformationMatrices(new CropBox(cropBox), rotation, out initialMatrix, out inverseMatrix);
         }
 
         private static void AssertAreEqual(PdfRectangle r1, PdfRectangle r2)

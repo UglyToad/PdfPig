@@ -145,18 +145,18 @@
             GraphicsStack.Push(new CurrentGraphicsState()
             {
                 CurrentTransformationMatrix = initialMatrix,
-                CurrentClippingPath = GetInitialClipping(cropBox),
+                CurrentClippingPath = GetInitialClipping(cropBox, rotation),
                 ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
             });
         }
 
         /// <summary>
-        /// Get the initial clipping path using the crop box and the initial transformation matrix.
+        /// Get the initial clipping path from the crop box, accounting for the page rotation.
         /// </summary>
-        protected static PdfPath GetInitialClipping(CropBox cropBox)
+        protected static PdfPath GetInitialClipping(CropBox cropBox, PageRotationDegrees rotation)
         {
             // Initiate CurrentClippingPath to cropBox
-            var clippingPath = cropBox.Bounds.ToPdfPath();
+            var clippingPath = cropBox.GetVisibleBounds(rotation).ToPdfPath();
             clippingPath.SetClipping(FillingRule.EvenOdd);
             return clippingPath;
         }

@@ -12,6 +12,28 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1330()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("issue_1330.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                var cropBox = page.CropBox.Bounds;
+                Assert.Equal(new PdfPoint(10, 10), cropBox.BottomLeft);
+                Assert.Equal(new PdfPoint(90, 90), cropBox.TopRight);
+                Assert.Equal(0, cropBox.Rotation);
+
+                var mediaBox = page.MediaBox.Bounds;
+                Assert.Equal(new PdfPoint(0, 0), mediaBox.BottomLeft);
+                Assert.Equal(new PdfPoint(100, 100), mediaBox.TopRight);
+                Assert.Equal(0, mediaBox.Rotation);
+
+                Assert.Equal(80, page.Width);
+                Assert.Equal(80, page.Height);
+            }
+        }
+
+        [Fact]
         public void Issues1331()
         {
             var path = IntegrationHelpers.GetDocumentPath("issue_1331.pdf");
