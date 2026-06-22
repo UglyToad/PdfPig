@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net462;net471;net6.0;net8.0</TargetFrameworks>
     <PackageId>PdfPig</PackageId>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Authors>UglyToad</Authors>
     <Title>PdfPig</Title>
     <Description>Reads text content from PDF documents and supports document creation. Apache 2.0 licensed.</Description>
