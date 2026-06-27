@@ -31,7 +31,9 @@
 
             var filter = streamDictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
 
-            var parameters = streamDictionary.GetObjectOrDefault(NameToken.DecodeParms, NameToken.Dp);
+            // For inline images the abbreviated key takes precedence over the full form when both are
+            // present (ISO 32000-2 Table 91 NOTE).
+            var parameters = streamDictionary.GetObjectOrDefault(NameToken.Dp, NameToken.DecodeParms);
 
             switch (filter)
             {

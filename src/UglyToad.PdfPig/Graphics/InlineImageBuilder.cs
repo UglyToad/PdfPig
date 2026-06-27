@@ -137,20 +137,24 @@
 #nullable disable
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        // <paramref name="name1"/> is the full key name, <paramref name="name2"/> the abbreviated
+        // inline-image form. ISO 32000-2 (PDF 2.0) Table 91 NOTE: "If both the abbreviated and the
+        // full form of a key are present, the abbreviated key takes precedence." So the abbreviated
+        // name is looked up first and the full name is only used as a fallback.
         private T GetByKeys<T>(NameToken name1, NameToken name2, bool required)
             where T : class, IToken
         {
+            if (name2 is not null)
+            {
+                if (Properties.TryGetValue(name2, out var abbreviated) && abbreviated is T abbreviatedResult)
+                {
+                    return abbreviatedResult;
+                }
+            }
+
             if (Properties.TryGetValue(name1, out var val) && val is T result)
             {
                 return result;
-            }
-
-            if (name2 != null)
-            {
-                if (Properties.TryGetValue(name2, out val) && val is T result2)
-                {
-                    return result2;
-                }
             }
 
             if (required)
