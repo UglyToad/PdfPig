@@ -70,6 +70,7 @@
         public static readonly NameToken Bottom = new NameToken("Bottom");
         public static readonly NameToken Bounds = new NameToken("Bounds");
         public static readonly NameToken Bpc = new NameToken("BPC");
+        public static readonly NameToken BrotliDecode = new NameToken("BrotliDecode");
         public static readonly NameToken Bs = new NameToken("BS");
         //** Acro form field type for button fields.
         public static readonly NameToken Btn = new NameToken("Btn");

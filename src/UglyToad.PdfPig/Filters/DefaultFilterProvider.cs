@@ -22,6 +22,7 @@
         {
             var ascii85 = new Ascii85Filter();
             var asciiHex = new AsciiHexDecodeFilter();
+            var brotli = new BrotliFilter();
             var ccitt = new CcittFaxDecodeFilter();
             var dct = new DctDecodeFilter();
             var flate = new FlateFilter();
@@ -36,6 +37,7 @@
                 { NameToken.Ascii85DecodeAbbreviation.Data, ascii85 },
                 { NameToken.AsciiHexDecode.Data, asciiHex },
                 { NameToken.AsciiHexDecodeAbbreviation.Data, asciiHex },
+                { NameToken.BrotliDecode.Data, brotli },
                 { NameToken.CcittfaxDecode.Data, ccitt },
                 { NameToken.CcittfaxDecodeAbbreviation.Data, ccitt },
                 { NameToken.DctDecode.Data, dct },

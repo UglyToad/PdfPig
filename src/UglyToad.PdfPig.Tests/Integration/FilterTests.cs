@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using PdfPig.Core;
     using PdfPig.Filters;
     using PdfPig.Tokens;
     using System;
@@ -15,6 +16,69 @@
             "GHOSTSCRIPT-698363-0.pdf",
             "ErcotFacts.pdf"
         ];
+
+//#if NET || NETSTANDARD2_1_OR_GREATER
+/*
+        [Fact]
+        public void BrotliDecodeRoundTripsCompressedData()
+        {
+            var expected = System.Text.Encoding.ASCII.GetBytes(
+                new string('A', 200) + "Hello Brotli compression coming to PDF!" + new string('B', 200));
+
+            byte[] compressed;
+            using (var ms = new System.IO.MemoryStream())
+            {
+                using (var brotli = new System.IO.Compression.BrotliStream(ms, System.IO.Compression.CompressionMode.Compress, leaveOpen: true))
+                {
+                    brotli.Write(expected, 0, expected.Length);
+                }
+
+                compressed = ms.ToArray();
+            }
+
+            var filter = new BrotliFilter();
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            var decoded = filter.Decode(compressed, parameters, DefaultFilterProvider.Instance, 0);
+
+            Assert.Equal(expected, decoded.ToArray());
+        }
+        */
+        
+        [Fact]
+        public void BrotliDecodeFilterReportsSupported()
+        {
+            Assert.True(new BrotliFilter().IsSupported);
+        }
+
+        [Fact]
+        public void DefaultFilterProviderResolvesBrotliDecode()
+        {
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Filter, NameToken.BrotliDecode }
+            });
+
+            var filters = DefaultFilterProvider.Instance.GetFilters(dictionary);
+
+            var filter = Assert.Single(filters);
+            Assert.IsType<BrotliFilter>(filter);
+        }
+        
+
+        [Fact]
+        public void BrotliDecode()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("Brotli-Prototype-FileA.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page);
+                }
+            }
+        }
+//#endif
 
         [Theory]
         [MemberData(nameof(GetAllDocuments))]
