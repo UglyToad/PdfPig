@@ -136,7 +136,12 @@
         {
             if (characterCode < firstChar || characterCode > lastChar)
             {
-                throw new InvalidFontFormatException($"The character code was not contained in the widths array: {characterCode}.");
+                // The code is outside the Widths array range. This is legal: a content
+                // stream may show codes (e.g. space, 32) that the font does not define a
+                // glyph for. Such codes have no glyph to paint (no CharProc), so report an
+                // empty bounding box rather than throwing. The advance width still comes
+                // from GetWidth, which falls back to the FontBBox width for these codes.
+                return new PdfRectangle(0, 0, boundingBox.Right, 0);
             }
 
             // The CharProc's d1 operator would declare a precise per-glyph
