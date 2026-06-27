@@ -35,6 +35,13 @@
 
         private readonly Dictionary<NameToken, PatternColor> patternsProperties = new Dictionary<NameToken, PatternColor>();
 
+        // 8.6.5.6: while a DefaultGray/RGB/CMYK substitution is being resolved, any device colour space
+        // encountered inside the substitute's own definition refers to the genuine device space and shall
+        // NOT be substituted again. This mirrors PDFBox's 'wasDefault' flag and breaks otherwise-infinite
+        // recursion for a default whose definition references the same device space, e.g.
+        // /DefaultCMYK [ /DeviceN [ ... ] /DeviceCMYK <tint function> ].
+        private bool isResolvingDefaultSubstitute;
+
         private (NameToken? name, IFont? font) lastLoadedFont;
 
         public ResourceStore(IPdfTokenScanner scanner,
@@ -311,9 +318,9 @@
             {
                 if (TryGetDefaultSubstitute(colorSpaceActual, out NameToken? substituteName))
                 {
-                    return GetColorSpaceDetails(substituteName, dictionary);
+                    return ResolveDefaultSubstitute(substituteName, dictionary);
                 }
-                
+
                 return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
             }
 
@@ -345,20 +352,11 @@
         public ColorSpaceDetails GetDeviceColorSpaceDetails(ColorSpace deviceColorSpace)
         {
             // 8.6.5.6: a directly selected device colour space is remapped to its DefaultGray/RGB/CMYK
-            // substitute when one is present in the current resources. Otherwise return the device
-            // space singleton.
-            // Any colour space other than a Lab, Indexed, or Pattern colour space may be used as a default
-            // colour space and it should be compatible with the original device colour space.
-            // We reject those families up-front from the substitute's own definition, before resolving its
-            // details. Besides being cheaper, this prevents infinite recursion for a self-referential default
-            // such as /DefaultRGB defined as [ /Indexed /DeviceRGB ... ], whose base would otherwise resolve
-            // this same device colour space again.
-            if (TryGetDefaultSubstitute(deviceColorSpace, out NameToken? substituteName) &&
-                TryGetNamedColorSpace(substituteName, out ResourceColorSpace substitute) &&
-                substitute.Name.TryMapToColorSpace(out ColorSpace substituteColorSpace) &&
-                substituteColorSpace is not ColorSpace.Lab and not ColorSpace.Indexed and not ColorSpace.Pattern)
+            // substitute when a valid one is present in the current resources; otherwise the device space
+            // singleton is returned.
+            if (TryGetDefaultSubstitute(deviceColorSpace, out NameToken? substituteName))
             {
-                return GetColorSpaceDetails(substituteName, null);
+                return ResolveDefaultSubstitute(substituteName, null);
             }
 
             return deviceColorSpace switch
@@ -372,8 +370,30 @@
             };
         }
 
+        private ColorSpaceDetails ResolveDefaultSubstitute(NameToken substituteName, DictionaryToken? dictionary)
+        {
+            isResolvingDefaultSubstitute = true;
+            try
+            {
+                return GetColorSpaceDetails(substituteName, dictionary);
+            }
+            finally
+            {
+                isResolvingDefaultSubstitute = false;
+            }
+        }
+
         private bool TryGetDefaultSubstitute(ColorSpace requested, [NotNullWhen(true)] out NameToken? substituteName)
         {
+            substituteName = null;
+
+            // Don't substitute while already resolving a default, the device space is the genuine one
+            // (see isResolvingDefaultSubstitute).
+            if (isResolvingDefaultSubstitute)
+            {
+                return false;
+            }
+
             NameToken? candidate = requested switch
             {
                 ColorSpace.DeviceGray => NameToken.DefaultGray,
@@ -382,13 +402,17 @@
                 _ => null
             };
 
-            if (candidate is not null && namedColorSpaces.TryGetValue(candidate, out _))
+            // 8.6.5.6: any colour space other than a Lab, Indexed, or Pattern colour space may be used as a
+            // default. Reject those families so an invalid default falls back to the genuine device space.
+            if (candidate is not null &&
+                TryGetNamedColorSpace(candidate, out ResourceColorSpace substitute) &&
+                substitute.Name.TryMapToColorSpace(out ColorSpace substituteColorSpace) &&
+                substituteColorSpace is not ColorSpace.Lab and not ColorSpace.Indexed and not ColorSpace.Pattern)
             {
                 substituteName = candidate;
                 return true;
             }
 
-            substituteName = null;
             return false;
         }
 

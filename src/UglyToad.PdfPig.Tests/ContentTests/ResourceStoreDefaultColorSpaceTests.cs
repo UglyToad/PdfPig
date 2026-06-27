@@ -68,6 +68,69 @@
         }
 
         [Fact]
+        public void DeviceRgbRequest_WithIndexedDefaultRgb_ReturnsDeviceColorSpace()
+        {
+            // 8.6.5.6: any colour space other than a Lab, Indexed, or Pattern colour space may be used as a
+            // default. Selecting /DeviceRGB through the cs/CS operator must reject an invalid Indexed
+            // DefaultRGB and fall back to the device space, exactly like the g/rg/k path.
+            // DefaultRGB -> [ /Indexed /DeviceGray 1 <00FF> ]
+            var defaultRgbArray = new ArrayToken(new IToken[]
+            {
+                NameToken.Indexed,
+                NameToken.Devicegray,
+                new NumericToken(1),
+                new StringToken("ÿ"),
+            });
+
+            var resources = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                {
+                    NameToken.ColorSpace,
+                    new DictionaryToken(new Dictionary<NameToken, IToken>
+                    {
+                        { NameToken.DefaultRgb, defaultRgbArray },
+                    })
+                },
+            });
+
+            var store = BuildStore();
+            store.LoadResourceDictionary(resources);
+
+            var details = store.GetColorSpaceDetails(
+                NameToken.Devicergb,
+                new DictionaryToken(new Dictionary<NameToken, IToken>()));
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details);
+        }
+
+        [Fact]
+        public void DeviceRgbRequest_WithPatternDefaultRgb_ReturnsDeviceColorSpace()
+        {
+            // 8.6.5.6: a Pattern colour space may not be used as a default colour space, so selecting
+            // /DeviceRGB through the cs/CS operator must ignore a Pattern DefaultRGB and use the device space.
+            // DefaultRGB -> /Pattern
+            var resources = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                {
+                    NameToken.ColorSpace,
+                    new DictionaryToken(new Dictionary<NameToken, IToken>
+                    {
+                        { NameToken.DefaultRgb, NameToken.Pattern },
+                    })
+                },
+            });
+
+            var store = BuildStore();
+            store.LoadResourceDictionary(resources);
+
+            var details = store.GetColorSpaceDetails(
+                NameToken.Devicergb,
+                new DictionaryToken(new Dictionary<NameToken, IToken>()));
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details);
+        }
+
+        [Fact]
         public void GetDeviceColorSpaceDetails_WithDefaultRgbInResources_UsesDefaultRgb()
         {
             // The g/rg/k operators select a device colour space directly; per 8.6.5.6 the matching
