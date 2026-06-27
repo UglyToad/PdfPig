@@ -12,6 +12,18 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1349()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("Type3Test.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotNull(page.Text);
+            }
+        }
+
+        [Fact]
         public void Issues1330()
         {
             var path = IntegrationHelpers.GetDocumentPath("issue_1330.pdf");
