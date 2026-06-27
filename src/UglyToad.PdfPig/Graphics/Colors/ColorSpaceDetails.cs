@@ -147,7 +147,7 @@
             {
                 return GrayColor.Black;
             }
-            
+
             if (gray == 1)
             {
                 return GrayColor.White;
@@ -219,7 +219,7 @@
             {
                 return RGBColor.Black;
             }
-            
+
             if (r == 1 && g == 1 && b == 1)
             {
                 return RGBColor.White;
@@ -382,10 +382,27 @@
             BaseType = baseColorSpaceDetails.Type;
         }
 
+        /// <summary>
+        /// Convert a colour index, which may be a real number or fall outside the valid
+        /// range, into a valid table index. Per ISO 32000-2 (PDF 2.0) 8.6.6.3 the value is
+        /// rounded to the nearest integer (0.5 rounds up) and any value outside 0..<see cref="HiVal"/>
+        /// is adjusted to the nearest value within that range.
+        /// </summary>
+        private byte ClampColorIndex(double value)
+        {
+            double rounded = Math.Round(value, MidpointRounding.AwayFromZero);
+            if (rounded <= 0)
+            {
+                return 0;
+            }
+
+            return rounded >= HiVal ? HiVal : (byte)rounded;
+        }
+
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            var csBytes = UnwrapIndexedColorSpaceBytes([(byte)values[0]]);
+            var csBytes = UnwrapIndexedColorSpaceBytes([ClampColorIndex(values[0])]);
 
             var scaledCsBytes = new double[csBytes.Length];
 
@@ -407,7 +424,7 @@
 
             return cache.GetOrAdd(values[0], v =>
             {
-                var csBytes = UnwrapIndexedColorSpaceBytes([(byte)v]);
+                var csBytes = UnwrapIndexedColorSpaceBytes([ClampColorIndex(v)]);
 
                 var scaledCsBytes = new double[csBytes.Length];
 
@@ -422,6 +439,22 @@
 
         internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input)
         {
+            // ISO 32000-2 (PDF 2.0) 8.6.6.3: an index outside 0..hival is adjusted to the
+            // nearest valid value. Indices arrive here as (unsigned) bytes (image samples, or
+            // the already-clamped content-stream index), so only the upper bound can be
+            // exceeded.
+            if (HiVal != byte.MaxValue)
+            {
+                for (int k = 0; k < input.Length; ++k)
+                {
+                    ref byte c = ref input[k];
+                    if (c > HiVal)
+                    {
+                        c = HiVal;
+                    }
+                }
+            }
+
             switch (BaseType)
             {
                 case ColorSpace.DeviceRGB:
