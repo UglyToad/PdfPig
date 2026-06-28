@@ -114,7 +114,6 @@
                     else
                     {
                         bitsPerComponent = Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span);
-                        System.Diagnostics.Debug.Assert(new int[] { 1, 2, 4, 8, 16 }.Contains(bitsPerComponent));
                     }
                 }
                 else
@@ -153,7 +152,10 @@
                 : null;
 
             var decode = Array.Empty<double>();
-            if (dictionary.TryGet(NameToken.Decode, out ArrayToken decodeArrayToken))
+            // PDF 2.0, 7.4.9: for a JPXDecode image with no /ColorSpace entry the Decode array shall be
+            // ignored unless the image is an image mask.
+            bool ignoreDecode = isJpxDecode && !isImageMask && !dictionary.ContainsKey(NameToken.ColorSpace);
+            if (!ignoreDecode && dictionary.TryGet(NameToken.Decode, out ArrayToken decodeArrayToken))
             {
                 decode = decodeArrayToken.Data.OfType<NumericToken>()
                     .Select(x => x.Double)
@@ -172,7 +174,14 @@
                 {
                     details = resourceStore.GetColorSpaceDetails(firstColorSpaceName, dictionary);
                 }
-                else if (!isJpxDecode)
+                else if (isJpxDecode)
+                {
+                    // A JPXDecode image without an explicit /ColorSpace entry takes its colour space
+                    // from the colour space information embedded in the JPEG2000 data (PDF 2.0, 7.4.9);
+                    // otherwise ColorSpaceDetails stays null and the image cannot be interpreted.
+                    details = Jpeg2000Helper.GetJpxColorSpaceDetails(xObject.Stream.Data);
+                }
+                else
                 {
                     details = xObject.DefaultColorSpace;
                 }

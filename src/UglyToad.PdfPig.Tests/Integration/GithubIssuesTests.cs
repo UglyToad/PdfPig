@@ -8,9 +8,26 @@
     using SkiaSharp;
     using UglyToad.PdfPig.AcroForms;
     using UglyToad.PdfPig.AcroForms.Fields;
+    using UglyToad.PdfPig.Graphics.Colors;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issues1356()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("539_2671-3.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                var images = page.GetImages().ToArray();
+                foreach (var image in images)
+                {
+                    Assert.Same(DeviceRgbColorSpaceDetails.Instance, image.ColorSpaceDetails);
+                    Assert.Empty(image.Decode);
+                }
+            }
+        }
+
         [Fact]
         public void Issues1354()
         {

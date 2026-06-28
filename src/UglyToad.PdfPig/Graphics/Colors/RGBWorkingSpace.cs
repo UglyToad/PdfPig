@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Graphics.Colors
     using System;
 
     // The RGB working space specifications below were obtained from: http://www.brucelindbloom.com/index.html?WorkingSpaceInfo.html
-    internal class RGBWorkingSpace
+    internal sealed class RGBWorkingSpace
     {
         public static readonly XYZReferenceWhite ReferenceWhites = new XYZReferenceWhite();
 
@@ -145,7 +145,7 @@ namespace UglyToad.PdfPig.Graphics.Colors
         }
 
         // The reference white values below were obtained from: http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
-        internal class XYZReferenceWhite
+        internal sealed class XYZReferenceWhite
         {
             internal XYZReferenceWhite() { }
             public readonly (double X, double Y, double Z) A = (1.09850, 1.00000, 0.35585);
