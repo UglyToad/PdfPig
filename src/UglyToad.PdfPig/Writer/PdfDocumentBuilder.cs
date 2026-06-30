@@ -361,7 +361,7 @@ namespace UglyToad.PdfPig.Writer
 
                 var contentReferences = new List<IndirectReferenceToken>();
 
-                if (contentsToken is ArrayToken array)
+                if (DirectObjectFinder.TryGet<ArrayToken>(contentsToken, document.Structure.TokenScanner, out var array))
                 {
                     foreach (var item in array.Data)
                     {
