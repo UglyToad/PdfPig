@@ -1329,6 +1329,24 @@
         }
 
         [Fact]
+        public void CanAddAndModifyPageWithArrayReference()
+        {
+            using var builder = new PdfDocumentBuilder();
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("GHOSTSCRIPT-697507-0.pdf")))
+            {
+                var pageBuilder = builder.AddPage(document, 1);
+                pageBuilder.NewContentStreamAfter();
+                pageBuilder.SetStrokeColor(0, 0, 0);
+            }
+            var bytes = builder.Build();
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                Assert.NotNull(document.GetPage(1).Content);
+            }
+        }
+
+        [Fact]
         public void CanAddInternalLinkToPage()
         {
             var builder = new PdfDocumentBuilder();
