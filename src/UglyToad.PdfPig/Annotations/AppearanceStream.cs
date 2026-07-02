@@ -22,6 +22,11 @@
         public bool IsStateless => statelessAppearanceStream != null;
 
         /// <summary>
+        /// The stateless appearance stream, if this appearance stream is stateless.
+        /// </summary>
+        public StreamToken? StatelessAppearanceStream => statelessAppearanceStream;
+
+        /// <summary>
         /// Get list of states. If this is a stateless appearance stream, an empty collection is returned.
         /// </summary>
         public ICollection<string> GetStates => appearanceStreamsByState != null ? appearanceStreamsByState.Keys : new string[0];

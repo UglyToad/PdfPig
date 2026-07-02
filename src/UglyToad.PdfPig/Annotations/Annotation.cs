@@ -84,6 +84,26 @@
         public bool HasDownAppearance => downAppearanceStream != null;
 
         /// <summary>
+        /// The normal appearance stream for this annotation, if any. Each appearance is a Form XObject.
+        /// </summary>
+        public AppearanceStream? NormalAppearance => normalAppearanceStream;
+
+        /// <summary>
+        /// The roll-over appearance stream (shown on hover), if any.
+        /// </summary>
+        public AppearanceStream? RollOverAppearance => rollOverAppearanceStream;
+
+        /// <summary>
+        /// The down appearance stream (shown on click), if any.
+        /// </summary>
+        public AppearanceStream? DownAppearance => downAppearanceStream;
+
+        /// <summary>
+        /// The current appearance state name, if any.
+        /// </summary>
+        public string? AppearanceState => appearanceState;
+
+        /// <summary>
         /// The <see cref="Annotation"/> this annotation was in reply to. Can be <see langword="null" />
         /// </summary>
         public Annotation? InReplyTo { get; }
