@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Parser.FileStructure;
+namespace UglyToad.PdfPig.Parser.FileStructure;
 
 using Core;
 using Logging;
@@ -135,6 +135,12 @@ internal static class XrefBruteForcer
 
                 var potentialTableOffset = bytes.CurrentOffset - 4;
 
+                // TryReadTableAtOffset seeks the shared stream and does not restore
+                // position (including on failure). Snapshot so the scan resumes from
+                // here — otherwise a failed parse can skip past later keywords such
+                // as a recoverable 'trailer' dictionary.
+                var resumePosition = bytes.CurrentOffset;
+
                 if (xrefOffsetSeen.Contains(potentialTableOffset))
                 {
                     log.Debug($"Skipping circular xref reference at {potentialTableOffset}");
@@ -158,6 +164,8 @@ internal static class XrefBruteForcer
                     log.Warn(
                         $"Found a table at {potentialTableOffset} but couldn't parse it.");
                 }
+
+                bytes.Seek(resumePosition);
             }
             else if (buffer.EndsWith("/XRef"))
             {
@@ -176,6 +184,9 @@ internal static class XrefBruteForcer
                 }
                 xrefOffsetSeen.Add(offset);
 
+                // Same position-preservation as the table branch above.
+                var resumePosition = bytes.CurrentOffset;
+
                 var stream = XrefStreamParser.TryReadStreamAtOffset(
                     new FileHeaderOffset(0),
                     offset,
@@ -187,10 +198,16 @@ internal static class XrefBruteForcer
                 {
                     results.Add(stream);
                 }
+
+                bytes.Seek(resumePosition);
             }
             else if (buffer.EndsWith("trailer "))
             {
                 ClearQueues();
+
+                // Ensure the scanner reads from the byte scan's current position —
+                // a preceding failed table/stream parse may have moved it elsewhere.
+                scanner.Seek(bytes.CurrentOffset);
 
                 // Grab the last trailer dictionary as backup in case we find no valid xrefs.
                 if (scanner.TryReadToken(out DictionaryToken trailerDict))
