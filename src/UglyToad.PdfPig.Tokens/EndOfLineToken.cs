@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents an End Of Line marker found in Adobe Type 1 font files and the cross-reference table.
     /// </summary>
-    public class EndOfLineToken : IToken
+    public sealed class EndOfLineToken : IToken
     {
         /// <summary>
         /// The instance of the end of line token.
@@ -12,6 +12,18 @@
 
         private EndOfLineToken()
         {
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return typeof(EndOfLineToken).GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
         }
 
         /// <inheritdoc />

@@ -8,7 +8,7 @@
     /// Each name is considered identical if it has the same sequence of characters. Names are used in
     /// PDF documents to identify dictionary keys and other elements of a PDF document.
     /// </summary>
-    public partial class NameToken : IDataToken<string>
+    public sealed partial class NameToken : IDataToken<string>
     {
         /// <inheritdoc />
         /// <summary>
@@ -45,9 +45,15 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            return Equals(obj as NameToken);
+            return obj is NameToken token && Equals(token);
+        }
+
+        /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            return obj is NameToken token && Equals(token);
         }
 
         /// <summary>
@@ -56,12 +62,6 @@
         public bool Equals(NameToken other)
         {
             return string.Equals(Data, other?.Data);
-        }
-
-        /// <inheritdoc />
-        public bool Equals(IToken obj)
-        {
-            return Equals(obj as NameToken);
         }
 
         /// <inheritdoc />

@@ -5,7 +5,7 @@
     /// <summary>
     /// A reference to an indirect object (see <see cref="ObjectToken"/>).
     /// </summary>
-    public class IndirectReferenceToken : IDataToken<IndirectReference>
+    public sealed class IndirectReferenceToken : IDataToken<IndirectReference>
     {
         /// <summary>
         /// The identifier for an object in the PDF file.
@@ -21,6 +21,17 @@
             Data = data;
         }
 
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
+        }
+
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
@@ -29,7 +40,7 @@
                 return true;
             }
 
-            if (!(obj is IndirectReferenceToken other))
+            if (obj is not IndirectReferenceToken other)
             {
                 return false;
             }

@@ -6,7 +6,7 @@
     /// An indirect object reference to a nonexistent object is treated the same as the null object. 
     /// Specifying the null object as the value of a dictionary entry is equivalent to omitting the entry entirely.
     /// </summary>
-    public class NullToken : IDataToken<object>
+    public sealed class NullToken : IDataToken<object>
     {
         /// <summary>
         /// The single instance of the <see cref="NullToken"/>.
@@ -16,12 +16,12 @@
         /// <summary>
         /// <see langword="null"/>.
         /// </summary>
-        public object Data { get; } = null;
+        public object Data { get; } = null!;
 
         private NullToken() { }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is NullToken;
         }
@@ -29,9 +29,9 @@
         /// <summary>
         /// Whether two null tokens are equal.
         /// </summary>
-        protected bool Equals(NullToken other)
+        public bool Equals(NullToken? other)
         {
-            return Equals(Data, other.Data);
+            return other is not null;
         }
 
         /// <inheritdoc />

@@ -85,6 +85,24 @@
         }
         
         /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            HashCode hash = new HashCode();
+            foreach (var t in Data)
+            {
+                hash.Add(t);
+            }
+
+            return hash.ToHashCode();
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
+        }
+
+        /// <inheritdoc />
         public bool Equals(IToken obj)
         {
             if (ReferenceEquals(this, obj))
@@ -92,7 +110,7 @@
                 return true;
             }
 
-            if (!(obj is ArrayToken other))
+            if (obj is not ArrayToken other)
             {
                 return false;
             }

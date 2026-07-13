@@ -41,6 +41,29 @@
         }
 
         /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(StreamDictionary);
+#if NET6_0_OR_GREATER
+            hash.AddBytes(Data.Span);
+#else
+            var span = Data.Span;
+            for (var i = 0; i < span.Length; i++)
+            {
+                hash.Add(span[i]);
+            }
+#endif
+            return hash.ToHashCode();
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
+        }
+
+        /// <inheritdoc />
         public bool Equals(IToken obj)
         {
             if (ReferenceEquals(this, obj))
@@ -48,7 +71,7 @@
                 return true;
             }
 
-            if (!(obj is StreamToken other))
+            if (obj is not StreamToken other)
             {
                 return false;
             }

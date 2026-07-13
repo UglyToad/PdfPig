@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace UglyToad.PdfPig.Tokens
+﻿namespace UglyToad.PdfPig.Tokens
 {
     /// <summary>
     /// A marker interface for tokens from the PDF file contents.
