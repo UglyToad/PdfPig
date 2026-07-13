@@ -4,7 +4,7 @@
     /// A comment from a PDF document. Any occurrence of the percent sign character (%) outside a string or stream
     /// introduces a comment. The comment consists of all characters between the percent sign and the end of the line.
     /// </summary>
-    public class CommentToken : IDataToken<string>
+    public sealed class CommentToken : IDataToken<string>
     {
         /// <summary>
         /// The text of the comment (excluding the initial percent '%' sign).
@@ -25,6 +25,18 @@
         {
             return Data;
         }
+        
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
+        }
 
         /// <inheritdoc />
         public bool Equals(IToken obj)
@@ -34,7 +46,7 @@
                 return true;
             }
 
-            if (!(obj is CommentToken other))
+            if (obj is not CommentToken other)
             {
                 return false;
             }

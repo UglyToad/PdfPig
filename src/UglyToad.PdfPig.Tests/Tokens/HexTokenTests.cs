@@ -33,5 +33,40 @@
 
             Assert.Equal(expected, value);
         }
+
+        [Fact]
+        public void EqualsAndGetHashCode()
+        {
+            var token1 = new HexToken("AE".ToCharArray());
+            var token2 = new HexToken("AE".ToCharArray());
+            var token3 = new HexToken("61".ToCharArray());
+
+            Assert.Equal(token1, token2);
+            Assert.Equal(token1.GetHashCode(), token2.GetHashCode());
+            Assert.NotEqual(token1, token3);
+            Assert.False(token1.Equals(null));
+            Assert.False(token1.Equals(new object()));
+        }
+
+        [Fact]
+        public void EqualsIgnoresHexDigitCase()
+        {
+            var upper = new HexToken("AE".ToCharArray());
+            var lower = new HexToken("ae".ToCharArray());
+
+            Assert.Equal(upper, lower);
+            Assert.Equal(upper.GetHashCode(), lower.GetHashCode());
+        }
+
+        [Fact]
+        public void NotEqualToStringTokenWithSameText()
+        {
+            var hex = new HexToken("61".ToCharArray());
+            var str = new StringToken("a");
+
+            Assert.Equal("a", hex.Data);
+            Assert.False(hex.Equals(str));
+            Assert.False(str.Equals(hex));
+        }
     }
 }

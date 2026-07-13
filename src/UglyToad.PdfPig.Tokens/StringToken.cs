@@ -50,7 +50,7 @@ namespace UglyToad.PdfPig.Tokens
         /// </summary>
         public byte[] GetBytes()
         {
-            if (rawBytes != null)
+            if (rawBytes is not null)
             {
                 return rawBytes;
             }
@@ -83,6 +83,18 @@ namespace UglyToad.PdfPig.Tokens
                 default:
                     return OtherEncodings.StringAsLatin1Bytes(Data);
             }
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(EncodedWith, Data);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
         }
 
         /// <inheritdoc />

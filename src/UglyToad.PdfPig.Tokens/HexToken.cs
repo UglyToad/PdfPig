@@ -146,6 +146,18 @@ namespace UglyToad.PdfPig.Tokens
 
             return value;
         }
+        
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode();
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
+        {
+            return obj is IToken token && Equals(token);
+        }
 
         /// <inheritdoc />
         public bool Equals(IToken obj)
@@ -155,7 +167,7 @@ namespace UglyToad.PdfPig.Tokens
                 return true;
             }
 
-            if (!(obj is HexToken other))
+            if (obj is not HexToken other)
             {
                 return false;
             }
