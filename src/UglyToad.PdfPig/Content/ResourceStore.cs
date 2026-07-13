@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using Core;
     using Graphics.Colors;
     using Parser.Parts;
@@ -28,6 +29,7 @@
 
         private readonly StackDictionary<NameToken, ResourceColorSpace> namedColorSpaces = new StackDictionary<NameToken, ResourceColorSpace>();
         private readonly Dictionary<NameToken, ColorSpaceDetails> loadedNamedColorSpaceDetails = new Dictionary<NameToken, ColorSpaceDetails>();
+        private readonly Dictionary<(NameToken? Name, IToken ColorSpace), ColorSpaceDetails> loadedColorSpaceDetailsCache = new Dictionary<(NameToken?, IToken), ColorSpaceDetails>();
 
         private readonly Dictionary<NameToken, DictionaryToken> markedContentProperties = new Dictionary<NameToken, DictionaryToken>();
 
@@ -59,6 +61,7 @@
         {
             lastLoadedFont = (null, null);
             loadedNamedColorSpaceDetails.Clear();
+            loadedColorSpaceDetailsCache.Clear();
 
             namedColorSpaces.Push();
             currentFontState.Push();
@@ -195,6 +198,7 @@
         {
             lastLoadedFont = (null, null);
             loadedNamedColorSpaceDetails.Clear();
+            loadedColorSpaceDetailsCache.Clear();
             currentFontState.Pop();
             currentXObjectState.Pop();
             namedColorSpaces.Pop();
@@ -305,9 +309,65 @@
         }
 
         public ColorSpaceDetails GetColorSpaceDetails(NameToken? name, DictionaryToken? dictionary)
-        {            
+        {
             dictionary ??= new DictionaryToken(new Dictionary<NameToken, IToken>());
-            
+
+            if (!TryGetCacheColorSpaceDefinition(dictionary, out IToken? colorSpaceToken))
+            {
+                return GetColorSpaceDetailsInternal(name, dictionary);
+            }
+
+            var key = (name, colorSpaceToken);
+            if (loadedColorSpaceDetailsCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var parsed = GetColorSpaceDetailsInternal(name, dictionary);
+            loadedColorSpaceDetailsCache[key] = parsed;
+            return parsed;
+        }
+
+        private bool TryGetCacheColorSpaceDefinition(DictionaryToken dictionary, [NotNullWhen(true)] out IToken? colorSpaceToken)
+        {
+            colorSpaceToken = null;
+
+            // While a DefaultGray/RGB/CMYK substitute is being resolved the same colour space object can
+            // legitimately parse to a different result, so bypass the cache entirely.
+            if (isResolvingDefaultSubstitute)
+            {
+                return false;
+            }
+
+            // We rely on the color space definition for caching.
+            if (!dictionary.TryGet(NameToken.ColorSpace, out colorSpaceToken) &&
+                !dictionary.TryGet(NameToken.Cs, out colorSpaceToken))
+            {
+                return false;
+            }
+
+            // We do not cache stencil-mask color spaces as they do not rely on color space definition.
+            // Stencil color spaces are created when the dictionary contains `ImageMask` or `Im` or if
+            // a filter is CcittFaxDecodeFilter.
+            if (dictionary.ContainsKey(NameToken.ImageMask) || dictionary.ContainsKey(NameToken.Im))
+            {
+                return false;
+            }
+
+            if ((dictionary.ContainsKey(NameToken.Filter) || dictionary.ContainsKey(NameToken.F)) &&
+                filterProvider.GetFilters(dictionary, scanner).OfType<CcittFaxDecodeFilter>().Any())
+            {
+                return false;
+            }
+
+            // NB: If the colorSpaceToken is an indirect reference, we do not resolve it.
+            // This could change, fine for now
+
+            return true;
+        }
+
+        private ColorSpaceDetails GetColorSpaceDetailsInternal(NameToken? name, DictionaryToken dictionary)
+        {
             // Null color space for images
             if (name is null)
             {
