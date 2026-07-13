@@ -632,6 +632,8 @@
     /// </summary>
     public sealed class DeviceNColorSpaceDetails : ColorSpaceDetails
     {
+        private readonly ConcurrentDictionary<double[], IColor> cache = new(DoubleArrayEqualityComparer.Instance);
+
         /// <summary>
         /// <inheritdoc/>
         /// <para>The 'N' in DeviceN.</para>
@@ -709,16 +711,28 @@
 
             // TODO - use attributes
 
-            // TODO - caching
+            if (cache.TryGetValue(values, out var color))
+            {
+                return color;
+            }
+
             var evaled = TintFunction.Eval(values);
-            return AlternateColorSpace.GetColor(evaled);
+            color = AlternateColorSpace.GetColor(evaled);
+
+            // The caller owns the values array and may mutate it after this call, so key on a copy.
+            cache.TryAdd(values.ToArray(), color);
+
+            return color;
         }
 
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded)
         {
-            var cache = new Dictionary<int, double[]>();
-            var transformed = new List<byte>();
+            // This is cached locally
+            var transformCache = new Dictionary<int, double[]>();
+            var transformed = new byte[decoded.Length * AlternateColorSpace.NumberOfColorComponents / NumberOfColorComponents];
+            int k = 0;
+            
             for (var i = 0; i < decoded.Length; i += NumberOfColorComponents)
             {
                 int key = 0;
@@ -730,23 +744,19 @@
                     comps[n] = b / 255.0;
                 }
 
-                if (!cache.TryGetValue(key, out double[]? colors))
+                if (!transformCache.TryGetValue(key, out double[]? colors))
                 {
                     colors = Process(comps);
-                    cache[key] = colors;
+                    transformCache[key] = colors;
                 }
 
                 for (int c = 0; c < colors.Length; c++)
                 {
-                    transformed.Add(ConvertToByte(colors[c]));
+                    transformed[k++] = ConvertToByte(colors[c]);
                 }
             }
 
-#if NET
-            return CollectionsMarshal.AsSpan(transformed);
-#else
-            return transformed.ToArray();
-#endif
+            return transformed;
         }
 
         /// <inheritdoc/>
@@ -762,6 +772,37 @@
         public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
         {
             GetRgbViaTint(TintFunction, AlternateColorSpace, values, out r, out g, out b);
+        }
+
+        private sealed class DoubleArrayEqualityComparer : IEqualityComparer<double[]>
+        {
+            public static readonly DoubleArrayEqualityComparer Instance = new DoubleArrayEqualityComparer();
+
+            public bool Equals(double[]? x, double[]? y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return true;
+                }
+
+                if (x is null || y is null)
+                {
+                    return false;
+                }
+
+                return x.AsSpan().SequenceEqual(y);
+            }
+
+            public int GetHashCode(double[] obj)
+            {
+                var hash = new HashCode();
+                foreach (var value in obj)
+                {
+                    hash.Add(value);
+                }
+
+                return hash.ToHashCode();
+            }
         }
 
         /// <summary>
@@ -900,8 +941,9 @@
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> values)
         {
-            var colorCache = new Dictionary<int, double[]>(values.Length);
-            var transformed = new List<byte>(values.Length);
+            var colorCache = new Dictionary<byte, double[]>(values.Length);
+            var transformed = new byte[values.Length * AlternateColorSpace.NumberOfColorComponents];
+            int k = 0;
 
             for (var i = 0; i < values.Length; ++i)
             {
@@ -914,15 +956,11 @@
 
                 for (int c = 0; c < colors.Length; ++c)
                 {
-                    transformed.Add(ConvertToByte(colors[c]));
+                    transformed[k++] = ConvertToByte(colors[c]);
                 }
             }
 
-#if NET
-            return CollectionsMarshal.AsSpan(transformed);
-#else
-            return transformed.ToArray();
-#endif
+            return transformed;
         }
 
         /// <inheritdoc/>
