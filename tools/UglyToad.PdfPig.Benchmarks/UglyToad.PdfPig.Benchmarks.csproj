@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(PdfPigVersion)' == 'Latest'">
-		<PackageReference Include="PdfPig" Version="0.1.15" />
+		<PackageReference Include="PdfPig" Version="0.1.16-alpha-20260714-a9ac3" />
 	</ItemGroup>
 
 	<ItemGroup>
