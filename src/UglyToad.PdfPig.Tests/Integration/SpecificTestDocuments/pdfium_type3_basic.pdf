@@ -1,0 +1,116 @@
+%PDF-1.7
+
+1 0  obj
+<<
+/Type /Catalog
+/Pages 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Page
+/Parent 3 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R 
+/Resources <<
+	/Font<<
+              /Font1 5 0 R >>
+            >>
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Pages
+/Kids [2 0 R]
+/Count 1
+>>
+endobj
+
+
+5 0  obj
+<<	/Type  /Font
+	/Subtype  /Type3
+	/FontBBox [0 0 750 750]
+	/FontMatrix [0.0015 0 0 0.0015 0 0]
+	/CharProcs 6 0 R
+	/Encoding  7 0 R
+	/FirstChar 97
+	/LastChar  99
+	/Widths [1000 1000 1000] 
+>>
+endobj
+
+7 0  obj
+<<	/Type  /Encoding
+	/Differences [97 /mya /myb /myc]
+>>
+endobj
+
+6 0 obj
+<<	/mya  10 0 R
+	/myb  11 0 R
+	/myc  12 0 R
+>>
+endobj
+
+10 0 obj
+<< /Length 0>>
+stream
+
+1000 0 d0
+1 0 0 rg
+0 0 750 750 re
+f
+endstream
+endobj
+
+11 0 obj
+<< /Length 0>>
+stream
+1000 0 d0
+0 0 m
+375 750 l
+750 0 l
+f
+endstream
+endobj
+
+12 0 obj
+<< /Length 0>>
+stream
+1000 0 0 0 750 750 d1
+125 0 m
+375 750 l
+600 0 l
+0 500 l
+750 500 l
+b
+endstream
+endobj
+
+4 0 obj
+<<
+/Length 0
+>>stream
+
+BT
+/Font1 50 Tf
+100 500 Td
+0 0 1 rg
+(abcabc) Tj 	%Type3 font
+ET
+			
+endstream
+endobj
+
+xref
+0 
+trailer
+<<
+/Size 0
+/Root 1 0 R
+>>
+startxref
+0
+%%EOF
