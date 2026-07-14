@@ -11,7 +11,7 @@
         /// <summary>
         /// Used to indicate the parsers current state.
         /// </summary>
-        internal enum State
+        internal enum State : byte
         {
             NEWLINE, WHITESPACE, COMMENT, TOKEN
         }
@@ -21,7 +21,7 @@
         /// </summary>
         /// <param name="input">the text source</param>
         /// <param name="handler">the syntax handler</param>
-        public static void Parse(string input, SyntaxHandler handler)
+        public static void Parse(string input, ISyntaxHandler handler)
         {
             Tokenizer tokenizer = new Tokenizer(input, handler);
             tokenizer.Tokenize();
@@ -31,7 +31,7 @@
         /// This interface defines all possible syntactic elements of a Type 4 function.
         /// It is called by the parser as the function is interpreted.
         /// </summary>
-        public interface SyntaxHandler
+        public interface ISyntaxHandler
         {
             /// <summary>
             /// Indicates that a new line starts.
@@ -59,9 +59,9 @@
         }
 
         /// <summary>
-        /// Abstract base class for a <see cref="SyntaxHandler"/>.
+        /// Abstract base class for a <see cref="ISyntaxHandler"/>.
         /// </summary>
-        public abstract class AbstractSyntaxHandler : SyntaxHandler
+        public abstract class AbstractSyntaxHandler : ISyntaxHandler
         {
             /// <inheritdoc/>
             public void Comment(string text)
@@ -88,7 +88,7 @@
         /// <summary>
         /// Tokenizer for Type 4 functions.
         /// </summary>
-        internal class Tokenizer
+        internal sealed class Tokenizer
         {
             private const char NUL = '\u0000'; //NUL
             private const char EOT = '\u0004'; //END OF TRANSMISSION
@@ -100,11 +100,11 @@
 
             private readonly string input;
             private int index;
-            private readonly SyntaxHandler handler;
+            private readonly ISyntaxHandler handler;
             private State state = State.WHITESPACE;
             private readonly StringBuilder buffer = new StringBuilder();
 
-            internal Tokenizer(string text, SyntaxHandler syntaxHandler)
+            internal Tokenizer(string text, ISyntaxHandler syntaxHandler)
             {
                 this.input = text;
                 this.handler = syntaxHandler;
@@ -127,10 +127,8 @@
                 {
                     return EOT;
                 }
-                else
-                {
-                    return CurrentChar();
-                }
+
+                return CurrentChar();
             }
 
             private char Peek()
@@ -139,10 +137,8 @@
                 {
                     return input[index + 1];
                 }
-                else
-                {
-                    return EOT;
-                }
+
+                return EOT;
             }
 
             private State NextState()
@@ -175,8 +171,7 @@
                 while (HasMore())
                 {
                     buffer.Length = 0;
-                    NextState();
-                    switch (state)
+                    switch (NextState())
                     {
                         case State.NEWLINE:
                             ScanNewLine();

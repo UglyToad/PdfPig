@@ -15,11 +15,11 @@
             Type4Tester.Create("5 0.23 add").Pop(5.23).IsEmpty();
 
             const int bigValue = int.MaxValue - 2;
-            ExecutionContext context = Type4Tester.Create($"{bigValue} {bigValue} add").ToExecutionContext();
-            double floatResult = Convert.ToDouble(context.Stack.Pop());
-            Assert.Equal((long)2 * (long)int.MaxValue - (long)4, floatResult, 1);
-
-            Assert.Empty(context.Stack);
+            Type4Tester tester = Type4Tester.Create($"{bigValue} {bigValue} add");
+            Operand sum = tester.PopOperand();
+            Assert.Equal(OperandKind.Real, sum.Kind);
+            Assert.Equal((long)2 * (long)int.MaxValue - (long)4, sum.Value, 1);
+            tester.IsEmpty();
         }
 
         /// <summary>
@@ -98,9 +98,9 @@
             Type4Tester.Create("77 cvr").PopReal(77).IsEmpty();
 
             //Check that the data types are really right
-            ExecutionContext context = Type4Tester.Create("77 77 cvr").ToExecutionContext();
-            Assert.True(context.Stack.Pop() is double, "Expected a real as the result of 'cvr'");
-            Assert.True(context.Stack.Pop() is int, "Expected an int from an int literal");
+            Type4Tester typeTester = Type4Tester.Create("77 77 cvr");
+            Assert.Equal(OperandKind.Real, typeTester.PopOperand().Kind);   // result of 'cvr' must be a real
+            Assert.Equal(OperandKind.Integer, typeTester.PopOperand().Kind); // an int literal stays an int
         }
 
         /// <summary>
