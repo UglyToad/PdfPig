@@ -232,7 +232,12 @@
 
                     try
                     {
-                        loadedFonts[reference] = fontFactory.Get(fontObject);
+                        var loadedFont = fontFactory.Get(fontObject);
+                        // Stamp the font dictionary's indirect reference so consumers can
+                        // distinguish same-named fonts (e.g. two subsets of one typeface
+                        // embedded without unique subset prefixes). See FontDetails.FontDictionaryReference.
+                        loadedFont.Details?.SetFontDictionaryReference(reference);
+                        loadedFonts[reference] = loadedFont;
                     }
                     catch
                     {
@@ -285,6 +290,8 @@
             }
 
             var font = fontFactory.Get(fontDictionaryToken);
+
+            font.Details?.SetFontDictionaryReference(fontReferenceToken.Data);
 
             return font;
         }
