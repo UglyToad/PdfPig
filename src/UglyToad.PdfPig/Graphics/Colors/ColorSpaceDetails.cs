@@ -403,15 +403,7 @@
         internal override double[] Process(params double[] values)
         {
             var csBytes = UnwrapIndexedColorSpaceBytes([ClampColorIndex(values[0])]);
-
-            var scaledCsBytes = new double[csBytes.Length];
-
-            for (int i = 0; i < csBytes.Length; i++)
-            {
-                scaledCsBytes[i] = csBytes[i] / 255.0;
-            }
-
-            return BaseColorSpace.Process(scaledCsBytes);
+            return BaseColorSpace.Process(ScaleIndexedComponents(csBytes));
         }
 
         /// <inheritdoc/>
@@ -425,16 +417,43 @@
             return cache.GetOrAdd(values[0], v =>
             {
                 var csBytes = UnwrapIndexedColorSpaceBytes([ClampColorIndex(v)]);
+                return BaseColorSpace.GetColor(ScaleIndexedComponents(csBytes));
+            });
+        }
 
-                var scaledCsBytes = new double[csBytes.Length];
+        /// <summary>
+        /// Decode colour-table bytes to the base colour space's component ranges.
+        /// ISO 32000-2 (PDF 2.0) 8.6.6.3: the colour table data is interpreted as
+        /// component values in the base space, i.e. each byte decodes to
+        /// min + (byte / 255) × (max − min) of that component's range. Device and
+        /// most CIE spaces use [0, 1]; Lab uses L* ∈ [0, 100] and a*/b* from the
+        /// /Range entry — feeding Lab a [0, 1] L* renders near-black.
+        /// </summary>
+        private double[] ScaleIndexedComponents(Span<byte> csBytes)
+        {
+            var scaled = new double[csBytes.Length];
 
+            if (BaseColorSpace is LabColorSpaceDetails labBase)
+            {
                 for (int i = 0; i < csBytes.Length; i++)
                 {
-                    scaledCsBytes[i] = csBytes[i] / 255.0;
+                    double unit = csBytes[i] / 255.0;
+                    scaled[i] = (i % 3) switch
+                    {
+                        0 => unit * 100.0,                                                          // L*: [0, 100]
+                        1 => labBase.Matrix[0] + unit * (labBase.Matrix[1] - labBase.Matrix[0]),    // a*: /Range
+                        _ => labBase.Matrix[2] + unit * (labBase.Matrix[3] - labBase.Matrix[2]),    // b*: /Range
+                    };
                 }
+                return scaled;
+            }
 
-                return BaseColorSpace.GetColor(scaledCsBytes);
-            });
+            for (int i = 0; i < csBytes.Length; i++)
+            {
+                scaled[i] = csBytes[i] / 255.0;
+            }
+
+            return scaled;
         }
 
         internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input)
