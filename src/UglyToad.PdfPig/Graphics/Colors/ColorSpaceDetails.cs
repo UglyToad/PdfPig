@@ -76,6 +76,24 @@
         internal abstract Span<byte> Transform(Span<byte> decoded);
 
         /// <summary>
+        /// Decode raw 8-bit encoded component samples (e.g. an Indexed colour space's colour-table
+        /// entry) into this colour space's native component ranges, writing in place into
+        /// <paramref name="destination"/>. Per ISO 32000-2 (PDF 2.0) 8.6.6.3 each byte decodes to
+        /// min + (byte / 255) × (max − min) of the component's range; for device and most CIE
+        /// spaces this is [0, 1], which this default implements. Spaces with other native ranges
+        /// (e.g. Lab) override this.
+        /// </summary>
+        /// <param name="raw">The encoded 8-bit component samples.</param>
+        /// <param name="destination">Receives the decoded component values. Must be at least as long as <paramref name="raw"/>.</param>
+        internal virtual void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
+        {
+            for (int i = 0; i < raw.Length; i++)
+            {
+                destination[i] = raw[i] / 255.0;
+            }
+        }
+
+        /// <summary>
         /// Convert to byte.
         /// </summary>
         protected static byte ConvertToByte(double componentValue)
@@ -399,11 +417,24 @@
             return rounded >= HiVal ? HiVal : (byte)rounded;
         }
 
-        /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        /// <summary>
+        /// Decode colour-table bytes to the base colour space's component ranges.
+        /// ISO 32000-2 (PDF 2.0) 8.6.6.3: the colour table data is interpreted as
+        /// component values in the base space, i.e. each byte decodes to
+        /// min + (byte / 255) × (max − min) of that component's range. Device and
+        /// most CIE spaces use [0, 1]; Lab uses L* ∈ [0, 100] and a*/b* from the
+        /// /Range entry — feeding Lab a [0, 1] L* renders near-black.
+        /// </summary>
+        /// <remarks>
+        /// The decode rule lives on the base colour space (<see cref="ColorSpaceDetails.DecodeRawComponents"/>);
+        /// this writes the decoded components in place into <paramref name="destination"/>, whose
+        /// length selects the table entry width (the base space's component count).
+        /// </remarks>
+        private void DecodeTableEntry(byte index, Span<double> destination)
         {
-            var csBytes = UnwrapIndexedColorSpaceBytes([ClampColorIndex(values[0])]);
-            return BaseColorSpace.Process(ScaleIndexedComponents(csBytes));
+            BaseColorSpace.DecodeRawComponents(
+                ColorTable.Slice(index * destination.Length, destination.Length),
+                destination);
         }
 
         /// <inheritdoc/>
@@ -416,44 +447,18 @@
 
             return cache.GetOrAdd(values[0], v =>
             {
-                var csBytes = UnwrapIndexedColorSpaceBytes([ClampColorIndex(v)]);
-                return BaseColorSpace.GetColor(ScaleIndexedComponents(csBytes));
+                var components = new double[BaseColorSpace.NumberOfColorComponents];
+                DecodeTableEntry(ClampColorIndex(v), components);
+                return BaseColorSpace.GetColor(components);
             });
         }
 
-        /// <summary>
-        /// Decode colour-table bytes to the base colour space's component ranges.
-        /// ISO 32000-2 (PDF 2.0) 8.6.6.3: the colour table data is interpreted as
-        /// component values in the base space, i.e. each byte decodes to
-        /// min + (byte / 255) × (max − min) of that component's range. Device and
-        /// most CIE spaces use [0, 1]; Lab uses L* ∈ [0, 100] and a*/b* from the
-        /// /Range entry — feeding Lab a [0, 1] L* renders near-black.
-        /// </summary>
-        private double[] ScaleIndexedComponents(Span<byte> csBytes)
+        /// <inheritdoc/>
+        internal override double[] Process(params double[] values)
         {
-            var scaled = new double[csBytes.Length];
-
-            if (BaseColorSpace is LabColorSpaceDetails labBase)
-            {
-                for (int i = 0; i < csBytes.Length; i++)
-                {
-                    double unit = csBytes[i] / 255.0;
-                    scaled[i] = (i % 3) switch
-                    {
-                        0 => unit * 100.0,                                                          // L*: [0, 100]
-                        1 => labBase.Matrix[0] + unit * (labBase.Matrix[1] - labBase.Matrix[0]),    // a*: /Range
-                        _ => labBase.Matrix[2] + unit * (labBase.Matrix[3] - labBase.Matrix[2]),    // b*: /Range
-                    };
-                }
-                return scaled;
-            }
-
-            for (int i = 0; i < csBytes.Length; i++)
-            {
-                scaled[i] = csBytes[i] / 255.0;
-            }
-
-            return scaled;
+            var components = new double[BaseColorSpace.NumberOfColorComponents];
+            DecodeTableEntry(ClampColorIndex(values[0]), components);
+            return BaseColorSpace.Process(components);
         }
 
         internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input)
@@ -564,72 +569,14 @@
         /// <inheritdoc/>
         public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
         {
-            // Look up the index into the colour table and dispatch to the base colour space.
-            // Base color spaces have at most 4 components for our supported types.
-            byte index = (byte)values[0];
-            Span<double> buffer = stackalloc double[4];
-            int components;
-            switch (BaseType)
-            {
-                case ColorSpace.DeviceRGB:
-                case ColorSpace.CalRGB:
-                case ColorSpace.Lab:
-                    components = 3;
-                    for (int j = 0; j < 3; j++)
-                    {
-                        buffer[j] = colorTable[index * 3 + j] / 255.0;
-                    }
-
-                    break;
-                case ColorSpace.DeviceCMYK:
-                    components = 4;
-                    for (int j = 0; j < 4; j++)
-                    {
-                        buffer[j] = colorTable[index * 4 + j] / 255.0;
-                    }
-
-                    break;
-                case ColorSpace.DeviceGray:
-                case ColorSpace.CalGray:
-                case ColorSpace.Separation:
-                    components = 1;
-                    buffer[0] = colorTable[index] / 255.0;
-                    break;
-                case ColorSpace.DeviceN:
-                case ColorSpace.ICCBased:
-                    components = BaseColorSpace.NumberOfColorComponents;
-                    if (components == 1)
-                    {
-                        buffer[0] = colorTable[index] / 255.0;
-                    }
-                    else
-                    {
-                        if (components > buffer.Length)
-                        {
-                            Span<double> big = components <= 128 ? stackalloc double[components] : new double[components];
-                            for (int j = 0; j < components; j++)
-                            {
-                                big[j] = colorTable[index * components + j] / 255.0;
-                            }
-
-                            BaseColorSpace.GetRgb(big, out r, out g, out b);
-                            return;
-                        }
-
-                        for (int j = 0; j < components; j++)
-                        {
-                            buffer[j] = colorTable[index * components + j] / 255.0;
-                        }
-                    }
-
-                    break;
-                default:
-                    components = 1;
-                    buffer[0] = values[0];
-                    break;
-            }
-
-            BaseColorSpace.GetRgb(buffer.Slice(0, components), out r, out g, out b);
+            // Look up the index into the colour table and let the base colour space decode its
+            // own table bytes into its native component ranges.
+            byte index = ClampColorIndex(values[0]);
+            int components = BaseColorSpace.NumberOfColorComponents;
+            Span<double> buffer = components <= 16 ? stackalloc double[16] : new double[components];
+            buffer = buffer.Slice(0, components);
+            DecodeTableEntry(index, buffer);
+            BaseColorSpace.GetRgb(buffer, out r, out g, out b);
         }
 
         /// <summary>
@@ -1353,6 +1300,27 @@
             }
 
             return transformed;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// Lab components do not decode to [0, 1]: L* decodes to [0, 100] and a*/b* decode to
+        /// the ranges given by the colour space's Range entry (<see cref="Matrix"/>).
+        /// </para>
+        /// </summary>
+        internal override void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
+        {
+            for (int i = 0; i < raw.Length; i++)
+            {
+                double unit = raw[i] / 255.0;
+                destination[i] = (i % 3) switch
+                {
+                    0 => unit * 100.0,                                            // L*: [0, 100]
+                    1 => Matrix[0] + unit * (Matrix[1] - Matrix[0]),              // a*: Range
+                    _ => Matrix[2] + unit * (Matrix[3] - Matrix[2]),              // b*: Range
+                };
+            }
         }
 
         private static double g(double x)
