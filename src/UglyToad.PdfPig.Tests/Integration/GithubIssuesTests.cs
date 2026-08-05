@@ -13,6 +13,28 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1371()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("094.-.Fiat.CR.32.Aces.of.the.Spanish.Civil.War.pdf");
+
+            // UseLenientParsing = true
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page);
+                }
+            }
+
+            // UseLenientParsing = false
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false }))
+            {
+                var ex = Assert.Throws<PdfDocumentFormatException>(() => document.GetPage(2));
+                Assert.Equal("Cannot convert FormXObject bbox array to rectangle.", ex.Message);
+            }
+        }
+
+        [Fact]
         public void Issues1356()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("539_2671-3.pdf");

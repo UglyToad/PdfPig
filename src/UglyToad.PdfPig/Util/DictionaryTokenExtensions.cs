@@ -239,6 +239,30 @@
         }
 
         /// <summary>
+        /// Try converting the <see cref="ArrayToken"/> into a <see cref="PdfRectangle"/>.
+        /// </summary>
+        /// <param name="array">The <see cref="ArrayToken"/>.</param>
+        /// <param name="tokenScanner">The Pdf token scanner.</param>
+        /// <param name="rectangle"></param>
+        public static bool TryToRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner, out PdfRectangle rectangle)
+        {
+            if (array is null || array.Data.Count < 4)
+            {
+                // Should be exactly 4, but can be more (see issues 1238). We ignore the rest.
+                rectangle = default;
+                return false;
+            }
+
+            rectangle = new PdfRectangle(
+                DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Double,
+                DirectObjectFinder.Get<NumericToken>(array[1], tokenScanner).Double,
+                DirectObjectFinder.Get<NumericToken>(array[2], tokenScanner).Double,
+                DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Double);
+
+            return true;
+        }
+
+        /// <summary>
         /// Converts the <see cref="ArrayToken"/> into a <see cref="PdfRectangle"/>.
         /// </summary>
         /// <param name="array">The <see cref="ArrayToken"/>.</param>
@@ -264,6 +288,30 @@
         }
 
         /// <summary>
+        /// Try converting the <see cref="ArrayToken"/> into a <see cref="PdfRectangle"/>.
+        /// </summary>
+        /// <param name="array">The <see cref="ArrayToken"/>.</param>
+        /// <param name="tokenScanner">The Pdf token scanner.</param>
+        /// <param name="rectangle"></param>
+        public static bool TryToIntRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner, out PdfRectangle rectangle)
+        {
+            if (array is null || array.Data.Count < 4)
+            {
+                // Should be exactly 4, but can be more (see issues 1238 with double). We ignore the rest.
+                rectangle = default;
+                return false;
+            }
+
+            rectangle = new PdfRectangle(
+                DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Int,
+                DirectObjectFinder.Get<NumericToken>(array[1], tokenScanner).Int,
+                DirectObjectFinder.Get<NumericToken>(array[2], tokenScanner).Int,
+                DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Int);
+
+            return true;
+        }
+
+        /// <summary>
         /// Converts the <see cref="ArrayToken"/> into a <see cref="PdfRectangle"/>.
         /// </summary>
         /// <param name="array">The <see cref="ArrayToken"/>.</param>
@@ -275,8 +323,9 @@
                 throw new ArgumentNullException(nameof(array));
             }
 
-            if (array.Data.Count != 4)
+            if (array.Data.Count < 4)
             {
+                // Should be exactly 4, but can be more (see issues 1238 with double). We ignore the rest.
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array.Data.Count}.");
             }
 
