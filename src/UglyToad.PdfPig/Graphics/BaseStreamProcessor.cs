@@ -18,6 +18,7 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
     using XObjects;
 
     /// <summary>
@@ -654,9 +655,15 @@
                 // 3. Clip according to the form dictionary's BBox entry.
                 if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Bbox, PdfScanner, out var bboxToken))
                 {
-                    var points = bboxToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
-                    PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]).Normalise();
-                    ClipToRectangle(bbox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
+                    if (bboxToken.TryToRectangle(PdfScanner, out var bbox))
+                    {
+                        ClipToRectangle(bbox.Normalise(), FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
+                    }
+                    else if (!ParsingOptions.UseLenientParsing)
+                    {
+                        throw new PdfDocumentFormatException("Cannot convert FormXObject bbox array to rectangle.");
+                    }
+                    // else we just do not clip (see issue #1371)
                 }
 
                 // 4. Paint the objects.
