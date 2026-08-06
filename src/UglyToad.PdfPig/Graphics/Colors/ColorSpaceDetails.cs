@@ -4,7 +4,6 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Runtime.InteropServices;
     using Tokens;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Functions;
@@ -607,7 +606,7 @@
         public override int NumberOfColorComponents { get; }
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => AlternateColorSpace.NumberOfColorComponents;
+        public override int BaseNumberOfColorComponents => AlternateColorSpace.BaseNumberOfColorComponents;
 
         /// <summary>
         /// Specifies name objects specifying the individual colour components. The length of the array shall
@@ -696,7 +695,7 @@
         {
             // This is cached locally
             var transformCache = new Dictionary<int, double[]>();
-            var transformed = new byte[decoded.Length * AlternateColorSpace.NumberOfColorComponents / NumberOfColorComponents];
+            var transformed = new byte[decoded.Length * BaseNumberOfColorComponents / NumberOfColorComponents];
             int k = 0;
             
             for (var i = 0; i < decoded.Length; i += NumberOfColorComponents)
@@ -834,7 +833,7 @@
         public override int NumberOfColorComponents => 1;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => AlternateColorSpace.NumberOfColorComponents;
+        public override int BaseNumberOfColorComponents => AlternateColorSpace.BaseNumberOfColorComponents;
 
         /// <summary>
         /// Specifies the name of the colorant that this Separation color space is intended to represent.
@@ -878,6 +877,7 @@
             Name = name;
             AlternateColorSpace = alternateColorSpaceDetails;
             TintFunction = tintFunction;
+            BaseType = AlternateColorSpace.Type;
         }
 
         /// <inheritdoc/>
@@ -908,7 +908,7 @@
         internal override Span<byte> Transform(Span<byte> values)
         {
             var colorCache = new Dictionary<byte, double[]>(values.Length);
-            var transformed = new byte[values.Length * AlternateColorSpace.NumberOfColorComponents];
+            var transformed = new byte[values.Length * BaseNumberOfColorComponents];
             int k = 0;
 
             for (var i = 0; i < values.Length; ++i)
