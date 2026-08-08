@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Colors;
     using Content;
     using Tokens;
@@ -33,7 +31,7 @@
             currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetStrokingColor(IReadOnlyList<double> operands, NameToken? patternName)
+        public void SetStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName)
         {
             if (CurrentStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
@@ -47,7 +45,7 @@
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.ToArray());
+                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands);
             }
         }
 
@@ -77,7 +75,7 @@
             currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken? patternName)
+        public void SetNonStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName)
         {
             if (CurrentNonStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
@@ -91,7 +89,7 @@
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.ToArray());
+                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands);
             }
         }
 
@@ -121,7 +119,7 @@
             var colorSpace = resourceStore.GetDeviceColorSpaceDetails(deviceColorSpace);
             var state = currentStateFunc();
 
-            IColor color = colorSpace.GetColor(values.ToArray());
+            IColor color = colorSpace.GetColor(values);
 
             if (stroking)
             {

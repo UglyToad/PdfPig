@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using Tokens;
@@ -9,7 +8,7 @@
     /// <summary>
     /// Set the stroking color based on the current color space with support for Pattern, Separation, DeviceN, and ICCBased color spaces.
     /// </summary>
-    public class SetNonStrokeColorAdvanced : IGraphicsStateOperation
+    public sealed class SetNonStrokeColorAdvanced : IGraphicsStateOperation
     {
         private static readonly TokenWriter TokenWriter = new TokenWriter();
 
@@ -18,13 +17,15 @@
         /// </summary>
         public const string Symbol = "scn";
 
+        private readonly double[] operands;
+
         /// <inheritdoc />
         public string Operator => Symbol;
 
         /// <summary>
         /// The values for the color.
         /// </summary>
-        public IReadOnlyList<double> Operands { get; }
+        public ReadOnlySpan<double> Operands => operands;
 
         /// <summary>
         /// The name of an entry in the Pattern subdictionary of the current resource dictionary.
@@ -35,9 +36,9 @@
         /// Create a new <see cref="SetNonStrokeColorAdvanced"/>.
         /// </summary>
         /// <param name="operands">The color operands.</param>
-        public SetNonStrokeColorAdvanced(IReadOnlyList<double> operands)
+        public SetNonStrokeColorAdvanced(double[] operands)
         {
-            Operands = operands;
+            this.operands = operands;
         }
 
         /// <summary>
@@ -45,9 +46,9 @@
         /// </summary>
         /// <param name="operands">The color operands.</param>
         /// <param name="patternName">The pattern name.</param>
-        public SetNonStrokeColorAdvanced(IReadOnlyList<double> operands, NameToken patternName)
+        public SetNonStrokeColorAdvanced(double[] operands, NameToken patternName)
+            : this(operands)
         {
-            Operands = operands;
             PatternName = patternName;
         }
 
@@ -66,7 +67,7 @@
                 stream.WriteWhiteSpace();
             }
 
-            if (PatternName != null)
+            if (PatternName is not null)
             {
                 TokenWriter.WriteToken(PatternName, stream);
             }
@@ -78,9 +79,9 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            var arguments = string.Join(" ", Operands.Select(x => x.ToString("N")));
+            var arguments = string.Join(" ", operands.Select(x => x.ToString("N")));
 
-            if (PatternName != null)
+            if (PatternName is not null)
             {
                 arguments += $" {PatternName}";
             }
