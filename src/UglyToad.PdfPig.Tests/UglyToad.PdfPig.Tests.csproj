@@ -4,7 +4,7 @@
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <DebugType>full</DebugType>
-        <LangVersion>12</LangVersion>
+        <LangVersion>13</LangVersion>
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
         <RuntimeFrameworkVersion Condition="'$(TargetFramework)'=='netcoreapp2.1'">2.1.30</RuntimeFrameworkVersion>

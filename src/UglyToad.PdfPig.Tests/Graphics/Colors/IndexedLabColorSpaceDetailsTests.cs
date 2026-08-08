@@ -29,7 +29,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         {
             var indexed = CreateIndexedOverLab();
 
-            var (r, g, b) = indexed.GetColor(1).ToRGBValues();
+            var (r, g, b) = indexed.GetColor([1]).ToRGBValues();
 
             // Without range decoding L* becomes 1.0 (of 100) and this renders near-black.
             Assert.True(r > 0.9 && g > 0.9 && b > 0.9, $"Expected near-white but got ({r}, {g}, {b}).");
@@ -40,7 +40,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         {
             var indexed = CreateIndexedOverLab();
 
-            var (r, g, b) = indexed.GetColor(0).ToRGBValues();
+            var (r, g, b) = indexed.GetColor([0]).ToRGBValues();
 
             Assert.True(r < 0.1 && g < 0.1 && b < 0.1, $"Expected near-black but got ({r}, {g}, {b}).");
         }
@@ -72,7 +72,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         {
             var indexed = CreateIndexedOverLab();
 
-            var (cr, cg, cb) = indexed.GetColor(1).ToRGBValues();
+            var (cr, cg, cb) = indexed.GetColor([1]).ToRGBValues();
             indexed.GetRgb([1.0], out double rr, out double rg, out double rb);
             double[] p = indexed.Process(1);
 
@@ -93,7 +93,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
             var lab = new LabColorSpaceDetails(D50WhitePoint, null, [0.0, 0.0, 0.0, 0.0]);
             var indexed = new IndexedColorSpaceDetails(lab, 0, [0x80, 0x00, 0xFF]);
 
-            var (r, g, b) = indexed.GetColor(0).ToRGBValues();
+            var (r, g, b) = indexed.GetColor([0]).ToRGBValues();
 
             Assert.Equal(r, g, 12);
             Assert.Equal(g, b, 12);

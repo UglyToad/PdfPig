@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System.Collections.Generic;
     using Colors;
     using Tokens;
     using UglyToad.PdfPig.Core;
@@ -37,7 +36,7 @@
         /// <summary>
         /// Set the color to use for stroking operations using the current color space.
         /// </summary>
-        void SetStrokingColor(IReadOnlyList<double> operands, NameToken? patternName = null);
+        void SetStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName = null);
 
         /// <summary>
         /// Set the stroking color space to DeviceGray and set the gray level to use for stroking operations.
@@ -65,7 +64,7 @@
         /// <summary>
         /// Set the color to use for nonstroking operations using the current color space.
         /// </summary>
-        void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken? patternName = null);
+        void SetNonStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName = null);
 
         /// <summary>
         /// Set the nonstroking color space to DeviceGray and set the gray level to use for nonstroking operations.

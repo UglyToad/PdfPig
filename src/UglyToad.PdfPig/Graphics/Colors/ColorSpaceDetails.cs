@@ -47,7 +47,7 @@
         /// <summary>
         /// Get the color.
         /// </summary>
-        public abstract IColor GetColor(params double[] values);
+        public abstract IColor GetColor(ReadOnlySpan<double> values);
 
         /// <summary>
         /// Get the color as an unboxed RGB triple. Avoids allocating an <see cref="IColor"/> and bypasses the
@@ -100,28 +100,61 @@
             var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
             return (byte)rounded;
         }
+    }
+
+    /// <summary>
+    /// <see cref="ColorSpaceDetails"/> that have a tint function: <see cref="SeparationColorSpaceDetails"/> and <see cref="DeviceNColorSpaceDetails"/>.
+    /// </summary>
+    internal static class TintColorSpaceDetailsHelper
+    {
+        /// <summary>
+        /// Evaluate <paramref name="tintInput"/> through a tint <paramref name="tint"/> function and write exactly
+        /// <paramref name="alternate"/>'s <see cref="NumberOfColorComponents"/> output values into
+        /// <paramref name="buffer"/>, which must be at least <see cref="TintBufferSize"/> long.
+        /// </summary>
+        /// <returns>The slice of <paramref name="buffer"/> holding the alternate space's component values.</returns>
+        private static ReadOnlySpan<double> EvalTint(PdfFunction tint, ColorSpaceDetails alternate,
+            ReadOnlySpan<double> tintInput, Span<double> buffer)
+        {
+            int alternateComponents = alternate.NumberOfColorComponents;
+            int written = tint.Eval(tintInput, buffer);
+
+            if (written < alternateComponents)
+            {
+                // A buggy tint function under-filled the buffer. Zero the trailing slots so the alternate
+                // space doesn't read uninitialised stack memory. A tint function that over-fills is trimmed
+                // by the slice below, so the alternate space always sees the component count it expects.
+                buffer.Slice(written, alternateComponents - written).Clear();
+            }
+
+            return buffer.Slice(0, alternateComponents);
+        }
 
         /// <summary>
         /// Evaluate <paramref name="tintInput"/> through a tint <paramref name="tint"/> function whose output values
         /// are then mapped to RGB by <paramref name="alternate"/>'s <see cref="GetRgb"/>. Allocation-free for the
-        /// typical case where the alternate colour space has at most 8 components.
+        /// typical case where the alternate colour space has at most <see cref="MaxStackallocComponents"/> components.
         /// </summary>
-        private protected static void GetRgbViaTint(PdfFunction tint, ColorSpaceDetails alternate,
+        public static void GetRgbViaTint(PdfFunction tint, ColorSpaceDetails alternate,
             ReadOnlySpan<double> tintInput, out double r, out double g, out double b)
         {
-            int alternateComponents = alternate.NumberOfColorComponents;
-            int tintMax = tint.MaxOutputComponentCount;
-            int max = tintMax > alternateComponents ? tintMax : alternateComponents;
-            Span<double> buffer = max <= 16 ? stackalloc double[max] : new double[max];
-            int written = tint.Eval(tintInput, buffer);
-            if (written < alternateComponents)
-            {
-                // A buggy tint function under-filled the buffer. Zero the trailing slots so the alternate
-                // space's GetRgb call doesn't read uninitialised stack memory.
-                buffer.Slice(written, alternateComponents - written).Clear();
-                written = alternateComponents;
-            }
-            alternate.GetRgb(buffer.Slice(0, written), out r, out g, out b);
+            int max = Math.Max(tint.MaxOutputComponentCount, alternate.NumberOfColorComponents);
+            Span<double> buffer = max <= 32 ? stackalloc double[max] : new double[max];
+            alternate.GetRgb(EvalTint(tint, alternate, tintInput, buffer), out r, out g, out b);
+        }
+
+        /// <summary>
+        /// Evaluate <paramref name="tintInput"/> through a tint <paramref name="tint"/> function whose output values
+        /// are then mapped to a colour by <paramref name="alternate"/>'s <see cref="GetColor"/>. The
+        /// <see cref="GetRgb"/> equivalent is <see cref="GetRgbViaTint"/>; the two must stay in step so that a
+        /// colour space renders the same whichever path it is reached through.
+        /// </summary>
+        public static IColor GetColorViaTint(PdfFunction tint, ColorSpaceDetails alternate,
+            ReadOnlySpan<double> tintInput)
+        {
+            int max = Math.Max(tint.MaxOutputComponentCount, alternate.NumberOfColorComponents);
+            Span<double> buffer = max <= 32 ? stackalloc double[max] : new double[max];
+            return alternate.GetColor(EvalTint(tint, alternate, tintInput, buffer));
         }
     }
 
@@ -152,11 +185,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             double gray = values[0];
@@ -222,11 +255,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             double r = values[0];
@@ -293,11 +326,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             double c = values[0];
@@ -437,11 +470,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             return cache.GetOrAdd(values[0], v =>
@@ -562,7 +595,7 @@
         {
             // Setting the current stroking or nonstroking colour space to an Indexed colour space shall
             // initialize the corresponding current colour to 0.
-            return GetColor(0);
+            return GetColor([0]);
         }
 
         /// <inheritdoc/>
@@ -598,6 +631,10 @@
     public sealed class DeviceNColorSpaceDetails : ColorSpaceDetails
     {
         private readonly ConcurrentDictionary<double[], IColor> cache = new(DoubleArrayEqualityComparer.Instance);
+
+#if NET9_0_OR_GREATER
+        private readonly ConcurrentDictionary<double[], IColor>.AlternateLookup<ReadOnlySpan<double>> lookup;
+#endif
 
         /// <summary>
         /// <inheritdoc/>
@@ -657,6 +694,10 @@
             Attributes = attributes;
             TintFunction = tintFunction;
             BaseType = AlternateColorSpace.Type;
+
+#if NET9_0_OR_GREATER
+            lookup = cache.GetAlternateLookup<ReadOnlySpan<double>>();
+#endif
         }
 
         /// <inheritdoc/>
@@ -667,26 +708,36 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             // TODO - use attributes
 
-            if (cache.TryGetValue(values, out var color))
+#if NET9_0_OR_GREATER
+            if (lookup.TryGetValue(values, out var color))
             {
                 return color;
             }
 
-            var evaled = TintFunction.Eval(values);
-            color = AlternateColorSpace.GetColor(evaled);
+            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values);
 
-            // The caller owns the values array and may mutate it after this call, so key on a copy.
-            cache.TryAdd(values.ToArray(), color);
+            lookup.TryAdd(values, color);
+#else
+            double[] key = values.ToArray();
 
+            if (cache.TryGetValue(key, out var color))
+            {
+                return color;
+            }
+
+            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values);
+
+            cache.TryAdd(key, color);
+#endif
             return color;
         }
 
@@ -730,16 +781,21 @@
             // When this space is set to the current colour space (using the CS or cs operators), each component
             // shall be given an initial value of 1.0. The SCN and scn operators respectively shall set the current
             // stroking and nonstroking colour.
-            return GetColor(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray());
+            Span<double> buffer = NumberOfColorComponents <= 32 ? stackalloc double[NumberOfColorComponents] : new double[NumberOfColorComponents];
+            buffer.Fill(1.0);
+            return GetColor(buffer);
         }
 
         /// <inheritdoc/>
         public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
         {
-            GetRgbViaTint(TintFunction, AlternateColorSpace, values, out r, out g, out b);
+            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values, out r, out g, out b);
         }
 
         private sealed class DoubleArrayEqualityComparer : IEqualityComparer<double[]>
+#if NET9_0_OR_GREATER
+        , IAlternateEqualityComparer<ReadOnlySpan<double>, double[]>
+#endif
         {
             public static readonly DoubleArrayEqualityComparer Instance = new DoubleArrayEqualityComparer();
 
@@ -768,6 +824,29 @@
 
                 return hash.ToHashCode();
             }
+            
+#if NET9_0_OR_GREATER
+            public bool Equals(ReadOnlySpan<double> alternate, double[] other)
+            {
+                return alternate.SequenceEqual(other);
+            }
+
+            public int GetHashCode(ReadOnlySpan<double> alternate)
+            {
+                var hash = new HashCode();
+                foreach (var value in alternate)
+                {
+                    hash.Add(value);
+                }
+
+                return hash.ToHashCode();
+            }
+
+            public double[] Create(ReadOnlySpan<double> alternate)
+            {
+                return alternate.ToArray();
+            }
+#endif
         }
 
         /// <summary>
@@ -888,20 +967,16 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             // TODO - we ignore the name for now
 
-            return cache.GetOrAdd(values[0], v =>
-            {
-                var evaled = TintFunction.Eval(v);
-                return AlternateColorSpace.GetColor(evaled);
-            });
+            return cache.GetOrAdd(values[0], v => TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, [v]));
         }
 
         /// <inheritdoc/>
@@ -933,13 +1008,13 @@
         public override IColor GetInitializeColor()
         {
             // The initial value for both the stroking and nonstroking colour in the graphics state shall be 1.0.
-            return GetColor(1.0);
+            return GetColor([1.0]);
         }
 
         /// <inheritdoc/>
         public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
         {
-            GetRgbViaTint(TintFunction, AlternateColorSpace, values.Slice(0, 1), out r, out g, out b);
+            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values.Slice(0, 1), out r, out g, out b);
         }
     }
 
@@ -1037,11 +1112,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             GetRgb(values, out double r, out double g, out double b);
@@ -1055,7 +1130,7 @@
             // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
             // values for a given component does not include 0.0, in which case the nearest valid value shall
             // be substituted.)
-            return GetColor(0);
+            return GetColor([0]);
         }
 
         /// <inheritdoc/>
@@ -1181,11 +1256,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             GetRgb(values, out double r, out double g, out double b);
@@ -1340,11 +1415,11 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             GetRgb(values, out double r, out double g, out double b);
@@ -1472,22 +1547,23 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
-            if (values is null || values.Length != NumberOfColorComponents)
+            if (values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             // TODO - use ICC profile
 
+            Span<double> buffer = stackalloc double[values.Length]; // 1, 3 or 4
             for (int c = 0; c < values.Length; c++)
             {
                 int i = 2 * c;
-                values[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
+                buffer[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
             }
 
-            return AlternateColorSpace.GetColor(values);
+            return AlternateColorSpace.GetColor(buffer);
         }
 
         /// <inheritdoc/>
@@ -1498,35 +1574,23 @@
             // values for a given component does not include 0.0, in which case the nearest valid value shall
             // be substituted.)
             double v = PdfFunction.ClipToRange(0.0, Range[0], Range[1]);
-            double[] init = Enumerable.Repeat(v, NumberOfColorComponents).ToArray();
-            return GetColor(init);
+            Span<double> buffer = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
+            buffer.Fill(v);
+            return GetColor(buffer);
         }
 
         /// <inheritdoc/>
         public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
         {
             // TODO - use ICC profile
-            int n = NumberOfColorComponents;
-            if (n <= 4)
+ 
+            Span<double> clipped = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
+            for (int c = 0; c < NumberOfColorComponents; c++)
             {
-                Span<double> clipped = stackalloc double[4];
-                for (int c = 0; c < n; c++)
-                {
-                    int i = 2 * c;
-                    clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
-                }
-                AlternateColorSpace.GetRgb(clipped.Slice(0, n), out r, out g, out b);
+                int i = 2 * c;
+                clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
             }
-            else
-            {
-                double[] clipped = new double[n];
-                for (int c = 0; c < n; c++)
-                {
-                    int i = 2 * c;
-                    clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
-                }
-                AlternateColorSpace.GetRgb(clipped, out r, out g, out b);
-            }
+            AlternateColorSpace.GetRgb(clipped, out r, out g, out b);
         }
 
         /// <inheritdoc/>
@@ -1608,7 +1672,7 @@
         /// Use <see cref="GetColor(NameToken)"/> instead.
         /// </para>
         /// </summary>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
             throw new InvalidOperationException("PatternColorSpaceDetails");
         }
@@ -1677,7 +1741,7 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(params double[] values)
+        public override IColor GetColor(ReadOnlySpan<double> values)
         {
             throw new InvalidOperationException("UnsupportedColorSpaceDetails");
         }
