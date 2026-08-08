@@ -1,0 +1,97 @@
+﻿namespace UglyToad.PdfPig.Graphics.Colors
+{
+    using System;
+
+    /// <summary>
+    /// Contains more document-specific information about the <see cref="ColorSpace"/>.
+    /// </summary>
+    public abstract class ColorSpaceDetails
+    {
+        /// <summary>
+        /// The type of the ColorSpace.
+        /// </summary>
+        public ColorSpace Type { get; }
+
+        /// <summary>
+        /// The number of components for the color space.
+        /// </summary>
+        public abstract int NumberOfColorComponents { get; }
+
+        /// <summary>
+        /// The underlying type of <see cref="ColorSpace"/>, usually equal to <see cref="Type"/>
+        /// unless <see cref="ColorSpace.Indexed"/> or <see cref="ColorSpace.DeviceN"/>.
+        /// </summary>
+        public ColorSpace BaseType { get; protected set; }
+
+        /// <summary>
+        /// The number of components for the underlying color space.
+        /// </summary>
+        public abstract int BaseNumberOfColorComponents { get; }
+
+        /// <summary>
+        /// Create a new <see cref="ColorSpaceDetails"/>.
+        /// </summary>
+        protected internal ColorSpaceDetails(ColorSpace type)
+        {
+            Type = type;
+            BaseType = type;
+        }
+
+        /// <summary>
+        /// Get the color.
+        /// </summary>
+        public abstract IColor GetColor(ReadOnlySpan<double> values);
+
+        /// <summary>
+        /// Get the color as an unboxed RGB triple. Avoids allocating an <see cref="IColor"/> and bypasses the
+        /// virtual dispatch through <see cref="IColor.ToRGBValues"/>. Each component is in [0, 1].
+        /// </summary>
+        /// <param name="values">The component values, in this colour space.</param>
+        /// <param name="r">The red component, in [0, 1].</param>
+        /// <param name="g">The green component, in [0, 1].</param>
+        /// <param name="b">The blue component, in [0, 1].</param>
+        public abstract void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b);
+
+        /// <summary>
+        /// Get the color, without check and caching.
+        /// </summary>
+        internal abstract double[] Process(params double[] values);
+
+        /// <summary>
+        /// Get the color that initialize the current stroking or nonstroking colour.
+        /// </summary>
+        public abstract IColor? GetInitializeColor();
+
+        /// <summary>
+        /// Transform image bytes.
+        /// </summary>
+        internal abstract Span<byte> Transform(Span<byte> decoded);
+
+        /// <summary>
+        /// Decode raw 8-bit encoded component samples (e.g. an Indexed colour space's colour-table
+        /// entry) into this colour space's native component ranges, writing in place into
+        /// <paramref name="destination"/>. Per ISO 32000-2 (PDF 2.0) 8.6.6.3 each byte decodes to
+        /// min + (byte / 255) × (max − min) of the component's range; for device and most CIE
+        /// spaces this is [0, 1], which this default implements. Spaces with other native ranges
+        /// (e.g. Lab) override this.
+        /// </summary>
+        /// <param name="raw">The encoded 8-bit component samples.</param>
+        /// <param name="destination">Receives the decoded component values. Must be at least as long as <paramref name="raw"/>.</param>
+        internal virtual void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
+        {
+            for (int i = 0; i < raw.Length; i++)
+            {
+                destination[i] = raw[i] / 255.0;
+            }
+        }
+
+        /// <summary>
+        /// Convert to byte.
+        /// </summary>
+        protected static byte ConvertToByte(double componentValue)
+        {
+            var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
+            return (byte)rounded;
+        }
+    }
+}

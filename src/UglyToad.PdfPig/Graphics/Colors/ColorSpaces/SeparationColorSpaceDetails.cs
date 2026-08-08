@@ -1,0 +1,128 @@
+﻿namespace UglyToad.PdfPig.Graphics.Colors
+{
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using UglyToad.PdfPig.Functions;
+    using UglyToad.PdfPig.Tokens;
+
+    /// <summary>
+    /// A Separation color space provides a means for specifying the use of additional colorants or
+    /// for isolating the control of individual color components of a device color space for a subtractive device.
+    /// When such a space is the current color space, the current color is a single-component value, called a tint,
+    /// that controls the application of the given colorant or color components only.
+    /// </summary>
+    public sealed class SeparationColorSpaceDetails : ColorSpaceDetails
+    {
+        private readonly ConcurrentDictionary<double, IColor> cache = new ConcurrentDictionary<double, IColor>();
+
+        /// <inheritdoc/>
+        public override int NumberOfColorComponents => 1;
+
+        /// <inheritdoc/>
+        public override int BaseNumberOfColorComponents => AlternateColorSpace.BaseNumberOfColorComponents;
+
+        /// <summary>
+        /// Specifies the name of the colorant that this Separation color space is intended to represent.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The special colorant name All refers collectively to all colorants available on an output device,
+        /// including those for the standard process colorants.
+        /// </para>
+        /// <para>
+        /// The special colorant name None never produces any visible output.
+        /// Painting operations in a Separation space with this colorant name have no effect on the current page.
+        /// </para>
+        /// </remarks>
+        public NameToken Name { get; }
+
+        /// <summary>
+        /// If the colorant name associated with a Separation color space does not correspond to a colorant available on the device,
+        /// the application arranges for subsequent painting operations to be performed in an alternate color space.
+        /// The intended colors can be approximated by colors in a device or CIE-based color space
+        /// which are then rendered with the usual primary or process colorants.
+        /// </summary>
+        public ColorSpaceDetails AlternateColorSpace { get; }
+
+        /// <summary>
+        /// During subsequent painting operations, an application calls this function to transform a tint value into
+        /// color component values in the alternate color space.
+        /// The function is called with the tint value and must return the corresponding color component values.
+        /// That is, the number of components and the interpretation of their values depend on the <see cref="AlternateColorSpace"/>.
+        /// </summary>
+        public PdfFunction TintFunction { get; }
+
+        /// <summary>
+        /// Create a new <see cref="SeparationColorSpaceDetails"/>.
+        /// </summary>
+        public SeparationColorSpaceDetails(NameToken name,
+            ColorSpaceDetails alternateColorSpaceDetails,
+            PdfFunction tintFunction)
+            : base(ColorSpace.Separation)
+        {
+            Name = name;
+            AlternateColorSpace = alternateColorSpaceDetails;
+            TintFunction = tintFunction;
+            BaseType = AlternateColorSpace.Type;
+        }
+
+        /// <inheritdoc/>
+        internal override double[] Process(params double[] values)
+        {
+            var evaled = TintFunction.Eval(values[0]);
+            return AlternateColorSpace.Process(evaled);
+        }
+
+        /// <inheritdoc/>
+        public override IColor GetColor(ReadOnlySpan<double> values)
+        {
+            if (values.Length != NumberOfColorComponents)
+            {
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+            }
+
+            // TODO - we ignore the name for now
+
+            return cache.GetOrAdd(values[0], v => TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, [v]));
+        }
+
+        /// <inheritdoc/>
+        internal override Span<byte> Transform(Span<byte> values)
+        {
+            var colorCache = new Dictionary<byte, double[]>(values.Length);
+            var transformed = new byte[values.Length * BaseNumberOfColorComponents];
+            int k = 0;
+
+            for (var i = 0; i < values.Length; ++i)
+            {
+                byte b = values[i];
+                if (!colorCache.TryGetValue(b, out double[]? colors))
+                {
+                    colors = Process(b / 255.0);
+                    colorCache[b] = colors;
+                }
+
+                for (int c = 0; c < colors.Length; ++c)
+                {
+                    transformed[k++] = ConvertToByte(colors[c]);
+                }
+            }
+
+            return transformed;
+        }
+
+        /// <inheritdoc/>
+        public override IColor GetInitializeColor()
+        {
+            // The initial value for both the stroking and nonstroking colour in the graphics state shall be 1.0.
+            return GetColor([1.0]);
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values.Slice(0, 1), out r, out g, out b);
+        }
+    }
+}
