@@ -1,0 +1,364 @@
+# ICC Profile & Output Intent Support — PdfPig vs PDFBox
+
+**Branch reviewed:** `feature/icc-profile-support-4` @ `f5b8a079` ("WIP - Add ICC profiles color spaces and output intent support, and add tests")
+**Compared against:** `C:\Users\Bob\source\repos\pdfbox` @ `bbea338208`
+**Date:** 2026-08-09
+**Scope:** ICC-based colour spaces, output intents, and the supporting plumbing (colour space parsing, caching, image byte conversion, rendering intent). No code changes made.
+
+---
+
+## 1. Executive summary
+
+The branch adds two things that PDFBox does *not* have, and leaves out several things PDFBox *does* have.
+
+**Fundamental architectural difference.** PDFBox does not implement ICC colour management — it delegates to `java.awt.color.ICC_ColorSpace`, which is backed by the JDK's bundled CMM (LittleCMS since JDK 8). Everything in `PDICCBased` is glue: load bytes, hand to the platform, catch the platform's exceptions, fall back to the alternate. PdfPig has no platform CMM available, so this branch instead defines a **provider interface** (`IIccProfileService` → `IIccProfile` → `IIccTransform`) that a caller must supply. That is the right call for .NET, and most of the differences below flow from it.
+
+**The consequence that matters most:** PDFBox colour-manages ICCBased content **by default**; PdfPig colour-manages it **only if the caller sets `ParsingOptions.IccProfileService`**, which defaults to `null`. Out of the box, PdfPig on this branch behaves exactly as it did before — always the alternate colour space. PDFBox's equivalent behaviour is opt-*out*, via an undocumented system property that its own source labels *"WARNING: do not activate this in a conforming reader"* (`PDICCBased.java:66-69`).
+
+**Two things PdfPig does that PDFBox does not:**
+
+1. **Rendering intent is threaded end-to-end.** PDFBox parses `ri`/`/RI` into `PDGraphicsState.renderingIntent` and then *never reads it* — a grep for `getRenderingIntent()` across `pdfbox/src/main` returns only the getter, the setter, and the ExtGState copy. PdfPig now carries `RenderingIntent` through `GetColor`, `GetRgb`, `Process`, `Transform`, `ColorSpaceDetailsByteConverter.Convert`, and into `IPdfImage`. This is a genuine improvement and the single biggest API-surface divergence.
+2. **Output intents are parsed for reading.** PDFBox's `PDOutputIntent` is a write-side/model-only class (used by `CreatePDFA` and `PDFMergerUtility`); it is never consulted during rendering. PdfPig parses it, resolves and decodes `/DestOutputProfile`, ranks candidates, and supports page-level `/OutputIntents` (PDF 2.0 Table 31), which PDFBox has no support for at all.
+
+**But** — see finding **A1** — the parsed output intent currently has **no consumer**. Nothing reads `CurrentGraphicsState.OutputIntent` or `IResourceStore.OutputIntent`, while the XML docs on both state it is *"Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics."* That behaviour is not implemented.
+
+**Highest-value gaps against PDFBox**, in order: `/Alternate` arrays are silently ignored (**B4**); a wrong `/N` disables colour management instead of being corrected (**B2**); no sRGB fast path (**B3**); no logging on any fallback (**B6**); parsed profiles are not cached across resource dictionaries (**B8**).
+
+---
+
+## 2. File map
+
+| Concern | PdfPig | PDFBox |
+|---|---|---|
+| ICCBased colour space | `Graphics/Colors/ColorSpaces/ICCBasedColorSpaceDetails.cs` | `pdmodel/graphics/color/PDICCBased.java` |
+| Colour space dispatch | `Util/ColorSpaceDetailsParser.cs` | `pdmodel/graphics/color/PDColorSpace.java` (`create`) |
+| Output intent model | `Graphics/Colors/Icc/OutputIntent.cs` | `pdmodel/graphics/color/PDOutputIntent.java` |
+| Output intent parsing | `Util/OutputIntentParser.cs` | `pdmodel/PDDocumentCatalog.getOutputIntents()` |
+| Output intent writing | `Writer/Colors/OutputIntentsFactory.cs` | `PDOutputIntent(PDDocument, InputStream)` |
+| CMM abstraction | `Graphics/Colors/Icc/IIccProfile*.cs`, `IIccTransform.cs` | *(none — `java.awt.color.ICC_ColorSpace`)* |
+| Profile byte caching | `Util/IccProfileByteCache.cs` | `pdmodel/ResourceCache` (caches the `PDICCBased` object) |
+| Image byte conversion | `Images/ColorSpaceDetailsByteConverter.cs` | `PDColorSpace.toRGBImageAWT` / `ColorConvertOp` |
+| Default CMYK | `DeviceCmykColorSpaceDetails` (analytic) | `PDDeviceCMYK` + bundled `CGATS001Compat-v2-micro.icc` |
+| Rendering intent | `Graphics/Core/RenderingIntent`, threaded everywhere | `graphics/state/RenderingIntent` (parsed, unused) |
+
+---
+
+## 3. Part A — Output intents
+
+### A1. The output intent is parsed but never consumed *(highest priority — doc/behaviour mismatch)*
+
+`OutputIntent` is stored on `CurrentGraphicsState.OutputIntent` (`BaseStreamProcessor.cs:153`) and exposed via `IResourceStore.OutputIntent` / `GetPageOutputIntent`. A repository-wide grep for consumers returns only the assignment, the `DeepClone`, and one test assertion. `ResourceStore.GetDeviceColorSpaceDetails` — the one place a device colour space could be routed through the output intent profile — does not reference it (`ResourceStore.cs:462-481`).
+
+Meanwhile:
+
+- `IResourceStore.cs:88-90`: *"Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics."*
+- `OutputIntentParser.cs:12-16`: *"rendering those device colours through that profile (rather than a fixed approximation) is what keeps colour-managed content and device-colour content visually consistent."*
+
+Neither is true today.
+
+**PDFBox comparison:** PDFBox is in the same *functional* position — it never uses output intents for rendering either. `PDDeviceCMYK` instead uses a **fixed bundled profile**, `CGATS001Compat-v2-micro.icc`, an open stand-in for "U.S. Web Coated (SWOP) v2" (`PDDeviceCMYK.java:97-114`). So PdfPig is not *behind* PDFBox here; the documentation simply describes an unimplemented feature.
+
+**Options:**
+- *Follow PDFBox:* drop the claim from the docs; ship a bundled default CMYK profile in `DeviceCmykColorSpaceDetails` and use the output intent for nothing but inspection/metadata. Lowest risk, matches the reference implementation.
+- *Go beyond PDFBox:* wire `ResourceStore.GetDeviceColorSpaceDetails` to build an `ICCBasedColorSpaceDetails`-equivalent from `OutputIntent.DestOutputProfile` when the component count matches. This is what the docs promise and is correct PDF/X behaviour, but it is a deliberate divergence and will change rendered output for every PDF/X file.
+
+Either way, resolve the mismatch before merging — the current state is a documented feature with no implementation.
+
+### A2. The entire output intent is hidden behind `IccProfileService`
+
+`OutputIntentParser.Create` returns `null` immediately when `iccProfileService is null` (`OutputIntentParser.cs:34-37`). Because the default is `null`, **no PdfPig user sees output intent metadata by default** — not `OutputConditionIdentifier`, not `RegistryName`, not `Info`.
+
+**PDFBox:** `PDDocumentCatalog.getOutputIntents()` always returns the list. Colour management is orthogonal.
+
+The metadata has consumers entirely independent of colour management: PDF/A and PDF/X conformance checking, "which press condition was this prepared for", archival tooling. Gating it on a CMM backend is an unnecessary coupling.
+
+**Recommendation:** always parse the dictionary entries; skip only `TryParseDestOutputProfile` when there is no service. This is a small change to `OutputIntentParser.Create` and makes PdfPig strictly more useful than PDFBox here (PDFBox exposes the `/DestOutputProfile` `COSStream` but never parses it).
+
+### A3. One intent with an invented ranking, vs PDFBox's full list
+
+`OutputIntentParser` ranks candidates `GTS_PDFX`(0) > `GTS_PDFA1`(1) > other(2), stable by array order (`GetSubtypeRank`, lines 118-131), then overrides that: any entry with a usable profile beats a better-ranked entry without one (lines 107-112). One `OutputIntent` is returned.
+
+**PDFBox:** returns every entry, unordered and unfiltered. No selection policy at all.
+
+Nothing in ISO 32000-2 14.11.5 establishes this precedence. PDF/A-1 requires exactly one output intent; PDF/X requires exactly one *PDF/X* output intent — so in conforming files the ranking is a no-op, and in non-conforming files PdfPig is guessing. The guess is defensible, but it is policy embedded in a parser, and it is unobservable to callers (there is no way to see the entries that lost).
+
+**Recommendation to follow PDFBox more closely:** expose `IReadOnlyList<OutputIntent>` as the primitive (mirroring `getOutputIntents()`), and keep the ranking as a separate, documented, public "effective output intent" selector on top. Callers doing PDF/A validation need the full list; callers doing colour management need the pick.
+
+### A4. No document-level public API
+
+PDFBox: `document.getDocumentCatalog().getOutputIntents()`. PdfPig: reachable only through `IResourceStore` (an interface a normal caller does not hold) or `CurrentGraphicsState` (only inside a stream processor). `PdfDocument` / `Structure` / catalog expose nothing.
+
+**Recommendation:** surface output intents on the document catalog, as PDFBox does. This is the natural home and the obvious place a user will look.
+
+### A5. Absent required entries become `""` rather than `null`
+
+`OutputIntentParser.cs:62-90` initialises `name = ""`, `outputConditionIdentifier = ""`, `registryName = ""` and leaves them empty when the key is absent. `/S` and `/OutputConditionIdentifier` are **Required** by Table 401, so their absence is diagnostic information a validator wants.
+
+There is also an annotation inconsistency: `OutputIntent.RegistryName` is declared `string?` (`OutputIntent.cs:39`) but the constructor parameter is non-nullable `string registryName` (`OutputIntent.cs:83`) and is never passed null. `OutputCondition` and `Info` correctly use `null`.
+
+**PDFBox:** `COSDictionary.getString` returns `null` for a missing key, uniformly.
+
+**Recommendation:** use `null` for absent entries throughout, matching PDFBox and letting callers distinguish "absent" from "present but empty".
+
+### A6. Page-level output intents — an extension beyond PDFBox
+
+`ResourceStore.GetPageOutputIntent` (`ResourceStore.cs:78-101`) implements PDF 2.0 Table 31 page-level `/OutputIntents` with fallback to the catalog. PDFBox has nothing equivalent. The implementation is sound: the cache is keyed by the `/OutputIntents` array's indirect reference so pages sharing an array share the parse, and the direct-array case correctly re-parses (cheaply, since the profile bytes are cached separately).
+
+Keep it. Just note in the XML docs that this is a PDF 2.0 feature with no PDFBox counterpart, so future porters do not mistake it for a divergence to "fix".
+
+### A7. Write side — at parity
+
+`Writer/Colors/OutputIntentsFactory.cs` emits a `GTS_PDFA1` intent with an embedded sRGB profile, mirroring `PDOutputIntent(PDDocument, InputStream)` + `CreatePDFA`. One small difference: PDFBox sets `/N` from `icc.getNumComponents()` (`PDOutputIntent.java:121`); PdfPig hardcodes `new NumericToken(3)` — correct for the bundled sRGB profile, but brittle if the profile is ever made configurable.
+
+---
+
+## 4. Part B — ICCBased colour spaces
+
+### B1. Colour management is opt-in (PdfPig) vs opt-out (PDFBox)
+
+`ParsingOptions.IccProfileService` defaults to `null` (`ParsingOptions.cs:81`), so `ICCBasedColorSpaceDetails` always falls through to `AlternateColorSpace`.
+
+PDFBox's `PDICCBased` always loads the profile; `useOnlyAlternateColorSpace` is a system-property escape hatch added for LCMS performance (PDFBOX-4309) and explicitly marked as non-conforming.
+
+This is a reasonable platform-driven decision — .NET has no bundled CMM. But it means "PdfPig ported from PDFBox" produces different colours by default for a large class of real files. Two ways to narrow the gap:
+
+- Ship a default `IIccProfileService` in-box (a managed ICC v2/v4 parser handling the common `curv`/`para` + matrix and `mft1`/`mft2`/`mAB ` LUT cases would cover the overwhelming majority of embedded profiles), and default `ParsingOptions.IccProfileService` to it.
+- At minimum, document prominently that ICC colour management requires wiring, and that without it PdfPig's ICCBased output is an approximation.
+
+### B2. A wrong `/N` disables colour management instead of being corrected
+
+```csharp
+// ICCBasedColorSpaceDetails.cs:93-100
+if (!profileData.IsEmpty && iccService is not null &&
+    iccService.TryGetProfile(profileData, out var profile) &&
+    profile.NumberOfComponents == NumberOfColorComponents &&
+    profile.TryGetTransform(RenderingIntent.RelativeColorimetric, out _))
+{
+    IccProfile = profile;
+}
+```
+
+A profile whose component count disagrees with `/N` is silently discarded.
+
+**PDFBox does the opposite** — it trusts the profile and corrects `/N` (PDFBOX-4801):
+
+```java
+// PDICCBased.java:341-352
+int numIccComponents = iccProfile.getNumComponents();
+if (numIccComponents != numberOfComponents) {
+    LOG.warn("Using {} components from ICC profile info instead of {} components from /N entry", ...);
+    numberOfComponents = numIccComponents;
+}
+```
+
+So a file with a wrong `/N` renders colour-managed in PDFBox and unmanaged in PdfPig.
+
+**Recommendation:** adopt PDFBox's behaviour. Note this is more invasive in PdfPig than in PDFBox because `NumberOfColorComponents` is set once in the constructor from `numeric.Int` (`ColorSpaceDetailsParser.cs:230`) and also governs operand counts in `GetColor`. The fix is to take the profile's count as authoritative when the two disagree, and log. PDFBox additionally tolerates a *missing* `/N` (`getInt` → `-1`, then corrected from the profile); PdfPig returns `UnsupportedColorSpaceDetails` (`ColorSpaceDetailsParser.cs:229-233`).
+
+### B3. No sRGB fast path
+
+PDFBox checks the profile header's device-model field for `"sRGB"` (`PDICCBased.java:246-252`), and if it matches:
+
+- substitutes the JVM's built-in sRGB profile (PDFBOX-2587, *"a large performance gain as it's our native color space"*),
+- sets `isRGB`, which makes `toRGB(value)` **return the input unchanged** (`PDICCBased.java:283`),
+- enables `PDIndexed.toRawImage`'s zero-conversion path.
+
+Most embedded RGB profiles in the wild are sRGB. PdfPig has no equivalent: every sRGB ICCBased fill, stroke and image goes through the full transform.
+
+**Recommendation:** add `bool IsSRgb { get; }` to `IIccProfile` (or detect it in PdfPig from the header before calling the service, which keeps every backend honest), and short-circuit `Process` / `GetColor` / `GetRgb` / `Transform` to identity. This is likely the single largest available performance win, and it removes backend-to-backend colour drift for the most common profile.
+
+### B4. `/Alternate` arrays are silently ignored *(concrete correctness gap)*
+
+```csharp
+// ColorSpaceDetailsParser.cs:236-242
+if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
+    ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+```
+
+Only a direct `NameToken` is handled. Note also the missing `scanner` argument, so an *indirect* `/Alternate` name is missed too.
+
+**PDFBox handles both shapes** (`PDICCBased.java:391-431`): `COSName` is wrapped into a one-element array; a `COSArray` is used as-is; anything else throws.
+
+So `/Alternate [/ICCBased 12 0 R]`, `/Alternate [/Separation /Spot /DeviceCMYK 14 0 R]`, `/Alternate [/CalRGB <<...>>]` — all legal — are silently dropped by PdfPig, which then falls back to the device space implied by `/N`. Without an `IIccProfileService` configured (the default!) this is the *only* thing determining the rendered colour, so the impact is not theoretical.
+
+**Recommendation:** route `/Alternate` through the existing `GetSecondaryColorSpace` helper (`ColorSpaceDetailsParser.cs:485`), which already handles both the name and array forms and resolves through the scanner. Highest correctness-per-line-changed fix in this review.
+
+*(One thing already at parity: PDFBox calls `PDColorSpace.create(alternateArray)` with no `resources`, so `/Alternate` gets no `DefaultGray`/`DefaultRGB`/`DefaultCMYK` substitution. PdfPig's path via `ColorSpaceDetailsParser` likewise bypasses `resourceStore.GetDeviceColorSpaceDetails`. Correct — preserve this if the above is changed, since `GetSecondaryColorSpace` **does** apply the substitution at lines 499-502.)*
+
+### B5. Array-length strictness
+
+PdfPig requires `colorSpaceArray.Length != 2` → `UnsupportedColorSpaceDetails` (`ColorSpaceDetailsParser.cs:212-216`). PDFBox requires `size() >= 2` and ignores extras (`PDICCBased.checkArray`).
+
+An ICCBased array with a trailing junk element renders in PDFBox and is dropped by PdfPig. Cheap fix; relax to `>= 2`.
+
+*(This exact-length pattern is repeated for CalGray, CalRGB and Lab in the same file. Same reasoning applies, though those are less commonly malformed.)*
+
+### B6. No logging anywhere on the ICC path
+
+PDFBox logs a warning at every degradation point: profile load failure with the exception message and the chosen alternate (`PDICCBased.java:236-237`), `/N` correction (`:347`), display-class rewrite (`:264`).
+
+PdfPig is silent throughout:
+
+- `IccProfileByteCache.Decode` catches *everything* and returns empty (`IccProfileByteCache.cs:83-91`),
+- the constructor drops mismatched or untransformable profiles with no trace,
+- `GetTransformWithFallback` silently downgrades an unsupported intent to RelativeColorimetric,
+- `OutputIntentParser.TryParseDestOutputProfile` returns `null` for several distinct failure modes.
+
+`ParsingOptions.Logger` exists and is used elsewhere in the codebase (`ResourceStore.cs:549`, `BaseStreamProcessor`). "My PDF/X file isn't colour-managed and I can't tell why" is currently undiagnosable.
+
+**Recommendation:** thread the logger into `ColorSpaceDetailsParser`, `ICCBasedColorSpaceDetails`, `OutputIntentParser` and `IccProfileByteCache`, and log at each fallback with the reason. Directly mirrors PDFBox.
+
+### B7. The validation "smoke test" is weaker than PDFBox's
+
+PDFBox deliberately forces the lazily-initialised CMM to fail *at load time*, inside the try block:
+
+```java
+// PDICCBased.java:208-216 — comments abridged
+awtColorSpace.toRGB(new float[numOfComponents]);          // triggers CMMException / ProfileDataException / AIOOBE
+new ComponentColorModel(awtColorSpace, false, false, ...); // PDFBOX-4015: triggers "LCMS error 13"
+```
+
+with a catch clause covering `ProfileDataException | CMMException | IllegalArgumentException | ArrayIndexOutOfBoundsException | IOException`. Four separate JIRAs are cited for cases where the failure only surfaced on first use.
+
+PdfPig's analogue is `profile.TryGetTransform(RenderingIntent.RelativeColorimetric, out _)` — it obtains a transform handle but **never performs a conversion**. A backend that builds its LUT pipeline lazily can still throw later, from `Process` / `GetColor` / `GetRgb` / `Transform`, none of which have a try/catch. That exception escapes through `page.GetImages()` or the stream processor.
+
+**Recommendation:** either (a) run one actual conversion at construction — `t.ToRgb(zeroes)` — so failures are caught where the alternate fallback lives, or (b) guard the conversion call sites so a late backend failure degrades to `AlternateColorSpace` rather than propagating. PDFBox's history says (a) is not paranoia.
+
+### B8. Parsed profiles are not cached across resource dictionaries
+
+**PDFBox:** `PDICCBased.create` caches the *constructed colour space object* in the document `ResourceCache`, keyed by the ICC array's `COSObject` (`PDICCBased.java:108-132`). The parsed `ICC_Profile` and its CMM transforms are shared for the document's lifetime.
+
+**PdfPig:** two caches, neither of which does this.
+- `IccProfileByteCache` caches **decoded bytes** document-wide (good, and well documented).
+- `ResourceStore.loadedColorSpaceDetailsCache` caches `ColorSpaceDetails`, but is **cleared on every `LoadResourceDictionary` and `UnloadResourceDictionary`** (`ResourceStore.cs:106-107`, `243-244`).
+
+So each resource dictionary — every page, and every Form XObject with its own `/Resources` — rebuilds `ICCBasedColorSpaceDetails` and calls `IIccProfileService.TryGetProfile` again. The interface doc pushes the fix onto implementers: *"Implementations should cache parsed profiles (recommended key: profile content hash)"* (`IIccProfileService.cs:12-13`). That means every backend must independently implement a correctness-relevant cache, and the default path pays a content hash of a multi-megabyte profile per page.
+
+This also explains the `XObjectFactory.Resolve` workaround (`XObjectFactory.cs:22-38`), which avoids resolving `/ColorSpace` purely so the indirect reference survives as a usable cache key — machinery PDFBox does not need, because it caches on the `COSObject` itself.
+
+**Recommendation:** extend `IccProfileByteCache` (or add a sibling) to memoise the parsed `IIccProfile` under the same indirect-reference / content key it already computes. One call to `TryGetProfile` per profile per document, matching PDFBox's guarantee, and `IIccProfileService` implementations become genuinely stateless.
+
+### B9. No `GetDefaultDecode` — image Decode defaults are wrong for non-`[0,1]` spaces
+
+PDFBox makes `getDefaultDecode(int bitsPerComponent)` **abstract on `PDColorSpace`**, and `PDICCBased` returns the ICC colour space's actual per-component bounds:
+
+```java
+// PDICCBased.java:358-375
+decode[i * 2]     = awtColorSpace.getMinValue(i);
+decode[i * 2 + 1] = awtColorSpace.getMaxValue(i);
+```
+
+For a Lab-input profile that is L*∈[0,100], a*,b*∈[-128,127].
+
+PdfPig has no `GetDefaultDecode` at all. `ColorSpaceDetailsByteConverter.ApplyDecode` hardcodes `defaultDMax = 1.0` for every non-Indexed space (`ColorSpaceDetailsByteConverter.cs:100`) and scales to bytes.
+
+The two PdfPig code paths then disagree with each other:
+- **Scalar path** (`GetColor` / `GetRgb`): `ClipForProfile` clips to a hardcoded `LabRange` constant when `IsLabInput` (`ICCBasedColorSpaceDetails.cs:152-165`).
+- **Image path** (`Transform`, lines 252-267): hands raw bytes straight to `IIccTransform.Transform` with **no `Range` clip and no Lab handling at all**.
+
+The same colour reached as a fill and as an image sample converts differently.
+
+**Recommendations:**
+1. Add `GetDefaultDecode(int bitsPerComponent)` to `ColorSpaceDetails`, mirroring PDFBox's abstract method, and have `ColorSpaceDetailsByteConverter` use it instead of the `[0,1]` assumption.
+2. Replace `IIccProfile.IsLabInput` (a bool) with per-component `MinValue`/`MaxValue` accessors — PDFBox gets these free from `ICC_ColorSpace.getMinValue/getMaxValue`, and the hardcoded `LabRange` array becomes unnecessary. This also fixes the case of a profile whose data space is neither `[0,1]` nor Lab.
+
+### B10. Indexed base with a Lab-input ICC profile decodes to near-black
+
+`ICCBasedColorSpaceDetails` does not override `DecodeRawComponents`, so an Indexed colour table over an ICCBased base uses the `ColorSpaceDetails` default of `byte / 255.0` → `[0,1]`. `ClipForProfile` then clips into `LabRange` (a no-op for values already in `[0,1]`), so L* arrives as ≈0-1 and renders black.
+
+This is the exact bug the branch deliberately fixed for `LabColorSpaceDetails` — see the comment at `IndexedColorSpaceDetails.cs:81-93`: *"feeding Lab a [0, 1] L* renders near-black."*
+
+**PDFBox has the identical bug** — `PDIndexed.readColorTable` is a flat `(lookupData[offset] & 0xff) / 255f` regardless of base (`PDIndexed.java`). So this is *at parity* with PDFBox, but PdfPig has already chosen to be better here for the direct Lab case and should finish the job. Fixed by the same change as **B9**.
+
+### B11. `BaseNumberOfColorComponents` when falling back to the alternate
+
+```csharp
+// ICCBasedColorSpaceDetails.cs:117-120
+BaseType = AlternateColorSpace.BaseType;
+BaseNumberOfColorComponents = NumberOfColorComponents;
+```
+
+`BaseType` comes from the alternate but the component count comes from `/N`. These disagree when the alternate's base has a different width — e.g. `/N 1` with `/Alternate [/Separation /Spot /DeviceCMYK f]`: `BaseType` is `DeviceCMYK` but `BaseNumberOfColorComponents` is 1, while `Transform` delegates to the alternate and emits 4 bytes/pixel. `PngFromPdfImageFactory` reads `BaseNumberOfColorComponents` to interpret that buffer (`PngFromPdfImageFactory.cs:91`).
+
+This is **pre-existing** (`HEAD~1` had `BaseNumberOfColorComponents => NumberOfColorComponents`), not a regression, and it is currently unreachable because **B4** means array `/Alternate` values never load. It becomes reachable the moment B4 is fixed. There is no PDFBox counterpart — `BaseNumberOfColorComponents` is a PdfPig concept — so the fix is simply `AlternateColorSpace.BaseNumberOfColorComponents`.
+
+### B12. No display-class fixup
+
+PDFBox rewrites the device class of a non-display, Perceptual-intent profile so the CMM will accept it (`ensureDisplayProfile`, `PDICCBased.java:256-270`, PDFBOX-4114, borrowed from TwelveMonkeys). PdfPig delegates entirely to the backend and simply drops the profile if `TryGetTransform` fails.
+
+**Recommendation:** either perform the same 4-byte header patch in PdfPig before handing bytes to the service — so every backend benefits and behaviour is uniform — or document it explicitly as a backend responsibility in the `IIccProfileService` contract. Currently it is neither, so behaviour silently varies by backend.
+
+### B13. JPX — at parity, with a note
+
+`Jpeg2000Helper.GetJpxColorSpaceDetails` now feeds the JP2 ICC box into `ICCBasedColorSpaceDetails` (`Jpeg2000Helper.cs:112-119`) rather than discarding it. PDFBox wraps whatever `ColorSpace` the JAI reader produced in `PDJPXColorSpace`. Both only consult the embedded colour space when the image dictionary has no `/ColorSpace`. Functionally equivalent; PdfPig's is arguably cleaner since it does not depend on an image-codec side effect.
+
+Note `PDJPXColorSpace.getDefaultDecode` returns the AWT space's real min/max — the same point as **B9**.
+
+### B14. No `toRawImage` equivalent
+
+PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space without conversion where possible; `PDIndexed.toRawImage` uses it to build an `IndexColorModel` directly when the base is an sRGB `PDICCBased` (`PDIndexed.java:257-277`). PdfPig always converts to RGB. Minor, and only worth pursuing alongside **B3**.
+
+---
+
+## 5. Ranked recommendations
+
+### Fix before merge
+| # | Item | Why |
+|---|---|---|
+| **A1** | Resolve the output-intent doc/behaviour mismatch | Documents a feature that does not exist |
+| **B4** | Accept array-valued and indirect `/Alternate` | Silent wrong colours on legal files; affects the *default* no-CMM path |
+| **B7** | Make profile validation actually convert a colour, or guard conversion sites | Backend exception can escape `page.GetImages()` |
+
+### High value, follows PDFBox closely
+| # | Item | PDFBox reference |
+|---|---|---|
+| **B2** | Correct `/N` from the profile instead of dropping the profile | `PDICCBased.java:341-352` (PDFBOX-4801) |
+| **B6** | Log every ICC/output-intent fallback via `ParsingOptions.Logger` | `PDICCBased.java:236, 264, 347` |
+| **B8** | Cache the parsed `IIccProfile` document-wide, not just its bytes | `PDICCBased.create` + `ResourceCache` |
+| **B3** | sRGB detection → identity fast path | `PDICCBased.is_sRGB`, PDFBOX-2587 |
+| **A2** | Parse output intent metadata without requiring an `IIccProfileService` | `PDDocumentCatalog.getOutputIntents()` |
+
+### Correctness, medium priority
+| # | Item |
+|---|---|
+| **B9** | Add `ColorSpaceDetails.GetDefaultDecode`; replace `IsLabInput` with per-component min/max on `IIccProfile` |
+| **B10** | Override `DecodeRawComponents` on `ICCBasedColorSpaceDetails` (falls out of B9) |
+| **B5** | Relax ICCBased array length to `>= 2` |
+| **B12** | Decide and document where the display-class fixup lives |
+| **B11** | `BaseNumberOfColorComponents` → `AlternateColorSpace.BaseNumberOfColorComponents` |
+
+### API shape
+| # | Item |
+|---|---|
+| **A3** | Expose the full output-intent list; make the ranking a separate documented selector |
+| **A4** | Surface output intents on the document catalog |
+| **A5** | `null` rather than `""` for absent entries; fix the `RegistryName` nullability mismatch |
+| **B1** | Ship a default `IIccProfileService`, or document the opt-in gap prominently |
+| **A7** | Derive `/N` from the profile in `OutputIntentsFactory` rather than hardcoding 3 |
+
+---
+
+## 6. Divergences worth keeping
+
+These are places where PdfPig deliberately does *not* follow PDFBox, and should not be "corrected":
+
+- **Rendering intent threaded through the colour pipeline.** PDFBox parses it and throws it away. PdfPig honours it, with a documented RelativeColorimetric fallback (`GetTransformWithFallback`) matching ISO 32000-2 8.6.5.8. Cost: `intent` is an ignored parameter on every non-ICC colour space. Worth it.
+- **The `IIccProfileService` / `IIccProfile` / `IIccTransform` abstraction.** There is no PDFBox analogue because the JDK supplies the CMM. The three-level split (service → profile → intent-bound transform) is the right shape and correctly documents its thread-safety requirements.
+- **Page-level `/OutputIntents`** (PDF 2.0 Table 31). No PDFBox support at all.
+- **`isResolvingDefaultSubstitute`** mirrors PDFBox's `wasDefault` flag exactly and is credited in the comment (`ResourceStore.cs:45-50`) — good porting hygiene. PdfPig additionally rejects Lab/Indexed/Pattern as `Default*` substitutes per 8.6.5.6, which PDFBox does not check. Correct divergence.
+- **`IccProfileByteCache`'s dual keying** (indirect reference / MurmurHash3 content key). PDFBox does not need this because it caches at a different level, but given PdfPig's token model the design is sound and the rationale is unusually well documented. If **B8** is implemented, this cache should be extended rather than replaced.
+- **`ColorSpaceDetails.DecodeRawComponents`** for Indexed colour tables — strictly more correct than PDFBox's flat `/255`.
+
+---
+
+## 7. Test coverage observations
+
+`OutputIntentParserTests.cs` (258 lines) covers the ranking policy thoroughly — including the "profile availability outranks subtype" rule and the "must not merely reverse the array" case. `IccProfileByteCacheTests.cs` covers both keying strategies. `ResourceStorePageOutputIntentTests.cs` covers page-vs-catalog resolution.
+
+Gaps, aligned with the findings above:
+
+- No test asserts that the output intent is *used* — consistent with **A1**, since it is not.
+- No test for an ICCBased colour space whose `/Alternate` is an array (**B4**), nor for `/N` disagreeing with the profile (**B2**).
+- No test that an `IIccProfileService` throwing from `ToRgb`/`Transform` degrades gracefully (**B7**).
+- No round-trip test comparing the scalar path (`GetColor`) against the image path (`Transform`) for the same colour — which is where the **B9** inconsistency lives.
+- `IccProfileBenchmarks` covers the caching work well (three GWG PDF/X files plus the 37-ICC-image `iron-ore` case). A benchmark with an sRGB profile would quantify **B3**.
