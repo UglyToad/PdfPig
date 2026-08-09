@@ -36,7 +36,7 @@
         /// <summary>
         /// Set the color to use for stroking operations using the current color space.
         /// </summary>
-        void SetStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName = null);
+        void SetStrokingColor(double[] operands, NameToken? patternName = null);
 
         /// <summary>
         /// Set the stroking color space to DeviceGray and set the gray level to use for stroking operations.
@@ -64,7 +64,7 @@
         /// <summary>
         /// Set the color to use for nonstroking operations using the current color space.
         /// </summary>
-        void SetNonStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName = null);
+        void SetNonStrokingColor(double[] operands, NameToken? patternName = null);
 
         /// <summary>
         /// Set the nonstroking color space to DeviceGray and set the gray level to use for nonstroking operations.
