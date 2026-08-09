@@ -1,9 +1,10 @@
-namespace UglyToad.PdfPig.Tests.ContentTests
+﻿namespace UglyToad.PdfPig.Tests.ContentTests
 {
     using System.Collections.Generic;
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Core;
     using PdfPig.PdfFonts;
     using PdfPig.Tokens;
     using UglyToad.PdfPig.Tests.Tokens;
@@ -44,11 +45,44 @@ namespace UglyToad.PdfPig.Tests.ContentTests
         }
 
         /// <summary>
+        /// <c>[/Separation /Spot /DeviceCMYK &lt;tint&gt;]</c> - one input component, four out of its base.
+        /// </summary>
+        private static ArrayToken SeparationOverCmykArray()
+        {
+            var tint = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.FunctionType, new NumericToken(2) },
+                { NameToken.Domain, new ArrayToken(new IToken[] { new NumericToken(0), new NumericToken(1) }) },
+                {
+                    NameToken.C0,
+                    new ArrayToken(new IToken[]
+                    {
+                        new NumericToken(0), new NumericToken(0), new NumericToken(0), new NumericToken(0)
+                    })
+                },
+                {
+                    NameToken.C1,
+                    new ArrayToken(new IToken[]
+                    {
+                        new NumericToken(0), new NumericToken(0), new NumericToken(0), new NumericToken(1)
+                    })
+                },
+                { NameToken.N, new NumericToken(1) }
+            });
+
+            return new ArrayToken(new IToken[]
+            {
+                NameToken.Separation, NameToken.Create("Spot"), NameToken.Devicecmyk, tint
+            });
+        }
+
+        /// <summary>
         /// Parse <c>[/ICCBased &lt;stream&gt;]</c> where the profile stream declares <paramref name="n"/>
         /// components and, when given, the supplied <c>/Alternate</c>.
         /// </summary>
         private static ICCBasedColorSpaceDetails Parse(IToken? alternate, int n,
-            TestPdfTokenScanner? scanner = null, DictionaryToken? resources = null)
+            TestPdfTokenScanner? scanner = null, DictionaryToken? resources = null,
+            IToken[]? trailingArrayElements = null)
         {
             var streamDictionary = new Dictionary<NameToken, IToken>
             {
@@ -73,16 +107,49 @@ namespace UglyToad.PdfPig.Tests.ContentTests
 
             store.LoadResourceDictionary(resources ?? Empty);
 
+            var colorSpaceArray = new List<IToken> { NameToken.Iccbased, profileStream };
+            if (trailingArrayElements is not null)
+            {
+                colorSpaceArray.AddRange(trailingArrayElements);
+            }
+
             var details = store.GetColorSpaceDetails(NameToken.Iccbased,
                 new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
-                    {
-                        NameToken.ColorSpace,
-                        new ArrayToken(new IToken[] { NameToken.Iccbased, profileStream })
-                    }
+                    { NameToken.ColorSpace, new ArrayToken(colorSpaceArray) }
                 }));
 
             return Assert.IsType<ICCBasedColorSpaceDetails>(details);
+        }
+
+        [Fact]
+        public void ArrayWithTrailingJunkElements_IsStillParsed()
+        {
+            // Only the first two elements are read. PDFBox requires size() >= 2 and ignores the rest;
+            // demanding exactly two threw away the colour space - and the page's colours - over an element
+            // nothing looks at.
+            var details = Parse(NameToken.Devicecmyk, n: 4,
+                trailingArrayElements: [new NumericToken(0), NameToken.Create("Junk")]);
+
+            Assert.Equal(4, details.NumberOfColorComponents);
+            Assert.Same(DeviceCmykColorSpaceDetails.Instance, details.AlternateColorSpace);
+        }
+
+        [Fact]
+        public void SeparationAlternate_ReportsItsOwnBaseComponentCount()
+        {
+            // /N 1 with [/Separation /Spot /DeviceCMYK <tint>]: one operand in, four components out of the
+            // alternate's base. BaseNumberOfColorComponents describes what Transform produces, so it has to
+            // be the alternate's four rather than /N's one.
+            var details = Parse(SeparationOverCmykArray(), n: 1);
+
+            Assert.Equal(ColorSpace.Separation, details.AlternateColorSpace.Type);
+            Assert.Equal(1, details.NumberOfColorComponents);
+            Assert.Equal(4, details.BaseNumberOfColorComponents);
+
+            Span<byte> samples = stackalloc byte[2] { 0, 255 };
+            var transformed = details.Transform(samples, RenderingIntent.RelativeColorimetric);
+            Assert.Equal(2 * details.BaseNumberOfColorComponents, transformed.Length);
         }
 
         [Fact]

@@ -20,7 +20,10 @@
     /// </summary>
     public sealed class ICCBasedColorSpaceDetails : ColorSpaceDetails
     {
-        private readonly bool isLabInput;
+        /// <summary>
+        /// See <see cref="GetProfileRanges"/>. Null whenever <see cref="Range"/> is the authority.
+        /// </summary>
+        private readonly IReadOnlyList<double>? profileRanges;
 
         /// <summary>
         /// Latches once a conversion has thrown, after which <see cref="AlternateColorSpace"/> takes over
@@ -120,13 +123,49 @@
             {
                 BaseType = ColorSpace.DeviceRGB;
                 BaseNumberOfColorComponents = 3;
-                isLabInput = IccProfile.IsLabInput;
+                profileRanges = GetProfileRanges(IccProfile, NumberOfColorComponents);
             }
             else
             {
                 BaseType = AlternateColorSpace.BaseType;
-                BaseNumberOfColorComponents = NumberOfColorComponents;
+
+                // Not NumberOfColorComponents: the alternate is what Transform delegates to, so it is the
+                // alternate's own base width that says how many components come back. The two agree for a
+                // device alternate - the overwhelmingly common case - but a Separation alternate consumes
+                // one component and emits its own base's, and a caller sizing a buffer from this property
+                // has to be told the second number.
+                BaseNumberOfColorComponents = AlternateColorSpace.BaseNumberOfColorComponents;
             }
+        }
+
+        /// <summary>
+        /// The profile's own component ranges, or <c>null</c> when it encodes everything in <c>[0, 1]</c>
+        /// and the colour space's <c>/Range</c> entry should therefore be left in charge.
+        /// <para>
+        /// A profile only overrides <c>/Range</c> when it actually disagrees with it, because <c>/Range</c>
+        /// is the author's statement about this colour space while the profile's encoding is a property of
+        /// the profile. The case this exists for is L*a*b*, where <c>/Range</c> is routinely left at its
+        /// <c>[0 1]</c> default and clipping against it would destroy the page.
+        /// </para>
+        /// </summary>
+        private static IReadOnlyList<double>? GetProfileRanges(IIccProfile profile, int numberOfColorComponents)
+        {
+            var ranges = profile.ComponentRanges;
+
+            if (ranges is null || ranges.Count != 2 * numberOfColorComponents)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < ranges.Count; i += 2)
+            {
+                if (ranges[i] != 0.0 || ranges[i + 1] != 1.0)
+                {
+                    return ranges;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -216,18 +255,77 @@
         }
 
         /// <summary>
-        /// The ICC.1 encoding range of the L*a*b* data colour space: L* in [0,100], a* and b* in [-128,127].
+        /// The bounds the profile path clips against, and the range a sample byte is understood to span:
+        /// the profile's own encoding when it declares one, otherwise the colour space's <c>/Range</c>.
         /// </summary>
-        private static readonly double[] LabRange = [0.0, 100.0, -128.0, 127.0, -128.0, 127.0];
+        private IReadOnlyList<double> EffectiveRanges => profileRanges ?? Range;
 
         private void ClipForProfile(ReadOnlySpan<double> values, Span<double> destination)
         {
-            IReadOnlyList<double> bounds = isLabInput && destination.Length <= 3 ? LabRange : Range;
+            IReadOnlyList<double> bounds = EffectiveRanges;
 
             for (int c = 0; c < destination.Length; c++)
             {
                 int i = 2 * c;
                 destination[c] = PdfFunction.ClipToRange(values[c], bounds[i], bounds[i + 1]);
+            }
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// Taken from the resolved profile's own encoding, which is the only thing that knows an L*a*b*
+        /// profile's L* runs to 100. With no profile the alternate colour space decides, exactly as it
+        /// does for every other conversion here - and as PDFBox's <c>PDICCBased.getDefaultDecode</c> does.
+        /// </para>
+        /// </summary>
+        public override void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        {
+            if (profileRanges is null)
+            {
+                if (IccProfile is null)
+                {
+                    AlternateColorSpace.GetDefaultDecode(bitsPerComponent, destination);
+                    return;
+                }
+
+                base.GetDefaultDecode(bitsPerComponent, destination);
+                return;
+            }
+
+            for (int i = 0; i < destination.Length; i++)
+            {
+                destination[i] = profileRanges[i];
+            }
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// Colour-table bytes reach this colour space's components through its own ranges, so an Indexed
+        /// space over an L*a*b* profile decodes L* into [0, 100] rather than [0, 1]. Without a profile the
+        /// alternate colour space owns the mapping, as it owns the conversion that follows it.
+        /// </para>
+        /// </summary>
+        internal override void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
+        {
+            if (profileRanges is null)
+            {
+                if (IccProfile is null)
+                {
+                    AlternateColorSpace.DecodeRawComponents(raw, destination);
+                    return;
+                }
+
+                base.DecodeRawComponents(raw, destination);
+                return;
+            }
+
+            for (int i = 0; i < raw.Length; i++)
+            {
+                int c = 2 * (i % NumberOfColorComponents);
+                double min = profileRanges[c];
+                destination[i] = min + (raw[i] / 255.0) * (profileRanges[c + 1] - min);
             }
         }
 

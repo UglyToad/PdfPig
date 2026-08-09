@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Colors.Icc;
     using UglyToad.PdfPig.Graphics.Core;
@@ -40,17 +41,32 @@
         {
             private readonly Dictionary<RenderingIntent, IIccTransform> transforms;
 
+            /// <summary>
+            /// The ICC.1 encoding range of an L*a*b* data colour space, which is the case the
+            /// <see cref="IIccProfile.ComponentRanges"/> contract exists for.
+            /// </summary>
+            public static readonly double[] LabRanges = [0.0, 100.0, -128.0, 127.0, -128.0, 127.0];
+
             public StubProfile(int components, Dictionary<RenderingIntent, IIccTransform> transforms,
                 bool isLabInput = false)
+                : this(components, transforms, isLabInput ? LabRanges : UnitRanges(components))
+            {
+            }
+
+            public StubProfile(int components, Dictionary<RenderingIntent, IIccTransform> transforms,
+                IReadOnlyList<double> componentRanges)
             {
                 NumberOfComponents = components;
-                IsLabInput = isLabInput;
+                ComponentRanges = componentRanges;
                 this.transforms = transforms;
             }
 
+            private static double[] UnitRanges(int components)
+                => Enumerable.Repeat(new[] { 0.0, 1.0 }, components).SelectMany(x => x).ToArray();
+
             public int NumberOfComponents { get; }
 
-            public bool IsLabInput { get; }
+            public IReadOnlyList<double> ComponentRanges { get; }
 
             public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
             {
@@ -670,6 +686,118 @@
             details.Transform(input, RenderingIntent.RelativeColorimetric);
 
             Assert.Equal(transformCallsBefore, transform.TransformCalls);
+        }
+
+        [Fact]
+        public void ProfileRanges_DriveTheDefaultDecodeArray()
+        {
+            // 8.9.5.10, Table 89: the profile's own encoding is what an image's samples decode into. Only
+            // the profile knows an L*a*b* space runs L* to 100 - /Range is routinely left at [0 1].
+            var (details, _) = WithRange(3, DeviceRgbColorSpaceDetails.Instance, range: null!,
+                isLabInput: true);
+
+            var decode = new double[6];
+            details.GetDefaultDecode(8, decode);
+
+            Assert.Equal(StubProfile.LabRanges, decode);
+        }
+
+        [Fact]
+        public void UnitProfileRanges_LeaveTheDefaultDecodeAtUnit()
+        {
+            var (details, _) = WithRange(4, DeviceCmykColorSpaceDetails.Instance, range: null!);
+
+            var decode = new double[8];
+            details.GetDefaultDecode(8, decode);
+
+            Assert.Equal(new[] { 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0 }, decode);
+        }
+
+        [Fact]
+        public void WithoutAProfile_DefaultDecodeComesFromTheAlternate()
+        {
+            // Mirrors PDFBox's PDICCBased.getDefaultDecode, which delegates to the alternate whenever the
+            // profile could not be loaded. Here the alternate is Lab, so its ranges must show through.
+            var lab = new LabColorSpaceDetails([0.9505, 1.0, 1.089], null, [-90.0, 90.0, -80.0, 80.0]);
+            var details = new ICCBasedColorSpaceDetails(3, lab, null, null,
+                new byte[] { 0x01 }, iccService: null);
+
+            var decode = new double[6];
+            details.GetDefaultDecode(8, decode);
+
+            Assert.Equal(new[] { 0.0, 100.0, -90.0, 90.0, -80.0, 80.0 }, decode);
+        }
+
+        [Fact]
+        public void IndexedOverALabProfile_DecodesTableBytesIntoTheProfilesRanges()
+        {
+            // The colour-table counterpart of the image path: a palette entry over an L*a*b* profile has to
+            // reach the transform as L* in [0, 100], not [0, 1]. Decoding it as a device space is what
+            // renders such a palette near-black - the bug already fixed for a direct Lab base, which an
+            // ICCBased base did not inherit because it did not override DecodeRawComponents.
+            var (iccBase, transform) = WithRange(3, DeviceRgbColorSpaceDetails.Instance, range: null!,
+                isLabInput: true);
+
+            // One entry: L* = 0xFF, a* = b* = 0x80.
+            var indexed = new IndexedColorSpaceDetails(iccBase, hiVal: 0, colorTable: [0xFF, 0x80, 0x80]);
+
+            indexed.GetColor([0], RenderingIntent.RelativeColorimetric);
+
+            Assert.NotNull(transform.LastValues);
+            Assert.Equal(100.0, transform.LastValues![0], 6); // 255/255 * 100
+            Assert.Equal(0.0, transform.LastValues[1], 1); // -128 + (128/255) * 255
+            Assert.Equal(0.0, transform.LastValues[2], 1);
+        }
+
+        [Fact]
+        public void IndexedOverAUnitProfile_StillDecodesTableBytesToUnit()
+        {
+            var (iccBase, transform) = WithRange(4, DeviceCmykColorSpaceDetails.Instance, range: null!);
+            var indexed = new IndexedColorSpaceDetails(iccBase, hiVal: 0,
+                colorTable: [0x00, 0xFF, 0x80, 0x40]);
+
+            indexed.GetColor([0], RenderingIntent.RelativeColorimetric);
+
+            Assert.NotNull(transform.LastValues);
+            Assert.Equal(0.0, transform.LastValues![0], 6);
+            Assert.Equal(1.0, transform.LastValues[1], 6);
+            Assert.Equal(128 / 255.0, transform.LastValues[2], 6);
+            Assert.Equal(64 / 255.0, transform.LastValues[3], 6);
+        }
+
+        [Fact]
+        public void WithoutAProfile_BaseComponentCountComesFromTheAlternatesBase()
+        {
+            // The alternate is what Transform delegates to, so its base width is what comes back - not /N.
+            // An Indexed alternate consumes one component and emits its base's four; a caller sizing a
+            // buffer from BaseNumberOfColorComponents needs the four.
+            var indexedAlternate = new IndexedColorSpaceDetails(DeviceCmykColorSpaceDetails.Instance,
+                hiVal: 0, colorTable: [0x10, 0x20, 0x30, 0x40]);
+
+            var details = new ICCBasedColorSpaceDetails(1, indexedAlternate, null, null,
+                new byte[] { 0x01 }, iccService: null);
+
+            Assert.Equal(1, details.NumberOfColorComponents);
+            Assert.Equal(4, details.BaseNumberOfColorComponents);
+            Assert.Equal(ColorSpace.DeviceCMYK, details.BaseType);
+
+            // The property has to describe what Transform actually produces.
+            Span<byte> oneSample = stackalloc byte[1] { 0 };
+            var transformed = details.Transform(oneSample, RenderingIntent.RelativeColorimetric);
+            Assert.Equal(details.BaseNumberOfColorComponents, transformed.Length);
+        }
+
+        [Fact]
+        public void WithADeviceAlternate_BaseComponentCountIsUnchanged()
+        {
+            // The common case, where the alternate's base width and /N agree; guards the change above
+            // against moving anything that was already right.
+            Assert.Equal(1, new ICCBasedColorSpaceDetails(1, DeviceGrayColorSpaceDetails.Instance,
+                null, null, new byte[] { 0x01 }, null).BaseNumberOfColorComponents);
+            Assert.Equal(3, new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
+                null, null, new byte[] { 0x01 }, null).BaseNumberOfColorComponents);
+            Assert.Equal(4, new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
+                null, null, new byte[] { 0x01 }, null).BaseNumberOfColorComponents);
         }
     }
 }

@@ -5,7 +5,12 @@
 **Date:** 2026-08-09
 **Scope:** ICC-based colour spaces, output intents, and the supporting plumbing (colour space parsing, caching, image byte conversion, rendering intent).
 
-> **Status update.** The three "fix before merge" items — **A1**, **B4** and **B7** — have since been addressed in the working tree; each is marked ✅ **Fixed** below with what was done. Everything else in this report is still open. Full test suite after the fixes: 4225 passed, 0 failed, 7 skipped.
+> **Status update.** Eight findings have since been addressed in the working tree, each marked ✅ **Fixed** below with what was done:
+>
+> - *Fix before merge:* **A1**, **B4**, **B7**
+> - *Correctness, medium priority:* **B9**, **B10**, **B5**, **B12**, **B11**
+>
+> Still open: **B2**, **B6**, **B8**, **B3** (high value), **A2**–**A5**, **A7**, **B1** (API shape). Full test suite after the fixes: 4247 passed, 0 failed, 7 skipped; all target frameworks build clean.
 
 ---
 
@@ -22,9 +27,11 @@ The branch adds two things that PDFBox does *not* have, and leaves out several t
 1. **Rendering intent is threaded end-to-end.** PDFBox parses `ri`/`/RI` into `PDGraphicsState.renderingIntent` and then *never reads it* — a grep for `getRenderingIntent()` across `pdfbox/src/main` returns only the getter, the setter, and the ExtGState copy. PdfPig now carries `RenderingIntent` through `GetColor`, `GetRgb`, `Process`, `Transform`, `ColorSpaceDetailsByteConverter.Convert`, and into `IPdfImage`. This is a genuine improvement and the single biggest API-surface divergence.
 2. **Output intents are parsed for reading.** PDFBox's `PDOutputIntent` is a write-side/model-only class (used by `CreatePDFA` and `PDFMergerUtility`); it is never consulted during rendering. PdfPig parses it, resolves and decodes `/DestOutputProfile`, ranks candidates, and supports page-level `/OutputIntents` (PDF 2.0 Table 31), which PDFBox has no support for at all.
 
-**But** — see finding **A1** — the parsed output intent currently has **no consumer**. Nothing reads `CurrentGraphicsState.OutputIntent` or `IResourceStore.OutputIntent`, while the XML docs on both state it is *"Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics."* That behaviour is not implemented.
+**But** — see finding **A1** — the parsed output intent has **no consumer**. Nothing reads `CurrentGraphicsState.OutputIntent` or `IResourceStore.OutputIntent`, while the XML docs on both stated it was *"Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics."* That behaviour is not implemented; the docs now say so.
 
-**Highest-value gaps against PDFBox**, in order: `/Alternate` arrays are silently ignored (**B4**); a wrong `/N` disables colour management instead of being corrected (**B2**); no sRGB fast path (**B3**); no logging on any fallback (**B6**); parsed profiles are not cached across resource dictionaries (**B8**).
+**Highest-value gaps against PDFBox**, in order: ~~`/Alternate` arrays are silently ignored (**B4**)~~ ✅; a wrong `/N` disables colour management instead of being corrected (**B2**); no sRGB fast path (**B3**); no logging on any fallback (**B6**); parsed profiles are not cached across resource dictionaries (**B8**).
+
+**Fixed along the way, and worth calling out separately:** every **Lab image rendered near-black**, because `LabColorSpaceDetails.Transform` divided its samples by 255 and handed `GetRgb` an L\* of at most 1 (of 100). This was independent of ICC and predates the branch; it surfaced while making the image and scalar paths agree (**B9**).
 
 ---
 
@@ -202,7 +209,11 @@ So `/Alternate [/ICCBased 12 0 R]`, `/Alternate [/Separation /Spot /DeviceCMYK 1
 
 *(One thing already at parity: PDFBox calls `PDColorSpace.create(alternateArray)` with no `resources`, so `/Alternate` gets no `DefaultGray`/`DefaultRGB`/`DefaultCMYK` substitution. PdfPig's path via `ColorSpaceDetailsParser` likewise bypasses `resourceStore.GetDeviceColorSpaceDetails`. Correct — preserve this if the above is changed, since `GetSecondaryColorSpace` **does** apply the substitution at lines 499-502.)*
 
-### B5. Array-length strictness
+### B5. Array-length strictness — ✅ **Fixed**
+
+> **Resolution.** The ICCBased array check relaxed from `Length != 2` to `Length < 2`, matching PDFBox's `checkArray`. Only the first two elements are read, so a trailing junk element no longer costs the page its colours. Scoped to ICCBased; CalGray/CalRGB/Lab keep their exact-length checks, as the original finding suggested.
+
+*Original finding:*
 
 PdfPig requires `colorSpaceArray.Length != 2` → `UnsupportedColorSpaceDetails` (`ColorSpaceDetailsParser.cs:212-216`). PDFBox requires `size() >= 2` and ignores extras (`PDICCBased.checkArray`).
 
@@ -265,7 +276,18 @@ This also explains the `XObjectFactory.Resolve` workaround (`XObjectFactory.cs:2
 
 **Recommendation:** extend `IccProfileByteCache` (or add a sibling) to memoise the parsed `IIccProfile` under the same indirect-reference / content key it already computes. One call to `TryGetProfile` per profile per document, matching PDFBox's guarantee, and `IIccProfileService` implementations become genuinely stateless.
 
-### B9. No `GetDefaultDecode` — image Decode defaults are wrong for non-`[0,1]` spaces
+### B9. No `GetDefaultDecode` — image Decode defaults are wrong for non-`[0,1]` spaces — ✅ **Fixed**
+
+> **Resolution.** Both recommendations implemented, plus the byte-encoding contract they imply.
+> - **`ColorSpaceDetails.GetDefaultDecode(int bitsPerComponent, Span<double> destination)`** added as `public virtual` (PDFBox makes it abstract; virtual here keeps external subclasses compiling and means only the spaces that differ have to say so). Overridden by `IndexedColorSpaceDetails` (`[0, 2^bpc - 1]`), `LabColorSpaceDetails` (`[0 100 amin amax bmin bmax]`) and `ICCBasedColorSpaceDetails` (profile ranges, else the alternate's — mirroring `PDICCBased.getDefaultDecode`).
+> - **`IIccProfile.IsLabInput` replaced by `IReadOnlyList<double> ComponentRanges`**, the counterpart of `ICC_ColorSpace.getMinValue`/`getMaxValue`. The hardcoded `LabRange` constant is gone; a profile declaring anything other than `[0, 1]` now overrides `/Range`, which generalises the old Lab special case without changing it. Snapshotted once at construction, so there is no per-pixel virtual dispatch.
+> - **`ColorSpaceDetailsByteConverter.ApplyDecode` reworked** to take its defaults from the colour space and, for non-Indexed spaces, to store the component's *position* within that range rather than its value. This is the piece that makes the byte pipeline coherent: a byte cannot hold an L\* of 100 or a negative a\*, and `DecodeRawComponents` reverses the mapping in `Transform`, so the pair round-trips. For a `[0, 1]` space position and value coincide and the behaviour is bit-for-bit what it was. For an L\*a\*b\* ICC profile it coincides with the ICC.1 8-bit encoding, now documented on `IIccTransform.Transform`.
+> - **`LabColorSpaceDetails.Transform` fixed** to decode via `DecodeRawComponents` instead of `/255`. It was handing `GetRgb` an L\* of at most 1 (of 100), so **every Lab image rendered near-black**; that is fixed as a direct consequence.
+> - Degenerate ranges (`/Range [0 0 0 0]`, which is legal) resolve to position zero rather than dividing by zero.
+>
+> 13 tests added in `UglyToad.PdfPig.Tests/Images/DefaultDecodeTests.cs`, including the scalar-vs-image round-trip the section below called out as missing, and 5 more in `ICCBasedColorSpaceDetailsTests`.
+
+*Original finding:*
 
 PDFBox makes `getDefaultDecode(int bitsPerComponent)` **abstract on `PDColorSpace`**, and `PDICCBased` returns the ICC colour space's actual per-component bounds:
 
@@ -289,7 +311,11 @@ The same colour reached as a fill and as an image sample converts differently.
 1. Add `GetDefaultDecode(int bitsPerComponent)` to `ColorSpaceDetails`, mirroring PDFBox's abstract method, and have `ColorSpaceDetailsByteConverter` use it instead of the `[0,1]` assumption.
 2. Replace `IIccProfile.IsLabInput` (a bool) with per-component `MinValue`/`MaxValue` accessors — PDFBox gets these free from `ICC_ColorSpace.getMinValue/getMaxValue`, and the hardcoded `LabRange` array becomes unnecessary. This also fixes the case of a profile whose data space is neither `[0,1]` nor Lab.
 
-### B10. Indexed base with a Lab-input ICC profile decodes to near-black
+### B10. Indexed base with a Lab-input ICC profile decodes to near-black — ✅ **Fixed**
+
+> **Resolution.** `ICCBasedColorSpaceDetails` now overrides `DecodeRawComponents`, decoding colour-table bytes through the profile's own `ComponentRanges` (falling back to the alternate colour space when there is no profile, since the alternate owns the conversion that follows). An Indexed palette over an L\*a\*b\* profile reaches the transform as L\* in [0, 100]. This closes the gap noted in the original finding: PdfPig had already chosen to be better than PDFBox for a direct Lab base, and an ICCBased base did not inherit it.
+
+*Original finding:*
 
 `ICCBasedColorSpaceDetails` does not override `DecodeRawComponents`, so an Indexed colour table over an ICCBased base uses the `ColorSpaceDetails` default of `byte / 255.0` → `[0,1]`. `ClipForProfile` then clips into `LabRange` (a no-op for values already in `[0,1]`), so L* arrives as ≈0-1 and renders black.
 
@@ -297,7 +323,11 @@ This is the exact bug the branch deliberately fixed for `LabColorSpaceDetails` �
 
 **PDFBox has the identical bug** — `PDIndexed.readColorTable` is a flat `(lookupData[offset] & 0xff) / 255f` regardless of base (`PDIndexed.java`). So this is *at parity* with PDFBox, but PdfPig has already chosen to be better here for the direct Lab case and should finish the job. Fixed by the same change as **B9**.
 
-### B11. `BaseNumberOfColorComponents` when falling back to the alternate
+### B11. `BaseNumberOfColorComponents` when falling back to the alternate — ✅ **Fixed**
+
+> **Resolution.** Changed to `AlternateColorSpace.BaseNumberOfColorComponents`. As the original finding predicted, this stopped being merely latent the moment **B4** made array alternates load: `/N 1` with `[/Separation /Spot /DeviceCMYK <tint>]` reports 4, which is what `Transform` actually emits and what `PngFromPdfImageFactory` sizes its buffer from. Tests cover both the new case and the device-alternate case that was already right.
+
+*Original finding:*
 
 ```csharp
 // ICCBasedColorSpaceDetails.cs:117-120
@@ -309,7 +339,11 @@ BaseNumberOfColorComponents = NumberOfColorComponents;
 
 This is **pre-existing** (`HEAD~1` had `BaseNumberOfColorComponents => NumberOfColorComponents`), not a regression, and it is currently unreachable because **B4** means array `/Alternate` values never load. It becomes reachable the moment B4 is fixed. There is no PDFBox counterpart — `BaseNumberOfColorComponents` is a PdfPig concept — so the fix is simply `AlternateColorSpace.BaseNumberOfColorComponents`.
 
-### B12. No display-class fixup
+### B12. No display-class fixup — ✅ **Resolved (decided and documented)**
+
+> **Resolution.** Decided in favour of *backend responsibility*, and written into the `IIccProfileService` contract. PdfPig has no colour engine of its own, so patching profile bytes for an engine that may not object would be speculative; instead the interface now states plainly that tolerating malformed profiles is the implementation's job, cites PDFBOX-4114 and the display-class rewrite as the known case, and spells out what PdfPig does when an implementation declines (drop the profile, use the alternate) and the one thing it must not do (report success and then produce wrong colours). The original finding's complaint was that this was *neither* implemented nor documented; it is now unambiguous.
+
+*Original finding:*
 
 PDFBox rewrites the device class of a non-display, Perceptual-intent profile so the CMM will accept it (`ensureDisplayProfile`, `PDICCBased.java:256-270`, PDFBOX-4114, borrowed from TwelveMonkeys). PdfPig delegates entirely to the backend and simply drops the profile if `TryGetTransform` fails.
 
@@ -345,14 +379,14 @@ PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space 
 | **B3** | sRGB detection → identity fast path | `PDICCBased.is_sRGB`, PDFBOX-2587 |
 | **A2** | Parse output intent metadata without requiring an `IIccProfileService` | `PDDocumentCatalog.getOutputIntents()` |
 
-### Correctness, medium priority
-| # | Item |
-|---|---|
-| **B9** | Add `ColorSpaceDetails.GetDefaultDecode`; replace `IsLabInput` with per-component min/max on `IIccProfile` |
-| **B10** | Override `DecodeRawComponents` on `ICCBasedColorSpaceDetails` (falls out of B9) |
-| **B5** | Relax ICCBased array length to `>= 2` |
-| **B12** | Decide and document where the display-class fixup lives |
-| **B11** | `BaseNumberOfColorComponents` → `AlternateColorSpace.BaseNumberOfColorComponents` |
+### Correctness, medium priority — ✅ all five done
+| # | Item | Status |
+|---|---|---|
+| **B9** | Add `ColorSpaceDetails.GetDefaultDecode`; replace `IsLabInput` with per-component min/max on `IIccProfile` | ✅ Both, + the byte-encoding contract they imply; fixed Lab images rendering near-black |
+| **B10** | Override `DecodeRawComponents` on `ICCBasedColorSpaceDetails` (falls out of B9) | ✅ Fixed |
+| **B5** | Relax ICCBased array length to `>= 2` | ✅ Fixed |
+| **B12** | Decide and document where the display-class fixup lives | ✅ Decided: backend responsibility, written into the `IIccProfileService` contract |
+| **B11** | `BaseNumberOfColorComponents` → `AlternateColorSpace.BaseNumberOfColorComponents` | ✅ Fixed (became live once B4 landed) |
 
 ### API shape
 | # | Item |
@@ -374,7 +408,8 @@ These are places where PdfPig deliberately does *not* follow PDFBox, and should 
 - **Page-level `/OutputIntents`** (PDF 2.0 Table 31). No PDFBox support at all.
 - **`isResolvingDefaultSubstitute`** mirrors PDFBox's `wasDefault` flag exactly and is credited in the comment (`ResourceStore.cs:45-50`) — good porting hygiene. PdfPig additionally rejects Lab/Indexed/Pattern as `Default*` substitutes per 8.6.5.6, which PDFBox does not check. Correct divergence.
 - **`IccProfileByteCache`'s dual keying** (indirect reference / MurmurHash3 content key). PDFBox does not need this because it caches at a different level, but given PdfPig's token model the design is sound and the rationale is unusually well documented. If **B8** is implemented, this cache should be extended rather than replaced.
-- **`ColorSpaceDetails.DecodeRawComponents`** for Indexed colour tables — strictly more correct than PDFBox's flat `/255`.
+- **`ColorSpaceDetails.DecodeRawComponents`** for Indexed colour tables — strictly more correct than PDFBox's flat `/255`, and since **B10** it covers an ICCBased base too, which PDFBox does not.
+- **The sample-byte encoding** introduced by **B9**: a byte holds the component's position within its default-decode range, not its value. PDFBox has no equivalent because AWT rasters carry their own colour model; PdfPig's `Span<byte>` pipeline needs an explicit convention, and this is the one that lets Lab and L\*a\*b\* ICC profiles share it with the device spaces unchanged.
 
 ---
 
@@ -387,6 +422,6 @@ Gaps, aligned with the findings above:
 - ~~No test for an ICCBased colour space whose `/Alternate` is an array~~ — ✅ closed by `IccBasedAlternateColorSpaceTests` (11 tests).
 - ~~No test that an `IIccProfileService` throwing from `ToRgb`/`Transform` degrades gracefully~~ — ✅ closed by 6 tests in `ICCBasedColorSpaceDetailsTests`.
 - No test asserts that the output intent is *used* — correct, and now documented as intentional (**A1**).
+- ~~No round-trip test comparing the scalar path (`GetColor`) against the image path (`Transform`) for the same colour~~ — ✅ closed by `DefaultDecodeTests.LabImage_ImagePathAgreesWithTheScalarPath`, along with 12 more default-decode / byte-encoding tests.
 - Still open: no test for `/N` disagreeing with the profile (**B2**).
-- Still open: no round-trip test comparing the scalar path (`GetColor`) against the image path (`Transform`) for the same colour — which is where the **B9** inconsistency lives.
 - `IccProfileBenchmarks` covers the caching work well (three GWG PDF/X files plus the 37-ICC-image `iron-ore` case). A benchmark with an sRGB profile would quantify **B3**.

@@ -1,5 +1,7 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
+    using System.Linq;
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using PdfPig.Functions;
     using PdfPig.Graphics.Colors;
@@ -164,7 +166,8 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
 
             public int NumberOfComponents { get; }
 
-            public bool IsLabInput => false;
+            public IReadOnlyList<double> ComponentRanges =>
+                Enumerable.Repeat(new[] { 0.0, 1.0 }, NumberOfComponents).SelectMany(x => x).ToArray();
 
             public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
             {

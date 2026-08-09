@@ -1,5 +1,6 @@
-namespace UglyToad.PdfPig.Tests.ContentTests
+﻿namespace UglyToad.PdfPig.Tests.ContentTests
 {
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using PdfPig.Content;
     using PdfPig.Core;
@@ -189,7 +190,7 @@ namespace UglyToad.PdfPig.Tests.ContentTests
         {
             public int NumberOfComponents => 4;
 
-            public bool IsLabInput => false;
+            public IReadOnlyList<double> ComponentRanges { get; } = [0, 1, 0, 1, 0, 1, 0, 1];
 
             public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
             {

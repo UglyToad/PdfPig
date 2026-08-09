@@ -209,8 +209,12 @@
                     }
                 case ColorSpace.ICCBased:
                     {
+                        // Two elements are what 8.6.5.5 defines, but only the first two are read and a file
+                        // with a trailing junk element is otherwise perfectly usable - PDFBox likewise
+                        // requires size() >= 2 and ignores the rest. Dropping the colour space over it would
+                        // cost the page its colours for nothing.
                         if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
-                            || colorSpaceArray.Length != 2)
+                            || colorSpaceArray.Length < 2)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }

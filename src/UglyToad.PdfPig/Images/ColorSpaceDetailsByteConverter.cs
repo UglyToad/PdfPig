@@ -91,23 +91,24 @@
                 return;
             }
 
-            // Per-component output range:
-            //   - Indexed: byte stores a palette INDEX in [0, 2^bpc - 1]; default Decode is [0, 2^bpc - 1]
-            //              (identity), the subsequent palette lookup in Transform produces the actual colour.
-            //   - Non-Indexed: byte stores a colour-space VALUE in [0, 1] scaled to [0, 255]; default Decode
-            //                  is [0, 1].
-            bool isIndexed = details.Type == ColorSpace.Indexed;
-            double defaultDMax = isIndexed ? sampleMax : 1.0;
-            double outputScale = isIndexed ? 1.0 : 255.0;
-            int outputMax = isIndexed ? sampleMax : 255;
+            // The colour space states the range each sample decodes into (8.9.5.10, Table 89). This is
+            // [0, 1] for the device spaces, [0, 2^bpc - 1] for Indexed - whose sample is a palette index,
+            // not a colour - and something else entirely for Lab and for an L*a*b* ICC profile, whose L*
+            // runs to 100. Assuming [0, 1] here is what used to clamp every Lab sample to 255.
+            Span<double> defaults = components <= 8
+                ? stackalloc double[2 * components]
+                : new double[2 * components];
+            details.GetDefaultDecode(bitsPerComponent, defaults);
 
+            bool isIndexed = details.Type == ColorSpace.Indexed;
             bool hasDecode = decode is not null && decode.Count >= components * 2;
 
-            // Fast-path: skip the loop when the per-byte transform would be the identity.
-            //   - Indexed: default Decode is identity for any bpc (S → S).
-            //   - Non-Indexed 8bpc: default Decode yields S / 255 * 255 = S.
-            // For non-Indexed sub-8bpc the default Decode still needs to stretch samples to bytes.
-            if (!hasDecode || IsDefaultDecode(decode!, components, defaultDMax))
+            // Fast path: the byte would come out as it went in.
+            //   - Indexed: the default Decode is the identity at any bit depth (S -> S).
+            //   - Non-Indexed 8bpc: the sample already IS the position within the default range, which is
+            //     exactly what a byte encodes (see below), so the round trip cancels.
+            // Sub-8bpc still has to be stretched from [0, 2^bpc - 1] to [0, 255].
+            if (!hasDecode || IsDefaultDecode(decode!, components, defaults))
             {
                 if (isIndexed || bitsPerComponent == 8)
                 {
@@ -117,15 +118,41 @@
 
             // Per PDF 2.0 8.9.5.10, for each component c with raw sample S in [0, sampleMax]:
             //     x_c = Dmin_c + S * (Dmax_c - Dmin_c) / sampleMax
-            // For non-Indexed x_c is a colour-space value (typically [0, 1]) re-scaled to a byte.
-            // For Indexed x_c is the post-Decode palette index, kept in [0, sampleMax].
-            // The result is clamped if the Decode range pushes the output beyond the valid byte range.
+            //
+            // What the byte then holds differs by colour space:
+            //   - Indexed: x_c is the palette index itself, kept as-is in [0, sampleMax].
+            //   - Non-Indexed: a byte cannot hold an L* of 100 or a negative a*, so it holds x_c's
+            //     POSITION within the component's default range, scaled to [0, 255]. The colour space
+            //     reverses this in its Transform via DecodeRawComponents, so the pair round-trips. For the
+            //     usual [0, 1] space position and value coincide and this is the historical behaviour.
             for (int i = 0; i < samples.Length; i++)
             {
                 int c = i % components;
-                double dMin = hasDecode ? decode![c * 2] : 0.0;
-                double dMax = hasDecode ? decode![c * 2 + 1] : defaultDMax;
+                double defaultMin = defaults[c * 2];
+                double defaultMax = defaults[c * 2 + 1];
+
+                double dMin = hasDecode ? decode![c * 2] : defaultMin;
+                double dMax = hasDecode ? decode![c * 2 + 1] : defaultMax;
                 double x = dMin + samples[i] * (dMax - dMin) / sampleMax;
+
+                double outputScale;
+                int outputMax;
+                if (isIndexed)
+                {
+                    outputScale = 1.0;
+                    outputMax = sampleMax;
+                }
+                else
+                {
+                    double span = defaultMax - defaultMin;
+
+                    // A degenerate range (Lab /Range [0 0 0 0] is legal) pins every sample to the single
+                    // valid value, which is position zero.
+                    x = span == 0.0 ? 0.0 : (x - defaultMin) / span;
+                    outputScale = 255.0;
+                    outputMax = 255;
+                }
+
                 int rounded = (int)Math.Round(x * outputScale, MidpointRounding.AwayFromZero);
                 if (rounded < 0)
                 {
@@ -140,11 +167,11 @@
             }
         }
 
-        private static bool IsDefaultDecode(IReadOnlyList<double> decode, int components, double defaultDMax)
+        private static bool IsDefaultDecode(IReadOnlyList<double> decode, int components, ReadOnlySpan<double> defaults)
         {
             for (int c = 0; c < components; c++)
             {
-                if (decode[c * 2] != 0.0 || decode[c * 2 + 1] != defaultDMax)
+                if (decode[c * 2] != defaults[c * 2] || decode[c * 2 + 1] != defaults[c * 2 + 1])
                 {
                     return false;
                 }
