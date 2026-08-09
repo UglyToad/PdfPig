@@ -9,12 +9,12 @@ public class AdvanceMergeTests
     [Fact]
     public void TestAdvanceMerge()
     {
-        using var inputFile = File.Open(IntegrationHelpers.GetSpecificTestDocumentPath("Various Content Types_merge.pdf"), FileMode.Open, FileAccess.Read);
+        using var inputFile = OpenRead(IntegrationHelpers.GetSpecificTestDocumentPath("Various Content Types_merge.pdf"));
         using var input = new MemoryStream();
         inputFile.CopyTo(input);
         input.Seek(0, SeekOrigin.Begin);
 
-        using var outputFile = File.Open(IntegrationHelpers.GetDocumentPath("EmptyPdf.pdf"), FileMode.Open);
+        using var outputFile = OpenRead(IntegrationHelpers.GetDocumentPath("EmptyPdf.pdf"));
         using var output = new MemoryStream();
         outputFile.CopyTo(output);
         output.Seek(0, SeekOrigin.Begin);
@@ -28,6 +28,11 @@ public class AdvanceMergeTests
         Assert.True(outputPdf.Structure.CrossReferenceTable.ObjectOffsets.Count > 3);  // we add more objects into empty pdf (has 3 objects)
     }
     
+    private static FileStream OpenRead(string path)
+    {
+        return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+    }
+
     private static Stream Merge(Stream input, Stream output)
     {
         using var pdf = PdfDocument.Open(input);
