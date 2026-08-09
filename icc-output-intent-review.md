@@ -5,12 +5,13 @@
 **Date:** 2026-08-09
 **Scope:** ICC-based colour spaces, output intents, and the supporting plumbing (colour space parsing, caching, image byte conversion, rendering intent).
 
-> **Status update.** Eight findings have since been addressed in the working tree, each marked ✅ **Fixed** below with what was done:
+> **Status update.** Twelve findings have since been addressed in the working tree, each marked ✅ **Fixed** below with what was done:
 >
 > - *Fix before merge:* **A1**, **B4**, **B7**
 > - *Correctness, medium priority:* **B9**, **B10**, **B5**, **B12**, **B11**
+> - *High value, follows PDFBox closely:* **B2**, **B6**, **B8**, **A2**
 >
-> Still open: **B2**, **B6**, **B8**, **B3** (high value), **A2**–**A5**, **A7**, **B1** (API shape). Full test suite after the fixes: 4247 passed, 0 failed, 7 skipped; all target frameworks build clean.
+> **B3** (sRGB fast path) has been reclassified: it is not PdfPig's to fix but the ICC backend's, for the reasons set out in its section. Still open on PdfPig: **A3**–**A5**, **A7**, **B1** (API shape). Full test suite after the fixes: 4262 passed, 0 failed, 7 skipped; all target frameworks build clean.
 
 ---
 
@@ -29,7 +30,7 @@ The branch adds two things that PDFBox does *not* have, and leaves out several t
 
 **But** — see finding **A1** — the parsed output intent has **no consumer**. Nothing reads `CurrentGraphicsState.OutputIntent` or `IResourceStore.OutputIntent`, while the XML docs on both stated it was *"Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics."* That behaviour is not implemented; the docs now say so.
 
-**Highest-value gaps against PDFBox**, in order: ~~`/Alternate` arrays are silently ignored (**B4**)~~ ✅; a wrong `/N` disables colour management instead of being corrected (**B2**); no sRGB fast path (**B3**); no logging on any fallback (**B6**); parsed profiles are not cached across resource dictionaries (**B8**).
+**Highest-value gaps against PDFBox**, in order: ~~`/Alternate` arrays are silently ignored (**B4**)~~ ✅; ~~a wrong `/N` disables colour management instead of being corrected (**B2**)~~ ✅; ~~no logging on any fallback (**B6**)~~ ✅; ~~parsed profiles are not cached across resource dictionaries (**B8**)~~ ✅. The sRGB fast path (**B3**) was on this list too, but it is a backend concern rather than a PdfPig one — see its section.
 
 **Fixed along the way, and worth calling out separately:** every **Lab image rendered near-black**, because `LabColorSpaceDetails.Transform` divided its samples by 255 and handed `GetRgb` an L\* of at most 1 (of 100). This was independent of ICC and predates the branch; it surfaced while making the image and scalar paths agree (**B9**).
 
@@ -79,7 +80,11 @@ Neither is true today.
 
 Either way, resolve the mismatch before merging — the current state is a documented feature with no implementation.
 
-### A2. The entire output intent is hidden behind `IccProfileService`
+### A2. The entire output intent is hidden behind `IccProfileService` — ✅ **Fixed**
+
+> **Resolution.** The early `return null` removed; only `TryParseDestOutputProfile` is now gated on the service. The output condition, its identifier, registry name, `/Info`, `/DestOutputProfileRef`, `/MixingHints` and `/SpectralData` are parsed unconditionally — as PDFBox's `getOutputIntents()` exposes them — while `DestOutputProfile` alone stays null without a service. Crucially, skipping the profile also means **not decoding the stream**: an embedded CMYK profile is routinely megabytes and nothing is going to look at it. Two tests assert both halves, and the `IResourceStore` / `CurrentGraphicsState` docs updated to say `null` now means only "the document declares none".
+
+*Original finding:*
 
 `OutputIntentParser.Create` returns `null` immediately when `iccProfileService is null` (`OutputIntentParser.cs:34-37`). Because the default is `null`, **no PdfPig user sees output intent metadata by default** — not `OutputConditionIdentifier`, not `RegistryName`, not `Info`.
 
@@ -140,7 +145,16 @@ This is a reasonable platform-driven decision — .NET has no bundled CMM. But i
 - Ship a default `IIccProfileService` in-box (a managed ICC v2/v4 parser handling the common `curv`/`para` + matrix and `mft1`/`mft2`/`mAB ` LUT cases would cover the overwhelming majority of embedded profiles), and default `ParsingOptions.IccProfileService` to it.
 - At minimum, document prominently that ICC colour management requires wiring, and that without it PdfPig's ICCBased output is an approximation.
 
-### B2. A wrong `/N` disables colour management instead of being corrected
+### B2. A wrong `/N` disables colour management instead of being corrected — ✅ **Fixed**
+
+> **Resolution.** PDFBox's behaviour adopted: the profile is believed and `/N` corrected from it, with a warning naming both counts. Three knock-on decisions the original finding anticipated ("more invasive in PdfPig than in PDFBox"):
+> - **The `/Alternate` width guard moved from the parser into the constructor.** It has to run *after* the correction — an alternate chosen against a declared `/N` of 3 no longer fits once the profile says 4 — so the constructor is now the single place that knows the final width. The parser still discards an alternate it could not interpret; only the width test moved.
+> - **A `/Range` of the wrong length is now ignored rather than thrown.** It was written for the declared `/N`, so a correction makes a mismatch expected rather than exceptional; PDFBox's `getRangeForComponent` likewise falls back to 0..1 instead of refusing the colour space. The old `ArgumentOutOfRangeException` escaped through page parsing and cost the whole page.
+> - **A profile claiming a count no ICCBased space may have (not 1, 3 or 4) is rejected** rather than used to "correct" `/N` into something invalid.
+>
+> 6 tests added covering the correction, the alternate it invalidates, the range fallback, and the invalid-count rejection.
+
+*Original finding:*
 
 ```csharp
 // ICCBasedColorSpaceDetails.cs:93-100
@@ -170,7 +184,18 @@ So a file with a wrong `/N` renders colour-managed in PDFBox and unmanaged in Pd
 
 **Recommendation:** adopt PDFBox's behaviour. Note this is more invasive in PdfPig than in PDFBox because `NumberOfColorComponents` is set once in the constructor from `numeric.Int` (`ColorSpaceDetailsParser.cs:230`) and also governs operand counts in `GetColor`. The fix is to take the profile's count as authoritative when the two disagree, and log. PDFBox additionally tolerates a *missing* `/N` (`getInt` → `-1`, then corrected from the profile); PdfPig returns `UnsupportedColorSpaceDetails` (`ColorSpaceDetailsParser.cs:229-233`).
 
-### B3. No sRGB fast path
+### B3. No sRGB fast path — ⛔ **Not PdfPig's to fix; belongs to the ICC backend**
+
+> **Reclassified.** This was filed against PdfPig, and that was wrong. Both halves of the optimisation sit entirely behind `IIccProfileService`:
+>
+> - **Detecting sRGB** means reading the profile header's device-model field — profile parsing, which is by definition the backend's job. PdfPig deliberately does not parse ICC bytes at all.
+> - **Short-circuiting** needs no PdfPig involvement either: a backend that recognises an sRGB profile can return an `IIccTransform` whose `ToRgb` returns its inputs and whose `Transform` copies bytes through. That captures essentially the whole win. What would remain on PdfPig's side — one virtual call and a clip loop over three doubles — is noise next to a CMM lookup, which is what the fast path exists to avoid.
+>
+> PDFBox has to do this inside `PDICCBased` only because it has no backend abstraction to put it behind: `PDICCBased` *is* the glue over the platform CMM, so substituting the JVM's built-in sRGB profile is something only it can do. PdfPig's provider split means the equivalent belongs one layer down, exactly as the display-class fixup does (**B12**).
+>
+> Adding `bool IsSRgb` to `IIccProfile`, as originally recommended, would therefore have been the wrong shape: it puts a profile-parsing fact on the interface and then obliges every colour-space entry point to branch on it, to buy back something the backend could have handled without telling PdfPig anything. **No PdfPig change is warranted.** The `IIccProfileService` contract now names it alongside the other things implementations own.
+
+*Original finding:*
 
 PDFBox checks the profile header's device-model field for `"sRGB"` (`PDICCBased.java:246-252`), and if it matches:
 
@@ -180,7 +205,7 @@ PDFBox checks the profile header's device-model field for `"sRGB"` (`PDICCBased.
 
 Most embedded RGB profiles in the wild are sRGB. PdfPig has no equivalent: every sRGB ICCBased fill, stroke and image goes through the full transform.
 
-**Recommendation:** add `bool IsSRgb { get; }` to `IIccProfile` (or detect it in PdfPig from the header before calling the service, which keeps every backend honest), and short-circuit `Process` / `GetColor` / `GetRgb` / `Transform` to identity. This is likely the single largest available performance win, and it removes backend-to-backend colour drift for the most common profile.
+**Recommendation** *(superseded — see above)***:** add `bool IsSRgb { get; }` to `IIccProfile` (or detect it in PdfPig from the header before calling the service, which keeps every backend honest), and short-circuit `Process` / `GetColor` / `GetRgb` / `Transform` to identity.
 
 ### B4. `/Alternate` arrays are silently ignored — ✅ **Fixed**
 
@@ -221,7 +246,18 @@ An ICCBased array with a trailing junk element renders in PDFBox and is dropped 
 
 *(This exact-length pattern is repeated for CalGray, CalRGB and Lab in the same file. Same reasoning applies, though those are less commonly malformed.)*
 
-### B6. No logging anywhere on the ICC path
+### B6. No logging anywhere on the ICC path — ✅ **Fixed**
+
+> **Resolution.** `ILog` threaded through the whole ICC path, surfaced as a new `IResourceStore.Logger` (fed from `ParsingOptions.Logger`, consistent with the `IccProfileService` / `OutputIntent` members this branch already added to that interface). Every degradation now says so:
+> - `/N` corrected from the profile, and a profile whose component count is not 1/3/4;
+> - a profile that resolved but could not convert a colour;
+> - an `/Alternate` that could not be interpreted, and one of the wrong width;
+> - a `/Range` of the wrong length;
+> - an `IIccProfileService` that declined a profile, and one that *threw* — the latter previously escaped as an exception and is now caught, logged, and treated as a decline.
+>
+> `RecordingLog` in the tests asserts the messages actually reach the log rather than merely that the fallback happened.
+
+*Original finding:*
 
 PDFBox logs a warning at every degradation point: profile load failure with the exception message and the chosen alternate (`PDICCBased.java:236-237`), `/N` correction (`:347`), display-class rewrite (`:264`).
 
@@ -262,7 +298,17 @@ PdfPig's analogue is `profile.TryGetTransform(RenderingIntent.RelativeColorimetr
 
 **Recommendation:** either (a) run one actual conversion at construction — `t.ToRgb(zeroes)` — so failures are caught where the alternate fallback lives, or (b) guard the conversion call sites so a late backend failure degrades to `AlternateColorSpace` rather than propagating. PDFBox's history says (a) is not paranoia.
 
-### B8. Parsed profiles are not cached across resource dictionaries
+### B8. Parsed profiles are not cached across resource dictionaries — ✅ **Fixed**
+
+> **Resolution.** `IccProfileByteCache` extended rather than replaced, as the original finding recommended. Its two dictionaries now hold an `Entry` carrying both the decoded bytes and the profile parsed from them, so `IIccProfileService.TryGetProfile` is called **at most once per profile per document** — the guarantee PDFBox gets from caching the constructed `PDICCBased` against the stream's `COSObject`. Keeping both in one entry also means the content hash that identifies a directly written profile is computed once per lookup rather than once per thing looked up.
+> - `ICCBasedColorSpaceDetails` now takes a resolved `IIccProfile?` instead of `(bytes, service)`, so the colour space no longer parses anything; resolution belongs to the cache.
+> - "Parsed, and the answer was no profile" is remembered as firmly as a success, so a profile the service declines is not retried per page.
+> - `OutputIntentParser` shares the same path, which matters because a PDF/X file routinely points its `/DestOutputProfile` and an `/ICCBased` colour space at the same stream object.
+> - `Jpeg2000Helper` resolves directly and is documented as the deliberate exception: a JPX profile is a slice of the image's own codestream, not a stream object the document can point at twice, so there is no key to share it under.
+>
+> Note the raw bytes are still retained alongside the parsed profile (unchanged from before). Releasing them after parsing would save megabytes per document and is worth a follow-up.
+
+*Original finding:*
 
 **PDFBox:** `PDICCBased.create` caches the *constructed colour space object* in the document `ResourceCache`, keyed by the ICC array's `COSObject` (`PDICCBased.java:108-132`). The parsed `ICC_Profile` and its CMM transforms are shared for the document's lifetime.
 
@@ -357,7 +403,7 @@ Note `PDJPXColorSpace.getDefaultDecode` returns the AWT space's real min/max —
 
 ### B14. No `toRawImage` equivalent
 
-PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space without conversion where possible; `PDIndexed.toRawImage` uses it to build an `IndexColorModel` directly when the base is an sRGB `PDICCBased` (`PDIndexed.java:257-277`). PdfPig always converts to RGB. Minor, and only worth pursuing alongside **B3**.
+PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space without conversion where possible; `PDIndexed.toRawImage` uses it to build an `IndexColorModel` directly when the base is an sRGB `PDICCBased` (`PDIndexed.java:257-277`). PdfPig always converts to RGB. Minor — and note a backend implementing the **B3** fast path already removes most of what this would save, since the conversion it avoids becomes a copy.
 
 ---
 
@@ -370,14 +416,14 @@ PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space 
 | **B4** | Accept array-valued and indirect `/Alternate` | Silent wrong colours on legal files; affects the *default* no-CMM path | ✅ Fixed, + component-width guard |
 | **B7** | Make profile validation actually convert a colour, or guard conversion sites | Backend exception can escape `page.GetImages()` | ✅ Both: probing validation + failure latch |
 
-### High value, follows PDFBox closely
-| # | Item | PDFBox reference |
-|---|---|---|
-| **B2** | Correct `/N` from the profile instead of dropping the profile | `PDICCBased.java:341-352` (PDFBOX-4801) |
-| **B6** | Log every ICC/output-intent fallback via `ParsingOptions.Logger` | `PDICCBased.java:236, 264, 347` |
-| **B8** | Cache the parsed `IIccProfile` document-wide, not just its bytes | `PDICCBased.create` + `ResourceCache` |
-| **B3** | sRGB detection → identity fast path | `PDICCBased.is_sRGB`, PDFBOX-2587 |
-| **A2** | Parse output intent metadata without requiring an `IIccProfileService` | `PDDocumentCatalog.getOutputIntents()` |
+### High value, follows PDFBox closely — ✅ four of five done, 1 marked as out of scope
+| # | Item | PDFBox reference | Status |
+|---|---|---|---|
+| **B2** | Correct `/N` from the profile instead of dropping the profile | `PDICCBased.java:341-352` (PDFBOX-4801) | ✅ Fixed, + the alternate/range consequences |
+| **B6** | Log every ICC/output-intent fallback via `ParsingOptions.Logger` | `PDICCBased.java:236, 264, 347` | ✅ Fixed via new `IResourceStore.Logger` |
+| **B8** | Cache the parsed `IIccProfile` document-wide, not just its bytes | `PDICCBased.create` + `ResourceCache` | ✅ Fixed; one parse per profile per document |
+| **A2** | Parse output intent metadata without requiring an `IIccProfileService` | `PDDocumentCatalog.getOutputIntents()` | ✅ Fixed; the stream is not even decoded |
+| **B3** | sRGB detection → identity fast path | `PDICCBased.is_sRGB`, PDFBOX-2587 | ⛔ Not PdfPig's — belongs to the `IIccProfileService` implementation |
 
 ### Correctness, medium priority — ✅ all five done
 | # | Item | Status |
@@ -423,5 +469,5 @@ Gaps, aligned with the findings above:
 - ~~No test that an `IIccProfileService` throwing from `ToRgb`/`Transform` degrades gracefully~~ — ✅ closed by 6 tests in `ICCBasedColorSpaceDetailsTests`.
 - No test asserts that the output intent is *used* — correct, and now documented as intentional (**A1**).
 - ~~No round-trip test comparing the scalar path (`GetColor`) against the image path (`Transform`) for the same colour~~ — ✅ closed by `DefaultDecodeTests.LabImage_ImagePathAgreesWithTheScalarPath`, along with 12 more default-decode / byte-encoding tests.
-- Still open: no test for `/N` disagreeing with the profile (**B2**).
-- `IccProfileBenchmarks` covers the caching work well (three GWG PDF/X files plus the 37-ICC-image `iron-ore` case). A benchmark with an sRGB profile would quantify **B3**.
+- ~~No test for `/N` disagreeing with the profile~~ — ✅ closed, along with tests for the profile cache's parse-once guarantee and for the log messages themselves.
+- `IccProfileBenchmarks` covers the caching work well (three GWG PDF/X files plus the 37-ICC-image `iron-ore` case). A benchmark with an sRGB profile would still be worth having, but it would measure a backend's fast path (**B3**) rather than anything PdfPig controls.

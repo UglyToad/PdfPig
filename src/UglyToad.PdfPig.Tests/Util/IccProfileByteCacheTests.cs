@@ -1,6 +1,11 @@
-namespace UglyToad.PdfPig.Tests.Util
+﻿namespace UglyToad.PdfPig.Tests.Util
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using PdfPig.Core;
+    using PdfPig.Graphics.Colors.Icc;
+    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
     using PdfPig.Util;
     using Tokens;
@@ -119,6 +124,149 @@ namespace UglyToad.PdfPig.Tests.Util
             }
 
             Assert.Equal(64, filters.DecodeCount);
+        }
+
+        /// <summary>
+        /// Counts how often the service is asked to parse, which is the cost B8 exists to bound.
+        /// </summary>
+        private sealed class CountingProfileService : IIccProfileService
+        {
+            private readonly bool succeed;
+
+            public CountingProfileService(bool succeed = true) => this.succeed = succeed;
+
+            public int ParseCount { get; private set; }
+
+            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes,
+                [NotNullWhen(true)] out IIccProfile? profile)
+            {
+                ParseCount++;
+                profile = succeed ? new StubProfile() : null;
+                return profile is not null;
+            }
+        }
+
+        private sealed class StubProfile : IIccProfile
+        {
+            public int NumberOfComponents => 3;
+
+            public IReadOnlyList<double> ComponentRanges { get; } = [0, 1, 0, 1, 0, 1];
+
+            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
+            {
+                transform = null;
+                return false;
+            }
+        }
+
+        [Fact]
+        public void ParsesTheSameIndirectProfileOnlyOnce()
+        {
+            // The guarantee PDFBox gets from caching the constructed PDICCBased against the profile stream's
+            // COSObject. Caching the bytes alone still left TryGetProfile called once per resource
+            // dictionary, because ResourceStore clears its colour space caches each time one is loaded.
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider();
+            var service = new CountingProfileService();
+            var reference = Reference(7);
+            var stream = ProfileStream(1, 2, 3, 4, 5);
+
+            var first = cache.GetOrParse(reference, stream, filters, Scanner, service);
+            var second = cache.GetOrParse(reference, stream, filters, Scanner, service);
+
+            Assert.NotNull(first);
+            Assert.Same(first, second);
+            Assert.Equal(1, service.ParseCount);
+            Assert.Equal(1, filters.DecodeCount);
+        }
+
+        [Fact]
+        public void ParsesTheSameDirectlyWrittenProfileOnlyOnce()
+        {
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider();
+            var service = new CountingProfileService();
+
+            var first = cache.GetOrParse(NullToken.Instance, ProfileStream(1, 2, 3), filters, Scanner, service);
+            var second = cache.GetOrParse(NullToken.Instance, ProfileStream(1, 2, 3), filters, Scanner, service);
+
+            Assert.Same(first, second);
+            Assert.Equal(1, service.ParseCount);
+            Assert.Equal(1, filters.DecodeCount);
+        }
+
+        [Fact]
+        public void DoesNotRetryAProfileTheServiceDeclined()
+        {
+            // "Parsed, and the answer was no profile" is as worth remembering as a success.
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider();
+            var service = new CountingProfileService(succeed: false);
+            var reference = Reference(9);
+            var stream = ProfileStream(1, 2, 3);
+
+            Assert.Null(cache.GetOrParse(reference, stream, filters, Scanner, service));
+            Assert.Null(cache.GetOrParse(reference, stream, filters, Scanner, service));
+
+            Assert.Equal(1, service.ParseCount);
+        }
+
+        [Fact]
+        public void WithoutAServiceNothingIsDecodedOrParsed()
+        {
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider();
+
+            Assert.Null(cache.GetOrParse(Reference(3), ProfileStream(1, 2, 3), filters, Scanner, null));
+
+            Assert.Equal(0, filters.DecodeCount);
+        }
+
+        [Fact]
+        public void AThrowingServiceCostsTheProfileAndNothingMore()
+        {
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider();
+
+            Assert.Null(cache.GetOrParse(Reference(4), ProfileStream(1, 2, 3), filters, Scanner,
+                new ThrowingProfileService()));
+        }
+
+        private sealed class ThrowingProfileService : IIccProfileService
+        {
+            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes,
+                [NotNullWhen(true)] out IIccProfile? profile)
+                => throw new InvalidOperationException("Simulated parser failure.");
+        }
+
+        [Fact]
+        public void AFailedDecodeIsNotHandedToTheService()
+        {
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider(throwOnDecode: true);
+            var service = new CountingProfileService();
+
+            Assert.Null(cache.GetOrParse(Reference(5), ProfileStream(1, 2, 3), filters, Scanner, service));
+
+            Assert.Equal(0, service.ParseCount);
+        }
+
+        [Fact]
+        public void TheProfileAndItsBytesShareOneCacheEntry()
+        {
+            // Both are keyed the same way, so asking for one after the other must not decode twice - which
+            // for a content-keyed profile also means hashing it only once per lookup.
+            var cache = new IccProfileByteCache();
+            var filters = new CountingFilterProvider();
+            var service = new CountingProfileService();
+            var stream = ProfileStream(1, 2, 3, 4, 5);
+
+            var bytes = cache.GetOrDecode(NullToken.Instance, stream, filters, Scanner);
+            var profile = cache.GetOrParse(NullToken.Instance, ProfileStream(1, 2, 3, 4, 5), filters, Scanner, service);
+
+            Assert.False(bytes.IsEmpty);
+            Assert.NotNull(profile);
+            Assert.Equal(1, filters.DecodeCount);
         }
 
         private static IndirectReferenceToken Reference(long objectNumber)

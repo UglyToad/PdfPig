@@ -7,6 +7,7 @@
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Colors.Icc;
     using UglyToad.PdfPig.Graphics.Core;
+    using UglyToad.PdfPig.Logging;
     using Xunit;
 
     public class ICCBasedColorSpaceDetailsTests
@@ -102,8 +103,7 @@
                 alternateColorSpaceDetails: DeviceRgbColorSpaceDetails.Instance,
                 range: null,
                 metadata: null,
-                profileData: new byte[] { 1, 2, 3 },
-                iccService: null);
+                profile: null);
 
             Assert.Equal(ColorSpace.DeviceRGB, details.BaseType);
             Assert.Equal(3, details.BaseNumberOfColorComponents);
@@ -129,8 +129,7 @@
                 alternateColorSpaceDetails: DeviceCmykColorSpaceDetails.Instance,
                 range: null,
                 metadata: null,
-                profileData: new byte[] { 0x01 },
-                iccService: new StubService(profile));
+                profile: profile);
 
             Assert.Equal(ColorSpace.DeviceRGB, details.BaseType);
             Assert.Equal(3, details.BaseNumberOfColorComponents);
@@ -148,7 +147,7 @@
             });
 
             var details = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0xAB }, new StubService(profile));
+                null, null, profile);
 
             var (r, g, b) = details.GetColor([0.1, 0.2, 0.3, 0.4]).ToRGBValues();
             Assert.Equal(0.25, r);
@@ -166,7 +165,7 @@
             });
 
             var details = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0xAB }, new StubService(profile));
+                null, null, profile);
 
             var (r, g, b) = details.GetColor(new double[] { 0.1, 0.2, 0.3, 0.4 },
                 RenderingIntent.Perceptual).ToRGBValues();
@@ -186,7 +185,7 @@
             });
 
             var details = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0xCD }, new StubService(profile));
+                null, null, profile);
 
             Span<byte> input = stackalloc byte[8] { 10, 20, 30, 40, 50, 60, 70, 80 };
 
@@ -217,7 +216,7 @@
             });
 
             var iccBase = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x01 }, new StubService(profile));
+                null, null, profile);
 
             // 2-entry CMYK palette (8 bytes).
             byte[] colorTable =
@@ -251,7 +250,7 @@
             });
 
             var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x99 }, new StubService(profile));
+                null, null, profile);
 
             // The unsupported intent resolves to the relative colorimetric transform rather than to null,
             // which is what lets the conversion paths treat a non-null IccProfile as always convertible.
@@ -303,7 +302,7 @@
             }, isLabInput);
 
             var details = new ICCBasedColorSpaceDetails(components, alternate, range, null,
-                new byte[] { 0x01 }, new StubService(profile));
+                profile);
 
             return (details, transform);
         }
@@ -356,7 +355,7 @@
             withProfile.GetColor(operands, RenderingIntent.RelativeColorimetric);
 
             var withoutProfile = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
-                range, null, new byte[] { 0x01 }, iccService: null);
+                range, null, profile: null);
             var (r, g, b) = withoutProfile.GetColor(operands, RenderingIntent.RelativeColorimetric).ToRGBValues();
 
             Assert.Equal(new double[] { r, g, b }, transform.LastValues);
@@ -438,7 +437,7 @@
             // The abstention above is scoped to the profile path only; the alternate space is a genuine
             // device space, and clipping into it against the default range is long-standing behaviour.
             var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
-                range: null, metadata: null, profileData: new byte[] { 0x01 }, iccService: null);
+                range: null, metadata: null, profile: null);
 
             var (r, g, b) = details.GetColor([100.0, -5.0, 0.5], RenderingIntent.RelativeColorimetric)
                 .ToRGBValues();
@@ -478,7 +477,7 @@
             var profile = new StubProfile(4, new Dictionary<RenderingIntent, IIccTransform>());
 
             var details = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x01 }, new StubService(profile));
+                null, null, profile);
 
             var processed = details.Process([0.1, 0.2, 0.3, 0.4], RenderingIntent.RelativeColorimetric);
 
@@ -498,7 +497,7 @@
             });
 
             var details = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x01 }, new StubService(profile));
+                null, null, profile);
 
             var processed = details.Process([0.9, 0.1], RenderingIntent.RelativeColorimetric);
 
@@ -581,7 +580,7 @@
             });
 
             return new ICCBasedColorSpaceDetails(components, alternate, null, null,
-                new byte[] { 0x01 }, new StubService(profile));
+                profile);
         }
 
         [Fact]
@@ -720,7 +719,7 @@
             // profile could not be loaded. Here the alternate is Lab, so its ranges must show through.
             var lab = new LabColorSpaceDetails([0.9505, 1.0, 1.089], null, [-90.0, 90.0, -80.0, 80.0]);
             var details = new ICCBasedColorSpaceDetails(3, lab, null, null,
-                new byte[] { 0x01 }, iccService: null);
+                profile: null);
 
             var decode = new double[6];
             details.GetDefaultDecode(8, decode);
@@ -775,7 +774,7 @@
                 hiVal: 0, colorTable: [0x10, 0x20, 0x30, 0x40]);
 
             var details = new ICCBasedColorSpaceDetails(1, indexedAlternate, null, null,
-                new byte[] { 0x01 }, iccService: null);
+                profile: null);
 
             Assert.Equal(1, details.NumberOfColorComponents);
             Assert.Equal(4, details.BaseNumberOfColorComponents);
@@ -787,17 +786,155 @@
             Assert.Equal(details.BaseNumberOfColorComponents, transformed.Length);
         }
 
+        /// <summary>
+        /// Captures what the colour space reported while degrading, so the tests can assert that a silent
+        /// fallback stopped being silent.
+        /// </summary>
+        private sealed class RecordingLog : ILog
+        {
+            public List<string> Warnings { get; } = new List<string>();
+
+            public void Debug(string message) { }
+
+            public void Debug(string message, Exception ex) { }
+
+            public void Warn(string message) => Warnings.Add(message);
+
+            public void Error(string message) => Warnings.Add(message);
+
+            public void Error(string message, Exception ex) => Warnings.Add(message);
+        }
+
+        [Fact]
+        public void ProfileDisagreeingWithN_CorrectsNRatherThanDroppingTheProfile()
+        {
+            // PDFBOX-4801: /N and the profile disagree, and the profile is the one that cannot be wrong
+            // about itself. Discarding it left such a file rendering unmanaged here while PDFBox rendered it
+            // colour-managed.
+            var profile = new StubProfile(4, new Dictionary<RenderingIntent, IIccTransform>
+            {
+                [RenderingIntent.RelativeColorimetric] = new StubTransform(4, (0.25, 0.5, 0.75))
+            });
+
+            var log = new RecordingLog();
+
+            // /N says 3; the profile says 4.
+            var details = new ICCBasedColorSpaceDetails(3, null, null, null, profile, log);
+
+            Assert.NotNull(details.IccProfile);
+            Assert.Equal(4, details.NumberOfColorComponents);
+            Assert.Same(DeviceCmykColorSpaceDetails.Instance, details.AlternateColorSpace);
+            Assert.Contains(log.Warnings, w => w.Contains("4 components from the ICC profile"));
+
+            // The corrected width is the one the colour space actually accepts.
+            var (r, g, b) = details.GetColor([0.1, 0.2, 0.3, 0.4]).ToRGBValues();
+            Assert.Equal(0.25, r);
+            Assert.Equal(0.5, g);
+            Assert.Equal(0.75, b);
+        }
+
+        [Fact]
+        public void CorrectingN_DropsAnAlternateChosenAgainstTheDeclaredWidth()
+        {
+            // The alternate was picked while /N still said 3, so correcting to 4 leaves it unusable; the
+            // device space implied by the corrected width takes over.
+            var profile = new StubProfile(4, new Dictionary<RenderingIntent, IIccTransform>
+            {
+                [RenderingIntent.RelativeColorimetric] = new StubTransform(4, (0, 0, 0))
+            });
+
+            var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
+                null, null, profile);
+
+            Assert.Equal(4, details.NumberOfColorComponents);
+            Assert.Same(DeviceCmykColorSpaceDetails.Instance, details.AlternateColorSpace);
+        }
+
+        [Fact]
+        public void CorrectingN_FallsBackToADefaultRangeSizedForTheCorrectedWidth()
+        {
+            // /Range was written for the declared /N, so a correction makes a mismatch expected rather than
+            // exceptional. PDFBox's getRangeForComponent likewise falls back to 0..1 instead of refusing.
+            var profile = new StubProfile(4, new Dictionary<RenderingIntent, IIccTransform>
+            {
+                [RenderingIntent.RelativeColorimetric] = new StubTransform(4, (0, 0, 0))
+            });
+
+            var details = new ICCBasedColorSpaceDetails(3, null, [0.0, 0.5, 0.0, 0.5, 0.0, 0.5], null, profile);
+
+            Assert.Equal(4, details.NumberOfColorComponents);
+            Assert.Equal(new[] { 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0 }, details.Range);
+        }
+
+        [Fact]
+        public void AMismatchedRangeIsIgnoredRatherThanThrown()
+        {
+            // Refusing the colour space cost the whole page over an entry that has a usable default.
+            var log = new RecordingLog();
+            var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
+                [0.0, 0.5], null, null, log);
+
+            Assert.Equal(new[] { 0.0, 1.0, 0.0, 1.0, 0.0, 1.0 }, details.Range);
+            Assert.Contains(log.Warnings, w => w.Contains("/Range"));
+        }
+
+        [Fact]
+        public void ProfileWithAComponentCountNoIccBasedSpaceMayHave_IsIgnored()
+        {
+            // 2 is not 1, 3 or 4, so the profile cannot be believed and /N stands.
+            var profile = new StubProfile(2, new Dictionary<RenderingIntent, IIccTransform>
+            {
+                [RenderingIntent.RelativeColorimetric] = new StubTransform(2, (0, 0, 0))
+            });
+
+            var log = new RecordingLog();
+            var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
+                null, null, profile, log);
+
+            Assert.Null(details.IccProfile);
+            Assert.Equal(3, details.NumberOfColorComponents);
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details.AlternateColorSpace);
+            Assert.Contains(log.Warnings, w => w.Contains("2 components"));
+        }
+
+        [Fact]
+        public void AnUnusableProfileIsReportedRatherThanDroppedSilently()
+        {
+            var log = new RecordingLog();
+            var profile = new StubProfile(3, new Dictionary<RenderingIntent, IIccTransform>
+            {
+                [RenderingIntent.RelativeColorimetric] = new ThrowingTransform(3)
+            });
+
+            var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
+                null, null, profile, log);
+
+            Assert.Null(details.IccProfile);
+            Assert.Contains(log.Warnings, w => w.Contains("could not convert a colour"));
+        }
+
+        [Fact]
+        public void AMismatchedAlternateIsReportedRatherThanDroppedSilently()
+        {
+            var log = new RecordingLog();
+            var details = new ICCBasedColorSpaceDetails(4, DeviceRgbColorSpaceDetails.Instance,
+                null, null, null, log);
+
+            Assert.Same(DeviceCmykColorSpaceDetails.Instance, details.AlternateColorSpace);
+            Assert.Contains(log.Warnings, w => w.Contains("/Alternate"));
+        }
+
         [Fact]
         public void WithADeviceAlternate_BaseComponentCountIsUnchanged()
         {
             // The common case, where the alternate's base width and /N agree; guards the change above
             // against moving anything that was already right.
             Assert.Equal(1, new ICCBasedColorSpaceDetails(1, DeviceGrayColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x01 }, null).BaseNumberOfColorComponents);
+                null, null, null, null).BaseNumberOfColorComponents);
             Assert.Equal(3, new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x01 }, null).BaseNumberOfColorComponents);
+                null, null, null, null).BaseNumberOfColorComponents);
             Assert.Equal(4, new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
-                null, null, new byte[] { 0x01 }, null).BaseNumberOfColorComponents);
+                null, null, null, null).BaseNumberOfColorComponents);
         }
     }
 }

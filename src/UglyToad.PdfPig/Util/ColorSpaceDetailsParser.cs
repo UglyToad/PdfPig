@@ -244,10 +244,20 @@
                                 imageDictionary, scanner, filterProvider, resourceStore,
                                 iccProfileCache, applyDefaultSubstitution: false);
                             
-                            if (alternate is not UnsupportedColorSpaceDetails &&
-                                alternate.NumberOfColorComponents == numeric.Int)
+                            // An alternate that could not be understood - including a Pattern, which is not
+                            // permitted here and which GetSecondaryColorSpace reports as unsupported - leaves
+                            // the colour space to fall back to the device space implied by /N. The width
+                            // check lives in the colour space itself, which is where the profile may still
+                            // correct /N out from under an alternate chosen against it.
+                            if (alternate is not UnsupportedColorSpaceDetails)
                             {
                                 alternateColorSpaceDetails = alternate;
+                            }
+                            else
+                            {
+                                resourceStore.Logger.Warn(
+                                    "The /Alternate of an ICCBased colour space could not be interpreted; " +
+                                    "using the device colour space implied by /N.");
                             }
                         }
 
@@ -265,11 +275,14 @@
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
                         
-                        ReadOnlyMemory<byte> profileBytes = resourceStore.IccProfileService is not null
-                            ? iccProfileCache.GetOrDecode(second, streamToken, filterProvider, scanner)
-                            : ReadOnlyMemory<byte>.Empty;
+                        // The unresolved token is passed as the cache key: when it is an indirect reference
+                        // the profile is recognised without touching the stream at all, and parsed at most
+                        // once per document however many resource dictionaries name it.
+                        var profile = iccProfileCache.GetOrParse(second, streamToken, filterProvider, scanner,
+                            resourceStore.IccProfileService, resourceStore.Logger);
 
-                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata, profileBytes, resourceStore.IccProfileService);
+                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range,
+                            metadata, profile, resourceStore.Logger);
                     }
                 case ColorSpace.Indexed:
                     {

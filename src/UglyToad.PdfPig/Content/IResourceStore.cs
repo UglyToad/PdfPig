@@ -4,6 +4,7 @@
     using System.Diagnostics.CodeAnalysis;
     using Graphics.Colors;
     using Graphics.Colors.Icc;
+    using Logging;
     using PdfFonts;
     using Tokens;
 
@@ -84,9 +85,18 @@
         IIccProfileService? IccProfileService { get; }
 
         /// <summary>
+        /// The log from <see cref="ParsingOptions.Logger"/>. Colour space parsing degrades rather than fails
+        /// in a number of places - an unusable ICC profile, a mismatched <c>/Alternate</c>, a <c>/N</c> the
+        /// profile disagrees with - and this is where it says so.
+        /// </summary>
+        ILog Logger { get; }
+
+        /// <summary>
         /// The output intent declared by the document catalog (see 14.11.5, "Output intents"), describing the
-        /// colour reproduction characteristics of the target output device. <c>null</c> when the catalog
-        /// declares none, or when no <see cref="IccProfileService"/> is configured.
+        /// colour reproduction characteristics of the target output device. <c>null</c> only when the catalog
+        /// declares none: the intent's descriptive entries are parsed whether or not an
+        /// <see cref="IccProfileService"/> is configured, and without one it is
+        /// <see cref="OutputIntent.DestOutputProfile"/> alone that stays null.
         /// <para>
         /// Exposed but not consumed: PdfPig does <b>not</b> render the device colour spaces (DeviceGray /
         /// DeviceRGB / DeviceCMYK) through the output intent's <c>/DestOutputProfile</c>: those colour spaces

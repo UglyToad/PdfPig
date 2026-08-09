@@ -56,8 +56,10 @@ namespace UglyToad.PdfPig.Graphics
         
         /// <summary>
         /// The output intent in effect for this graphics state (see 14.11.5, "Output intents"), or
-        /// <see langword="null"/> when neither the page nor the document catalog declares one (or no
-        /// <see cref="ParsingOptions.IccProfileService"/> is configured).
+        /// <see langword="null"/> when neither the page nor the document catalog declares one. Its
+        /// descriptive entries are available whether or not an
+        /// <see cref="ParsingOptions.IccProfileService"/> is configured; without one only
+        /// <see cref="OutputIntent.DestOutputProfile"/> stays null.
         /// <para>
         /// Carried on the state so a consumer can tell what the content was prepared for. It does not take
         /// part in colour conversion: <see cref="CurrentStrokingColor"/> and

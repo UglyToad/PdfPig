@@ -112,11 +112,36 @@
         }
 
         [Fact]
-        public void ReturnsNullWithoutAProfileService()
+        public void WithoutAProfileService_StillReportsTheOutputCondition()
         {
+            // The descriptive entries are what PDF/A and PDF/X conformance checking reads and have nothing
+            // to do with colour management, so an absent IIccProfileService must not hide them - it is only
+            // /DestOutputProfile that goes unresolved. PDFBox exposes getOutputIntents() unconditionally.
             var catalog = Catalog(Intent("GTS_PDFX", "FOGRA51", withProfile: true));
 
-            Assert.Null(OutputIntentParser.Create(catalog, Scanner, TestFilterProvider.Instance, null, new IccProfileByteCache()));
+            var result = OutputIntentParser.Create(catalog, Scanner, TestFilterProvider.Instance, null,
+                new IccProfileByteCache());
+
+            Assert.NotNull(result);
+            Assert.Equal("GTS_PDFX", result!.Name);
+            Assert.Equal("FOGRA51", result.OutputConditionIdentifier);
+            Assert.Null(result.DestOutputProfile);
+        }
+
+        [Fact]
+        public void WithoutAProfileService_TheProfileStreamIsNeverDecoded()
+        {
+            // Not resolving the profile has to mean not paying for it either: an embedded CMYK profile is
+            // routinely megabytes, and nothing is going to look at it.
+            var scanner = new TestPdfTokenScanner();
+            var filters = new CountingFilterProvider();
+            var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
+
+            var result = OutputIntentParser.Create(catalog, scanner, filters, null, new IccProfileByteCache());
+
+            Assert.NotNull(result);
+            Assert.Null(result!.DestOutputProfile);
+            Assert.Equal(0, filters.DecodeCount);
         }
 
         [Fact]

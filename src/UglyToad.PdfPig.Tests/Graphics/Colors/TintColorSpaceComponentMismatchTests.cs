@@ -142,7 +142,6 @@
                 DeviceRgbColorSpaceDetails.Instance,
                 [0.0, 0.5, 0.0, 0.5, 0.0, 0.5],
                 null,
-                ReadOnlyMemory<byte>.Empty,
                 null);
 
             double[] values = [1.0, 1.0, 1.0];
@@ -201,8 +200,7 @@
                 DeviceCmykColorSpaceDetails.Instance,
                 null,
                 null,
-                new byte[] { 0x01 },
-                new SingleProfileService(new TransformlessProfile(4)));
+                new TransformlessProfile(4));
 
             var separation = new SeparationColorSpaceDetails(
                 NameToken.Create("Spot"),

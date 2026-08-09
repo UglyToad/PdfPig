@@ -4,6 +4,8 @@ namespace UglyToad.PdfPig.Util
     using System.Collections.Generic;
     using Core;
     using Filters;
+    using Graphics.Colors.Icc;
+    using Logging;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -32,9 +34,27 @@ namespace UglyToad.PdfPig.Util
     /// </summary>
     internal sealed class IccProfileByteCache
     {
-        private readonly Dictionary<IndirectReference, ReadOnlyMemory<byte>> byReference = new();
+        /// <summary>
+        /// What the cache holds against a key: the decoded bytes, and the profile parsed from them once
+        /// anything has asked for it. Keeping both in one entry means the content hash that identifies a
+        /// directly written profile is computed once per lookup rather than once per thing looked up.
+        /// </summary>
+        private sealed class Entry
+        {
+            public ReadOnlyMemory<byte> Bytes;
 
-        private readonly Dictionary<ContentKey, ReadOnlyMemory<byte>> byContent = new();
+            public IIccProfile? Profile;
+
+            /// <summary>
+            /// Distinguishes "not parsed yet" from "parsed, and the answer was no profile" - the second is
+            /// as worth remembering as the first is worth avoiding.
+            /// </summary>
+            public bool ProfileResolved;
+        }
+
+        private readonly Dictionary<IndirectReference, Entry> byReference = new();
+
+        private readonly Dictionary<ContentKey, Entry> byContent = new();
 
         /// <summary>
         /// Decode the profile stream, reusing a previously decoded copy of the same profile when there is
@@ -45,7 +65,81 @@ namespace UglyToad.PdfPig.Util
         /// The token the stream was resolved from, used as the cache key when it is an indirect reference.
         /// </param>
         /// <param name="profileStream">The resolved profile stream.</param>
+        /// <param name="filterProvider">Used to decode the stream.</param>
+        /// <param name="scanner">Used to resolve the stream's own indirect entries.</param>
         public ReadOnlyMemory<byte> GetOrDecode(IToken profileToken, StreamToken profileStream,
+            ILookupFilterProvider filterProvider, IPdfTokenScanner scanner)
+        {
+            return GetOrCreateEntry(profileToken, profileStream, filterProvider, scanner).Bytes;
+        }
+
+        /// <summary>
+        /// Resolve the parsed profile for a stream, parsing it at most once per document.
+        /// <para>
+        /// Caching the bytes alone still left <see cref="IIccProfileService.TryGetProfile"/> called once per
+        /// resource dictionary - so once per page, and again per Form XObject with its own resources -
+        /// because <c>ResourceStore</c> clears its colour space caches each time one is loaded. PDFBox has
+        /// no such problem: it caches the constructed <c>PDICCBased</c> against the profile stream's
+        /// <c>COSObject</c> in the document resource cache, so the parsed profile and its transforms are
+        /// shared for the document's lifetime. This is that guarantee, keyed the same two ways the bytes
+        /// already are.
+        /// </para>
+        /// </summary>
+        /// <param name="profileToken">
+        /// The token the stream was resolved from, used as the cache key when it is an indirect reference.
+        /// </param>
+        /// <param name="profileStream">The resolved profile stream.</param>
+        /// <param name="filterProvider">Used to decode the stream.</param>
+        /// <param name="scanner">Used to resolve the stream's own indirect entries.</param>
+        /// <param name="service">The service that parses profile bytes, or <c>null</c> for no colour management.</param>
+        /// <param name="log">Receives a warning when a profile is present but unusable.</param>
+        public IIccProfile? GetOrParse(IToken profileToken, StreamToken profileStream,
+            ILookupFilterProvider filterProvider, IPdfTokenScanner scanner,
+            IIccProfileService? service, ILog? log = null)
+        {
+            if (service is null)
+            {
+                return null;
+            }
+
+            var entry = GetOrCreateEntry(profileToken, profileStream, filterProvider, scanner);
+
+            if (entry.ProfileResolved)
+            {
+                return entry.Profile;
+            }
+
+            entry.ProfileResolved = true;
+
+            if (entry.Bytes.IsEmpty)
+            {
+                return null;
+            }
+
+            try
+            {
+                if (service.TryGetProfile(entry.Bytes, out var profile))
+                {
+                    entry.Profile = profile;
+                }
+                else
+                {
+                    log?.Warn("ICC profile could not be parsed by the configured IIccProfileService; " +
+                              "the colour space will use its alternate.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // TryGetProfile is third-party code. A profile that makes it throw is no worse than one it
+                // declines, so it costs the colour space its profile and nothing more.
+                log?.Error("The configured IIccProfileService threw while parsing an ICC profile; " +
+                           "the colour space will use its alternate.", ex);
+            }
+
+            return entry.Profile;
+        }
+
+        private Entry GetOrCreateEntry(IToken profileToken, StreamToken profileStream,
             ILookupFilterProvider filterProvider, IPdfTokenScanner scanner)
         {
             if (profileToken is IndirectReferenceToken reference)
@@ -55,9 +149,9 @@ namespace UglyToad.PdfPig.Util
                     return cached;
                 }
 
-                var decoded = Decode(profileStream, filterProvider, scanner);
-                byReference[reference.Data] = decoded;
-                return decoded;
+                var entry = new Entry { Bytes = Decode(profileStream, filterProvider, scanner) };
+                byReference[reference.Data] = entry;
+                return entry;
             }
 
             var key = ContentKey.Create(profileStream.Data.Span);
@@ -67,9 +161,9 @@ namespace UglyToad.PdfPig.Util
                 return cachedByContent;
             }
 
-            var decodedByContent = Decode(profileStream, filterProvider, scanner);
-            byContent[key] = decodedByContent;
-            return decodedByContent;
+            var entryByContent = new Entry { Bytes = Decode(profileStream, filterProvider, scanner) };
+            byContent[key] = entryByContent;
+            return entryByContent;
         }
 
         /// <summary>

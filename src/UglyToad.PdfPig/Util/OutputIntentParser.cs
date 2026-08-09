@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Filters;
+    using Logging;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -33,13 +34,12 @@
         /// </summary>
         public static OutputIntent? Create(DictionaryToken dictionary, IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
-            IccProfileByteCache iccProfileCache)
+            IccProfileByteCache iccProfileCache, ILog? log = null)
         {
-            if (iccProfileService is null)
-            {
-                return null;
-            }
-
+            // An absent IIccProfileService means no /DestOutputProfile is resolved, not that the output
+            // intent is invisible: the output condition, its registry and its identifier are what PDF/A and
+            // PDF/X conformance checking reads, and they have nothing to do with colour management. PDFBox
+            // likewise exposes getOutputIntents() unconditionally.
             if (!dictionary.TryGet(NameToken.OutputIntents, scanner, out ArrayToken? outputIntents))
             {
                 return null;
@@ -103,7 +103,7 @@
                 intentDictionary.TryGet(NameToken.SpectralData, scanner, out DictionaryToken? spectralData);
                 
                 IIccProfile? profile = TryParseDestOutputProfile(intentDictionary, scanner, filterProvider,
-                    iccProfileService, iccProfileCache);
+                    iccProfileService, iccProfileCache, log);
 
                 var outputIntent = new OutputIntent(name, outputCondition, outputConditionIdentifier, registryName, info,
                     profile, destOutputProfileRef, mixingHints, spectralData);
@@ -135,9 +135,14 @@
         }
 
         private static IIccProfile? TryParseDestOutputProfile(DictionaryToken intentDictionary,
-            IPdfTokenScanner scanner, ILookupFilterProvider filterProvider, IIccProfileService iccProfileService,
-            IccProfileByteCache iccProfileCache)
+            IPdfTokenScanner scanner, ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
+            IccProfileByteCache iccProfileCache, ILog? log)
         {
+            if (iccProfileService is null)
+            {
+                return null;
+            }
+
             // The unresolved token is kept because it is the cache key: when it is an indirect reference the
             // cache can recognise the profile without touching the stream at all.
             if (!intentDictionary.TryGet(NameToken.DestOutputProfile, out var profileToken)
@@ -149,14 +154,8 @@
             // Shared with the /ICCBased colour space path: a PDF/X file routinely points its /DestOutputProfile
             // and an /ICCBased colour space at the same stream object, and a page-level output intent is
             // resolved once per page and again on every re-render of that page.
-            var bytes = iccProfileCache.GetOrDecode(profileToken, profileStream, filterProvider, scanner);
-
-            if (bytes.IsEmpty)
-            {
-                return null;
-            }
-
-            return iccProfileService.TryGetProfile(bytes, out var profile) ? profile : null;
+            return iccProfileCache.GetOrParse(profileToken, profileStream, filterProvider, scanner,
+                iccProfileService, log);
         }
 
         private static IccProfileReference ParseProfileReference(DictionaryToken refDictionary, IPdfTokenScanner scanner)

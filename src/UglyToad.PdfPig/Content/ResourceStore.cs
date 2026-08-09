@@ -12,6 +12,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using Graphics.Colors.Icc;
+    using Logging;
     using Util;
 
     internal sealed class ResourceStore : IResourceStore
@@ -53,6 +54,8 @@
 
         public IIccProfileService? IccProfileService => parsingOptions.IccProfileService;
 
+        public ILog Logger => parsingOptions.Logger;
+
         private readonly Lazy<OutputIntent?> outputIntent;
         public OutputIntent? OutputIntent => outputIntent.Value;
         
@@ -71,7 +74,7 @@
             this.outputIntent = catalogDictionary is null
                 ? new Lazy<OutputIntent?>(() => null)
                 : new Lazy<OutputIntent?>(() => OutputIntentParser.Create(catalogDictionary, scanner,
-                    filterProvider, parsingOptions.IccProfileService, iccProfileByteCache));
+                    filterProvider, parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger));
         }
 
         /// <inheritdoc/>
@@ -85,7 +88,7 @@
             if (outputIntentsToken is not IndirectReferenceToken reference)
             {
                 return OutputIntentParser.Create(pageDictionary, scanner, filterProvider,
-                    parsingOptions.IccProfileService, iccProfileByteCache) ?? OutputIntent;
+                    parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger) ?? OutputIntent;
             }
 
             if (pageOutputIntents.TryGetValue(reference.Data, out var cached))
@@ -94,7 +97,7 @@
             }
 
             cached = OutputIntentParser.Create(pageDictionary, scanner, filterProvider,
-                parsingOptions.IccProfileService, iccProfileByteCache);
+                parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger);
             pageOutputIntents[reference.Data] = cached;
 
             return cached ?? OutputIntent;

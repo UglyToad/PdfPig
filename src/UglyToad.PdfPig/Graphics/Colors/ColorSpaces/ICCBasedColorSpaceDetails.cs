@@ -7,6 +7,7 @@
     using Content;
     using Functions;
     using Icc;
+    using Logging;
 
     /// <summary>
     /// The ICCBased color space is one of the CIE-based color spaces supported in PDFs. These color spaces
@@ -86,38 +87,87 @@
             ColorSpaceDetails? alternateColorSpaceDetails,
             IReadOnlyList<double>? range,
             XmpMetadata? metadata,
-            ReadOnlyMemory<byte> profileData,
-            IIccProfileService? iccService)
+            IIccProfile? profile,
+            ILog? log = null)
             : base(ColorSpace.ICCBased)
         {
-            if (numberOfColorComponents != 1 && numberOfColorComponents != 3 && numberOfColorComponents != 4)
+            Metadata = metadata;
+
+            // 8.6.5.5 requires /N to match the profile, and when they disagree the profile is the one that
+            // cannot be wrong about itself - a transform reads its own number of components no matter what
+            // the dictionary claims. PDFBox takes the same view and overrides /N from the profile
+            // (PDFBOX-4801); discarding the profile instead left such a file rendering unmanaged here while
+            // it rendered colour-managed there.
+            if (profile is not null && profile.NumberOfComponents != numberOfColorComponents)
+            {
+                if (IsValidComponentCount(profile.NumberOfComponents))
+                {
+                    log?.Warn(
+                        $"Using {profile.NumberOfComponents} components from the ICC profile instead of the " +
+                        $"{numberOfColorComponents} declared by the /N entry of the ICCBased colour space.");
+
+                    numberOfColorComponents = profile.NumberOfComponents;
+                }
+                else
+                {
+                    log?.Warn(
+                        $"The ICC profile declares {profile.NumberOfComponents} components, which no ICCBased " +
+                        "colour space may have; ignoring the profile and using the alternate colour space.");
+
+                    profile = null;
+                }
+            }
+
+            if (!IsValidComponentCount(numberOfColorComponents))
             {
                 throw new ArgumentOutOfRangeException(nameof(numberOfColorComponents), "must be 1, 3 or 4");
             }
 
             NumberOfColorComponents = numberOfColorComponents;
+
+            // We need to make sure the icc profile will at least fall back with RelativeColorimetric to be valid
+            if (profile is not null && !IsUsable(profile, NumberOfColorComponents))
+            {
+                log?.Warn("The ICC profile resolved but could not convert a colour; " +
+                          "using the alternate colour space.");
+
+                profile = null;
+            }
+
+            IccProfile = profile;
+
+            // The alternate stands in for the profile and is handed the very same operands, so one of the
+            // wrong width cannot be evaluated at all. This is also where a /N corrected above lands: an
+            // alternate chosen against the declared /N may no longer fit.
+            if (alternateColorSpaceDetails is not null &&
+                alternateColorSpaceDetails.NumberOfColorComponents != NumberOfColorComponents)
+            {
+                log?.Warn(
+                    $"The /Alternate colour space of an ICCBased colour space takes " +
+                    $"{alternateColorSpaceDetails.NumberOfColorComponents} components where the colour space has " +
+                    $"{NumberOfColorComponents}; ignoring it and using the implied device colour space.");
+
+                alternateColorSpaceDetails = null;
+            }
+
             AlternateColorSpace = alternateColorSpaceDetails ??
                 (NumberOfColorComponents == 1 ? DeviceGrayColorSpaceDetails.Instance :
                 NumberOfColorComponents == 3 ? DeviceRgbColorSpaceDetails.Instance : DeviceCmykColorSpaceDetails.Instance);
 
-            Metadata = metadata;
-
-            if (!profileData.IsEmpty && iccService is not null &&
-                iccService.TryGetProfile(profileData, out var profile) &&
-                profile.NumberOfComponents == NumberOfColorComponents &&
-                // We need to make sure the icc profile will at least fall back with RelativeColorimetric to be valid
-                IsUsable(profile, NumberOfColorComponents))
+            if (range is not null && range.Count != 2 * NumberOfColorComponents)
             {
-                IccProfile = profile;
+                // PDFBox's getRangeForComponent falls back to 0..1 for a /Range it cannot use rather than
+                // refusing the colour space. Throwing here cost the whole page, and a /N corrected above
+                // makes a mismatch expected rather than exceptional.
+                log?.Warn(
+                    $"The /Range of an ICCBased colour space has {range.Count} entries where " +
+                    $"{2 * NumberOfColorComponents} (2 x {NumberOfColorComponents}) are required; using the default.");
+
+                range = null;
             }
 
             Range = range ??
-                Enumerable.Range(0, numberOfColorComponents).Select(x => new[] { 0.0, 1.0 }).SelectMany(x => x).ToArray();
-            if (Range.Count != 2 * numberOfColorComponents)
-            {
-                throw new ArgumentOutOfRangeException(nameof(range), range,
-                    $"Must consist of exactly {2 * numberOfColorComponents} (2 x NumberOfColorComponents), but was passed {range?.Count ?? 0}");
-            }
+                Enumerable.Range(0, NumberOfColorComponents).Select(x => new[] { 0.0, 1.0 }).SelectMany(x => x).ToArray();
 
             if (IccProfile is not null)
             {
@@ -137,6 +187,12 @@
                 BaseNumberOfColorComponents = AlternateColorSpace.BaseNumberOfColorComponents;
             }
         }
+
+        /// <summary>
+        /// The component counts an ICCBased colour space may have (8.6.5.5).
+        /// </summary>
+        private static bool IsValidComponentCount(int components)
+            => components == 1 || components == 3 || components == 4;
 
         /// <summary>
         /// The profile's own component ranges, or <c>null</c> when it encodes everything in <c>[0, 1]</c>
