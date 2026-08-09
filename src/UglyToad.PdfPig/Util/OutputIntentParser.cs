@@ -23,16 +23,16 @@
     internal static class OutputIntentParser
     {
         /// <summary>
-        /// Try to resolve and parse the most usable output intent from the
-        /// <c>/OutputIntents</c> array of the given dictionary. This works for both the document
-        /// catalog and a page object (PDF 2.0, Table 31), which may each carry <c>/OutputIntents</c>.
+        /// Parse every entry of the <c>/OutputIntents</c> array of the given dictionary, in the order the
+        /// array wrote them. This works for both the document catalog and a page object (PDF 2.0, Table 31),
+        /// which may each carry <c>/OutputIntents</c>.
         /// <para>
-        /// Where several entries are present, one embedding a usable <c>/DestOutputProfile</c> always wins;
-        /// among equally usable entries the <c>/S</c> subtype decides, preferring <c>GTS_PDFX</c>, then
-        /// <c>GTS_PDFA1</c>, then array order.
+        /// The full list is the primitive, as it is in PDFBox: which entry (if any) describes the document
+        /// is a separate question, answered by <see cref="OutputIntent.SelectEffective"/>, and a caller doing
+        /// PDF/A or PDF/X conformance checking wants the entries that policy would discard.
         /// </para>
         /// </summary>
-        public static OutputIntent? Create(DictionaryToken dictionary, IPdfTokenScanner scanner,
+        public static IReadOnlyList<OutputIntent> CreateAll(DictionaryToken dictionary, IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
             IccProfileByteCache iccProfileCache, ILog? log = null)
         {
@@ -42,96 +42,79 @@
             // likewise exposes getOutputIntents() unconditionally.
             if (!dictionary.TryGet(NameToken.OutputIntents, scanner, out ArrayToken? outputIntents))
             {
-                return null;
+                return [];
             }
-            
-            var ranked = new List<(int Rank, int Index, DictionaryToken Dictionary)>(outputIntents.Data.Count);
 
-            for (int i = 0; i < outputIntents.Data.Count; i++)
+            var results = new List<OutputIntent>(outputIntents.Data.Count);
+
+            foreach (var entry in outputIntents.Data)
             {
-                if (!DirectObjectFinder.TryGet(outputIntents.Data[i], scanner, out DictionaryToken? entryDictionary))
+                if (!DirectObjectFinder.TryGet(entry, scanner, out DictionaryToken? intentDictionary))
                 {
                     continue;
                 }
 
-                ranked.Add((GetSubtypeRank(entryDictionary, scanner), i, entryDictionary));
+                results.Add(Create(intentDictionary, scanner, filterProvider, iccProfileService,
+                    iccProfileCache, log));
             }
 
-            ranked.Sort(static (a, b) => a.Rank != b.Rank ? a.Rank.CompareTo(b.Rank) : a.Index.CompareTo(b.Index));
-            
-            OutputIntent? fallback = null;
-
-            foreach (var (_, _, intentDictionary) in ranked)
-            {
-                string name = "";
-                if (intentDictionary.TryGet(NameToken.S, scanner, out NameToken? nameToken))
-                {
-                    name = nameToken.Data;
-                }
-
-                string? outputCondition = null;
-                if (intentDictionary.TryGet(NameToken.OutputCondition, scanner, out StringToken? outputConditionToken))
-                {
-                    outputCondition = outputConditionToken?.Data;
-                }
-
-                string outputConditionIdentifier = "";
-                if (intentDictionary.TryGet(NameToken.OutputConditionIdentifier, scanner, out StringToken? outputConditionIdentifierToken))
-                {
-                    outputConditionIdentifier = outputConditionIdentifierToken.Data;
-                }
-
-                string registryName = "";
-                if (intentDictionary.TryGet(NameToken.RegistryName, scanner, out StringToken? registryNameToken))
-                {
-                    registryName = registryNameToken.Data;
-                }
-
-                string? info = null;
-                if (intentDictionary.TryGet(NameToken.Info, scanner, out StringToken? infoToken))
-                {
-                    info = infoToken?.Data;
-                }
-
-                IccProfileReference? destOutputProfileRef = null;
-                if (intentDictionary.TryGet(NameToken.DestOutputProfileRef, scanner, out DictionaryToken? refDictionary))
-                {
-                    destOutputProfileRef = ParseProfileReference(refDictionary, scanner);
-                }
-
-                intentDictionary.TryGet(NameToken.MixingHints, scanner, out DictionaryToken? mixingHints);
-                intentDictionary.TryGet(NameToken.SpectralData, scanner, out DictionaryToken? spectralData);
-                
-                IIccProfile? profile = TryParseDestOutputProfile(intentDictionary, scanner, filterProvider,
-                    iccProfileService, iccProfileCache, log);
-
-                var outputIntent = new OutputIntent(name, outputCondition, outputConditionIdentifier, registryName, info,
-                    profile, destOutputProfileRef, mixingHints, spectralData);
-
-                if (profile is not null)
-                {
-                    return outputIntent;
-                }
-
-                fallback ??= outputIntent;
-            }
-
-            return fallback;
+            return results;
         }
 
-        private static int GetSubtypeRank(DictionaryToken intentDictionary, IPdfTokenScanner scanner)
+        /// <summary>
+        /// Parse one output intent dictionary. Absent entries stay <see langword="null"/> rather than
+        /// becoming empty strings: <c>/S</c> and <c>/OutputConditionIdentifier</c> are required, so their
+        /// absence is itself worth reporting, and PDFBox's <c>getString</c> accessors return null the same
+        /// way.
+        /// </summary>
+        private static OutputIntent Create(DictionaryToken intentDictionary, IPdfTokenScanner scanner,
+            ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
+            IccProfileByteCache iccProfileCache, ILog? log)
         {
-            if (!intentDictionary.TryGet(NameToken.S, scanner, out NameToken? subtype))
+            string? name = null;
+            if (intentDictionary.TryGet(NameToken.S, scanner, out NameToken? nameToken))
             {
-                return 2; // Other
+                name = nameToken.Data;
             }
 
-            return subtype.Data switch // Lower is better
+            string? outputCondition = null;
+            if (intentDictionary.TryGet(NameToken.OutputCondition, scanner, out StringToken? outputConditionToken))
             {
-                "GTS_PDFX" => 0,
-                "GTS_PDFA1" => 1,
-                _ => 2 // Other
-            };
+                outputCondition = outputConditionToken?.Data;
+            }
+
+            string? outputConditionIdentifier = null;
+            if (intentDictionary.TryGet(NameToken.OutputConditionIdentifier, scanner, out StringToken? outputConditionIdentifierToken))
+            {
+                outputConditionIdentifier = outputConditionIdentifierToken.Data;
+            }
+
+            string? registryName = null;
+            if (intentDictionary.TryGet(NameToken.RegistryName, scanner, out StringToken? registryNameToken))
+            {
+                registryName = registryNameToken.Data;
+            }
+
+            string? info = null;
+            if (intentDictionary.TryGet(NameToken.Info, scanner, out StringToken? infoToken))
+            {
+                info = infoToken?.Data;
+            }
+
+            IccProfileReference? destOutputProfileRef = null;
+            if (intentDictionary.TryGet(NameToken.DestOutputProfileRef, scanner, out DictionaryToken? refDictionary))
+            {
+                destOutputProfileRef = ParseProfileReference(refDictionary, scanner);
+            }
+
+            intentDictionary.TryGet(NameToken.MixingHints, scanner, out DictionaryToken? mixingHints);
+            intentDictionary.TryGet(NameToken.SpectralData, scanner, out DictionaryToken? spectralData);
+
+            IIccProfile? profile = TryParseDestOutputProfile(intentDictionary, scanner, filterProvider,
+                iccProfileService, iccProfileCache, log);
+
+            return new OutputIntent(name, outputCondition, outputConditionIdentifier, registryName, info,
+                profile, destOutputProfileRef, mixingHints, spectralData);
         }
 
         private static IIccProfile? TryParseDestOutputProfile(DictionaryToken intentDictionary,

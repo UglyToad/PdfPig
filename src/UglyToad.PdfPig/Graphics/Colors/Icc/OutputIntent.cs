@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors.Icc
 {
+    using System;
+    using System.Collections.Generic;
     using Tokens;
 
     /// <summary>
@@ -15,9 +17,13 @@
     {
         /// <summary>
         /// (Required) The output intent subtype. The value may be <c>GTS_PDFX</c>, <c>GTS_PDFA1</c>, <c>ISO_PDFE1</c>
-        /// or a key defined by an ISO 32000 extension. 
+        /// or a key defined by an ISO 32000 extension.
+        /// <para>
+        /// <see langword="null"/> when the entry is absent. It is required, so its absence is itself worth
+        /// knowing - a conformance check cannot tell that from an entry present but empty.
+        /// </para>
         /// </summary>
-        public string Name { get; }
+        public string? Name { get; }
 
         /// <summary>
         /// (Optional) A text string concisely identifying the intended output device or production condition in
@@ -28,9 +34,9 @@
         /// <summary>
         /// (Required) A text string identifying the intended output device or production condition in human- or
         /// machine-readable form. If human-readable, this string may be used in lieu of an OutputCondition string
-        /// for presentation to the user.
+        /// for presentation to the user. <see langword="null"/> when the entry is absent.
         /// </summary>
-        public string OutputConditionIdentifier { get; }
+        public string? OutputConditionIdentifier { get; }
 
         /// <summary>
         /// (Optional) A text string (conventionally a uniform resource identifier, or URI) identifying the registry
@@ -84,8 +90,8 @@
         /// </summary>
         public DictionaryToken? SpectralData { get; }
 
-        internal OutputIntent(string name, string? outputCondition, string outputConditionIdentifier,
-            string registryName, string? info, IIccProfile? destOutputProfile, IccProfileReference? destOutputProfileRef,
+        internal OutputIntent(string? name, string? outputCondition, string? outputConditionIdentifier,
+            string? registryName, string? info, IIccProfile? destOutputProfile, IccProfileReference? destOutputProfileRef,
             DictionaryToken? mixingHints, DictionaryToken? spectralData)
         {
             Name = name;
@@ -97,6 +103,74 @@
             DestOutputProfileRef = destOutputProfileRef;
             MixingHints = mixingHints;
             SpectralData = spectralData;
+        }
+
+        /// <summary>
+        /// The subtypes this library prefers when a document declares more than one output intent, best first.
+        /// </summary>
+        private static readonly string[] PreferredSubtypes = ["GTS_PDFX", "GTS_PDFA1"];
+
+        /// <summary>
+        /// Pick the one output intent to treat as describing the document, from those it declares.
+        /// <para>
+        /// <b>This is a PdfPig policy, not a rule of ISO 32000.</b> Nothing in 14.11.5 orders the
+        /// <c>/OutputIntents</c> array or says which entry wins, and in a conforming file the question does
+        /// not arise - PDF/A-1 requires exactly one output intent and PDF/X exactly one PDF/X output intent.
+        /// The policy exists for files that are not conforming, and it is exposed rather than buried in the
+        /// parser so that a caller who disagrees can apply their own to
+        /// <see cref="Content.IResourceStore.OutputIntents"/> instead. PDFBox has no equivalent: it returns
+        /// the whole list and leaves the choice to the caller.
+        /// </para>
+        /// <para>
+        /// The order is: an entry carrying a usable <see cref="DestOutputProfile"/> beats one without,
+        /// because only an embedded profile can drive colour management; among equals the <c>/S</c> subtype
+        /// decides, preferring <c>GTS_PDFX</c> then <c>GTS_PDFA1</c>; and beyond that the array's own order
+        /// stands.
+        /// </para>
+        /// </summary>
+        /// <param name="outputIntents">The declared output intents, in the order the array wrote them.</param>
+        /// <returns>The effective output intent, or <see langword="null"/> when the list is empty.</returns>
+        public static OutputIntent? SelectEffective(IReadOnlyList<OutputIntent>? outputIntents)
+        {
+            if (outputIntents is null || outputIntents.Count == 0)
+            {
+                return null;
+            }
+
+            OutputIntent? best = null;
+            int bestRank = int.MaxValue;
+
+            foreach (var candidate in outputIntents)
+            {
+                int rank = GetRank(candidate);
+
+                // Strictly better only, so ties fall to whichever the array wrote first.
+                if (rank < bestRank)
+                {
+                    best = candidate;
+                    bestRank = rank;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Lower is better. Profile availability dominates the subtype, so it contributes the high digit.
+        /// </summary>
+        private static int GetRank(OutputIntent intent)
+        {
+            int subtypeRank = PreferredSubtypes.Length;
+            for (int i = 0; i < PreferredSubtypes.Length; i++)
+            {
+                if (string.Equals(intent.Name, PreferredSubtypes[i], StringComparison.Ordinal))
+                {
+                    subtypeRank = i;
+                    break;
+                }
+            }
+
+            return (intent.DestOutputProfile is null ? 10 : 0) + subtypeRank;
         }
     }
 }

@@ -10,8 +10,9 @@
 > - *Fix before merge:* **A1**, **B4**, **B7**
 > - *Correctness, medium priority:* **B9**, **B10**, **B5**, **B12**, **B11**
 > - *High value, follows PDFBox closely:* **B2**, **B6**, **B8**, **A2**
+> - *API shape:* **A3**, **A5**, **A7**
 >
-> **B3** (sRGB fast path) has been reclassified: it is not PdfPig's to fix but the ICC backend's, for the reasons set out in its section. Still open on PdfPig: **A3**–**A5**, **A7**, **B1** (API shape). Full test suite after the fixes: 4262 passed, 0 failed, 7 skipped; all target frameworks build clean.
+> **B3** (sRGB fast path) has been reclassified: it is not PdfPig's to fix but the ICC backend's, for the reasons set out in its section. Still open on PdfPig: **A4** (surface output intents on the document catalog) and **B1** (ship or document a default `IIccProfileService`). Full test suite after the fixes: 4284 passed, 0 failed, 7 skipped; all target frameworks build clean.
 
 ---
 
@@ -94,7 +95,16 @@ The metadata has consumers entirely independent of colour management: PDF/A and 
 
 **Recommendation:** always parse the dictionary entries; skip only `TryParseDestOutputProfile` when there is no service. This is a small change to `OutputIntentParser.Create` and makes PdfPig strictly more useful than PDFBox here (PDFBox exposes the `/DestOutputProfile` `COSStream` but never parses it).
 
-### A3. One intent with an invented ranking, vs PDFBox's full list
+### A3. One intent with an invented ranking, vs PDFBox's full list — ✅ **Fixed**
+
+> **Resolution.** The list is now the primitive and the policy is public, exactly as recommended.
+> - `OutputIntentParser.CreateAll` parses **every** entry, in array order, and `IResourceStore` exposes `OutputIntents` / `GetPageOutputIntents` — the PDFBox-shaped API a conformance check needs, because it needs the entries the policy would discard.
+> - The ranking moved out of the parser into **`OutputIntent.SelectEffective`**, a public static whose XML doc states plainly that this is *PdfPig policy, not a rule of ISO 32000*, explains why the question does not arise in a conforming file (PDF/A-1 requires exactly one output intent, PDF/X exactly one PDF/X one), and points a caller who disagrees at the list.
+> - The singular `IResourceStore.OutputIntent` / `GetPageOutputIntent` remain as documented conveniences defined as "the list, reduced by that selector", so nothing downstream changed and `CurrentGraphicsState` still carries the single intent in effect.
+>
+> One behavioural consequence worth stating: the old code sorted first and stopped at the first entry carrying a profile, so it could skip resolving later profiles. `CreateAll` resolves them all. For the normal one-entry document that is identical work, multiple output intents are rare and non-conforming, and the profile cache (**B8**) means repeats cost nothing — but it is a deliberate trade of a little eager work for an honest list.
+
+*Original finding:*
 
 `OutputIntentParser` ranks candidates `GTS_PDFX`(0) > `GTS_PDFA1`(1) > other(2), stable by array order (`GetSubtypeRank`, lines 118-131), then overrides that: any entry with a usable profile beats a better-ranked entry without one (lines 107-112). One `OutputIntent` is returned.
 
@@ -110,7 +120,13 @@ PDFBox: `document.getDocumentCatalog().getOutputIntents()`. PdfPig: reachable on
 
 **Recommendation:** surface output intents on the document catalog, as PDFBox does. This is the natural home and the obvious place a user will look.
 
-### A5. Absent required entries become `""` rather than `null`
+### A5. Absent required entries become `""` rather than `null` — ✅ **Fixed**
+
+> **Resolution.** `Name`, `OutputConditionIdentifier` and `RegistryName` are now `string?` and stay `null` when the entry is absent, matching `OutputCondition` and `Info` and matching PDFBox's `getString` accessors. The `RegistryName` annotation mismatch is gone with it — the property was already declared `string?` while the constructor parameter was not.
+>
+> Two tests pin the distinction in both directions: absent entries come back `null`, and an entry the file wrote as empty stays empty rather than being flattened to `null`. That difference is the whole point for a conformance check, since `/S` and `/OutputConditionIdentifier` are required.
+
+*Original finding:*
 
 `OutputIntentParser.cs:62-90` initialises `name = ""`, `outputConditionIdentifier = ""`, `registryName = ""` and leaves them empty when the key is absent. `/S` and `/OutputConditionIdentifier` are **Required** by Table 401, so their absence is diagnostic information a validator wants.
 
@@ -126,7 +142,13 @@ There is also an annotation inconsistency: `OutputIntent.RegistryName` is declar
 
 Keep it. Just note in the XML docs that this is a PDF 2.0 feature with no PDFBox counterpart, so future porters do not mistake it for a divergence to "fix".
 
-### A7. Write side — at parity
+### A7. Write side — ✅ **Fixed**
+
+> **Resolution.** `OutputIntentsFactory` no longer hardcodes `/N 3`; it reads the component count from the profile it is embedding, via a new internal `IccProfileHeader.TryGetNumberOfComponents`. The value is still 3 for the bundled sRGB profile, so nothing written changes today — the point is that it stays correct if that profile is ever swapped or made configurable, and 8.6.5.5 requires `/N` to match the profile.
+>
+> Note this does put a small ICC header reader in PdfPig, which sits oddly beside **B3**'s conclusion that profile parsing belongs to the backend. The distinction is real: on the *writing* path there is no `IIccProfileService` to ask, and PdfPig owns the profile it ships, so it is the only thing that can get `/N` right. The class documents that scope explicitly.
+
+*Original finding:*
 
 `Writer/Colors/OutputIntentsFactory.cs` emits a `GTS_PDFA1` intent with an embedded sRGB profile, mirroring `PDOutputIntent(PDDocument, InputStream)` + `CreatePDFA`. One small difference: PDFBox sets `/N` from `icc.getNumComponents()` (`PDOutputIntent.java:121`); PdfPig hardcodes `new NumericToken(3)` — correct for the bundled sRGB profile, but brittle if the profile is ever made configurable.
 
@@ -434,14 +456,14 @@ PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space 
 | **B12** | Decide and document where the display-class fixup lives | ✅ Decided: backend responsibility, written into the `IIccProfileService` contract |
 | **B11** | `BaseNumberOfColorComponents` → `AlternateColorSpace.BaseNumberOfColorComponents` | ✅ Fixed (became live once B4 landed) |
 
-### API shape
-| # | Item |
-|---|---|
-| **A3** | Expose the full output-intent list; make the ranking a separate documented selector |
-| **A4** | Surface output intents on the document catalog |
-| **A5** | `null` rather than `""` for absent entries; fix the `RegistryName` nullability mismatch |
-| **B1** | Ship a default `IIccProfileService`, or document the opt-in gap prominently |
-| **A7** | Derive `/N` from the profile in `OutputIntentsFactory` rather than hardcoding 3 |
+### API shape — ✅ three of five done, 2 marked as won't do
+| # | Item | Status |
+|---|---|---|
+| **A3** | Expose the full output-intent list; make the ranking a separate documented selector | ✅ `OutputIntents` / `GetPageOutputIntents` + public `OutputIntent.SelectEffective` |
+| **A5** | `null` rather than `""` for absent entries; fix the `RegistryName` nullability mismatch | ✅ Fixed |
+| **A7** | Derive `/N` from the profile in `OutputIntentsFactory` rather than hardcoding 3 | ✅ Fixed via internal `IccProfileHeader` |
+| **A4** | Surface output intents on the document catalog | ⛔ Won't do |
+| **B1** | Ship a default `IIccProfileService`, or document the opt-in gap prominently | ⛔ Won't do |
 
 ---
 
@@ -461,7 +483,7 @@ These are places where PdfPig deliberately does *not* follow PDFBox, and should 
 
 ## 7. Test coverage observations
 
-`OutputIntentParserTests.cs` (258 lines) covers the ranking policy thoroughly — including the "profile availability outranks subtype" rule and the "must not merely reverse the array" case. `IccProfileByteCacheTests.cs` covers both keying strategies. `ResourceStorePageOutputIntentTests.cs` covers page-vs-catalog resolution.
+`OutputIntentParserTests.cs` covers the ranking policy thoroughly — including the "profile availability outranks subtype" rule and the "must not merely reverse the array" case — and now also the full-list API, the null-vs-empty distinction, and non-dictionary array entries. `IccProfileByteCacheTests.cs` covers both keying strategies and the parse-once guarantee. `ResourceStorePageOutputIntentTests.cs` covers page-vs-catalog resolution for both the list and the singular convenience. `OutputIntentsFactoryTests.cs` covers the write side and the ICC header reader.
 
 Gaps, aligned with the findings above:
 

@@ -48,6 +48,35 @@
         }
 
         [Fact]
+        public void ExposesEveryDeclaredIntentNotJustTheEffectiveOne()
+        {
+            var scanner = new TestPdfTokenScanner();
+            var filters = new CountingFilterProvider();
+            var store = BuildStore(scanner, filters,
+                Catalog(scanner, "GTS_PDFX", "CATALOG", profileObjectNumber: 7));
+
+            Assert.Single(store.OutputIntents);
+            Assert.Equal("CATALOG", store.OutputIntents[0].OutputConditionIdentifier);
+
+            // The singular member is the list reduced by the documented policy, not a separate parse.
+            Assert.Same(store.OutputIntents[0], store.OutputIntent);
+        }
+
+        [Fact]
+        public void PageIntentsFallBackToTheCatalogList()
+        {
+            var scanner = new TestPdfTokenScanner();
+            var filters = new CountingFilterProvider();
+            var store = BuildStore(scanner, filters,
+                Catalog(scanner, "GTS_PDFX", "CATALOG", profileObjectNumber: 7));
+
+            var intents = store.GetPageOutputIntents(new DictionaryToken(new Dictionary<NameToken, IToken>()));
+
+            Assert.Single(intents);
+            Assert.Equal("CATALOG", intents[0].OutputConditionIdentifier);
+        }
+
+        [Fact]
         public void PageIntentOverridesTheCatalogIntent()
         {
             var scanner = new TestPdfTokenScanner();

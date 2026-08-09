@@ -56,10 +56,14 @@
 
         public ILog Logger => parsingOptions.Logger;
 
-        private readonly Lazy<OutputIntent?> outputIntent;
-        public OutputIntent? OutputIntent => outputIntent.Value;
-        
-        private readonly Dictionary<IndirectReference, OutputIntent?> pageOutputIntents = new Dictionary<IndirectReference, OutputIntent?>();
+        private readonly Lazy<IReadOnlyList<OutputIntent>> outputIntents;
+
+        public IReadOnlyList<OutputIntent> OutputIntents => outputIntents.Value;
+
+        public OutputIntent? OutputIntent => OutputIntent.SelectEffective(OutputIntents);
+
+        private readonly Dictionary<IndirectReference, IReadOnlyList<OutputIntent>> pageOutputIntents =
+            new Dictionary<IndirectReference, IReadOnlyList<OutputIntent>>();
 
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
@@ -71,36 +75,47 @@
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
             this.parsingOptions = parsingOptions;
-            this.outputIntent = catalogDictionary is null
-                ? new Lazy<OutputIntent?>(() => null)
-                : new Lazy<OutputIntent?>(() => OutputIntentParser.Create(catalogDictionary, scanner,
-                    filterProvider, parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger));
+            this.outputIntents = catalogDictionary is null
+                ? new Lazy<IReadOnlyList<OutputIntent>>(() => [])
+                : new Lazy<IReadOnlyList<OutputIntent>>(() => OutputIntentParser.CreateAll(catalogDictionary,
+                    scanner, filterProvider, parsingOptions.IccProfileService, iccProfileByteCache,
+                    parsingOptions.Logger));
+        }
+
+        /// <inheritdoc/>
+        public IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary)
+        {
+            if (pageDictionary is null || !pageDictionary.TryGet(NameToken.OutputIntents, out var outputIntentsToken))
+            {
+                return OutputIntents;
+            }
+
+            if (outputIntentsToken is not IndirectReferenceToken reference)
+            {
+                var parsed = ParsePageOutputIntents(pageDictionary);
+                return parsed.Count > 0 ? parsed : OutputIntents;
+            }
+
+            if (!pageOutputIntents.TryGetValue(reference.Data, out var cached))
+            {
+                cached = ParsePageOutputIntents(pageDictionary);
+                pageOutputIntents[reference.Data] = cached;
+            }
+
+            // A page whose own array yielded nothing usable still sits inside the document's declaration.
+            return cached.Count > 0 ? cached : OutputIntents;
+        }
+
+        private IReadOnlyList<OutputIntent> ParsePageOutputIntents(DictionaryToken pageDictionary)
+        {
+            return OutputIntentParser.CreateAll(pageDictionary, scanner, filterProvider,
+                parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger);
         }
 
         /// <inheritdoc/>
         public OutputIntent? GetPageOutputIntent(DictionaryToken? pageDictionary)
         {
-            if (pageDictionary is null || !pageDictionary.TryGet(NameToken.OutputIntents, out var outputIntentsToken))
-            {
-                return OutputIntent;
-            }
-
-            if (outputIntentsToken is not IndirectReferenceToken reference)
-            {
-                return OutputIntentParser.Create(pageDictionary, scanner, filterProvider,
-                    parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger) ?? OutputIntent;
-            }
-
-            if (pageOutputIntents.TryGetValue(reference.Data, out var cached))
-            {
-                return cached ?? OutputIntent;
-            }
-
-            cached = OutputIntentParser.Create(pageDictionary, scanner, filterProvider,
-                parsingOptions.IccProfileService, iccProfileByteCache, parsingOptions.Logger);
-            pageOutputIntents[reference.Data] = cached;
-
-            return cached ?? OutputIntent;
+            return OutputIntent.SelectEffective(GetPageOutputIntents(pageDictionary));
         }
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary)

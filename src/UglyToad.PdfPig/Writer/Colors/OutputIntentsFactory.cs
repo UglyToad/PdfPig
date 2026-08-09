@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Graphics.Colors.Icc;
     using Tokens;
 
     internal static class OutputIntentsFactory
@@ -17,10 +18,20 @@
 
             var compressedBytes = DataCompressor.CompressBytes(profileBytes);
 
+            // /N shall match the profile (8.6.5.5), so read it from the profile rather than restating it.
+            // Three is right for the sRGB profile shipped today, but a hardcoded three is a trap the moment
+            // that profile is swapped or made configurable - and a mismatch is exactly what readers have to
+            // write code to work around (see PDFBOX-4801).
+            if (!IccProfileHeader.TryGetNumberOfComponents(profileBytes, out int numberOfComponents))
+            {
+                throw new InvalidOperationException(
+                    "Could not determine the number of colour components of the embedded sRGB ICC profile.");
+            }
+
             var profileStreamDictionary = new Dictionary<NameToken, IToken>
             {
                 {NameToken.Length, new NumericToken(compressedBytes.Length)},
-                {NameToken.N, new NumericToken(3)},
+                {NameToken.N, new NumericToken(numberOfComponents)},
                 {NameToken.Filter, NameToken.FlateDecode}
             };
 

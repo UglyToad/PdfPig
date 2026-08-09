@@ -112,6 +112,120 @@
         }
 
         [Fact]
+        public void EveryDeclaredIntentIsReturned_InArrayOrder()
+        {
+            // The list is the primitive, as it is in PDFBox: a conformance check needs the entries the
+            // selection policy would discard, and it needs them in the order the file wrote them.
+            var catalog = Catalog(
+                Intent("GTS_PDFA1", "FOGRA39", withProfile: false),
+                Intent("GTS_PDFX", "FOGRA51", withProfile: true),
+                Intent("ISO_PDFE1", "PDFE", withProfile: false));
+
+            var all = CreateAll(catalog);
+
+            Assert.Equal(3, all.Count);
+            Assert.Equal(["GTS_PDFA1", "GTS_PDFX", "ISO_PDFE1"], all.Select(x => x.Name));
+            Assert.Equal(["FOGRA39", "FOGRA51", "PDFE"], all.Select(x => x.OutputConditionIdentifier));
+        }
+
+        [Fact]
+        public void SelectingTheEffectiveIntentDoesNotDisturbTheList()
+        {
+            var catalog = Catalog(
+                Intent("GTS_PDFA1", "FOGRA39", withProfile: true),
+                Intent("GTS_PDFX", "FOGRA51", withProfile: true));
+
+            var all = CreateAll(catalog);
+            var effective = OutputIntent.SelectEffective(all);
+
+            Assert.Equal("GTS_PDFX", effective!.Name);
+            Assert.Equal("GTS_PDFA1", all[0].Name); // array order preserved
+            Assert.Contains(all, x => ReferenceEquals(x, effective));
+        }
+
+        [Fact]
+        public void EmptyOrNullListSelectsNothing()
+        {
+            Assert.Null(OutputIntent.SelectEffective(null));
+            Assert.Null(OutputIntent.SelectEffective([]));
+        }
+
+        [Fact]
+        public void EntriesThatAreNotDictionariesAreSkippedWithoutLosingTheRest()
+        {
+            var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                {
+                    NameToken.OutputIntents,
+                    new ArrayToken([
+                        new NumericToken(42),
+                        Intent("GTS_PDFX", "FOGRA51", withProfile: true)
+                    ])
+                }
+            });
+
+            var all = CreateAll(catalog);
+
+            Assert.Single(all);
+            Assert.Equal("GTS_PDFX", all[0].Name);
+        }
+
+        [Fact]
+        public void AbsentEntriesAreNullRatherThanEmptyStrings()
+        {
+            // /S and /OutputConditionIdentifier are required, so a conformance check has to be able to tell
+            // "absent" from "present but empty". PDFBox's getString accessors return null the same way.
+            var bare = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.DestOutputProfile, ProfileStream() }
+            });
+
+            var intent = Assert.Single(CreateAll(Catalog(bare)));
+
+            Assert.Null(intent.Name);
+            Assert.Null(intent.OutputConditionIdentifier);
+            Assert.Null(intent.RegistryName);
+            Assert.Null(intent.OutputCondition);
+            Assert.Null(intent.Info);
+        }
+
+        [Fact]
+        public void PresentButEmptyEntriesStayEmptyRatherThanBecomingNull()
+        {
+            // The other half of the distinction: an entry the file actually wrote, empty, is not absent.
+            var empty = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.S, NameToken.Create("GTS_PDFX") },
+                { NameToken.OutputConditionIdentifier, new StringToken(string.Empty) },
+                { NameToken.RegistryName, new StringToken(string.Empty) }
+            });
+
+            var intent = Assert.Single(CreateAll(Catalog(empty)));
+
+            Assert.Equal(string.Empty, intent.OutputConditionIdentifier);
+            Assert.Equal(string.Empty, intent.RegistryName);
+        }
+
+        [Fact]
+        public void RegistryNameIsReadWhenPresent()
+        {
+            var withRegistry = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.S, NameToken.Create("GTS_PDFX") },
+                { NameToken.OutputConditionIdentifier, new StringToken("FOGRA51") },
+                { NameToken.RegistryName, new StringToken("http://www.color.org") },
+                { NameToken.OutputCondition, new StringToken("Coated FOGRA51") },
+                { NameToken.Info, new StringToken("Some info") }
+            });
+
+            var intent = Assert.Single(CreateAll(Catalog(withRegistry)));
+
+            Assert.Equal("http://www.color.org", intent.RegistryName);
+            Assert.Equal("Coated FOGRA51", intent.OutputCondition);
+            Assert.Equal("Some info", intent.Info);
+        }
+
+        [Fact]
         public void WithoutAProfileService_StillReportsTheOutputCondition()
         {
             // The descriptive entries are what PDF/A and PDF/X conformance checking reads and have nothing
@@ -119,8 +233,8 @@
             // /DestOutputProfile that goes unresolved. PDFBox exposes getOutputIntents() unconditionally.
             var catalog = Catalog(Intent("GTS_PDFX", "FOGRA51", withProfile: true));
 
-            var result = OutputIntentParser.Create(catalog, Scanner, TestFilterProvider.Instance, null,
-                new IccProfileByteCache());
+            var result = OutputIntent.SelectEffective(OutputIntentParser.CreateAll(catalog, Scanner,
+                TestFilterProvider.Instance, null, new IccProfileByteCache()));
 
             Assert.NotNull(result);
             Assert.Equal("GTS_PDFX", result!.Name);
@@ -137,7 +251,8 @@
             var filters = new CountingFilterProvider();
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
-            var result = OutputIntentParser.Create(catalog, scanner, filters, null, new IccProfileByteCache());
+            var result = OutputIntent.SelectEffective(
+                OutputIntentParser.CreateAll(catalog, scanner, filters, null, new IccProfileByteCache()));
 
             Assert.NotNull(result);
             Assert.Null(result!.DestOutputProfile);
@@ -155,8 +270,10 @@
             var cache = new IccProfileByteCache();
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
-            var first = OutputIntentParser.Create(catalog, scanner, filters, new FakeIccProfileService(), cache);
-            var second = OutputIntentParser.Create(catalog, scanner, filters, new FakeIccProfileService(), cache);
+            var first = OutputIntent.SelectEffective(
+                OutputIntentParser.CreateAll(catalog, scanner, filters, new FakeIccProfileService(), cache));
+            var second = OutputIntent.SelectEffective(
+                OutputIntentParser.CreateAll(catalog, scanner, filters, new FakeIccProfileService(), cache));
 
             Assert.NotNull(first!.DestOutputProfile);
             Assert.NotNull(second!.DestOutputProfile);
@@ -178,7 +295,8 @@
 
             Assert.Equal(1, filters.DecodeCount);
 
-            Assert.NotNull(OutputIntentParser.Create(catalog, scanner, filters, new FakeIccProfileService(), cache)!.DestOutputProfile);
+            Assert.NotNull(OutputIntent.SelectEffective(OutputIntentParser.CreateAll(catalog, scanner, filters,
+                new FakeIccProfileService(), cache))!.DestOutputProfile);
             Assert.Equal(1, filters.DecodeCount);
         }
 
@@ -189,8 +307,8 @@
             var filters = new CountingFilterProvider(throwOnDecode: true);
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
-            var result = OutputIntentParser.Create(catalog, scanner, filters, new FakeIccProfileService(),
-                new IccProfileByteCache());
+            var result = OutputIntent.SelectEffective(OutputIntentParser.CreateAll(catalog, scanner, filters,
+                new FakeIccProfileService(), new IccProfileByteCache()));
 
             Assert.NotNull(result);
             Assert.Null(result!.DestOutputProfile);
@@ -213,10 +331,19 @@
             });
         }
 
+        /// <summary>
+        /// The effective intent, resolved the way production does: parse every entry, then apply the
+        /// documented selection policy.
+        /// </summary>
         private static OutputIntent? Create(DictionaryToken catalog)
         {
-            return OutputIntentParser.Create(catalog, Scanner, TestFilterProvider.Instance, new FakeIccProfileService(),
-                new IccProfileByteCache());
+            return OutputIntent.SelectEffective(CreateAll(catalog));
+        }
+
+        private static IReadOnlyList<OutputIntent> CreateAll(DictionaryToken catalog)
+        {
+            return OutputIntentParser.CreateAll(catalog, Scanner, TestFilterProvider.Instance,
+                new FakeIccProfileService(), new IccProfileByteCache());
         }
 
         private static DictionaryToken Catalog(params IToken[] intents)

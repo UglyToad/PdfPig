@@ -92,25 +92,42 @@
         ILog Logger { get; }
 
         /// <summary>
-        /// The output intent declared by the document catalog (see 14.11.5, "Output intents"), describing the
-        /// colour reproduction characteristics of the target output device. <c>null</c> only when the catalog
-        /// declares none: the intent's descriptive entries are parsed whether or not an
-        /// <see cref="IccProfileService"/> is configured, and without one it is
-        /// <see cref="OutputIntent.DestOutputProfile"/> alone that stays null.
+        /// Every output intent declared by the document catalog (see 14.11.5, "Output intents"), in the order
+        /// the <c>/OutputIntents</c> array wrote them; empty when the catalog declares none. Each describes
+        /// the colour reproduction characteristics of a possible target output device.
+        /// <para>
+        /// The descriptive entries are parsed whether or not an <see cref="IccProfileService"/> is
+        /// configured; without one it is <see cref="OutputIntent.DestOutputProfile"/> alone that stays null.
+        /// </para>
         /// <para>
         /// Exposed but not consumed: PdfPig does <b>not</b> render the device colour spaces (DeviceGray /
-        /// DeviceRGB / DeviceCMYK) through the output intent's <c>/DestOutputProfile</c>: those colour spaces
+        /// DeviceRGB / DeviceCMYK) through an output intent's <c>/DestOutputProfile</c>: those colour spaces
         /// convert exactly as they do in a document with no output intent. PDFBox behaves the same way,
         /// modelling output intents without consulting them when rendering.
         /// </para>
         /// </summary>
+        IReadOnlyList<OutputIntent> OutputIntents { get; }
+
+        /// <summary>
+        /// The single output intent taken to describe the document: <see cref="OutputIntents"/> reduced by
+        /// <see cref="OutputIntent.SelectEffective"/>. A convenience over the list, which stays the
+        /// primitive - the selection rule is this library's policy rather than anything ISO 32000 states, so
+        /// a caller who needs every declared entry, or a different rule, should use <see cref="OutputIntents"/>.
+        /// </summary>
         OutputIntent? OutputIntent { get; }
 
         /// <summary>
-        /// The output intent in effect for the content of a given page: a page-level <c>/OutputIntents</c>
-        /// entry (PDF 2.0, Table 31) overrides the document catalog's <see cref="OutputIntent"/>, which is
-        /// what is returned when the page carries none. As with <see cref="OutputIntent"/>, the result
+        /// Every output intent in effect for the content of a given page: a page-level <c>/OutputIntents</c>
+        /// entry (PDF 2.0, Table 31) overrides the document catalog's <see cref="OutputIntents"/>, which is
+        /// what is returned when the page carries none. As with <see cref="OutputIntents"/>, the result
         /// describes the page and does not affect how its colours are converted.
+        /// </summary>
+        /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
+        IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary);
+
+        /// <summary>
+        /// <see cref="GetPageOutputIntents"/> reduced by <see cref="OutputIntent.SelectEffective"/>, as
+        /// <see cref="OutputIntent"/> is to <see cref="OutputIntents"/>.
         /// </summary>
         /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
         OutputIntent? GetPageOutputIntent(DictionaryToken? pageDictionary);
