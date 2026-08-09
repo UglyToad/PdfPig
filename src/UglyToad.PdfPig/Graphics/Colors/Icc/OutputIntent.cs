@@ -52,6 +52,11 @@
         /// (see 8.6.5.5, "ICCBased colour spaces"). The output transformation uses the profile's "from CIE" information
         /// (BToA in ICC terminology); the "to CIE" (AToB) information may optionally be used to remap source colour
         /// values to some other destination colour space, such as for screen preview or hardcopy proofing.
+        /// <para>
+        /// PdfPig parses this profile but does not itself apply it: no colour space converts through the output
+        /// intent. It is here for a caller that wants to drive the transformation, or simply to inspect what the
+        /// document targets.
+        /// </para>
         /// </summary>
         public IIccProfile? DestOutputProfile { get; }
 

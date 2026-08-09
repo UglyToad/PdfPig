@@ -9,11 +9,15 @@
     using Graphics.Colors.Icc;
     
     /// <summary>
-    /// Resolves the document's output intent ICC profile from the catalog's <c>/OutputIntents</c> array.
-    /// PDF/X files characterize their device colour (DeviceCMYK / DeviceRGB / DeviceGray) through the
-    /// output intent's <c>/DestOutputProfile</c>; rendering those device colours through that profile
-    /// (rather than a fixed approximation) is what keeps colour-managed content and device-colour
-    /// content visually consistent.
+    /// Resolves an output intent, and its embedded ICC profile, from a <c>/OutputIntents</c> array
+    /// (see 14.11.5, "Output intents").
+    /// <para>
+    /// A PDF/X file characterises its device colour (DeviceCMYK / DeviceRGB / DeviceGray) through the output
+    /// intent's <c>/DestOutputProfile</c>. PdfPig parses and exposes that profile but does not currently
+    /// convert device colours through it - device colour spaces behave identically whether or not an output
+    /// intent is present - so what this produces is descriptive: the output condition a document was prepared
+    /// for, and a profile a caller may drive itself.
+    /// </para>
     /// </summary>
     internal static class OutputIntentParser
     {

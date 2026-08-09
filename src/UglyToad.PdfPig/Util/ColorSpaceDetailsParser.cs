@@ -232,13 +232,19 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        // Alternate is optional
+                        // Alternate is optional, and may be either a name or a colour space array
                         ColorSpaceDetails? alternateColorSpaceDetails = null;
-                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
-                            ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out var alternateColorSpaceToken))
                         {
-                            alternateColorSpaceDetails =
-                                GetColorSpaceDetails(alternateColorSpace, imageDictionary, scanner, resourceStore, filterProvider, iccProfileCache, true);
+                            var alternate = GetSecondaryColorSpace(alternateColorSpaceToken,
+                                imageDictionary, scanner, filterProvider, resourceStore,
+                                iccProfileCache, applyDefaultSubstitution: false);
+                            
+                            if (alternate is not UnsupportedColorSpaceDetails &&
+                                alternate.NumberOfColorComponents == numeric.Int)
+                            {
+                                alternateColorSpaceDetails = alternate;
+                            }
                         }
 
                         // Range is optional
@@ -482,12 +488,17 @@
             }
         }
 
+        // applyDefaultSubstitution: whether a device colour space reached here is subject to the
+        // DefaultGray/DefaultRGB/DefaultCMYK substitution. True for the callers 8.6.5.6 names (an Indexed
+        // base, a Separation/DeviceN alternate, a Pattern's underlying space); false for an ICCBased
+        // /Alternate, which is not selected from a resource dictionary.
         private static ColorSpaceDetails GetSecondaryColorSpace(IToken csToken,
             DictionaryToken dictionary,
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
             IResourceStore resourceStore,
-            IccProfileByteCache iccProfileCache)
+            IccProfileByteCache iccProfileCache,
+            bool applyDefaultSubstitution = true)
         {
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
                 && ColorSpaceMapper.TryMap(alternateNameToken, resourceStore, out var baseColorSpaceName))
@@ -496,7 +507,8 @@
                 // DefaultGray/DefaultRGB/DefaultCMYK substitution shall be used in place of that device
                 // space. This applies to the base of an Indexed space, the alternate of a Separation/DeviceN
                 // space and the underlying space of a Pattern - all of which are resolved here.
-                if (baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
+                if (applyDefaultSubstitution &&
+                    baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
                 {
                     return resourceStore.GetDeviceColorSpaceDetails(baseColorSpaceName);
                 }

@@ -3,7 +3,9 @@
 **Branch reviewed:** `feature/icc-profile-support-4` @ `f5b8a079` ("WIP - Add ICC profiles color spaces and output intent support, and add tests")
 **Compared against:** `C:\Users\Bob\source\repos\pdfbox` @ `bbea338208`
 **Date:** 2026-08-09
-**Scope:** ICC-based colour spaces, output intents, and the supporting plumbing (colour space parsing, caching, image byte conversion, rendering intent). No code changes made.
+**Scope:** ICC-based colour spaces, output intents, and the supporting plumbing (colour space parsing, caching, image byte conversion, rendering intent).
+
+> **Status update.** The three "fix before merge" items — **A1**, **B4** and **B7** — have since been addressed in the working tree; each is marked ✅ **Fixed** below with what was done. Everything else in this report is still open. Full test suite after the fixes: 4225 passed, 0 failed, 7 skipped.
 
 ---
 
@@ -45,7 +47,13 @@ The branch adds two things that PDFBox does *not* have, and leaves out several t
 
 ## 3. Part A — Output intents
 
-### A1. The output intent is parsed but never consumed *(highest priority — doc/behaviour mismatch)*
+### A1. The output intent is parsed but never consumed — ✅ **Fixed (docs)**
+
+> **Resolution:** the "follow PDFBox" option was taken. No behavioural change; the documentation now describes what the code does. Rewritten: `IResourceStore.OutputIntent` and `GetPageOutputIntent`, `CurrentGraphicsState.OutputIntent`, the `OutputIntentParser` class summary, and `OutputIntent.DestOutputProfile` — each now states plainly that the output intent is exposed for inspection and that device colour spaces convert identically whether or not one is present, noting that PDFBox behaves the same way. Also fixed an unresolvable `<see cref="IccProfileService"/>` on `CurrentGraphicsState` (→ `ParsingOptions.IccProfileService`).
+>
+> Implementing PDF/X device colour management remains available as a future change; the plumbing that would carry it (`GetPageOutputIntent`, the graphics-state field, the byte cache) is all in place and now honestly documented.
+
+*Original finding:*
 
 `OutputIntent` is stored on `CurrentGraphicsState.OutputIntent` (`BaseStreamProcessor.cs:153`) and exposed via `IResourceStore.OutputIntent` / `GetPageOutputIntent`. A repository-wide grep for consumers returns only the assignment, the `DeepClone`, and one test assertion. `ResourceStore.GetDeviceColorSpaceDetails` — the one place a device colour space could be routed through the output intent profile — does not reference it (`ResourceStore.cs:462-481`).
 
@@ -167,7 +175,16 @@ Most embedded RGB profiles in the wild are sRGB. PdfPig has no equivalent: every
 
 **Recommendation:** add `bool IsSRgb { get; }` to `IIccProfile` (or detect it in PdfPig from the header before calling the service, which keeps every backend honest), and short-circuit `Process` / `GetColor` / `GetRgb` / `Transform` to identity. This is likely the single largest available performance win, and it removes backend-to-backend colour drift for the most common profile.
 
-### B4. `/Alternate` arrays are silently ignored *(concrete correctness gap)*
+### B4. `/Alternate` arrays are silently ignored — ✅ **Fixed**
+
+> **Resolution:** `/Alternate` now routes through `GetSecondaryColorSpace`, which handles the name form, the array form, and indirect references to either. Three supporting decisions:
+> - `GetSecondaryColorSpace` gained an `applyDefaultSubstitution` parameter (default `true`). The `/Alternate` call passes `false`, so `DefaultGray`/`DefaultRGB`/`DefaultCMYK` do not capture it — matching PDFBox, which resolves the alternate with no resources at all. The 8.6.5.6 cases (Indexed base, Separation/DeviceN alternate, Pattern underlying space) are unaffected.
+> - An alternate that resolves to `UnsupportedColorSpaceDetails` is discarded rather than adopted, so the space falls back to the device space implied by `/N`. This covers a Pattern alternate, which Table 66 forbids, without a special case.
+> - **An alternate whose component count disagrees with `/N` is rejected.** This guard is required, not optional: the alternate is handed the very same operands as the profile, so a 3-component alternate under `/N 4` made `GetColor` throw on the operand count. Enabling array alternates without it would have turned a silently-ignored entry into a crash.
+>
+> 11 tests added in `UglyToad.PdfPig.Tests/ContentTests/IccBasedAlternateColorSpaceTests.cs`, covering all four `/Alternate` shapes, the width guard, Pattern and unparseable alternates, the `/N`-implied default, and both directions of the default-substitution scoping.
+
+*Original finding:*
 
 ```csharp
 // ColorSpaceDetailsParser.cs:236-242
@@ -208,7 +225,17 @@ PdfPig is silent throughout:
 
 **Recommendation:** thread the logger into `ColorSpaceDetailsParser`, `ICCBasedColorSpaceDetails`, `OutputIntentParser` and `IccProfileByteCache`, and log at each fallback with the reason. Directly mirrors PDFBox.
 
-### B7. The validation "smoke test" is weaker than PDFBox's
+### B7. The validation "smoke test" is weaker than PDFBox's — ✅ **Fixed**
+
+> **Resolution:** both halves of the recommendation were implemented, because neither alone is sufficient.
+> - **Validation now converts.** `IsUsable(profile, components)` replaces the bare `TryGetTransform` check: it obtains the RelativeColorimetric transform and then exercises *both* conversion entry points — `ToRgb` with a zero vector (in range for every data colour space, Lab included) and `Transform` with a one-pixel buffer — inside a try that returns `false`. The two are separate implementations that fail separately, which is the direct analogue of PDFBox calling `toRGB` *and* constructing a `ComponentColorModel` inside the same try.
+> - **Conversion sites are guarded.** Validation can only prove the profile converts the input it probed. A `volatile bool iccTransformFailed` latch, set by a shared `TryToRgb` helper and by the byte path's own catch, retires the profile permanently on the first failure; `GetTransformWithFallback` then returns `null` and every path falls through to `AlternateColorSpace`. The latch is per colour space rather than per entry point, so a scalar failure also stops the image path from hitting the same defect, and a broken profile costs one exception per document rather than one per pixel.
+>
+> The byte path's fallback is safe because `IIccTransform.Transform` takes a `ReadOnlySpan` source, so a partially completed conversion cannot have consumed the samples the alternate then needs.
+>
+> 6 tests added to `ICCBasedColorSpaceDetailsTests`: rejection at construction on either entry point, graceful fallback when a validated profile starts throwing, the latch not retrying, the byte path falling back with its source intact, and the latch crossing between entry points.
+
+*Original finding:*
 
 PDFBox deliberately forces the lazily-initialised CMM to fail *at load time*, inside the try block:
 
@@ -302,12 +329,12 @@ PDFBox's `PDColorSpace.toRawImage` returns the image in its native colour space 
 
 ## 5. Ranked recommendations
 
-### Fix before merge
-| # | Item | Why |
-|---|---|---|
-| **A1** | Resolve the output-intent doc/behaviour mismatch | Documents a feature that does not exist |
-| **B4** | Accept array-valued and indirect `/Alternate` | Silent wrong colours on legal files; affects the *default* no-CMM path |
-| **B7** | Make profile validation actually convert a colour, or guard conversion sites | Backend exception can escape `page.GetImages()` |
+### Fix before merge — ✅ all three done
+| # | Item | Why | Status |
+|---|---|---|---|
+| **A1** | Resolve the output-intent doc/behaviour mismatch | Documents a feature that does not exist | ✅ Docs corrected; no behavioural change |
+| **B4** | Accept array-valued and indirect `/Alternate` | Silent wrong colours on legal files; affects the *default* no-CMM path | ✅ Fixed, + component-width guard |
+| **B7** | Make profile validation actually convert a colour, or guard conversion sites | Backend exception can escape `page.GetImages()` | ✅ Both: probing validation + failure latch |
 
 ### High value, follows PDFBox closely
 | # | Item | PDFBox reference |
@@ -357,8 +384,9 @@ These are places where PdfPig deliberately does *not* follow PDFBox, and should 
 
 Gaps, aligned with the findings above:
 
-- No test asserts that the output intent is *used* — consistent with **A1**, since it is not.
-- No test for an ICCBased colour space whose `/Alternate` is an array (**B4**), nor for `/N` disagreeing with the profile (**B2**).
-- No test that an `IIccProfileService` throwing from `ToRgb`/`Transform` degrades gracefully (**B7**).
-- No round-trip test comparing the scalar path (`GetColor`) against the image path (`Transform`) for the same colour — which is where the **B9** inconsistency lives.
+- ~~No test for an ICCBased colour space whose `/Alternate` is an array~~ — ✅ closed by `IccBasedAlternateColorSpaceTests` (11 tests).
+- ~~No test that an `IIccProfileService` throwing from `ToRgb`/`Transform` degrades gracefully~~ — ✅ closed by 6 tests in `ICCBasedColorSpaceDetailsTests`.
+- No test asserts that the output intent is *used* — correct, and now documented as intentional (**A1**).
+- Still open: no test for `/N` disagreeing with the profile (**B2**).
+- Still open: no round-trip test comparing the scalar path (`GetColor`) against the image path (`Transform`) for the same colour — which is where the **B9** inconsistency lives.
 - `IccProfileBenchmarks` covers the caching work well (three GWG PDF/X files plus the 37-ICC-image `iron-ore` case). A benchmark with an sRGB profile would quantify **B3**.

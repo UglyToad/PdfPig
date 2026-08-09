@@ -84,16 +84,23 @@
         IIccProfileService? IccProfileService { get; }
 
         /// <summary>
-        /// The output intent ICC profile (document or page scope), or <c>null</c> when the document declares
-        /// no usable output intent (or no <see cref="IccProfileService"/> is configured).
-        /// Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics.
+        /// The output intent declared by the document catalog (see 14.11.5, "Output intents"), describing the
+        /// colour reproduction characteristics of the target output device. <c>null</c> when the catalog
+        /// declares none, or when no <see cref="IccProfileService"/> is configured.
+        /// <para>
+        /// Exposed but not consumed: PdfPig does <b>not</b> render the device colour spaces (DeviceGray /
+        /// DeviceRGB / DeviceCMYK) through the output intent's <c>/DestOutputProfile</c>: those colour spaces
+        /// convert exactly as they do in a document with no output intent. PDFBox behaves the same way,
+        /// modelling output intents without consulting them when rendering.
+        /// </para>
         /// </summary>
         OutputIntent? OutputIntent { get; }
 
         /// <summary>
         /// The output intent in effect for the content of a given page: a page-level <c>/OutputIntents</c>
         /// entry (PDF 2.0, Table 31) overrides the document catalog's <see cref="OutputIntent"/>, which is
-        /// what is returned when the page carries none.
+        /// what is returned when the page carries none. As with <see cref="OutputIntent"/>, the result
+        /// describes the page and does not affect how its colours are converted.
         /// </summary>
         /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
         OutputIntent? GetPageOutputIntent(DictionaryToken? pageDictionary);

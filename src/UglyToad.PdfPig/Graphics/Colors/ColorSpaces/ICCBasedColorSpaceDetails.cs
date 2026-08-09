@@ -23,6 +23,15 @@
         private readonly bool isLabInput;
 
         /// <summary>
+        /// Latches once a conversion has thrown, after which <see cref="AlternateColorSpace"/> takes over
+        /// permanently. An <see cref="IIccProfileService"/> is third-party code and the profile behind it may
+        /// be malformed in ways only some inputs reach, so a profile that passed <see cref="IsUsable"/> at
+        /// construction can still fail later. Falling back beats both throwing out of page processing and
+        /// paying an exception per pixel for the rest of the document.
+        /// </summary>
+        private volatile bool iccTransformFailed;
+
+        /// <summary>
         /// The number of color components in the color space described by the ICC profile data.
         /// This number shall match the number of components actually in the ICC profile.
         /// Valid values are 1, 3 and 4.
@@ -94,7 +103,7 @@
                 iccService.TryGetProfile(profileData, out var profile) &&
                 profile.NumberOfComponents == NumberOfColorComponents &&
                 // We need to make sure the icc profile will at least fall back with RelativeColorimetric to be valid
-                profile.TryGetTransform(RenderingIntent.RelativeColorimetric, out _))
+                IsUsable(profile, NumberOfColorComponents))
             {
                 IccProfile = profile;
             }
@@ -120,9 +129,47 @@
             }
         }
 
+        /// <summary>
+        /// Whether the profile can actually convert, not merely hand out a transform.
+        /// <para>
+        /// Obtaining an <see cref="IIccTransform"/> proves nothing: the interface lets a service build its
+        /// transforms lazily, so the work that a malformed profile fails at may not have happened yet. Both
+        /// conversion entry points are therefore exercised here, inside the construction that can still choose
+        /// <see cref="AlternateColorSpace"/> instead. PDFBox does exactly this for the same reason - see
+        /// PDICCBased.loadICCProfile, which calls both <c>toRGB</c> and <c>new ComponentColorModel</c> inside
+        /// the try that falls back, each citing a different profile that parsed cleanly and then threw on use
+        /// (PDFBOX-1295, 1740, 3610, 4015, 5563).
+        /// </para>
+        /// </summary>
+        private static bool IsUsable(IIccProfile profile, int numberOfColorComponents)
+        {
+            if (!profile.TryGetTransform(RenderingIntent.RelativeColorimetric, out var transform))
+            {
+                return false;
+            }
+
+            try
+            {
+                // Zero is in range for every data colour space a profile may declare, L*a*b* included.
+                Span<double> components = stackalloc double[numberOfColorComponents]; // 1, 3 or 4
+                transform.ToRgb(components);
+
+                // The packed-byte path is a separate implementation and fails separately.
+                Span<byte> onePixel = stackalloc byte[numberOfColorComponents];
+                Span<byte> rgb = stackalloc byte[3];
+                transform.Transform(onePixel, rgb);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         internal IIccTransform? GetTransformWithFallback(RenderingIntent intent)
         {
-            if (IccProfile is null)
+            if (IccProfile is null || iccTransformFailed)
             {
                 return null;
             }
@@ -134,6 +181,26 @@
             }
 
             return IccProfile.TryGetTransform(RenderingIntent.RelativeColorimetric, out var rct) ? rct : null;
+        }
+
+        /// <summary>
+        /// Convert through <paramref name="transform"/>, latching <see cref="iccTransformFailed"/> and
+        /// reporting <see langword="false"/> so the caller can fall back if it throws.
+        /// </summary>
+        private bool TryToRgb(IIccTransform transform, ReadOnlySpan<double> components,
+            out double r, out double g, out double b)
+        {
+            try
+            {
+                (r, g, b) = transform.ToRgb(components);
+                return true;
+            }
+            catch
+            {
+                iccTransformFailed = true;
+                r = g = b = 0.0;
+                return false;
+            }
         }
 
         /// <summary>
@@ -170,15 +237,14 @@
             Span<double> operands = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
             Normalise(values, operands);
 
-            if (IccProfile is not null)
+            IIccTransform? transform = GetTransformWithFallback(intent);
+            if (transform is not null)
             {
-                IIccTransform? t = GetTransformWithFallback(intent);
-                if (t is not null)
-                {
-                    Span<double> forProfile = stackalloc double[NumberOfColorComponents];
-                    ClipForProfile(operands, forProfile);
+                Span<double> forProfile = stackalloc double[NumberOfColorComponents];
+                ClipForProfile(operands, forProfile);
 
-                    var (r, g, b) = t.ToRgb(forProfile);
+                if (TryToRgb(transform, forProfile, out double r, out double g, out double b))
+                {
                     return [r, g, b];
                 }
             }
@@ -199,13 +265,12 @@
 
             Span<double> buffer = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
 
-            if (IccProfile is not null)
+            var transform = GetTransformWithFallback(intent);
+            if (transform is not null)
             {
-                var t = GetTransformWithFallback(intent);
-                if (t is not null)
+                ClipForProfile(values, buffer);
+                if (TryToRgb(transform, buffer, out double r, out double g, out double b))
                 {
-                    ClipForProfile(values, buffer);
-                    var (r, g, b) = t.ToRgb(buffer);
                     return new RGBColor(r, g, b);
                 }
             }
@@ -233,13 +298,12 @@
         {
             Span<double> clipped = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
 
-            if (IccProfile is not null)
+            var transform = GetTransformWithFallback(intent);
+            if (transform is not null)
             {
-                var t = GetTransformWithFallback(intent);
-                if (t is not null)
+                ClipForProfile(values, clipped);
+                if (TryToRgb(transform, clipped, out r, out g, out b))
                 {
-                    ClipForProfile(values, clipped);
-                    (r, g, b) = t.ToRgb(clipped);
                     return;
                 }
             }
@@ -251,15 +315,21 @@
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
-            if (IccProfile is not null)
+            var transform = GetTransformWithFallback(intent);
+            if (transform is not null)
             {
-                var t = GetTransformWithFallback(intent);
-                if (t is not null)
+                int pixelCount = decoded.Length / NumberOfColorComponents;
+                byte[] dst = new byte[pixelCount * 3];
+
+                try
                 {
-                    int pixelCount = decoded.Length / NumberOfColorComponents;
-                    byte[] dst = new byte[pixelCount * 3];
-                    t.Transform(decoded, dst);
+                    transform.Transform(decoded, dst);
                     return dst;
+                }
+                catch
+                {
+                    // The source is read-only by contract, so it is still intact for the alternate.
+                    iccTransformFailed = true;
                 }
             }
 

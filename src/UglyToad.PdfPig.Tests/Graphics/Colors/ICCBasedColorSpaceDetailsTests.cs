@@ -501,5 +501,175 @@
 
             Assert.Equal(new double[] { 0.9, 0.1, 0.0, 0.0 }, transform.LastValues);
         }
+
+        /// <summary>
+        /// Throws from the conversion entry points, each after its own number of successful calls. An
+        /// <see cref="IIccProfileService"/> is free to build its transforms lazily, so a handle that is handed
+        /// out cleanly and then throws is a supported implementation, not a broken one - PDFBox documents five
+        /// separate profiles that behave exactly this way under the platform CMM.
+        /// <para>
+        /// Construction probes each entry point exactly once, so a grace of 1 is what lets a transform survive
+        /// validation and fail on the first real conversion; a grace of 0 makes it fail during validation.
+        /// </para>
+        /// </summary>
+        private sealed class ThrowingTransform : IIccTransform
+        {
+            private readonly int toRgbGrace;
+            private readonly int transformGrace;
+
+            public ThrowingTransform(int components, int toRgbGrace = 0, int transformGrace = 0)
+            {
+                NumberOfComponents = components;
+                this.toRgbGrace = toRgbGrace;
+                this.transformGrace = transformGrace;
+            }
+
+            public int NumberOfComponents { get; }
+
+            public int ToRgbCalls { get; private set; }
+
+            public int TransformCalls { get; private set; }
+
+            public (double r, double g, double b) ToRgb(ReadOnlySpan<double> values)
+            {
+                if (ToRgbCalls++ < toRgbGrace)
+                {
+                    return (1.0, 1.0, 1.0);
+                }
+
+                throw new InvalidOperationException("Simulated CMM failure.");
+            }
+
+            public void Transform(ReadOnlySpan<byte> src, Span<byte> dstRgb)
+            {
+                if (TransformCalls++ < transformGrace)
+                {
+                    dstRgb.Fill(255);
+                    return;
+                }
+
+                throw new InvalidOperationException("Simulated CMM failure.");
+            }
+        }
+
+        /// <summary>A transform that survives validation and throws on the first conversion after it.</summary>
+        private static ThrowingTransform ThrowsAfterValidation(int components)
+            => new ThrowingTransform(components, toRgbGrace: 1, transformGrace: 1);
+
+        private static ICCBasedColorSpaceDetails WithTransform(int components, ColorSpaceDetails alternate,
+            IIccTransform transform)
+        {
+            var profile = new StubProfile(components, new Dictionary<RenderingIntent, IIccTransform>
+            {
+                [RenderingIntent.RelativeColorimetric] = transform
+            });
+
+            return new ICCBasedColorSpaceDetails(components, alternate, null, null,
+                new byte[] { 0x01 }, new StubService(profile));
+        }
+
+        [Fact]
+        public void ProfileThatThrowsOnConversion_IsRejectedAtConstruction()
+        {
+            // Obtaining an IIccTransform proves nothing about whether it converts. Validation therefore has
+            // to run a conversion while construction can still choose the alternate, which is what PDFBox
+            // does in loadICCProfile for PDFBOX-1295 / 1740 / 3610 / 4015 / 5563.
+            var details = WithTransform(4, DeviceCmykColorSpaceDetails.Instance, new ThrowingTransform(4));
+
+            Assert.Null(details.IccProfile);
+            Assert.Equal(ColorSpace.DeviceCMYK, details.BaseType);
+            Assert.Equal(4, details.BaseNumberOfColorComponents);
+            Assert.Null(details.GetTransformWithFallback(RenderingIntent.RelativeColorimetric));
+        }
+
+        [Fact]
+        public void ProfileThatThrowsOnlyOnTheByteTransform_IsRejectedAtConstruction()
+        {
+            // ToRgb and Transform are separate implementations and fail separately, so both are probed -
+            // the analogue of PDFBox constructing a ComponentColorModel alongside its toRGB call.
+            var transform = new ThrowingTransform(3, toRgbGrace: 1, transformGrace: 0);
+            var details = WithTransform(3, DeviceRgbColorSpaceDetails.Instance, transform);
+
+            Assert.Equal(1, transform.ToRgbCalls); // the scalar probe succeeded
+            Assert.Null(details.IccProfile); // the byte probe did not
+        }
+
+        [Fact]
+        public void ProfileThatStartsThrowingAfterConstruction_FallsBackInsteadOfPropagating()
+        {
+            // Validation cannot prove a profile converts every input, only the one it probed. A later
+            // failure must degrade to the alternate rather than escape through page processing.
+            var transform = ThrowsAfterValidation(4);
+            var details = WithTransform(4, DeviceCmykColorSpaceDetails.Instance, transform);
+
+            Assert.NotNull(details.IccProfile);
+
+            var color = details.GetColor([0.0, 0.0, 0.0, 1.0], RenderingIntent.RelativeColorimetric);
+
+            // DeviceCMYK black through the alternate, not an InvalidOperationException.
+            var (r, g, b) = color.ToRGBValues();
+            Assert.Equal(0.0, r);
+            Assert.Equal(0.0, g);
+            Assert.Equal(0.0, b);
+        }
+
+        [Fact]
+        public void AFailedConversionLatchesSoTheProfileIsNotRetried()
+        {
+            // Retrying a profile that has thrown costs one exception per colour for the rest of the
+            // document, and cannot start working. One failure retires it.
+            var transform = ThrowsAfterValidation(4);
+            var details = WithTransform(4, DeviceCmykColorSpaceDetails.Instance, transform);
+
+            details.GetColor([0.1, 0.2, 0.3, 0.4], RenderingIntent.RelativeColorimetric);
+            int callsAfterFirstFailure = transform.ToRgbCalls;
+
+            for (int i = 0; i < 5; i++)
+            {
+                details.GetColor([0.1, 0.2, 0.3, 0.4], RenderingIntent.RelativeColorimetric);
+                details.GetRgb([0.1, 0.2, 0.3, 0.4], RenderingIntent.RelativeColorimetric, out _, out _, out _);
+                details.Process([0.1, 0.2, 0.3, 0.4], RenderingIntent.RelativeColorimetric);
+            }
+
+            Assert.Equal(callsAfterFirstFailure, transform.ToRgbCalls);
+            Assert.Null(details.GetTransformWithFallback(RenderingIntent.RelativeColorimetric));
+        }
+
+        [Fact]
+        public void AFailedByteTransform_FallsBackWithTheSourceIntact()
+        {
+            // IIccTransform.Transform takes a ReadOnlySpan, so a partially completed conversion cannot have
+            // consumed the samples: the alternate must still see the original image bytes.
+            var transform = ThrowsAfterValidation(1);
+            var details = WithTransform(1, DeviceGrayColorSpaceDetails.Instance, transform);
+
+            Assert.NotNull(details.IccProfile);
+
+            Span<byte> input = stackalloc byte[3] { 10, 20, 30 };
+            var result = details.Transform(input, RenderingIntent.RelativeColorimetric);
+
+            // DeviceGray passes its samples through unchanged.
+            Assert.Equal(3, result.Length);
+            Assert.Equal(10, result[0]);
+            Assert.Equal(20, result[1]);
+            Assert.Equal(30, result[2]);
+        }
+
+        [Fact]
+        public void AFailedScalarConversion_AlsoRetiresTheByteTransform()
+        {
+            // The latch is per colour space, not per entry point: whatever made one conversion throw is a
+            // property of the profile, so the image path must not go on to hit it too.
+            var transform = ThrowsAfterValidation(1);
+            var details = WithTransform(1, DeviceGrayColorSpaceDetails.Instance, transform);
+
+            details.GetColor([0.5], RenderingIntent.RelativeColorimetric);
+            int transformCallsBefore = transform.TransformCalls;
+
+            Span<byte> input = stackalloc byte[2] { 7, 9 };
+            details.Transform(input, RenderingIntent.RelativeColorimetric);
+
+            Assert.Equal(transformCallsBefore, transform.TransformCalls);
+        }
     }
 }
