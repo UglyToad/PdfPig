@@ -35,7 +35,7 @@
 
         // NOT cleared per resource dictionary: it is keyed by the profile stream's indirect reference, which is unique
         // document-wide, so it stays valid across resource dictionary switches.
-        private readonly IccProfileByteCache iccProfileByteCache = new IccProfileByteCache();
+        private readonly IccProfileCache iccProfileByteCache = new IccProfileCache();
 
         private readonly Dictionary<NameToken, DictionaryToken> markedContentProperties = new Dictionary<NameToken, DictionaryToken>();
 

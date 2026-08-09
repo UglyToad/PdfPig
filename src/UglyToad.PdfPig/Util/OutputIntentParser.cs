@@ -34,7 +34,7 @@
         /// </summary>
         public static IReadOnlyList<OutputIntent> CreateAll(DictionaryToken dictionary, IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
-            IccProfileByteCache iccProfileCache, ILog? log = null)
+            IccProfileCache iccProfileCache, ILog? log = null)
         {
             // An absent IIccProfileService means no /DestOutputProfile is resolved, not that the output
             // intent is invisible: the output condition, its registry and its identifier are what PDF/A and
@@ -69,7 +69,7 @@
         /// </summary>
         private static OutputIntent Create(DictionaryToken intentDictionary, IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
-            IccProfileByteCache iccProfileCache, ILog? log)
+            IccProfileCache iccProfileCache, ILog? log)
         {
             string? name = null;
             if (intentDictionary.TryGet(NameToken.S, scanner, out NameToken? nameToken))
@@ -119,7 +119,7 @@
 
         private static IIccProfile? TryParseDestOutputProfile(DictionaryToken intentDictionary,
             IPdfTokenScanner scanner, ILookupFilterProvider filterProvider, IIccProfileService? iccProfileService,
-            IccProfileByteCache iccProfileCache, ILog? log)
+            IccProfileCache iccProfileCache, ILog? log)
         {
             if (iccProfileService is null)
             {

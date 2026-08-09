@@ -234,7 +234,7 @@
             var catalog = Catalog(Intent("GTS_PDFX", "FOGRA51", withProfile: true));
 
             var result = OutputIntent.SelectEffective(OutputIntentParser.CreateAll(catalog, Scanner,
-                TestFilterProvider.Instance, null, new IccProfileByteCache()));
+                TestFilterProvider.Instance, null, new IccProfileCache()));
 
             Assert.NotNull(result);
             Assert.Equal("GTS_PDFX", result!.Name);
@@ -252,7 +252,7 @@
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
             var result = OutputIntent.SelectEffective(
-                OutputIntentParser.CreateAll(catalog, scanner, filters, null, new IccProfileByteCache()));
+                OutputIntentParser.CreateAll(catalog, scanner, filters, null, new IccProfileCache()));
 
             Assert.NotNull(result);
             Assert.Null(result!.DestOutputProfile);
@@ -267,7 +267,7 @@
             // that inflating an embedded CMYK profile over and over.
             var scanner = new TestPdfTokenScanner();
             var filters = new CountingFilterProvider();
-            var cache = new IccProfileByteCache();
+            var cache = new IccProfileCache();
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
             var first = OutputIntent.SelectEffective(
@@ -287,11 +287,12 @@
             // the same object as /DestOutputProfile must not pay for a second inflate.
             var scanner = new TestPdfTokenScanner();
             var filters = new CountingFilterProvider();
-            var cache = new IccProfileByteCache();
+            var cache = new IccProfileCache();
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
             var reference = new IndirectReferenceToken(new IndirectReference(7, 0));
-            cache.GetOrDecode(reference, (StreamToken)scanner.Get(reference.Data).Data, filters, scanner);
+            cache.GetOrParse(reference, (StreamToken)scanner.Get(reference.Data).Data, filters, scanner,
+                new FakeIccProfileService());
 
             Assert.Equal(1, filters.DecodeCount);
 
@@ -308,7 +309,7 @@
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
             var result = OutputIntent.SelectEffective(OutputIntentParser.CreateAll(catalog, scanner, filters,
-                new FakeIccProfileService(), new IccProfileByteCache()));
+                new FakeIccProfileService(), new IccProfileCache()));
 
             Assert.NotNull(result);
             Assert.Null(result!.DestOutputProfile);
@@ -343,7 +344,7 @@
         private static IReadOnlyList<OutputIntent> CreateAll(DictionaryToken catalog)
         {
             return OutputIntentParser.CreateAll(catalog, Scanner, TestFilterProvider.Instance,
-                new FakeIccProfileService(), new IccProfileByteCache());
+                new FakeIccProfileService(), new IccProfileCache());
         }
 
         private static DictionaryToken Catalog(params IToken[] intents)

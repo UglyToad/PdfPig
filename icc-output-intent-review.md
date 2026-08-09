@@ -47,7 +47,7 @@ The branch adds two things that PDFBox does *not* have, and leaves out several t
 | Output intent parsing | `Util/OutputIntentParser.cs` | `pdmodel/PDDocumentCatalog.getOutputIntents()` |
 | Output intent writing | `Writer/Colors/OutputIntentsFactory.cs` | `PDOutputIntent(PDDocument, InputStream)` |
 | CMM abstraction | `Graphics/Colors/Icc/IIccProfile*.cs`, `IIccTransform.cs` | *(none — `java.awt.color.ICC_ColorSpace`)* |
-| Profile byte caching | `Util/IccProfileByteCache.cs` | `pdmodel/ResourceCache` (caches the `PDICCBased` object) |
+| Profile caching | `Util/IccProfileCache.cs` | `pdmodel/ResourceCache` (caches the `PDICCBased` object) |
 | Image byte conversion | `Images/ColorSpaceDetailsByteConverter.cs` | `PDColorSpace.toRGBImageAWT` / `ColorConvertOp` |
 | Default CMYK | `DeviceCmykColorSpaceDetails` (analytic) | `PDDeviceCMYK` + bundled `CGATS001Compat-v2-micro.icc` |
 | Rendering intent | `Graphics/Core/RenderingIntent`, threaded everywhere | `graphics/state/RenderingIntent` (parsed, unused) |
@@ -322,13 +322,15 @@ PdfPig's analogue is `profile.TryGetTransform(RenderingIntent.RelativeColorimetr
 
 ### B8. Parsed profiles are not cached across resource dictionaries — ✅ **Fixed**
 
-> **Resolution.** `IccProfileByteCache` extended rather than replaced, as the original finding recommended. Its two dictionaries now hold an `Entry` carrying both the decoded bytes and the profile parsed from them, so `IIccProfileService.TryGetProfile` is called **at most once per profile per document** — the guarantee PDFBox gets from caching the constructed `PDICCBased` against the stream's `COSObject`. Keeping both in one entry also means the content hash that identifies a directly written profile is computed once per lookup rather than once per thing looked up.
+> **Resolution.** The existing cache was extended rather than replaced, as the original finding recommended, and its two dictionaries now key the parsed profile the same two ways the bytes were keyed — so `IIccProfileService.TryGetProfile` is called **at most once per profile per document**, the guarantee PDFBox gets from caching the constructed `PDICCBased` against the stream's `COSObject`. The content hash that identifies a directly written profile is computed once per lookup.
 > - `ICCBasedColorSpaceDetails` now takes a resolved `IIccProfile?` instead of `(bytes, service)`, so the colour space no longer parses anything; resolution belongs to the cache.
 > - "Parsed, and the answer was no profile" is remembered as firmly as a success, so a profile the service declines is not retried per page.
 > - `OutputIntentParser` shares the same path, which matters because a PDF/X file routinely points its `/DestOutputProfile` and an `/ICCBased` colour space at the same stream object.
 > - `Jpeg2000Helper` resolves directly and is documented as the deliberate exception: a JPX profile is a slice of the image's own codestream, not a stream object the document can point at twice, so there is no key to share it under.
 >
-> Note the raw bytes are still retained alongside the parsed profile (unchanged from before). Releasing them after parsing would save megabytes per document and is worth a follow-up.
+> **Follow-up, now done.** The first cut kept the decoded bytes alongside the parsed profile, which meant a multi-megabyte inflated CMYK profile stayed alive for the document's lifetime after the only thing that needed it had finished. Since `GetOrDecode` turned out to have no production callers at all, it was removed and `GetOrParse` became the sole entry point: the bytes are now a local inside `DecodeAndParse`, collectable the moment the service has built its profile, and the dictionaries hold `IIccProfile?` directly. The class was renamed `IccProfileByteCache` → **`IccProfileCache`**, since bytes are the one thing it no longer caches (internal type; no public API impact).
+>
+> That this is not tested is deliberate and noted in the test file: with no field left that could hold the bytes, the guarantee is structural, and asserting it would take a GC-and-weak-reference test — the flakiest kind there is — to re-prove something the type already gives.
 
 *Original finding:*
 
@@ -475,7 +477,7 @@ These are places where PdfPig deliberately does *not* follow PDFBox, and should 
 - **The `IIccProfileService` / `IIccProfile` / `IIccTransform` abstraction.** There is no PDFBox analogue because the JDK supplies the CMM. The three-level split (service → profile → intent-bound transform) is the right shape and correctly documents its thread-safety requirements.
 - **Page-level `/OutputIntents`** (PDF 2.0 Table 31). No PDFBox support at all.
 - **`isResolvingDefaultSubstitute`** mirrors PDFBox's `wasDefault` flag exactly and is credited in the comment (`ResourceStore.cs:45-50`) — good porting hygiene. PdfPig additionally rejects Lab/Indexed/Pattern as `Default*` substitutes per 8.6.5.6, which PDFBox does not check. Correct divergence.
-- **`IccProfileByteCache`'s dual keying** (indirect reference / MurmurHash3 content key). PDFBox does not need this because it caches at a different level, but given PdfPig's token model the design is sound and the rationale is unusually well documented. If **B8** is implemented, this cache should be extended rather than replaced.
+- **`IccProfileCache`'s dual keying** (indirect reference / MurmurHash3 content key). PDFBox does not need this because it caches at a different level, but given PdfPig's token model the design is sound and the rationale is unusually well documented. If **B8** is implemented, this cache should be extended rather than replaced.
 - **`ColorSpaceDetails.DecodeRawComponents`** for Indexed colour tables — strictly more correct than PDFBox's flat `/255`, and since **B10** it covers an ICCBased base too, which PDFBox does not.
 - **The sample-byte encoding** introduced by **B9**: a byte holds the component's position within its default-decode range, not its value. PDFBox has no equivalent because AWT rasters carry their own colour model; PdfPig's `Span<byte>` pipeline needs an explicit convention, and this is the one that lets Lab and L\*a\*b\* ICC profiles share it with the device spaces unchanged.
 
@@ -483,7 +485,7 @@ These are places where PdfPig deliberately does *not* follow PDFBox, and should 
 
 ## 7. Test coverage observations
 
-`OutputIntentParserTests.cs` covers the ranking policy thoroughly — including the "profile availability outranks subtype" rule and the "must not merely reverse the array" case — and now also the full-list API, the null-vs-empty distinction, and non-dictionary array entries. `IccProfileByteCacheTests.cs` covers both keying strategies and the parse-once guarantee. `ResourceStorePageOutputIntentTests.cs` covers page-vs-catalog resolution for both the list and the singular convenience. `OutputIntentsFactoryTests.cs` covers the write side and the ICC header reader.
+`OutputIntentParserTests.cs` covers the ranking policy thoroughly — including the "profile availability outranks subtype" rule and the "must not merely reverse the array" case — and now also the full-list API, the null-vs-empty distinction, and non-dictionary array entries. `IccProfileCacheTests.cs` covers both keying strategies and the parse-once guarantee. `ResourceStorePageOutputIntentTests.cs` covers page-vs-catalog resolution for both the list and the singular convenience. `OutputIntentsFactoryTests.cs` covers the write side and the ICC header reader.
 
 Gaps, aligned with the findings above:
 

@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Images
+﻿namespace UglyToad.PdfPig.Images
 {
     using Graphics.Colors;
     using Graphics.Colors.Icc;
@@ -113,7 +113,7 @@ namespace UglyToad.PdfPig.Images
                 case Jpeg2000ColorSpace.Icc:
                     if (numberOfComponents == 1 || numberOfComponents == 3 || numberOfComponents == 4)
                     {
-                        // Not routed through IccProfileByteCache: this profile is a slice of the image's own
+                        // Not routed through IccProfileCache: this profile is a slice of the image's own
                         // codestream rather than a stream object the document can point at twice, so there
                         // is no key to share it under.
                         var iccProfile = jpxData.Slice(iccProfileOffset, iccProfileLength);

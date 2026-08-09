@@ -41,7 +41,7 @@
             IPdfTokenScanner scanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
-            IccProfileByteCache iccProfileCache,
+            IccProfileCache iccProfileCache,
             bool cannotRecurse = false)
         {
             if ((imageDictionary.TryGet(NameToken.ImageMask, scanner, out BooleanToken isImageMask) && isImageMask.Data) ||
@@ -514,7 +514,7 @@
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
             IResourceStore resourceStore,
-            IccProfileByteCache iccProfileCache,
+            IccProfileCache iccProfileCache,
             bool applyDefaultSubstitution = true)
         {
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
