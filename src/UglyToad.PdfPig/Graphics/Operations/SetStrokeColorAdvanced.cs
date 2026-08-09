@@ -55,7 +55,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().ColorSpaceContext.SetStrokingColor(Operands, PatternName);
+            operationContext.GetCurrentState().ColorSpaceContext.SetStrokingColor(operands, PatternName);
         }
 
         /// <inheritdoc />

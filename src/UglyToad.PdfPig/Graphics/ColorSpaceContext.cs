@@ -31,7 +31,7 @@
             currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName)
+        public void SetStrokingColor(double[] operands, NameToken? patternName)
         {
             if (CurrentStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
@@ -75,7 +75,7 @@
             currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetNonStrokingColor(ReadOnlySpan<double> operands, NameToken? patternName)
+        public void SetNonStrokingColor(double[] operands, NameToken? patternName)
         {
             if (CurrentNonStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
