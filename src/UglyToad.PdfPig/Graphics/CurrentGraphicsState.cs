@@ -1,11 +1,10 @@
-﻿#nullable disable
-
-// ReSharper disable RedundantDefaultMemberInitializer
+﻿// ReSharper disable RedundantDefaultMemberInitializer
 namespace UglyToad.PdfPig.Graphics
 {
     using Colors;
     using Core;
     using PdfPig.Core;
+    using Colors.Icc;
 
     /// <summary>
     /// The state of the current graphics control parameters set by operations in the content stream.
@@ -23,7 +22,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The <see cref="CurrentFontState"/> for this graphics state.
         /// </summary>
-        public CurrentFontState FontState { get; set; } = new CurrentFontState();
+        public CurrentFontState? FontState { get; set; } = new CurrentFontState();
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.
@@ -54,6 +53,13 @@ namespace UglyToad.PdfPig.Graphics
         /// The rendering intent to use when converting CIE-based colors to device colors.
         /// </summary>
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
+        
+        /// <summary>
+        /// The output intent in effect for this graphics state (see 14.11.5, "Output intents"), or
+        /// <see langword="null"/> when the document declares no usable output intent (or no
+        /// <see cref="IccProfileService"/> is configured).
+        /// </summary>
+        public OutputIntent? OutputIntent { get; set; } = null;
 
         /// <summary>
         /// Should a correction for rasterization effects be applied?
@@ -91,7 +97,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The active colorspaces for this content stream.
         /// </summary>
-        public IColorSpaceContext ColorSpaceContext { get; set; }
+        public IColorSpaceContext? ColorSpaceContext { get; set; }
 
         /// <summary>
         /// The current active stroking color for paths.
@@ -165,7 +171,8 @@ namespace UglyToad.PdfPig.Graphics
                 CurrentClippingPath = CurrentClippingPath,
                 ColorSpaceContext = ColorSpaceContext?.DeepClone(),
                 BlendMode = BlendMode,
-                SoftMask = SoftMask
+                SoftMask = SoftMask,
+                OutputIntent = OutputIntent
             };
         }
     }

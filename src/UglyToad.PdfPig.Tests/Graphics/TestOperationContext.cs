@@ -6,6 +6,7 @@
     using PdfPig.Graphics;
     using PdfPig.Tokens;
     using PdfPig.Core;
+    using PdfPig.Graphics.Colors.Icc;
     using Tokens;
     using UglyToad.PdfPig.Graphics.Core;
     using UglyToad.PdfPig.Graphics.Operations.TextPositioning;
@@ -42,7 +43,8 @@
                             ClipPaths = false,
                             SkipMissingFonts = true,
                             Logger = new NoOpLog()
-                        }))
+                        },
+                        null))
             });
             CurrentSubpath = new PdfSubpath();
         }

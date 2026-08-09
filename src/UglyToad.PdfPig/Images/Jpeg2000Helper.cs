@@ -81,7 +81,7 @@ namespace UglyToad.PdfPig.Images
         /// channel count, and for raw codestreams that carry no colour space box, the device colour space
         /// implied by the channel count is used.
         /// </remarks>
-        public static ColorSpaceDetails? GetJpxColorSpaceDetails(ReadOnlyMemory<byte> jpxData)
+        public static ColorSpaceDetails? GetJpxColorSpaceDetails(ReadOnlyMemory<byte> jpxData, ParsingOptions options)
         {
             ReadOnlySpan<byte> jpxSpan = jpxData.Span;
             int numberOfComponents = GetNumberOfComponents(jpxSpan);
@@ -112,8 +112,9 @@ namespace UglyToad.PdfPig.Images
                 case Jpeg2000ColorSpace.Icc:
                     if (numberOfComponents == 1 || numberOfComponents == 3 || numberOfComponents == 4)
                     {
-                        var iccProfile = jpxData.Slice(iccProfileOffset, iccProfileLength); // TODO - use for later
-                        return new ICCBasedColorSpaceDetails(numberOfComponents, null, null, null);
+                        var iccProfile = jpxData.Slice(iccProfileOffset, iccProfileLength);
+                        return new ICCBasedColorSpaceDetails(numberOfComponents, null,
+                            null, null, iccProfile, options.IccProfileService);
                     }
                     return null;
                 case Jpeg2000ColorSpace.Unsupported:

@@ -1,8 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Generic;
-    using UglyToad.PdfPig.Tokens;
+    using Tokens;
 
     /// <summary>
     /// Pattern color space.
@@ -20,7 +21,8 @@
         /// Cannot be called for <see cref="PatternColorSpaceDetails"/>, will throw a <see cref="InvalidOperationException"/>.
         /// </para>
         /// </summary>
-        public override int NumberOfColorComponents => throw new InvalidOperationException("PatternColorSpaceDetails");
+        public override int NumberOfColorComponents
+            => throw new InvalidOperationException("Cannot be called for PatternColorSpaceDetails.");
 
         /// <summary>
         /// <inheritdoc/>
@@ -62,10 +64,8 @@
         /// Cannot be called for <see cref="PatternColorSpaceDetails"/>, will throw a <see cref="InvalidOperationException"/>.
         /// </para>
         /// </summary>
-        internal override double[] Process(params double[] values)
-        {
-            throw new InvalidOperationException("PatternColorSpaceDetails");
-        }
+        internal override double[] Process(double[] values, RenderingIntent intent)
+            => throw new InvalidOperationException("Cannot be called for PatternColorSpaceDetails.");
 
         /// <summary>
         /// <inheritdoc/>
@@ -74,16 +74,12 @@
         /// Use <see cref="GetColor(NameToken)"/> instead.
         /// </para>
         /// </summary>
-        public override IColor GetColor(ReadOnlySpan<double> values)
-        {
-            throw new InvalidOperationException("PatternColorSpaceDetails");
-        }
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
+            => throw new InvalidOperationException("Cannot be called for PatternColorSpaceDetails.");
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
-        {
-            throw new InvalidOperationException("PatternColorSpaceDetails");
-        }
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent, out double r, out double g, out double b)
+            => throw new InvalidOperationException("Cannot be called for PatternColorSpaceDetails.");
 
         /// <summary>
         /// <inheritdoc/>
@@ -100,9 +96,7 @@
         /// Cannot be called for <see cref="PatternColorSpaceDetails"/>, will throw a <see cref="InvalidOperationException"/>.
         /// </para>
         /// </summary>
-        internal override Span<byte> Transform(Span<byte> decoded)
-        {
-            throw new InvalidOperationException("PatternColorSpaceDetails");
-        }
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
+            => throw new InvalidOperationException("Cannot be called for PatternColorSpaceDetails.");
     }
 }

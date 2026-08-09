@@ -1,10 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using UglyToad.PdfPig.Functions;
-    using UglyToad.PdfPig.Tokens;
+    using Functions;
+    using Tokens;
 
     /// <summary>
     /// A Separation color space provides a means for specifying the use of additional colorants or
@@ -14,7 +15,7 @@
     /// </summary>
     public sealed class SeparationColorSpaceDetails : ColorSpaceDetails
     {
-        private readonly ConcurrentDictionary<double, IColor> cache = new ConcurrentDictionary<double, IColor>();
+        private readonly ConcurrentDictionary<(double Tint, RenderingIntent Intent), IColor> cache = new();
 
         /// <inheritdoc/>
         public override int NumberOfColorComponents => 1;
@@ -68,14 +69,14 @@
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             var evaled = TintFunction.Eval(values[0]);
-            return AlternateColorSpace.Process(evaled);
+            return AlternateColorSpace.Process(evaled, intent);
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -84,11 +85,20 @@
 
             // TODO - we ignore the name for now
 
-            return cache.GetOrAdd(values[0], v => TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, [v]));
+            var key = (values[0], intent);
+            if (cache.TryGetValue(key, out var color))
+            {
+                return color;
+            }
+
+            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values, intent);
+
+            cache.TryAdd(key, color);
+            return color;
         }
 
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> values)
+        internal override Span<byte> Transform(Span<byte> values, RenderingIntent intent)
         {
             var colorCache = new Dictionary<byte, double[]>(values.Length);
             var transformed = new byte[values.Length * BaseNumberOfColorComponents];
@@ -99,7 +109,7 @@
                 byte b = values[i];
                 if (!colorCache.TryGetValue(b, out double[]? colors))
                 {
-                    colors = Process(b / 255.0);
+                    colors = Process([b / 255.0], intent);
                     colorCache[b] = colors;
                 }
 
@@ -120,9 +130,11 @@
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
-            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values.Slice(0, 1), out r, out g, out b);
+            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values.Slice(0, 1), intent,
+                out r, out g, out b);
         }
     }
 }

@@ -3,6 +3,7 @@
     using Filters;
     using System.Collections.Generic;
     using Logging;
+    using Graphics.Colors.Icc;
 
     /// <summary>
     /// Configures options used by the parser when reading PDF documents.
@@ -72,5 +73,11 @@
         /// Defaults to <see langword="false"/>.
         /// </summary>
         public bool UseActualText { get; set; } = false;
+
+        /// <summary>
+        /// Service used to convert <c>/ICCBased</c> color space samples. When <c>null</c> (default),
+        /// ICC-based color spaces fall back silently to their declared alternate color space.
+        /// </summary>
+        public IIccProfileService? IccProfileService { get; set; } = null;
     }
 }

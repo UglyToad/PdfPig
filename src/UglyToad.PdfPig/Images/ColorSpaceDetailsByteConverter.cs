@@ -4,6 +4,7 @@
     using Graphics.Colors;
     using System;
     using System.Collections.Generic;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// Utility for working with the bytes in <see cref="IPdfImage"/>s and converting according to their <see cref="ColorSpaceDetails"/>.s
@@ -18,7 +19,7 @@
         /// </summary>
         public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
-            return Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null);
+            return Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null, RenderingIntent.RelativeColorimetric);
         }
 
         /// <summary>
@@ -32,7 +33,8 @@
         /// colour space default" (which is a no-op for the common case). For <see cref="ColorSpace.Indexed"/> the
         /// sample is itself an index so the byte-level Decode applied here is skipped.
         /// </remarks>
-        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight, IReadOnlyList<double>? decode)
+        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight,
+            IReadOnlyList<double>? decode, RenderingIntent intent)
         {
             if (decoded.IsEmpty)
             {
@@ -69,7 +71,7 @@
 
             ApplyDecode(decoded, details, decode, bitsPerComponent);
 
-            return details.Transform(decoded);
+            return details.Transform(decoded, intent);
         }
 
         private static void ApplyDecode(Span<byte> samples, ColorSpaceDetails details, IReadOnlyList<double>? decode, int bitsPerComponent)

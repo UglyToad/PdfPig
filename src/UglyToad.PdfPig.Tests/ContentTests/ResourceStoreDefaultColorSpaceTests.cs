@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using PdfPig.Content;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
     using PdfPig.PdfFonts;
     using PdfPig.Tokens;
     using UglyToad.PdfPig.Tests.Tokens;
@@ -25,7 +26,8 @@
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                });
+                },
+                null);
         }
 
         [Fact]

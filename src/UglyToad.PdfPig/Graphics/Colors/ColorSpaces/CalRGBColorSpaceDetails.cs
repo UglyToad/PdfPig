@@ -1,8 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Generic;
-    using UglyToad.PdfPig.Util;
+    using Util;
 
     /// <summary>
     /// CIE (Commission Internationale de l'Éclairage) colorspace.
@@ -91,7 +92,7 @@
         }
 
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             var transformed = new byte[decoded.Length];
             int index = 0;
@@ -112,14 +113,14 @@
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             GetRgb(values, out double r, out double g, out double b);
             return [r, g, b];
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -143,7 +144,8 @@
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
             (r, g, b) = colorSpaceTransformer.TransformToRGB((values[0], values[1], values[2]));
         }

@@ -136,6 +136,24 @@
             return result;
         }
 
+        /// <summary>
+        /// MurmurHash3 128-bit x64 variant, writing the 128-bit hash as two <see langword="ulong"/>s into
+        /// <paramref name="outHash"/>. Unlike the <see cref="byte"/> array overloads this allocates nothing,
+        /// so it is usable on a hot path or with a <see langword="stackalloc"/> destination.
+        /// <para>
+        /// Note - The x86 and x64 versions do _not_ produce the same results, as the
+        /// algorithms are optimized for their respective platforms. You can still
+        /// compile and run any of them on any platform, but your performance with the
+        /// non-native version will be less than optimal.
+        /// </para>
+        /// </summary>
+        /// <param name="data">The bytes to hash.</param>
+        /// <param name="outHash">Destination for the hash, must be at least 2 elements long.</param>
+        public static void Compute_x64_128(ReadOnlySpan<byte> data, Span<ulong> outHash)
+        {
+            Compute_x64_128(data, data.Length, 0, outHash);
+        }
+
         private static void Compute_x86_128(ReadOnlySpan<byte> data, int len, uint seed, Span<uint> outHash)
         {
             const uint c1 = 0x239b961b, c2 = 0xab0e9789, c3 = 0x38b34ae5, c4 = 0xa1e38b93;

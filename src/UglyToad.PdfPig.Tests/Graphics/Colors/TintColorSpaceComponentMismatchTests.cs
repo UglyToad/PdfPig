@@ -1,7 +1,10 @@
 namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
+    using System.Diagnostics.CodeAnalysis;
     using PdfPig.Functions;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
+    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
 
     /// <summary>
@@ -136,6 +139,8 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
                 3,
                 DeviceRgbColorSpaceDetails.Instance,
                 [0.0, 0.5, 0.0, 0.5, 0.0, 0.5],
+                null,
+                ReadOnlyMemory<byte>.Empty,
                 null);
 
             double[] values = [1.0, 1.0, 1.0];
@@ -147,6 +152,65 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
             Assert.Equal(0.5, b, 12);
 
             Assert.Equal(new[] { 1.0, 1.0, 1.0 }, values);
+        }
+
+        /// <summary>
+        /// An <see cref="IIccProfile"/> that parses but resolves no transform for any rendering intent,
+        /// which <see cref="IIccProfile.TryGetTransform"/> explicitly permits.
+        /// </summary>
+        private sealed class TransformlessProfile : IIccProfile
+        {
+            public TransformlessProfile(int components) => NumberOfComponents = components;
+
+            public int NumberOfComponents { get; }
+
+            public bool IsLabInput => false;
+
+            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
+            {
+                transform = null;
+                return false;
+            }
+        }
+
+        private sealed class SingleProfileService : IIccProfileService
+        {
+            private readonly IIccProfile profile;
+
+            public SingleProfileService(IIccProfile profile) => this.profile = profile;
+
+            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes, [NotNullWhen(true)] out IIccProfile? profile)
+            {
+                profile = this.profile;
+                return true;
+            }
+        }
+
+        [Fact]
+        public void SeparationOverProfileThatResolvesNoTransform_TransformFillsItsBuffer()
+        {
+            // Separation.Transform sizes its output as values.Length * BaseNumberOfColorComponents but
+            // fills it with whatever Process returns per sample. When the ICC alternate reports a
+            // 3-component DeviceRGB base it cannot actually deliver, Process falls back to the 4-component
+            // CMYK alternate and the write runs off the end of the buffer.
+            var icc = new ICCBasedColorSpaceDetails(
+                4,
+                DeviceCmykColorSpaceDetails.Instance,
+                null,
+                null,
+                new byte[] { 0x01 },
+                new SingleProfileService(new TransformlessProfile(4)));
+
+            var separation = new SeparationColorSpaceDetails(
+                NameToken.Create("Spot"),
+                icc,
+                Tint([0, 0, 0, 0], [1, 1, 1, 1]));
+
+            byte[] samples = [0, 128, 255];
+
+            var transformed = ((ColorSpaceDetails)separation).Transform(samples, RenderingIntent.RelativeColorimetric);
+
+            Assert.Equal(samples.Length * separation.BaseNumberOfColorComponents, transformed.Length);
         }
     }
 }

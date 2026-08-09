@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Graphics.Colors;
+    using Graphics.Colors.Icc;
     using PdfFonts;
     using Tokens;
 
@@ -75,5 +76,26 @@
         /// Get the shading corresponding to the name.
         /// </summary>
         Shading GetShading(NameToken name);
+
+        /// <summary>
+        /// The configured ICC profile service (from <see cref="ParsingOptions.IccProfileService"/>),
+        /// or <c>null</c> when ICC-based color spaces should fall back to their alternate color space.
+        /// </summary>
+        IIccProfileService? IccProfileService { get; }
+
+        /// <summary>
+        /// The output intent ICC profile (document or page scope), or <c>null</c> when the document declares
+        /// no usable output intent (or no <see cref="IccProfileService"/> is configured).
+        /// Used to colour-manage the device colour spaces (DeviceCMYK / DeviceRGB / DeviceGray) per PDF/X semantics.
+        /// </summary>
+        OutputIntent? OutputIntent { get; }
+
+        /// <summary>
+        /// The output intent in effect for the content of a given page: a page-level <c>/OutputIntents</c>
+        /// entry (PDF 2.0, Table 31) overrides the document catalog's <see cref="OutputIntent"/>, which is
+        /// what is returned when the page carries none.
+        /// </summary>
+        /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
+        OutputIntent? GetPageOutputIntent(DictionaryToken? pageDictionary);
     }
 }

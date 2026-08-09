@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-
+    
     using Colors;
     using Content;
     using Core;
@@ -18,6 +18,7 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using Colors.Icc;
     using Util;
     using XObjects;
 
@@ -132,6 +133,7 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
+            DictionaryToken? pageDictionary,
             ParsingOptions parsingOptions)
         {
             this.PageNumber = pageNumber;
@@ -147,7 +149,8 @@
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox, rotation),
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
+                OutputIntent = resourceStore.GetPageOutputIntent(pageDictionary)
             });
         }
 
@@ -957,7 +960,7 @@
                     "Begin inline image (BI) command encountered while another inline image was active.");
             }
 
-            InlineImageBuilder = new InlineImageBuilder();
+            InlineImageBuilder = new InlineImageBuilder(ParsingOptions);
         }
 
         /// <inheritdoc/>

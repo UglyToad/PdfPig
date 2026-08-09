@@ -38,14 +38,15 @@
                 return;
             }
 
+            var state = currentStateFunc();
             if (patternName is not null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
             {
-                currentStateFunc().CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
+                state.CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
                 // TODO - use operands values for Uncoloured Tiling Patterns
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands);
+                state.CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands, state.RenderingIntent);
             }
         }
 
@@ -82,14 +83,15 @@
                 return;
             }
 
+            var state = currentStateFunc();
             if (patternName is not null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
             {
-                currentStateFunc().CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
+                state.CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
                 // TODO - use operands values for Uncoloured Tiling Patterns
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands);
+                state.CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands, state.RenderingIntent);
             }
         }
 
@@ -119,7 +121,7 @@
             var colorSpace = resourceStore.GetDeviceColorSpaceDetails(deviceColorSpace);
             var state = currentStateFunc();
 
-            IColor color = colorSpace.GetColor(values);
+            IColor color = colorSpace.GetColor(values, state.RenderingIntent);
 
             if (stroking)
             {

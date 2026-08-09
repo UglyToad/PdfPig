@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Tests.ContentTests
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
     using PdfPig.PdfFonts;
     using PdfPig.Tokens;
     using UglyToad.PdfPig.Tests.Tokens;
@@ -26,7 +27,8 @@ namespace UglyToad.PdfPig.Tests.ContentTests
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                });
+                },
+                null);
         }
 
         private static ArrayToken CreateSeparationArray()

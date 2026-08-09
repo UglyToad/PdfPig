@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
     using System;
+    using Core;
 
     /// <summary>
     /// Contains more document-specific information about the <see cref="ColorSpace"/>.
@@ -40,7 +41,13 @@
         /// <summary>
         /// Get the color.
         /// </summary>
-        public abstract IColor GetColor(ReadOnlySpan<double> values);
+        public IColor GetColor(ReadOnlySpan<double> values)
+            => GetColor(values, RenderingIntent.RelativeColorimetric);
+
+        /// <summary>
+        /// Intent-aware <see cref="GetColor(ReadOnlySpan{double})"/>.
+        /// </summary>
+        public abstract IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent);
 
         /// <summary>
         /// Get the color as an unboxed RGB triple. Avoids allocating an <see cref="IColor"/> and bypasses the
@@ -50,12 +57,49 @@
         /// <param name="r">The red component, in [0, 1].</param>
         /// <param name="g">The green component, in [0, 1].</param>
         /// <param name="b">The blue component, in [0, 1].</param>
-        public abstract void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b);
+        public void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+            => GetRgb(values, RenderingIntent.RelativeColorimetric, out r, out g, out b);
+
+        /// <summary>
+        /// Get the color as an unboxed RGB triple. Avoids allocating an <see cref="IColor"/> and bypasses the
+        /// virtual dispatch through <see cref="IColor.ToRGBValues"/>. Each component is in [0, 1].
+        /// </summary>
+        /// <param name="values">The component values, in this colour space.</param>
+        /// <param name="intent">Rendering intent.</param>
+        /// <param name="r">The red component, in [0, 1].</param>
+        /// <param name="g">The green component, in [0, 1].</param>
+        /// <param name="b">The blue component, in [0, 1].</param>
+        public abstract void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent, out double r, out double g, out double b);
 
         /// <summary>
         /// Get the color, without check and caching.
         /// </summary>
-        internal abstract double[] Process(params double[] values);
+        internal abstract double[] Process(double[] values, RenderingIntent intent);
+
+        /// <summary>
+        /// Copy <paramref name="values"/> into <paramref name="destination"/> so that exactly
+        /// <paramref name="destination"/>'s length components are defined: a short input is zero-filled and
+        /// a surplus is dropped. Colour spaces are handed component vectors by several routes -- a tint
+        /// function's output, an operand array off the content stream -- none of which are obliged to match
+        /// the width the space consumes, and every route has to reconcile a mismatch the same way or the
+        /// same colour renders differently depending on how it was reached.
+        /// <para>
+        /// <paramref name="values"/> may overlap <paramref name="destination"/>, which is what lets a caller
+        /// normalise a buffer a function has just written into.
+        /// </para>
+        /// </summary>
+        internal static void Normalise(ReadOnlySpan<double> values, Span<double> destination)
+        {
+            if (values.Length >= destination.Length)
+            {
+                values.Slice(0, destination.Length).CopyTo(destination);
+            }
+            else
+            {
+                values.CopyTo(destination);
+                destination.Slice(values.Length).Clear();
+            }
+        }
 
         /// <summary>
         /// Get the color that initialize the current stroking or nonstroking colour.
@@ -65,7 +109,7 @@
         /// <summary>
         /// Transform image bytes.
         /// </summary>
-        internal abstract Span<byte> Transform(Span<byte> decoded);
+        internal abstract Span<byte> Transform(Span<byte> decoded, RenderingIntent intent);
 
         /// <summary>
         /// Decode raw 8-bit encoded component samples (e.g. an Indexed colour space's colour-table

@@ -5,12 +5,13 @@
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
+    using Filters;
     using Graphics.Colors;
     using Parser.Parts;
     using PdfFonts;
     using Tokenization.Scanner;
     using Tokens;
-    using Filters;
+    using Graphics.Colors.Icc;
     using Util;
 
     internal sealed class ResourceStore : IResourceStore
@@ -31,6 +32,10 @@
         private readonly Dictionary<NameToken, ColorSpaceDetails> loadedNamedColorSpaceDetails = new Dictionary<NameToken, ColorSpaceDetails>();
         private readonly Dictionary<(NameToken? Name, IToken ColorSpace), ColorSpaceDetails> loadedColorSpaceDetailsCache = new Dictionary<(NameToken?, IToken), ColorSpaceDetails>();
 
+        // NOT cleared per resource dictionary: it is keyed by the profile stream's indirect reference, which is unique
+        // document-wide, so it stays valid across resource dictionary switches.
+        private readonly IccProfileByteCache iccProfileByteCache = new IccProfileByteCache();
+
         private readonly Dictionary<NameToken, DictionaryToken> markedContentProperties = new Dictionary<NameToken, DictionaryToken>();
 
         private readonly Dictionary<NameToken, Shading> shadingsProperties = new Dictionary<NameToken, Shading>();
@@ -46,15 +51,53 @@
 
         private (NameToken? name, IFont? font) lastLoadedFont;
 
+        public IIccProfileService? IccProfileService => parsingOptions.IccProfileService;
+
+        private readonly Lazy<OutputIntent?> outputIntent;
+        public OutputIntent? OutputIntent => outputIntent.Value;
+        
+        private readonly Dictionary<IndirectReference, OutputIntent?> pageOutputIntents = new Dictionary<IndirectReference, OutputIntent?>();
+
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            DictionaryToken? catalogDictionary)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
             this.parsingOptions = parsingOptions;
+            this.outputIntent = catalogDictionary is null
+                ? new Lazy<OutputIntent?>(() => null)
+                : new Lazy<OutputIntent?>(() => OutputIntentParser.Create(catalogDictionary, scanner,
+                    filterProvider, parsingOptions.IccProfileService, iccProfileByteCache));
+        }
+
+        /// <inheritdoc/>
+        public OutputIntent? GetPageOutputIntent(DictionaryToken? pageDictionary)
+        {
+            if (pageDictionary is null || !pageDictionary.TryGet(NameToken.OutputIntents, out var outputIntentsToken))
+            {
+                return OutputIntent;
+            }
+
+            if (outputIntentsToken is not IndirectReferenceToken reference)
+            {
+                return OutputIntentParser.Create(pageDictionary, scanner, filterProvider,
+                    parsingOptions.IccProfileService, iccProfileByteCache) ?? OutputIntent;
+            }
+
+            if (pageOutputIntents.TryGetValue(reference.Data, out var cached))
+            {
+                return cached ?? OutputIntent;
+            }
+
+            cached = OutputIntentParser.Create(pageDictionary, scanner, filterProvider,
+                parsingOptions.IccProfileService, iccProfileByteCache);
+            pageOutputIntents[reference.Data] = cached;
+
+            return cached ?? OutputIntent;
         }
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary)
@@ -378,7 +421,7 @@
             // Null color space for images
             if (name is null)
             {
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this, filterProvider);
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this, filterProvider, iccProfileByteCache);
             }
 
             if (name.TryMapToColorSpace(out ColorSpace colorSpaceActual))
@@ -388,7 +431,7 @@
                     return ResolveDefaultSubstitute(substituteName, dictionary);
                 }
 
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider, iccProfileByteCache);
             }
 
             // Named color spaces
@@ -402,12 +445,12 @@
             {
                 if (namedColorSpace.Data is null)
                 {
-                    return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this, filterProvider);
+                    return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this, filterProvider, iccProfileByteCache);
                 }
                 
                 if (namedColorSpace.Data is ArrayToken array)
                 {
-                    var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this, filterProvider);
+                    var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this, filterProvider, iccProfileByteCache);
                     loadedNamedColorSpaceDetails[name] = csd;
                     return csd;
                 }
