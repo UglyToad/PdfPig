@@ -45,9 +45,9 @@ public static class PdfMerger
         _ = file1 ?? throw new ArgumentNullException(nameof(file1));
         _ = file2 ?? throw new ArgumentNullException(nameof(file2));
 
-        using (var stream1 = File.OpenRead(file1))
+        using (var stream1 = OpenReadShared(file1))
         {
-            using (var stream2 = File.OpenRead(file2))
+            using (var stream2 = OpenReadShared(file2))
             {
                 Merge(new[] { stream1, stream2 }, output, new[] { file1Selection, file2Selection }, archiveStandard, docInfoBuilder);
             }
@@ -93,7 +93,7 @@ public static class PdfMerger
             for (var i = 0; i < filePaths.Length; i++)
             {
                 var filePath = filePaths[i] ?? throw new ArgumentNullException(nameof(filePaths), $"Null filepath at index {i}.");
-                streams.Add(File.OpenRead(filePath));
+                streams.Add(OpenReadShared(filePath));
             }
 
             Merge(streams, output, null, archiveStandard, docInfoBuilder);
@@ -118,10 +118,26 @@ public static class PdfMerger
     {
         _ = files ?? throw new ArgumentNullException(nameof(files));
 
-        using (var output = new MemoryStream())
+        var documents = new List<PdfDocument>(files.Count);
+        try
         {
-            Merge(files.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle, archiveStandard, docInfoBuilder);
-            return output.ToArray();
+            foreach (var file in files)
+            {
+                documents.Add(PdfDocument.Open(file));
+            }
+
+            using (var output = new MemoryStream())
+            {
+                Merge(documents, output, pagesBundle, archiveStandard, docInfoBuilder);
+                return output.ToArray();
+            }
+        }
+        finally
+        {
+            foreach (var document in documents)
+            {
+                document.Dispose();
+            }
         }
     }
 
@@ -146,7 +162,28 @@ public static class PdfMerger
         _ = streams ?? throw new ArgumentNullException(nameof(streams));
         _ = output ?? throw new ArgumentNullException(nameof(output));
 
-        Merge(streams.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle, archiveStandard, docInfoBuilder);
+        var documents = new List<PdfDocument>(streams.Count);
+        try
+        {
+            foreach (var stream in streams)
+            {
+                documents.Add(PdfDocument.Open(stream));
+            }
+
+            Merge(documents, output, pagesBundle, archiveStandard, docInfoBuilder);
+        }
+        finally
+        {
+            foreach (var document in documents)
+            {
+                document.Dispose();
+            }
+        }
+    }
+    
+    private static FileStream OpenReadShared(string path)
+    {
+        return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
     }
 
     private static void Merge(
