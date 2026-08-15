@@ -99,6 +99,7 @@
         public static readonly NameToken Ch = new NameToken("Ch");
         public static readonly NameToken CharProcs = new NameToken("CharProcs");
         public static readonly NameToken CharSet = new NameToken("CharSet");
+        public static readonly NameToken CheckSum = new NameToken("CheckSum");
         public static readonly NameToken CiciSignit = new NameToken("CICI.SignIt");
         public static readonly NameToken CidFontType0 = new NameToken("CIDFontType0");
         public static readonly NameToken CidFontType0C = new NameToken("CIDFontType0C");
@@ -119,6 +120,7 @@
         public static readonly NameToken ColorBurn = new NameToken("ColorBurn");
         public static readonly NameToken ColorDodge = new NameToken("ColorDodge");
         public static readonly NameToken Colorants = new NameToken("Colorants");
+        public static readonly NameToken ColorantTable = new NameToken("ColorantTable");
         public static readonly NameToken Colors = new NameToken("Colors");
         public static readonly NameToken ColorSpace = new NameToken("ColorSpace");
         public static readonly NameToken Columns = new NameToken("Columns");
@@ -154,6 +156,7 @@
         public static readonly NameToken Descent = new NameToken("Descent");
         public static readonly NameToken Dest = new NameToken("Dest");
         public static readonly NameToken DestOutputProfile = new NameToken("DestOutputProfile");
+        public static readonly NameToken DestOutputProfileRef = new NameToken("DestOutputProfileRef");
         public static readonly NameToken Dests = new NameToken("Dests");
         public static readonly NameToken Devicecmyk = new NameToken("DeviceCMYK");
         public static readonly NameToken Devicegray = new NameToken("DeviceGray");
@@ -284,6 +287,7 @@
         public static readonly NameToken I = new NameToken("I");
         public static readonly NameToken Ic = new NameToken("IC");
         public static readonly NameToken Iccbased = new NameToken("ICCBased");
+        public static readonly NameToken IccVersion = new NameToken("ICCVersion");
         public static readonly NameToken Id = new NameToken("ID");
         public static readonly NameToken IdTree = new NameToken("IDTree");
         public static readonly NameToken Identity = new NameToken("Identity");
@@ -456,6 +460,8 @@
         public static readonly NameToken ProcSet = new NameToken("ProcSet");
         public static readonly NameToken Process = new NameToken("Process");
         public static readonly NameToken Producer = new NameToken("Producer");
+        public static readonly NameToken ProfileCS = new NameToken("ProfileCS");
+        public static readonly NameToken ProfileName = new NameToken("ProfileName");
         public static readonly NameToken PropBuild = new NameToken("Prop_Build");
         public static readonly NameToken Properties = new NameToken("Properties");
         public static readonly NameToken Ps = new NameToken("PS");
@@ -509,6 +515,7 @@
         public static readonly NameToken Smask = new NameToken("SMask");
         public static readonly NameToken SoftLight = new NameToken("SoftLight");
         public static readonly NameToken Sound = new NameToken("Sound");
+        public static readonly NameToken SpectralData = new NameToken("SpectralData");
         public static readonly NameToken Square = new NameToken("Square");
         public static readonly NameToken Squiggly = new NameToken("Squiggly");
         public static readonly NameToken Ss = new NameToken("SS");
@@ -584,6 +591,7 @@
         public static readonly NameToken Unix = new NameToken("Unix");
         public static readonly NameToken Uri = new NameToken("URI");
         public static readonly NameToken Url = new NameToken("URL");
+        public static readonly NameToken Urls = new NameToken("URLs");
         public static readonly NameToken Usage = new NameToken("Usage");
         public static readonly NameToken UserUnit = new NameToken("UserUnit");
         // V
