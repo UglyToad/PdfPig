@@ -1,6 +1,7 @@
-namespace UglyToad.PdfPig.Images
+﻿namespace UglyToad.PdfPig.Images
 {
     using Graphics.Colors;
+    using Graphics.Colors.Icc;
     using System;
     using System.Buffers.Binary;
 
@@ -81,7 +82,7 @@ namespace UglyToad.PdfPig.Images
         /// channel count, and for raw codestreams that carry no colour space box, the device colour space
         /// implied by the channel count is used.
         /// </remarks>
-        public static ColorSpaceDetails? GetJpxColorSpaceDetails(ReadOnlyMemory<byte> jpxData)
+        public static ColorSpaceDetails? GetJpxColorSpaceDetails(ReadOnlyMemory<byte> jpxData, ParsingOptions options)
         {
             ReadOnlySpan<byte> jpxSpan = jpxData.Span;
             int numberOfComponents = GetNumberOfComponents(jpxSpan);
@@ -112,8 +113,27 @@ namespace UglyToad.PdfPig.Images
                 case Jpeg2000ColorSpace.Icc:
                     if (numberOfComponents == 1 || numberOfComponents == 3 || numberOfComponents == 4)
                     {
-                        var iccProfile = jpxData.Slice(iccProfileOffset, iccProfileLength); // TODO - use for later
-                        return new ICCBasedColorSpaceDetails(numberOfComponents, null, null, null);
+                        // Not routed through IccProfileCache: this profile is a slice of the image's own
+                        // codestream rather than a stream object the document can point at twice, so there
+                        // is no key to share it under.
+                        var iccProfile = jpxData.Slice(iccProfileOffset, iccProfileLength);
+
+                        IIccProfile? profile = null;
+                        if (options.IccProfileService is not null)
+                        {
+                            try
+                            {
+                                options.IccProfileService.TryGetProfile(iccProfile, out profile);
+                            }
+                            catch (Exception ex)
+                            {
+                                options.Logger.Error("The configured IIccProfileService threw while parsing the ICC profile " +
+                                                     "embedded in a JPEG 2000 image; using the implied device colour space.", ex);
+                            }
+                        }
+
+                        return new ICCBasedColorSpaceDetails(numberOfComponents, null,
+                            null, null, profile, options.Logger);
                     }
                     return null;
                 case Jpeg2000ColorSpace.Unsupported:

@@ -26,7 +26,8 @@ namespace UglyToad.PdfPig.Tests.ContentTests
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                });
+                },
+                null);
         }
 
         private static ArrayToken CreateSeparationArray()

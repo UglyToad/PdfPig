@@ -82,7 +82,8 @@
         [Fact]
         public void Separation_OverIccBased_SetsBaseTypeToIccBased()
         {
-            var icc = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance, null, null);
+            var icc = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
+                null, null, null);
             var separation = new SeparationColorSpaceDetails(
                 NameToken.Create("Spot"),
                 icc,

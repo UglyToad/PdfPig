@@ -23,6 +23,7 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IResourceStore resourceStore;
+        private readonly ParsingOptions options;
 
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
 
@@ -38,7 +39,8 @@
             IReadOnlyList<MarkedContentElement> markedContents,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            ParsingOptions options)
         {
             GraphicsStateOperations = graphicsStateOperations;
             Letters = letters;
@@ -48,6 +50,7 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
+            this.options = options;
         }
 
         public IEnumerable<IPdfImage> GetImages()
@@ -56,7 +59,7 @@
             {
                 if (image.TryGetFirst(out var xObjectContentRecord))
                 {
-                    yield return XObjectFactory.ReadImage(xObjectContentRecord, pdfScanner, filterProvider, resourceStore);
+                    yield return XObjectFactory.ReadImage(xObjectContentRecord, pdfScanner, filterProvider, resourceStore, options);
                 }
                 else if (image.TryGetSecond(out var inlineImage))
                 {

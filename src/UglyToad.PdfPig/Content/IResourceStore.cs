@@ -4,6 +4,8 @@
     using System.Diagnostics.CodeAnalysis;
     using Core;
     using Graphics.Colors;
+    using Graphics.Colors.Icc;
+    using Logging;
     using PdfFonts;
     using Tokens;
 
@@ -82,5 +84,17 @@
         /// Get the shading corresponding to the name.
         /// </summary>
         Shading GetShading(NameToken name);
+
+        /// <summary>
+        /// The configured ICC profile service (from <see cref="ParsingOptions.IccProfileService"/>),
+        /// or <c>null</c> when ICC-based color spaces should fall back to their alternate color space.
+        /// </summary>
+        IIccProfileService? IccProfileService { get; }
+
+        /// <summary>
+        /// The log from <see cref="ParsingOptions.Logger"/>.
+        /// </summary>
+        ILog Logger { get; }
+
     }
 }

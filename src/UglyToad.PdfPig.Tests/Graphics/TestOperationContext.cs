@@ -42,7 +42,8 @@
                             ClipPaths = false,
                             SkipMissingFonts = true,
                             Logger = new NoOpLog()
-                        }))
+                        },
+                        null))
             });
             CurrentSubpath = new PdfSubpath();
         }
