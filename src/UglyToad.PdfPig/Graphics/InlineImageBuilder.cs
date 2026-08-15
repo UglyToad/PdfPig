@@ -29,7 +29,13 @@
         /// </summary>
         public Memory<byte> Bytes { get; internal set; }
 
-        internal InlineImageBuilder(ParsingOptions options)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InlineImageBuilder"/> class with the specified parsing options.
+        /// </summary>
+        /// <param name="options">
+        /// The <see cref="ParsingOptions"/> instance that configures the behavior of the inline image builder.
+        /// </param>
+        public InlineImageBuilder(ParsingOptions options)
         {
             this.options = options;
         }

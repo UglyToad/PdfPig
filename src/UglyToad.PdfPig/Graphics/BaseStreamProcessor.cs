@@ -18,7 +18,6 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using Colors.Icc;
     using Util;
     using XObjects;
 
