@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Graphics
     using Colors;
     using Core;
     using PdfPig.Core;
+    using Colors.Icc;
     using Tokens;
 
     /// <summary>
@@ -53,6 +54,21 @@ namespace UglyToad.PdfPig.Graphics
         /// The rendering intent to use when converting CIE-based colors to device colors.
         /// </summary>
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
+
+        /// <summary>
+        /// Every output intent in effect for the content being processed (14.11.5, "Output intents"), in the
+        /// order the <c>/OutputIntents</c> array wrote them: the page's own array when it has one, otherwise
+        /// the document catalog's.
+        /// Which entry, if any, characterises the output device is the consumer's decision.
+        /// <para>
+        /// <see langword="null"/> and empty both mean "no output intent is in effect" and consumers must
+        /// treat them alike. The distinction is only in how they arise: empty is what a document declaring
+        /// none produces, while <see langword="null"/> is how a consumer <i>suppresses</i> an intent that
+        /// does exist: a renderer clears it for the duration of a soft-mask group, where device values are
+        /// an alpha/luminosity computation rather than output-device colour, and restores it afterwards.
+        /// </para>
+        /// </summary>
+        public IReadOnlyList<OutputIntent>? OutputIntents { get; set; } = null;
 
         /// <summary>
         /// Should a correction for rasterization effects be applied?
@@ -317,6 +333,7 @@ namespace UglyToad.PdfPig.Graphics
                 ColorSpaceContext = ColorSpaceContext?.DeepClone(),
                 BlendMode = BlendMode,
                 SoftMask = SoftMask,
+                OutputIntents = OutputIntents
             };
         }
     }

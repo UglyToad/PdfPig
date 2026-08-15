@@ -16,11 +16,11 @@
             var profileBytes = ProfileStreamReader.GetSRgb2014();
 
             var compressedBytes = DataCompressor.CompressBytes(profileBytes);
-
+            
             var profileStreamDictionary = new Dictionary<NameToken, IToken>
             {
                 {NameToken.Length, new NumericToken(compressedBytes.Length)},
-                {NameToken.N, new NumericToken(3)},
+                {NameToken.N, new NumericToken(ProfileStreamReader.SRgb2014NumberOfComponents)},
                 {NameToken.Filter, NameToken.FlateDecode}
             };
 

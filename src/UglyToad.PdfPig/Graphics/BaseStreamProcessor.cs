@@ -18,6 +18,7 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using Colors.Icc;
     using Util;
     using XObjects;
 
@@ -152,7 +153,8 @@
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox, rotation),
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
+                OutputIntents = resourceStore.GetPageOutputIntents(pageDictionary)
             });
         }
 

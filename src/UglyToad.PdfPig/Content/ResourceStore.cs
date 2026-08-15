@@ -57,6 +57,12 @@
 
         public ILog Logger => parsingOptions.Logger;
 
+        private readonly Lazy<IReadOnlyList<OutputIntent>> outputIntents;
+
+        public IReadOnlyList<OutputIntent> DocumentOutputIntents => outputIntents.Value;
+
+        private readonly Dictionary<IndirectReference, IReadOnlyList<OutputIntent>> pageOutputIntents = new();
+
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
@@ -67,6 +73,40 @@
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
             this.parsingOptions = parsingOptions;
+            this.outputIntents = catalogDictionary is null
+                ? new Lazy<IReadOnlyList<OutputIntent>>(() => [])
+                : new Lazy<IReadOnlyList<OutputIntent>>(() => OutputIntentParser.CreateAll(catalogDictionary,
+                    scanner, filterProvider, parsingOptions.IccProfileService, iccProfileByteCache, Logger));
+        }
+
+        /// <inheritdoc/>
+        public IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary)
+        {
+            if (pageDictionary is null || !pageDictionary.TryGet(NameToken.OutputIntents, out var outputIntentsToken))
+            {
+                return DocumentOutputIntents;
+            }
+
+            if (outputIntentsToken is not IndirectReferenceToken reference)
+            {
+                var parsed = ParsePageOutputIntents(pageDictionary);
+                return parsed.Count > 0 ? parsed : DocumentOutputIntents;
+            }
+
+            if (!pageOutputIntents.TryGetValue(reference.Data, out var cached))
+            {
+                cached = ParsePageOutputIntents(pageDictionary);
+                pageOutputIntents[reference.Data] = cached;
+            }
+
+            // A page whose own array yielded nothing usable still sits inside the document's declaration.
+            return cached.Count > 0 ? cached : DocumentOutputIntents;
+        }
+
+        private IReadOnlyList<OutputIntent> ParsePageOutputIntents(DictionaryToken pageDictionary)
+        {
+            return OutputIntentParser.CreateAll(pageDictionary, scanner, filterProvider,
+                parsingOptions.IccProfileService, iccProfileByteCache, Logger);
         }
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary)
