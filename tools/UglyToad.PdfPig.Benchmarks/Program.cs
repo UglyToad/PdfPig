@@ -12,7 +12,7 @@ internal class Program
         // feature/optimisations-shading work targets.
         if (args.Length == 0)
         {
-            BenchmarkRunner.Run<Type4FunctionBenchmarks>();
+            BenchmarkRunner.Run<IccProfileBenchmarks>();
         }
         else
         {
