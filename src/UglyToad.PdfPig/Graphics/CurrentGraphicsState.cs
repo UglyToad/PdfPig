@@ -1,11 +1,10 @@
-﻿#nullable disable
-
-// ReSharper disable RedundantDefaultMemberInitializer
+﻿// ReSharper disable RedundantDefaultMemberInitializer
 namespace UglyToad.PdfPig.Graphics
 {
     using Colors;
     using Core;
     using PdfPig.Core;
+    using Tokens;
 
     /// <summary>
     /// The state of the current graphics control parameters set by operations in the content stream.
@@ -23,7 +22,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The <see cref="CurrentFontState"/> for this graphics state.
         /// </summary>
-        public CurrentFontState FontState { get; set; } = new CurrentFontState();
+        public CurrentFontState? FontState { get; set; } = new CurrentFontState();
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.
@@ -91,17 +90,169 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The active colorspaces for this content stream.
         /// </summary>
-        public IColorSpaceContext ColorSpaceContext { get; set; }
+        public IColorSpaceContext? ColorSpaceContext { get; set; }
+
+        private PdfColorInfo stroking;
+        private PdfColorInfo nonStroking;
+
+        /// <summary>
+        /// The message on the <see cref="NotSupportedException"/> both colour setters now throw.
+        /// </summary>
+        private const string ColorSetterRemoved = "Setting the current colour directly is no longer supported. Use the relevant Set[...]StrokingColor() instead.";
 
         /// <summary>
         /// The current active stroking color for paths.
         /// </summary>
-        public IColor CurrentStrokingColor { get; set; }
+        /// <exception cref="NotSupportedException">Always, when set. See <see cref="PdfColorInfo"/>.</exception>
+        public IColor CurrentStrokingColor
+        {
+            get
+            {
+                stroking = stroking.Resolved(RenderingIntent);
+                return stroking.Color!;
+            }
+
+            [Obsolete(ColorSetterRemoved, error: true)]
+            set => throw new NotSupportedException(ColorSetterRemoved);
+        }
 
         /// <summary>
         /// The current active non-stroking color for text and fill.
         /// </summary>
-        public IColor CurrentNonStrokingColor { get; set; }
+        /// <exception cref="NotSupportedException">Always, when set. See <see cref="PdfColorInfo"/>.</exception>
+        public IColor CurrentNonStrokingColor
+        {
+            get
+            {
+                nonStroking = nonStroking.Resolved(RenderingIntent);
+                return nonStroking.Color!;
+            }
+
+            [Obsolete(ColorSetterRemoved, error: true)]
+            set => throw new NotSupportedException(ColorSetterRemoved);
+        }
+
+        /// <summary>
+        /// The colour an <b>uncoloured</b> tiling pattern selected for stroking paints its content in, or
+        /// <see langword="null"/> when the current stroking colour is not such a pattern.
+        /// <para>
+        /// <c>SCN</c> selects a pattern by name, and for <c>/PaintType 2</c> it also supplies the colour to
+        /// paint the pattern's cell in, as operands in the underlying colour space the Pattern space was
+        /// declared with (8.7.3.3). <see cref="CurrentStrokingColor"/> answers the pattern; this answers
+        /// that colour. Like the current colours it follows the graphics state's
+        /// <see cref="RenderingIntent"/>, and it is <see langword="null"/> for a coloured tiling pattern, a
+        /// shading pattern, and any non-pattern colour.
+        /// </para>
+        /// </summary>
+        public IColor? CurrentStrokingUnderlyingColor
+        {
+            get
+            {
+                stroking = stroking.Resolved(RenderingIntent);
+                return stroking.UnderlyingColor;
+            }
+        }
+
+        /// <summary>
+        /// The non-stroking counterpart of <see cref="CurrentStrokingUnderlyingColor"/>, selected by <c>scn</c>.
+        /// </summary>
+        public IColor? CurrentNonStrokingUnderlyingColor
+        {
+            get
+            {
+                nonStroking = nonStroking.Resolved(RenderingIntent);
+                return nonStroking.UnderlyingColor;
+            }
+        }
+
+        /// <summary>
+        /// Select the stroking colour from the operands it was written with, keeping them so that the colour
+        /// can be reconverted if the rendering intent changes before anything is painted (8.6.5.8).
+        /// </summary>
+        /// <param name="colorSpace">The colour space the operands belong to.</param>
+        /// <param name="operands">
+        /// The selected component values, or <see langword="null"/> for the colour space's own initial
+        /// colour. Stored by reference, the caller must not mutate the array afterward.
+        /// </param>
+        public void SetStrokingColor(ColorSpaceDetails colorSpace, double[]? operands)
+        {
+            stroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent);
+        }
+
+        /// <summary>
+        /// Select a Pattern colour for stroking, by name, together with any operands accompanying it.
+        /// <para>
+        /// The pattern itself is fixed, but for an uncoloured tiling pattern the operands select the colour
+        /// its content is painted in, and that colour converts and reconverts like any other - access it
+        /// through <see cref="CurrentStrokingUnderlyingColor"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="patternColorSpace">The Pattern colour space the name is resolved against.</param>
+        /// <param name="patternName">The name of an entry in the <c>/Pattern</c> subdictionary of the current resource dictionary.</param>
+        /// <param name="operands">The component values accompanying the name, in the pattern's underlying colour space, or empty
+        /// when there are none. Stored by reference, the caller must not mutate the array afterward.</param>
+        public void SetStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName, double[]? operands)
+        {
+            stroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent);
+        }
+
+        /// <summary>
+        /// The non-stroking counterpart of <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[])"/>.
+        /// </summary>
+        /// <param name="patternColorSpace">The Pattern colour space the name is resolved against.</param>
+        /// <param name="patternName">The name of an entry in the <c>/Pattern</c> subdictionary of the current resource dictionary.</param>
+        /// <param name="operands">The component values accompanying the name, in the pattern's underlying colour space, or empty
+        /// when there are none. Stored by reference, the caller must not mutate the array afterward.</param>
+        public void SetNonStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName, double[]? operands)
+        {
+            nonStroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent);
+        }
+
+        /// <summary>
+        /// Record an already-converted stroking colour, with no colour space or operands behind it.
+        /// <para>
+        /// <b>The colour is fixed: it stands exactly as given and will not follow a later intent change</b>,
+        /// because nothing is kept to reconvert it from.
+        /// </para>
+        /// <para>
+        /// Use it only for a colour a consumer has deliberately computed for itself. A colour selected from
+        /// operands belongs on <see cref="SetStrokingColor(ColorSpaceDetails, double[])"/> and a Pattern
+        /// colour on <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[])"/>,
+        /// both of which keep what they need to answer a later <c>ri</c>.
+        /// </para>
+        /// </summary>
+        /// <param name="color">
+        /// The colour, or <see langword="null"/>, which is what a Pattern colour space's initial colour is,
+        /// and which <see cref="CurrentStrokingColor"/> then hands back.
+        /// </param>
+        public void SetStrokingColor(IColor? color)
+        {
+            stroking = PdfColorInfo.Fixed(color);
+        }
+
+        /// <summary>
+        /// The non-stroking counterpart of <see cref="SetStrokingColor(ColorSpaceDetails, double[])"/>.
+        /// </summary>
+        /// <param name="colorSpace">The colour space the operands belong to.</param>
+        /// <param name="operands">The selected component values, or <see langword="null"/> for the colour
+        /// space's own initial colour. Stored by reference, the caller must not mutate the array afterward.</param>
+        public void SetNonStrokingColor(ColorSpaceDetails colorSpace, double[]? operands)
+        {
+            nonStroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent);
+        }
+
+        /// <summary>
+        /// The non-stroking counterpart of <see cref="SetStrokingColor(UglyToad.PdfPig.Graphics.Colors.IColor?)"/>. The same caveat
+        /// applies: the colour will not follow a later intent change.
+        /// </summary>
+        /// <param name="color">
+        /// The colour, or <see langword="null"/>, which is what a Pattern colour space's initial colour is,
+        /// and which <see cref="CurrentNonStrokingColor"/> then hands back.
+        /// </param>
+        public void SetNonStrokingColor(IColor? color)
+        {
+            nonStroking = PdfColorInfo.Fixed(color);
+        }
 
         /// <summary>
         /// The current blend mode.
@@ -160,12 +311,12 @@ namespace UglyToad.PdfPig.Graphics
                 OverprintMode = OverprintMode,
                 Smoothness = Smoothness,
                 StrokeAdjustment = StrokeAdjustment,
-                CurrentStrokingColor = CurrentStrokingColor,
-                CurrentNonStrokingColor = CurrentNonStrokingColor,
+                stroking = stroking,
+                nonStroking = nonStroking,
                 CurrentClippingPath = CurrentClippingPath,
                 ColorSpaceContext = ColorSpaceContext?.DeepClone(),
                 BlendMode = BlendMode,
-                SoftMask = SoftMask
+                SoftMask = SoftMask,
             };
         }
     }

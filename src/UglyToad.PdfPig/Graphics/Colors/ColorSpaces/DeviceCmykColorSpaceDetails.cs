@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
     using System;
+    using Core;
 
     /// <summary>
     /// Color values are defined by four components cyan, magenta, yellow and black.
@@ -23,13 +24,13 @@
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             return values;
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -44,7 +45,7 @@
             {
                 return CMYKColor.Black;
             }
-            
+
             if (c == 0 && m == 0 && y == 0 && k == 0)
             {
                 return CMYKColor.White;
@@ -54,13 +55,14 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
             return CMYKColor.Black;
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
             double c = values[0];
             double m = values[1];
@@ -73,7 +75,7 @@
         }
 
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             return decoded;
         }

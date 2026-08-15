@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
+    using System.Diagnostics;
     using Colors;
     using Content;
     using Tokens;
@@ -28,7 +29,11 @@
                 return;
             }
 
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
+            var state = currentStateFunc();
+
+            // No operands: the colour space derives its own initial colour. A Pattern colour space has none
+            // and answers null, which this has always stored as-is; scn supplies the colour for that space.
+            state.SetStrokingColor(CurrentStrokingColorSpace, null);
         }
 
         public void SetStrokingColor(double[] operands, NameToken? patternName)
@@ -38,14 +43,19 @@
                 return;
             }
 
-            if (patternName is not null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
-                currentStateFunc().CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
-                // TODO - use operands values for Uncoloured Tiling Patterns
+                Debug.Assert(CurrentStrokingColorSpace.Type == ColorSpace.Pattern);
+
+                // The operands travel with the pattern: an uncoloured tiling pattern (/PaintType 2) paints
+                // its cell in the colour they select from the underlying colour space (8.7.3.3), read back
+                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor.
+                state.SetStrokingPatternColor(patternCs, patternName, operands);
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands);
+                state.SetStrokingColor(CurrentStrokingColorSpace, operands);
             }
         }
 
@@ -72,7 +82,11 @@
                 return;
             }
 
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
+            var state = currentStateFunc();
+
+            // No operands: the colour space derives its own initial colour. A Pattern colour space has none
+            // and answers null, which this has always stored as-is; scn supplies the colour for that space.
+            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null);
         }
 
         public void SetNonStrokingColor(double[] operands, NameToken? patternName)
@@ -82,14 +96,17 @@
                 return;
             }
 
-            if (patternName is not null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentNonStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
-                currentStateFunc().CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
-                // TODO - use operands values for Uncoloured Tiling Patterns
+                Debug.Assert(CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern);
+
+                // See the stroking counterpart: the operands select the uncoloured tiling pattern's colour.
+                state.SetNonStrokingPatternColor(patternCs, patternName, operands);
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands);
+                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands);
             }
         }
 
@@ -119,17 +136,36 @@
             var colorSpace = resourceStore.GetDeviceColorSpaceDetails(deviceColorSpace);
             var state = currentStateFunc();
 
-            IColor color = colorSpace.GetColor(values);
-
             if (stroking)
             {
                 CurrentStrokingColorSpace = colorSpace;
-                state.CurrentStrokingColor = color;
+
+                if (colorSpace.RenderingIntentAffectsOutput)
+                {
+                    // Only allocate operand here, because the graphics state has to keep something to reconvert from
+                    state.SetStrokingColor(colorSpace, values.ToArray());
+                }
+                else
+                {
+                    // The intent is still passed, even though it does not affect the output.
+                    // It is unconditionally the right value here.
+                    state.SetStrokingColor(colorSpace.GetColor(values, state.RenderingIntent));
+                }
             }
             else
             {
                 CurrentNonStrokingColorSpace = colorSpace;
-                state.CurrentNonStrokingColor = color;
+
+                if (colorSpace.RenderingIntentAffectsOutput)
+                {
+                    // See the stroking counterpart.
+                    state.SetNonStrokingColor(colorSpace, values.ToArray());
+                }
+                else
+                {
+                    // See the stroking counterpart for why the intent is passed here.
+                    state.SetNonStrokingColor(colorSpace.GetColor(values, state.RenderingIntent));
+                }
             }
         }
 

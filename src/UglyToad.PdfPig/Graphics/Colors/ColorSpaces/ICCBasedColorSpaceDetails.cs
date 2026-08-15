@@ -5,6 +5,7 @@
     using System.Linq;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Functions;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// The ICCBased color space is one of the CIE-based color spaces supported in PDFs. These color spaces
@@ -86,15 +87,15 @@
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             // TODO - use ICC profile
 
-            return AlternateColorSpace.Process(values);
+            return AlternateColorSpace.Process(values, intent);
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -110,11 +111,11 @@
                 buffer[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
             }
 
-            return AlternateColorSpace.GetColor(buffer);
+            return AlternateColorSpace.GetColor(buffer, intent);
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
             // Setting the current stroking or nonstroking colour space to any CIE-based colour space shall
             // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
@@ -123,11 +124,12 @@
             double v = PdfFunction.ClipToRange(0.0, Range[0], Range[1]);
             Span<double> buffer = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
             buffer.Fill(v);
-            return GetColor(buffer);
+            return GetColor(buffer, intent);
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
             // TODO - use ICC profile
 
@@ -137,15 +139,15 @@
                 int i = 2 * c;
                 clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
             }
-            AlternateColorSpace.GetRgb(clipped, out r, out g, out b);
+            AlternateColorSpace.GetRgb(clipped, intent, out r, out g, out b);
         }
 
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             // TODO - use ICC profile
 
-            return AlternateColorSpace.Transform(decoded);
+            return AlternateColorSpace.Transform(decoded, intent);
         }
     }
 }

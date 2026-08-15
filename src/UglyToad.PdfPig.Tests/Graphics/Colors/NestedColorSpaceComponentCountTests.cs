@@ -1,7 +1,8 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
     using PdfPig.Functions;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
 
     /// <summary>
@@ -115,7 +116,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
 
             // Sizing Transform's buffer from the alternate's NumberOfColorComponents (1) instead of
             // BaseNumberOfColorComponents (4) overflowed the output buffer.
-            byte[] transformed = outer.Transform([255, 0]).ToArray();
+            byte[] transformed = outer.Transform([255, 0], RenderingIntent.RelativeColorimetric).ToArray();
 
             Assert.Equal(2 * outer.BaseNumberOfColorComponents, transformed.Length);
             Assert.Equal(new byte[] { 0, 0, 0, 255, 0, 0, 0, 0 }, transformed);
@@ -126,7 +127,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         {
             var separation = SeparationOverCmyk();
 
-            byte[] transformed = separation.Transform([255, 0]).ToArray();
+            byte[] transformed = separation.Transform([255, 0], RenderingIntent.RelativeColorimetric).ToArray();
 
             Assert.Equal(2 * separation.BaseNumberOfColorComponents, transformed.Length);
             Assert.Equal(new byte[] { 0, 0, 0, 255, 0, 0, 0, 0 }, transformed);
@@ -167,7 +168,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
                 Tint([0], [1]));
 
             // Two samples of two components each.
-            byte[] transformed = deviceN.Transform([255, 0, 0, 255]).ToArray();
+            byte[] transformed = deviceN.Transform([255, 0, 0, 255], RenderingIntent.RelativeColorimetric).ToArray();
 
             Assert.Equal(2 * deviceN.BaseNumberOfColorComponents, transformed.Length);
             Assert.Equal(new byte[] { 255, 0, 0, 0, 0, 0 }, transformed);
@@ -189,7 +190,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
             Assert.Equal(3, outer.NumberOfColorComponents);
             Assert.Equal(4, outer.BaseNumberOfColorComponents);
 
-            byte[] transformed = outer.Transform([255, 0, 0]).ToArray();
+            byte[] transformed = outer.Transform([255, 0, 0], RenderingIntent.RelativeColorimetric).ToArray();
 
             Assert.Equal(outer.BaseNumberOfColorComponents, transformed.Length);
             Assert.Equal(new byte[] { 0, 0, 0, 255 }, transformed);

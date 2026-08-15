@@ -1,10 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using UglyToad.PdfPig.Functions;
-    using UglyToad.PdfPig.Tokens;
+    using Functions;
+    using Tokens;
 
     /// <summary>
     /// DeviceN colour spaces may contain an arbitrary number of colour components. They provide greater flexibility than
@@ -12,10 +13,10 @@
     /// </summary>
     public sealed class DeviceNColorSpaceDetails : ColorSpaceDetails
     {
-        private readonly ConcurrentDictionary<double[], IColor> cache = new(DoubleArrayEqualityComparer.Instance);
+        private readonly ConcurrentDictionary<TintKey, IColor> cache = new(TintKeyEqualityComparer.Instance);
 
 #if NET9_0_OR_GREATER
-        private readonly ConcurrentDictionary<double[], IColor>.AlternateLookup<ReadOnlySpan<double>> lookup;
+        private readonly ConcurrentDictionary<TintKey, IColor>.AlternateLookup<TintKeyRef> lookup;
 #endif
 
         /// <summary>
@@ -26,6 +27,14 @@
 
         /// <inheritdoc/>
         public override int BaseNumberOfColorComponents => AlternateColorSpace.BaseNumberOfColorComponents;
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// The tint transform ignores the intent and only <see cref="AlternateColorSpace"/> can consume it.
+        /// </para>
+        /// </summary>
+        public override bool RenderingIntentAffectsOutput => AlternateColorSpace.RenderingIntentAffectsOutput;
 
         /// <summary>
         /// Specifies name objects specifying the individual colour components. The length of the array shall
@@ -78,19 +87,19 @@
             BaseType = AlternateColorSpace.Type;
 
 #if NET9_0_OR_GREATER
-            lookup = cache.GetAlternateLookup<ReadOnlySpan<double>>();
+            lookup = cache.GetAlternateLookup<TintKeyRef>();
 #endif
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             var evaled = TintFunction.Eval(values);
-            return AlternateColorSpace.Process(evaled);
+            return AlternateColorSpace.Process(evaled, intent);
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -100,23 +109,23 @@
             // TODO - use attributes
 
 #if NET9_0_OR_GREATER
-            if (lookup.TryGetValue(values, out var color))
+            var key = new TintKeyRef(values, intent);
+            if (lookup.TryGetValue(key, out var color))
             {
                 return color;
             }
 
-            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values);
+            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values, intent);
 
-            lookup.TryAdd(values, color);
+            lookup.TryAdd(key, color);
 #else
-            double[] key = values.ToArray();
-
+            var key = new TintKey(values.ToArray(), intent);
             if (cache.TryGetValue(key, out var color))
             {
                 return color;
             }
 
-            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values);
+            color = TintColorSpaceDetailsHelper.GetColorViaTint(TintFunction, AlternateColorSpace, values, intent);
 
             cache.TryAdd(key, color);
 #endif
@@ -124,7 +133,7 @@
         }
 
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             // This is cached locally
             var transformCache = new Dictionary<int, double[]>();
@@ -144,7 +153,7 @@
 
                 if (!transformCache.TryGetValue(key, out double[]? colors))
                 {
-                    colors = Process(comps);
+                    colors = Process(comps, intent);
                     transformCache[key] = colors;
                 }
 
@@ -158,48 +167,83 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
             // When this space is set to the current colour space (using the CS or cs operators), each component
             // shall be given an initial value of 1.0. The SCN and scn operators respectively shall set the current
             // stroking and nonstroking colour.
             Span<double> buffer = NumberOfColorComponents <= 32 ? stackalloc double[NumberOfColorComponents] : new double[NumberOfColorComponents];
             buffer.Fill(1.0);
-            return GetColor(buffer);
+            return GetColor(buffer, intent);
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
-            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values, out r, out g, out b);
+            TintColorSpaceDetailsHelper.GetRgbViaTint(TintFunction, AlternateColorSpace, values, intent, out r, out g, out b);
         }
 
-        private sealed class DoubleArrayEqualityComparer : IEqualityComparer<double[]>
+        private readonly struct TintKey
+        {
+            public TintKey(double[] values, RenderingIntent intent)
+            {
+                Values = values;
+                Intent = intent;
+            }
+
+            public readonly double[] Values;
+
+            public readonly RenderingIntent Intent;
+        }
+
 #if NET9_0_OR_GREATER
-        , IAlternateEqualityComparer<ReadOnlySpan<double>, double[]>
+        private readonly ref struct TintKeyRef
+        {
+            public TintKeyRef(ReadOnlySpan<double> values, RenderingIntent intent)
+            {
+                Values = values;
+                Intent = intent;
+            }
+
+            public readonly ReadOnlySpan<double> Values;
+
+            public readonly RenderingIntent Intent;
+        }
+#endif
+
+        private sealed class TintKeyEqualityComparer : IEqualityComparer<TintKey>
+#if NET9_0_OR_GREATER
+        , IAlternateEqualityComparer<TintKeyRef, TintKey>
 #endif
         {
-            public static readonly DoubleArrayEqualityComparer Instance = new DoubleArrayEqualityComparer();
+            public static readonly TintKeyEqualityComparer Instance = new TintKeyEqualityComparer();
 
-            public bool Equals(double[]? x, double[]? y)
+            public bool Equals(TintKey x, TintKey y)
             {
-                if (ReferenceEquals(x, y))
-                {
-                    return true;
-                }
-
-                if (x is null || y is null)
+                if (x.Intent != y.Intent)
                 {
                     return false;
                 }
 
-                return x.AsSpan().SequenceEqual(y);
+                if (ReferenceEquals(x.Values, y.Values))
+                {
+                    return true;
+                }
+
+                if (x.Values is null || y.Values is null)
+                {
+                    return false;
+                }
+
+                return x.Values.AsSpan().SequenceEqual(y.Values);
             }
 
-            public int GetHashCode(double[] obj)
+            public int GetHashCode(TintKey obj)
             {
                 var hash = new HashCode();
-                foreach (var value in obj)
+                hash.Add(obj.Intent);
+                foreach (var value in obj.Values)
                 {
                     hash.Add(value);
                 }
@@ -208,15 +252,17 @@
             }
 
 #if NET9_0_OR_GREATER
-            public bool Equals(ReadOnlySpan<double> alternate, double[] other)
+            public bool Equals(TintKeyRef alternate, TintKey other)
             {
-                return alternate.SequenceEqual(other);
+                return alternate.Intent == other.Intent &&
+                       alternate.Values.SequenceEqual(other.Values);
             }
 
-            public int GetHashCode(ReadOnlySpan<double> alternate)
+            public int GetHashCode(TintKeyRef alternate)
             {
                 var hash = new HashCode();
-                foreach (var value in alternate)
+                hash.Add(alternate.Intent);
+                foreach (var value in alternate.Values)
                 {
                     hash.Add(value);
                 }
@@ -224,9 +270,9 @@
                 return hash.ToHashCode();
             }
 
-            public double[] Create(ReadOnlySpan<double> alternate)
+            public TintKey Create(TintKeyRef alternate)
             {
-                return alternate.ToArray();
+                return new TintKey(alternate.Values.ToArray(), alternate.Intent);
             }
 #endif
         }
