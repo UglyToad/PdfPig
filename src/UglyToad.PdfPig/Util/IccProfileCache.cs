@@ -73,25 +73,7 @@ namespace UglyToad.PdfPig.Util
                 return null;
             }
 
-            try
-            {
-                if (service.TryGetProfile(bytes, out var profile))
-                {
-                    return profile;
-                }
-
-                log?.Warn("An ICC profile could not be parsed by the configured IIccProfileService; " +
-                          "the colour space will use its alternate.");
-            }
-            catch (Exception ex)
-            {
-                // TryGetProfile is third-party code. A profile that makes it throw is no worse than one it
-                // declines, so it costs the colour space its profile and nothing more.
-                log?.Error("The configured IIccProfileService threw while parsing an ICC profile; " +
-                           "the colour space will use its alternate.", ex);
-            }
-
-            return null;
+            return IccProfileParser.Parse(bytes, service, log);
         }
     }
 }

@@ -4,6 +4,7 @@
     using Graphics.Colors.Icc;
     using System;
     using System.Buffers.Binary;
+    using Util;
 
     internal static class Jpeg2000Helper
     {
@@ -113,24 +114,13 @@
                 case Jpeg2000ColorSpace.Icc:
                     if (numberOfComponents == 1 || numberOfComponents == 3 || numberOfComponents == 4)
                     {
-                        // Not routed through IccProfileCache: this profile is a slice of the image's own
-                        // codestream rather than a stream object the document can point at twice, so there
-                        // is no key to share it under.
+                        // Not cached: this profile is a slice of the image's own codestream rather than a
+                        // stream object the document can point at twice, so there is no key to share it under.
                         var iccProfile = jpxData.Slice(iccProfileOffset, iccProfileLength);
 
-                        IIccProfile? profile = null;
-                        if (options.IccProfileService is not null)
-                        {
-                            try
-                            {
-                                options.IccProfileService.TryGetProfile(iccProfile, out profile);
-                            }
-                            catch (Exception ex)
-                            {
-                                options.Logger.Error("The configured IIccProfileService threw while parsing the ICC profile " +
-                                                     "embedded in a JPEG 2000 image; using the implied device colour space.", ex);
-                            }
-                        }
+                        IIccProfile? profile = options.IccProfileService is null
+                            ? null
+                            : IccProfileParser.Parse(iccProfile, options.IccProfileService, options.Logger);
 
                         return new ICCBasedColorSpaceDetails(numberOfComponents, null,
                             null, null, profile, options.Logger);
