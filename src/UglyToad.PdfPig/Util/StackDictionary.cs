@@ -57,6 +57,25 @@ namespace UglyToad.PdfPig.Util
             return false;
         }
 
+        /// <summary>
+        /// Collapses every level currently on the stack into a single dictionary, with entries from
+        /// higher (more recently pushed) levels shadowing those from lower ones.
+        /// </summary>
+        public IReadOnlyDictionary<K, V> Flatten()
+        {
+            var result = new Dictionary<K, V>();
+
+            foreach (var v in values)
+            {
+                foreach (var pair in v)
+                {
+                    result[pair.Key] = pair.Value;
+                }
+            }
+
+            return result;
+        }
+
         public void Push()
         {
             values.Add(new Dictionary<K, V>());
