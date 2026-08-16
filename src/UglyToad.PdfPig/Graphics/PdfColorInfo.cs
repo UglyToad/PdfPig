@@ -62,14 +62,22 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// A colour selected in <paramref name="colorSpace"/>, converted now under <paramref name="intent"/>
         /// and reconvertible later under another.
+        /// <para>
+        /// If <see cref="ColorSpaceDetails.RenderingIntentAffectsOutput"/> is  <see langword="false"/>, <see cref="Fixed"/> is used.
+        /// You should check beforehand if the operands array allocation is required.
+        /// </para>
         /// </summary>
         /// <param name="colorSpace">The colour space the operands belong to.</param>
         /// <param name="operands">The selected component values, or <see langword="null"/> for the colour space's initial colour.
         /// Stored by reference, the caller must not mutate it afterward.</param>
         /// <param name="intent">The intent in force when the colour was selected.</param>
-        public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands,
-            RenderingIntent intent)
-            => new(colorSpace, operands, Convert(colorSpace, operands, intent), null, intent);
+        public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent)
+        {
+            var color = Convert(colorSpace, operands, intent);
+            return colorSpace.RenderingIntentAffectsOutput
+                ? new(colorSpace, operands, color, null, intent)
+                : Fixed(color);
+        }
 
         /// <summary>
         /// A Pattern colour selected by <c>SCN</c>/<c>scn</c>. The pattern itself is fixed (it comes from a

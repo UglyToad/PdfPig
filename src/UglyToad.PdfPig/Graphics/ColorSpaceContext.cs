@@ -139,33 +139,41 @@
             if (stroking)
             {
                 CurrentStrokingColorSpace = colorSpace;
-
-                if (colorSpace.RenderingIntentAffectsOutput)
-                {
-                    // Only allocate operand here, because the graphics state has to keep something to reconvert from
-                    state.SetStrokingColor(colorSpace, values.ToArray());
-                }
-                else
-                {
-                    // The intent is still passed, even though it does not affect the output.
-                    // It is unconditionally the right value here.
-                    state.SetStrokingColor(colorSpace.GetColor(values, state.RenderingIntent));
-                }
             }
             else
             {
                 CurrentNonStrokingColorSpace = colorSpace;
+            }
 
-                if (colorSpace.RenderingIntentAffectsOutput)
+            if (colorSpace.RenderingIntentAffectsOutput)
+            {
+                // Paying the cost of allocating operand only here: this is the one case where the graphics
+                // state keeps them, to reconvert from if the intent moves before the mark is made.
+                double[] operands = values.ToArray();
+
+                if (stroking)
                 {
-                    // See the stroking counterpart.
-                    state.SetNonStrokingColor(colorSpace, values.ToArray());
+                    state.SetStrokingColor(colorSpace, operands);
                 }
                 else
                 {
-                    // See the stroking counterpart for why the intent is passed here.
-                    state.SetNonStrokingColor(colorSpace.GetColor(values, state.RenderingIntent));
+                    state.SetNonStrokingColor(colorSpace, operands);
                 }
+
+                return;
+            }
+
+            // The intent is still passed, even though it cannot affect the output; it is unconditionally
+            // the right value here.
+            var color = colorSpace.GetColor(values, state.RenderingIntent);
+
+            if (stroking)
+            {
+                state.SetStrokingColor(color);
+            }
+            else
+            {
+                state.SetNonStrokingColor(color);
             }
         }
 

@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
     using System;
     using System.Collections.Generic;
@@ -26,7 +26,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         /// answering for itself is covered separately, in
         /// <see cref="InitializeColorRenderingIntentTests"/>.
         /// </summary>
-        private sealed class IntentSensitiveColorSpaceDetails : ColorSpaceDetails
+        private class IntentSensitiveColorSpaceDetails : ColorSpaceDetails
         {
             public IntentSensitiveColorSpaceDetails() : base(ColorSpace.DeviceRGB)
             {
@@ -55,6 +55,17 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
             internal override double[] Process(double[] values, RenderingIntent intent) => values;
 
             internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent) => decoded;
+        }
+
+        /// <summary>
+        /// Converts differently per intent while reporting that it does not, which no real colour space
+        /// does. It makes the difference between "converted once and kept" and "reconverted on demand"
+        /// visible in the output, which is otherwise unobservable precisely because honest spaces agree
+        /// across intents.
+        /// </summary>
+        private sealed class DishonestColorSpaceDetails : IntentSensitiveColorSpaceDetails
+        {
+            public override bool RenderingIntentAffectsOutput => false;
         }
 
         /// <summary>
@@ -197,6 +208,49 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
 
             (r, _, _) = state.CurrentNonStrokingColor.ToRGBValues();
             Assert.Equal(0.10, r);
+        }
+
+        [Fact]
+        public void ANonVaryingSpaceIsConvertedOnceAndNotAgain()
+        {
+            // The other half of the contract, and the point of the property: a space that says its output
+            // cannot vary is converted at selection time and nothing is retained to reconvert from, so a
+            // later ri cannot move it. Only a space that lies about the property can show this.
+            var state = new PdfPig.Graphics.CurrentGraphicsState
+            {
+                RenderingIntent = RenderingIntent.RelativeColorimetric
+            };
+
+            state.SetNonStrokingColor(new DishonestColorSpaceDetails(), [0.0, 0.0, 0.0]);
+
+            var (r, _, _) = state.CurrentNonStrokingColor.ToRGBValues();
+            Assert.Equal(0.60, r);
+
+            state.RenderingIntent = RenderingIntent.Perceptual;
+
+            (r, _, _) = state.CurrentNonStrokingColor.ToRGBValues();
+            Assert.Equal(0.60, r);
+        }
+
+        [Fact]
+        public void ANonVaryingSpacesInitialColourIsAlsoConvertedOnce()
+        {
+            // The cs/CS path, where the colour space supplies its own initial colour and there are no
+            // operands at all. It goes through the same conversion, so it has to make the same choice.
+            var state = new PdfPig.Graphics.CurrentGraphicsState
+            {
+                RenderingIntent = RenderingIntent.RelativeColorimetric
+            };
+
+            state.SetStrokingColor(new DishonestColorSpaceDetails(), null);
+
+            var (r, _, _) = state.CurrentStrokingColor.ToRGBValues();
+            Assert.Equal(0.60, r);
+
+            state.RenderingIntent = RenderingIntent.Perceptual;
+
+            (r, _, _) = state.CurrentStrokingColor.ToRGBValues();
+            Assert.Equal(0.60, r);
         }
     }
 }
