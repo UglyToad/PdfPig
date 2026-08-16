@@ -31,11 +31,11 @@
         private readonly Dictionary<NameToken, ColorSpaceDetails> loadedNamedColorSpaceDetails = new Dictionary<NameToken, ColorSpaceDetails>();
         private readonly Dictionary<(NameToken? Name, IToken ColorSpace), ColorSpaceDetails> loadedColorSpaceDetailsCache = new Dictionary<(NameToken?, IToken), ColorSpaceDetails>();
 
-        private readonly Dictionary<NameToken, DictionaryToken> markedContentProperties = new Dictionary<NameToken, DictionaryToken>();
+        private readonly StackDictionary<NameToken, DictionaryToken> markedContentProperties = new StackDictionary<NameToken, DictionaryToken>();
 
-        private readonly Dictionary<NameToken, Shading> shadingsProperties = new Dictionary<NameToken, Shading>();
+        private readonly StackDictionary<NameToken, Shading> shadingsProperties = new StackDictionary<NameToken, Shading>();
 
-        private readonly Dictionary<NameToken, PatternColor> patternsProperties = new Dictionary<NameToken, PatternColor>();
+        private readonly StackDictionary<NameToken, PatternColor> patternsProperties = new StackDictionary<NameToken, PatternColor>();
 
         // 8.6.5.6: while a DefaultGray/RGB/CMYK substitution is being resolved, any device colour space
         // encountered inside the substitute's own definition refers to the genuine device space and shall
@@ -67,6 +67,9 @@
             currentFontState.Push();
             currentXObjectState.Push();
             extendedGraphicsStates.Push();
+            markedContentProperties.Push();
+            shadingsProperties.Push();
+            patternsProperties.Push();
 
             if (resourceDictionary.TryGet(NameToken.Font, out var fontBase))
             {
@@ -203,6 +206,9 @@
             currentXObjectState.Pop();
             namedColorSpaces.Pop();
             extendedGraphicsStates.Pop();
+            markedContentProperties.Pop();
+            shadingsProperties.Pop();
+            patternsProperties.Pop();
         }
 
         private void LoadFontDictionary(DictionaryToken fontDictionary)
@@ -522,7 +528,7 @@
 
         public IReadOnlyDictionary<NameToken, PatternColor> GetPatterns()
         {
-            return patternsProperties;
+            return patternsProperties.Flatten();
         }
     }
 }
