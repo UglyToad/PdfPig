@@ -4,18 +4,12 @@
     using PdfPig.Content;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Colors;
-    using PdfPig.PdfFonts;
     using PdfPig.Tokens;
-    using UglyToad.PdfPig.Tests.Tokens;
+    using PdfPig.Tests.Tokens;
     using Xunit;
 
     public class ResourceStoreDefaultColorSpaceTests
     {
-        private sealed class NoOpFontFactory : IFontFactory
-        {
-            public IFont Get(DictionaryToken dictionary) => null!;
-        }
-
         private static ResourceStore BuildStore()
         {
             return new ResourceStore(

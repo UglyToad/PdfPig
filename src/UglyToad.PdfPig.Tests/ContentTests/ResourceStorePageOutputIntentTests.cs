@@ -1,13 +1,9 @@
-namespace UglyToad.PdfPig.Tests.ContentTests
+﻿namespace UglyToad.PdfPig.Tests.ContentTests
 {
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using PdfPig.Content;
     using PdfPig.Core;
-    using PdfPig.Graphics.Colors.Icc;
-    using PdfPig.Graphics.Core;
-    using PdfPig.PdfFonts;
     using PdfPig.Tokens;
     using Tokens;
 
@@ -18,11 +14,6 @@ namespace UglyToad.PdfPig.Tests.ContentTests
     /// </summary>
     public class ResourceStorePageOutputIntentTests
     {
-        private sealed class NoOpFontFactory : IFontFactory
-        {
-            public IFont Get(DictionaryToken dictionary) => null!;
-        }
-
         [Fact]
         public void ExposesTheCatalogIntents()
         {
@@ -333,7 +324,7 @@ namespace UglyToad.PdfPig.Tests.ContentTests
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                    IccProfileService = new FakeIccProfileService()
+                    IccProfileService = new TestIccProfileService(4)
                 },
                 catalogDictionary);
         }
@@ -373,29 +364,6 @@ namespace UglyToad.PdfPig.Tests.ContentTests
                 { NameToken.OutputConditionIdentifier, new StringToken(conditionIdentifier) },
                 { NameToken.DestOutputProfile, new IndirectReferenceToken(reference) }
             });
-        }
-
-        private sealed class FakeIccProfileService : IIccProfileService
-        {
-            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes,
-                [NotNullWhen(true)] out IIccProfile? profile)
-            {
-                profile = new FakeIccProfile();
-                return true;
-            }
-        }
-
-        private sealed class FakeIccProfile : IIccProfile
-        {
-            public int NumberOfComponents => 4;
-
-            public IReadOnlyList<double> ComponentRanges { get; } = [0, 1, 0, 1, 0, 1, 0, 1];
-
-            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
-            {
-                transform = null;
-                return false;
-            }
         }
     }
 }

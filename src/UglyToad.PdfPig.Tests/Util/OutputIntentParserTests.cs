@@ -1,11 +1,10 @@
-namespace UglyToad.PdfPig.Tests.Util
+﻿namespace UglyToad.PdfPig.Tests.Util
 {
     using System.Linq;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using PdfPig.Core;
     using PdfPig.Graphics.Colors.Icc;
-    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
     using PdfPig.Util;
     using Tokens;
@@ -107,7 +106,7 @@ namespace UglyToad.PdfPig.Tests.Util
             var catalog = Catalog(new IndirectReferenceToken(reference));
 
             var intent = Assert.Single(OutputIntentParser.CreateAll(catalog, scanner, TestFilterProvider.Instance,
-                new FakeIccProfileService(), new IccProfileCache()));
+                new TestIccProfileService(4), new IccProfileCache()));
 
             Assert.Equal("FOGRA51", intent.OutputConditionIdentifier);
             Assert.NotNull(intent.DestOutputProfile);
@@ -127,7 +126,7 @@ namespace UglyToad.PdfPig.Tests.Util
             });
 
             var intent = Assert.Single(OutputIntentParser.CreateAll(catalog, scanner, TestFilterProvider.Instance,
-                new FakeIccProfileService(), new IccProfileCache()));
+                new TestIccProfileService(4), new IccProfileCache()));
 
             Assert.Equal("GTS_PDFX", intent.Name);
         }
@@ -424,9 +423,9 @@ namespace UglyToad.PdfPig.Tests.Util
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
             var first = Assert.Single(
-                OutputIntentParser.CreateAll(catalog, scanner, filters, new FakeIccProfileService(), cache));
+                OutputIntentParser.CreateAll(catalog, scanner, filters, new TestIccProfileService(4), cache));
             var second = Assert.Single(
-                OutputIntentParser.CreateAll(catalog, scanner, filters, new FakeIccProfileService(), cache));
+                OutputIntentParser.CreateAll(catalog, scanner, filters, new TestIccProfileService(4), cache));
 
             Assert.NotNull(first.DestOutputProfile);
             Assert.NotNull(second.DestOutputProfile);
@@ -446,7 +445,7 @@ namespace UglyToad.PdfPig.Tests.Util
                 Intent("GTS_PDFX", "FOGRA51", withProfile: true),
                 Intent("GTS_PDFA1", "FOGRA39", withProfile: true));
 
-            var all = OutputIntentParser.CreateAll(catalog, Scanner, filters, new FakeIccProfileService(), cache);
+            var all = OutputIntentParser.CreateAll(catalog, Scanner, filters, new TestIccProfileService(4), cache);
 
             Assert.Equal(2, all.Count);
             Assert.NotNull(all[0].DestOutputProfile);
@@ -466,12 +465,12 @@ namespace UglyToad.PdfPig.Tests.Util
 
             var reference = new IndirectReferenceToken(new IndirectReference(7, 0));
             cache.GetOrParse(reference, (StreamToken)scanner.Get(reference.Data).Data, filters, scanner,
-                new FakeIccProfileService());
+                new TestIccProfileService(4));
 
             Assert.Equal(1, filters.DecodeCount);
 
             var intent = Assert.Single(
-                OutputIntentParser.CreateAll(catalog, scanner, filters, new FakeIccProfileService(), cache));
+                OutputIntentParser.CreateAll(catalog, scanner, filters, new TestIccProfileService(4), cache));
 
             Assert.NotNull(intent.DestOutputProfile);
             Assert.Equal(1, filters.DecodeCount);
@@ -485,7 +484,7 @@ namespace UglyToad.PdfPig.Tests.Util
             var catalog = Catalog(IntentReferencingProfile(scanner, objectNumber: 7));
 
             var intent = Assert.Single(OutputIntentParser.CreateAll(catalog, scanner, filters,
-                new FakeIccProfileService(), new IccProfileCache()));
+                new TestIccProfileService(4), new IccProfileCache()));
 
             Assert.Equal("FOGRA51", intent.OutputConditionIdentifier);
             Assert.Null(intent.DestOutputProfile);
@@ -504,7 +503,7 @@ namespace UglyToad.PdfPig.Tests.Util
             for (int i = 0; i < 3; i++)
             {
                 Assert.Null(Assert.Single(OutputIntentParser.CreateAll(catalog, scanner, filters,
-                    new FakeIccProfileService(), cache)).DestOutputProfile);
+                    new TestIccProfileService(4), cache)).DestOutputProfile);
             }
 
             Assert.Equal(1, filters.DecodeCount);
@@ -530,7 +529,7 @@ namespace UglyToad.PdfPig.Tests.Util
         private static IReadOnlyList<OutputIntent> CreateAll(DictionaryToken catalog)
         {
             return OutputIntentParser.CreateAll(catalog, Scanner, TestFilterProvider.Instance,
-                new FakeIccProfileService(), new IccProfileCache());
+                new TestIccProfileService(4), new IccProfileCache());
         }
 
         private static DictionaryToken Catalog(params IToken[] intents)
@@ -573,16 +572,6 @@ namespace UglyToad.PdfPig.Tests.Util
             return new StreamToken(dictionary, new byte[] { 1, 2, 3, 4 });
         }
 
-        private sealed class FakeIccProfileService : IIccProfileService
-        {
-            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes,
-                [NotNullWhen(true)] out IIccProfile? profile)
-            {
-                profile = new FakeIccProfile(4);
-                return true;
-            }
-        }
-
         /// <summary>
         /// An implementation that does not recognise the profile it was handed.
         /// </summary>
@@ -605,20 +594,6 @@ namespace UglyToad.PdfPig.Tests.Util
                 [NotNullWhen(true)] out IIccProfile? profile)
             {
                 throw new InvalidOperationException("Malformed profile.");
-            }
-        }
-
-        private sealed class FakeIccProfile(int numberOfComponents) : IIccProfile
-        {
-            public int NumberOfComponents { get; } = numberOfComponents;
-
-            public IReadOnlyList<double> ComponentRanges { get; } =
-                Enumerable.Repeat(new[] { 0.0, 1.0 }, numberOfComponents).SelectMany(x => x).ToArray();
-
-            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
-            {
-                transform = null;
-                return false;
             }
         }
     }

@@ -1,11 +1,10 @@
-namespace UglyToad.PdfPig.Tests.Util
+﻿namespace UglyToad.PdfPig.Tests.Util
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using PdfPig.Core;
     using PdfPig.Graphics.Colors.Icc;
-    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
     using PdfPig.Util;
     using Tokens;
@@ -30,7 +29,7 @@ namespace UglyToad.PdfPig.Tests.Util
                 [NotNullWhen(true)] out IIccProfile? profile)
             {
                 ParseCount++;
-                profile = succeed ? new StubProfile() : null;
+                profile = succeed ? new TestIccProfile() : null;
                 return profile is not null;
             }
         }
@@ -40,19 +39,6 @@ namespace UglyToad.PdfPig.Tests.Util
             public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes,
                 [NotNullWhen(true)] out IIccProfile? profile)
                 => throw new InvalidOperationException("Simulated parser failure.");
-        }
-
-        private sealed class StubProfile : IIccProfile
-        {
-            public int NumberOfComponents => 3;
-
-            public IReadOnlyList<double> ComponentRanges { get; } = [0, 1, 0, 1, 0, 1];
-
-            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
-            {
-                transform = null;
-                return false;
-            }
         }
 
         [Fact]

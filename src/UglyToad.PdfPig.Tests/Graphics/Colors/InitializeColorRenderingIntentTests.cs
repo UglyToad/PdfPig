@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
     using System;
     using System.Collections.Generic;
@@ -8,7 +8,6 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
     using PdfPig.Graphics.Colors;
     using PdfPig.Graphics.Colors.Icc;
     using PdfPig.Graphics.Core;
-    using PdfPig.PdfFonts;
     using PdfPig.Tests.Tokens;
     using PdfPig.Tokens;
     using Xunit;
@@ -21,11 +20,6 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
     /// </summary>
     public class InitializeColorRenderingIntentTests
     {
-        private sealed class NoOpFontFactory : IFontFactory
-        {
-            public IFont Get(DictionaryToken dictionary) => null!;
-        }
-
         /// <summary>
         /// Answers a different colour per intent, so which transform was chosen is visible in the output.
         /// </summary>

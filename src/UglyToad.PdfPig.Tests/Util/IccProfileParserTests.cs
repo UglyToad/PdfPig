@@ -1,10 +1,9 @@
-namespace UglyToad.PdfPig.Tests.Util
+﻿namespace UglyToad.PdfPig.Tests.Util
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using PdfPig.Graphics.Colors.Icc;
-    using PdfPig.Graphics.Core;
     using PdfPig.Logging;
     using PdfPig.Util;
 
@@ -33,19 +32,6 @@ namespace UglyToad.PdfPig.Tests.Util
             public void Error(string message, Exception ex) => Errors.Add(message);
         }
 
-        private sealed class StubProfile : IIccProfile
-        {
-            public int NumberOfComponents => 3;
-
-            public IReadOnlyList<double> ComponentRanges => [0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
-
-            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
-            {
-                transform = null;
-                return false;
-            }
-        }
-
         /// <summary>
         /// Answers <paramref name="profile"/>, or throws when <paramref name="throws"/>.
         /// </summary>
@@ -69,7 +55,7 @@ namespace UglyToad.PdfPig.Tests.Util
         public void AParsedProfileIsReturnedAndNothingIsLogged()
         {
             var log = new RecordingLog();
-            var expected = new StubProfile();
+            var expected = new TestIccProfile();
 
             var profile = IccProfileParser.Parse(ProfileBytes, new StubService(expected), log);
 

@@ -1,9 +1,6 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors.Icc
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors.Icc
 {
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using PdfPig.Graphics.Colors.Icc;
-    using PdfPig.Graphics.Core;
     using Xunit;
 
     /// <summary>
@@ -14,26 +11,13 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors.Icc
     /// </summary>
     public class OutputIntentSelectionTests
     {
-        private sealed class StubProfile : IIccProfile
-        {
-            public int NumberOfComponents => 4;
-
-            public IReadOnlyList<double> ComponentRanges => [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
-
-            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
-            {
-                transform = null;
-                return false;
-            }
-        }
-
         /// <summary>
         /// An output intent identified by its <c>/OutputConditionIdentifier</c>, so that which entry was
         /// picked is visible in the assertion.
         /// </summary>
         private static OutputIntent Intent(string? subtype, string identifier, bool withProfile)
             => new OutputIntent(subtype, null, identifier, null, null,
-                withProfile ? new StubProfile() : null, null, null, null);
+                withProfile ? new TestIccProfile(4) : null, null, null, null);
 
         private static string? Select(params OutputIntent[] intents)
             => OutputIntent.SelectForColorManagement(intents)?.OutputConditionIdentifier;

@@ -5,7 +5,6 @@
     using PdfPig.Core;
     using PdfPig.Graphics.Colors;
     using PdfPig.Graphics.Core;
-    using PdfPig.PdfFonts;
     using PdfPig.Tokens;
     using PdfPig.Tests.Tokens;
     using Xunit;
@@ -20,11 +19,6 @@
     /// </summary>
     public class IccBasedAlternateColorSpaceTests
     {
-        private sealed class NoOpFontFactory : IFontFactory
-        {
-            public IFont Get(DictionaryToken dictionary) => null!;
-        }
-
         private static readonly DictionaryToken Empty = new DictionaryToken(new Dictionary<NameToken, IToken>());
 
         private static ArrayToken CalRgbArray()
