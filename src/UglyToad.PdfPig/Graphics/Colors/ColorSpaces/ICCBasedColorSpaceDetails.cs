@@ -268,27 +268,16 @@
         }
 
         /// <summary>
-        /// Clip the components to <see cref="Range"/>.
-        /// </summary>
-        private void ClipToRange(ReadOnlySpan<double> values, Span<double> destination)
-        {
-            for (int c = 0; c < destination.Length; c++)
-            {
-                int i = 2 * c;
-                destination[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
-            }
-        }
-
-        /// <summary>
         /// The bounds the profile path clips against, and the range a sample byte is understood to span:
         /// the profile's own encoding when it declares one, otherwise the colour space's <c>/Range</c>.
         /// </summary>
         private IReadOnlyList<double> EffectiveRanges => profileRanges ?? Range;
 
-        private void ClipForProfile(ReadOnlySpan<double> values, Span<double> destination)
+        /// <summary>
+        /// Clip each component to its <paramref name="bounds"/> pair, <c>[min0 max0 min1 max1 ...]</c>.
+        /// </summary>
+        private static void Clip(ReadOnlySpan<double> values, IReadOnlyList<double> bounds, Span<double> destination)
         {
-            IReadOnlyList<double> bounds = EffectiveRanges;
-
             for (int c = 0; c < destination.Length; c++)
             {
                 int i = 2 * c;
@@ -363,7 +352,7 @@
             if (transform is not null)
             {
                 Span<double> forProfile = stackalloc double[NumberOfColorComponents];
-                ClipForProfile(operands, forProfile);
+                Clip(operands, EffectiveRanges, forProfile);
 
                 if (TryToRgb(transform, forProfile, out double r, out double g, out double b))
                 {
@@ -372,7 +361,7 @@
             }
 
             double[] clipped = new double[NumberOfColorComponents];
-            ClipToRange(operands, clipped);
+            Clip(operands, Range, clipped);
 
             if (IccProfile is null)
             {
@@ -402,14 +391,14 @@
             var transform = GetTransformWithFallback(intent);
             if (transform is not null)
             {
-                ClipForProfile(values, buffer);
+                Clip(values, EffectiveRanges, buffer);
                 if (TryToRgb(transform, buffer, out double r, out double g, out double b))
                 {
                     return new RGBColor(r, g, b);
                 }
             }
 
-            ClipToRange(values, buffer);
+            Clip(values, Range, buffer);
             return AlternateColorSpace.GetColor(buffer, intent);
         }
 
@@ -435,14 +424,14 @@
             var transform = GetTransformWithFallback(intent);
             if (transform is not null)
             {
-                ClipForProfile(values, clipped);
+                Clip(values, EffectiveRanges, clipped);
                 if (TryToRgb(transform, clipped, out r, out g, out b))
                 {
                     return;
                 }
             }
 
-            ClipToRange(values, clipped);
+            Clip(values, Range, clipped);
             AlternateColorSpace.GetRgb(clipped, intent, out r, out g, out b);
         }
 
