@@ -42,7 +42,8 @@ namespace UglyToad.PdfPig.Tests.Integration
             {
                 UseLenientParsing = true,
                 SkipMissingFonts = true,
-            });
+            },
+            null);
 
         private static DictionaryToken Dict(params (NameToken Key, IToken Value)[] entries)
         {
@@ -281,7 +282,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             TransformationMatrix initialMatrix,
             ParsingOptions parsingOptions)
             : BaseStreamProcessor<IReadOnlyList<ShadingUsage>>(pageNumber, resourceStore, pdfScanner,
-                pageContentParser, filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix, parsingOptions)
+                pageContentParser, filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix, null, parsingOptions)
         {
             private readonly List<ShadingUsage> _usages = [];
             private int _formDepth;

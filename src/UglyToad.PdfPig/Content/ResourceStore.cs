@@ -35,7 +35,7 @@
 
         // NOT cleared per resource dictionary: it is keyed by the profile stream's indirect reference (unique document-wide)
         private readonly IccProfileCache iccProfileByteCache = new IccProfileCache();
-        
+
         private readonly StackDictionary<NameToken, DictionaryToken> markedContentProperties = new StackDictionary<NameToken, DictionaryToken>();
 
         private readonly StackDictionary<NameToken, Shading> shadingsProperties = new StackDictionary<NameToken, Shading>();
