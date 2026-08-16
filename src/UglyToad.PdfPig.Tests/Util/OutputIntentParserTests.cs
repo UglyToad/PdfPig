@@ -583,6 +583,9 @@
                 profile = null;
                 return false;
             }
+            public bool UseOutputIntent => false;
+
+            public string? PreferredOutputIntentSubtype => null;
         }
 
         /// <summary>
@@ -595,6 +598,9 @@
             {
                 throw new InvalidOperationException("Malformed profile.");
             }
+            public bool UseOutputIntent => false;
+
+            public string? PreferredOutputIntentSubtype => null;
         }
     }
 }

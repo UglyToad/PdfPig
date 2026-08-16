@@ -43,5 +43,12 @@ namespace UglyToad.PdfPig.Tests
             profile = new TestIccProfile(numberOfComponents);
             return true;
         }
+
+        /// <summary>
+        /// Output-intent colour management is a rendering concern that PdfPig's own tests never exercise.
+        /// </summary>
+        public bool UseOutputIntent => false;
+
+        public string? PreferredOutputIntentSubtype => null;
     }
 }

@@ -63,6 +63,9 @@
                 profile = new PerIntentProfile();
                 return true;
             }
+            public bool UseOutputIntent => false;
+
+            public string? PreferredOutputIntentSubtype => null;
         }
 
         /// <summary>

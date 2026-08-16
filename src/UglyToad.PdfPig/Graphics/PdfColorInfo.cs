@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Graphics
 {
     using Colors;
+    using Colors.Icc;
     using Core;
     using Tokens;
 
@@ -40,16 +41,25 @@ namespace UglyToad.PdfPig.Graphics
         /// </summary>
         private readonly IColor? patternColor;
 
+        /// <summary>
+        /// The output intent profile <see cref="color"/> was managed through, or <see langword="null"/> when
+        /// it was not managed (14.11.5 / 8.6.5.7). Retained because the profile resolves a <i>different</i>
+        /// transform per <see cref="RenderingIntent"/>, so a managed colour has to be re-managed when the
+        /// intent moves - even for a device colour space, whose own conversion cannot vary.
+        /// </summary>
+        private readonly IIccProfile? outputIntentProfile;
+
         private readonly RenderingIntent intent;
 
         private PdfColorInfo(ColorSpaceDetails? colorSpace, double[]? operands, IColor? color,
-            IColor? patternColor, RenderingIntent intent)
+            IColor? patternColor, RenderingIntent intent, IIccProfile? outputIntentProfile = null)
         {
             this.colorSpace = colorSpace;
             this.operands = operands;
             this.color = color;
             this.patternColor = patternColor;
             this.intent = intent;
+            this.outputIntentProfile = outputIntentProfile;
         }
 
         /// <summary>
@@ -71,13 +81,37 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="operands">The selected component values, or <see langword="null"/> for the colour space's initial colour.
         /// Stored by reference, the caller must not mutate it afterward.</param>
         /// <param name="intent">The intent in force when the colour was selected.</param>
-        public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent)
+        /// <param name="outputIntentProfile">
+        /// (Optional) The output intent profile to colour-manage the converted colour through, when the
+        /// document declares one and the configured <see cref="IIccProfileService"/> opted in. Managing a
+        /// colour makes it vary by intent whatever its colour space says, so a managed colour keeps its
+        /// operands however <see cref="ColorSpaceDetails.RenderingIntentAffectsOutput"/> answered.
+        /// </param>
+        public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands,
+            RenderingIntent intent, IIccProfile? outputIntentProfile = null)
         {
             var color = Convert(colorSpace, operands, intent);
+
+            if (outputIntentProfile is not null &&
+                TryManage(colorSpace, color, outputIntentProfile, intent, out var managed))
+            {
+                return new(colorSpace, operands, managed, null, intent, outputIntentProfile);
+            }
+
+            // Not managed - either no output intent applies, or this colour space is not one the profile can
+            // express - so the colour space's own answer decides whether anything is worth retaining.
             return colorSpace.RenderingIntentAffectsOutput
                 ? new(colorSpace, operands, color, null, intent)
                 : Fixed(color);
         }
+
+        /// <summary>
+        /// Convert <paramref name="color"/> through the output intent profile, reporting whether it applied.
+        /// </summary>
+        private static bool TryManage(ColorSpaceDetails colorSpace, IColor? color, IIccProfile profile,
+            RenderingIntent intent, out IColor? managed)
+            => OutputIntentColorManagement.TryConvert(color,
+                OutputIntentColorManagement.GetEffectiveDeviceType(colorSpace), profile, intent, out managed);
 
         /// <summary>
         /// A Pattern colour selected by <c>SCN</c>/<c>scn</c>. The pattern itself is fixed (it comes from a
@@ -184,8 +218,19 @@ namespace UglyToad.PdfPig.Graphics
                 return this;
             }
 
-            return new PdfColorInfo(colorSpace, operands, Convert(colorSpace, operands, currentIntent),
-                patternColor, currentIntent);
+            var converted = Convert(colorSpace, operands, currentIntent);
+
+            // Re-run the output intent under the new intent too: the profile resolves its transform per
+            // intent, so re-converting the operands without re-managing them would answer with the old
+            // device's colour under the new intent.
+            if (outputIntentProfile is not null &&
+                TryManage(colorSpace, converted, outputIntentProfile, currentIntent, out var managed))
+            {
+                converted = managed;
+            }
+
+            return new PdfColorInfo(colorSpace, operands, converted, patternColor, currentIntent,
+                outputIntentProfile);
         }
 
         private static IColor? Convert(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent)

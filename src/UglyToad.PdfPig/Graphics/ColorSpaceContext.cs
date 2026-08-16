@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using Colors;
+    using Colors.Icc;
     using Content;
     using Tokens;
 
@@ -33,7 +34,7 @@
 
             // No operands: the colour space derives its own initial colour. A Pattern colour space has none
             // and answers null, which this has always stored as-is; scn supplies the colour for that space.
-            state.SetStrokingColor(CurrentStrokingColorSpace, null);
+            state.SetStrokingColor(CurrentStrokingColorSpace, null, GetOutputIntentIccProfile(state));
         }
 
         public void SetStrokingColor(double[] operands, NameToken? patternName)
@@ -55,7 +56,7 @@
             }
             else
             {
-                state.SetStrokingColor(CurrentStrokingColorSpace, operands);
+                state.SetStrokingColor(CurrentStrokingColorSpace, operands, GetOutputIntentIccProfile(state));
             }
         }
 
@@ -86,7 +87,7 @@
 
             // No operands: the colour space derives its own initial colour. A Pattern colour space has none
             // and answers null, which this has always stored as-is; scn supplies the colour for that space.
-            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null);
+            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null, GetOutputIntentIccProfile(state));
         }
 
         public void SetNonStrokingColor(double[] operands, NameToken? patternName)
@@ -106,7 +107,7 @@
             }
             else
             {
-                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands);
+                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands, GetOutputIntentIccProfile(state));
             }
         }
 
@@ -145,19 +146,23 @@
                 CurrentNonStrokingColorSpace = colorSpace;
             }
 
-            if (colorSpace.RenderingIntentAffectsOutput)
+            var outputIntentProfile = GetOutputIntentIccProfile(state);
+
+            // A managed colour varies by intent even when its colour space does not, because the profile
+            // resolves its transform per intent - so the operands have to be kept in that case too.
+            if (colorSpace.RenderingIntentAffectsOutput || outputIntentProfile is not null)
             {
-                // Paying the cost of allocating operand only here: this is the one case where the graphics
+                // Paying the cost of allocating operands only here: these are the cases where the graphics
                 // state keeps them, to reconvert from if the intent moves before the mark is made.
                 double[] operands = values.ToArray();
 
                 if (stroking)
                 {
-                    state.SetStrokingColor(colorSpace, operands);
+                    state.SetStrokingColor(colorSpace, operands, outputIntentProfile);
                 }
                 else
                 {
-                    state.SetNonStrokingColor(colorSpace, operands);
+                    state.SetNonStrokingColor(colorSpace, operands, outputIntentProfile);
                 }
 
                 return;
@@ -175,6 +180,14 @@
             {
                 state.SetNonStrokingColor(color);
             }
+        }
+
+        private IIccProfile? GetOutputIntentIccProfile(CurrentGraphicsState state)
+        {
+            var iccService = resourceStore.IccProfileService;
+            return iccService?.UseOutputIntent == true ?
+                OutputIntentColorManagement.GetDeviceProfile(state.OutputIntents, iccService)
+                : null;
         }
 
         public IColorSpaceContext DeepClone()

@@ -32,6 +32,9 @@
                 profile = succeed ? new TestIccProfile() : null;
                 return profile is not null;
             }
+            public bool UseOutputIntent => false;
+
+            public string? PreferredOutputIntentSubtype => null;
         }
 
         private sealed class ThrowingProfileService : IIccProfileService
@@ -39,6 +42,9 @@
             public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes,
                 [NotNullWhen(true)] out IIccProfile? profile)
                 => throw new InvalidOperationException("Simulated parser failure.");
+            public bool UseOutputIntent => false;
+
+            public string? PreferredOutputIntentSubtype => null;
         }
 
         [Fact]

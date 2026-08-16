@@ -47,6 +47,10 @@
                 parsed = profile;
                 return parsed is not null;
             }
+
+            public bool UseOutputIntent => false;
+
+            public string? PreferredOutputIntentSubtype => null;
         }
 
         private static readonly ReadOnlyMemory<byte> ProfileBytes = new byte[] { 1, 2, 3, 4 };

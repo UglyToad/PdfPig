@@ -176,6 +176,7 @@
                 "UglyToad.PdfPig.Graphics.Colors.Icc.IIccProfileService",
                 "UglyToad.PdfPig.Graphics.Colors.Icc.IIccTransform",
                 "UglyToad.PdfPig.Graphics.Colors.Icc.OutputIntent",
+                "UglyToad.PdfPig.Graphics.Colors.Icc.OutputIntentColorManagement",
                 "UglyToad.PdfPig.Graphics.Colors.Icc.IccProfileReference",
                 "UglyToad.PdfPig.Graphics.Colors.IndexedColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.LabColorSpaceDetails",

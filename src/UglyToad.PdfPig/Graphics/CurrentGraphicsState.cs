@@ -191,8 +191,17 @@ namespace UglyToad.PdfPig.Graphics
         /// colour. Stored by reference, the caller must not mutate the array afterward.
         /// </param>
         public void SetStrokingColor(ColorSpaceDetails colorSpace, double[]? operands)
+            => SetStrokingColor(colorSpace, operands, null);
+
+        /// <summary>
+        /// As <see cref="SetStrokingColor(ColorSpaceDetails, double[])"/>, additionally colour-managing the
+        /// colour through <paramref name="outputIntentProfile"/> (14.11.5 / 8.6.5.7). The profile is retained
+        /// so that a later <c>ri</c> re-manages the colour: a profile resolves a different transform per
+        /// intent, which makes even a device colour vary by one.
+        /// </summary>
+        public void SetStrokingColor(ColorSpaceDetails colorSpace, double[]? operands, IIccProfile? outputIntentProfile)
         {
-            stroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent);
+            stroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent, outputIntentProfile);
         }
 
         /// <summary>
@@ -253,8 +262,17 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="operands">The selected component values, or <see langword="null"/> for the colour
         /// space's own initial colour. Stored by reference, the caller must not mutate the array afterward.</param>
         public void SetNonStrokingColor(ColorSpaceDetails colorSpace, double[]? operands)
+            => SetNonStrokingColor(colorSpace, operands, null);
+
+        /// <summary>
+        /// As <see cref="SetNonStrokingColor(ColorSpaceDetails, double[])"/>, additionally colour-managing the
+        /// colour through <paramref name="outputIntentProfile"/> (14.11.5 / 8.6.5.7). The profile is retained
+        /// so that a later <c>ri</c> re-manages the colour: a profile resolves a different transform per
+        /// intent, which makes even a device colour vary by one.
+        /// </summary>
+        public void SetNonStrokingColor(ColorSpaceDetails colorSpace, double[]? operands, IIccProfile? outputIntentProfile)
         {
-            nonStroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent);
+            nonStroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent, outputIntentProfile);
         }
 
         /// <summary>
