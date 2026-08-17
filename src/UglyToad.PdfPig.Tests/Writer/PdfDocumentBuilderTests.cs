@@ -10,6 +10,7 @@
     using Tests.Fonts.TrueType;
     using UglyToad.PdfPig.Graphics.Operations.General;
     using UglyToad.PdfPig.Graphics.Operations.InlineImages;
+    using UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState;
     using UglyToad.PdfPig.Outline;
     using UglyToad.PdfPig.Outline.Destinations;
 
@@ -885,6 +886,88 @@
                     var b = pdfWriter.Build();
                     Assert.NotEmpty(b);
                 }
+            }
+        }
+
+        [Fact]
+        public void CopyFromKeepsPositionWhenSourceStreamTransformIsSelfCancelling()
+        {
+            // The pages of this document flip the co-ordinate system with a top level 'cm' and undo the
+            // flip with a second top level 'cm' at the end, so no transform is left active. Merging page 2
+            // onto page 1 must not move or mirror the copied image. See issue #1163.
+            byte[] result;
+            PdfRectangle sourceBounds;
+
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("issue_1163.pdf"), ParsingOptions.LenientParsingOff))
+            {
+                var source = document.GetPage(2);
+                sourceBounds = Assert.Single(source.GetImages()).BoundingBox;
+
+                var builder = new PdfDocumentBuilder();
+                builder.AddPage(document, 1).CopyFrom(source);
+
+                result = builder.Build();
+            }
+
+            WriteFile(nameof(CopyFromKeepsPositionWhenSourceStreamTransformIsSelfCancelling), result);
+
+            using (var document = PdfDocument.Open(result))
+            {
+                var images = document.GetPage(1).GetImages().ToList();
+
+                Assert.Equal(2, images.Count);
+
+                var copied = images[1].BoundingBox;
+
+                Assert.Equal(sourceBounds.Left, copied.Left, 4);
+                Assert.Equal(sourceBounds.Bottom, copied.Bottom, 4);
+                Assert.Equal(sourceBounds.Width, copied.Width, 4);
+                Assert.Equal(sourceBounds.Height, copied.Height, 4);
+            }
+        }
+
+        [Fact]
+        public void AddPageDoesNotTransformNewContentWhenCopiedStreamsCancelOut()
+        {
+            // The page's transform is split over 2 content streams which, taken together, leave no
+            // transform active. Content added afterwards must not be transformed.
+            byte[] source;
+            {
+                var builder = new PdfDocumentBuilder();
+                var page = builder.AddPage(PageSize.A4);
+
+                page.CurrentStream.Operations.Add(
+                    new ModifyCurrentTransformationMatrix([0.75, 0, 0, -0.75, 0, 841.89]));
+
+                page.NewContentStreamAfter();
+
+                page.CurrentStream.Operations.Add(
+                    new ModifyCurrentTransformationMatrix([1 / 0.75d, 0, 0, -1 / 0.75d, 0, 841.89 / 0.75d]));
+
+                source = builder.Build();
+            }
+
+            byte[] result;
+            using (var document = PdfDocument.Open(source))
+            {
+                var builder = new PdfDocumentBuilder();
+                builder.AddPage(document, 1).DrawRectangle(new PdfPoint(100, 200), 50, 25);
+
+                result = builder.Build();
+            }
+
+            WriteFile(nameof(AddPageDoesNotTransformNewContentWhenCopiedStreamsCancelOut), result);
+
+            using (var document = PdfDocument.Open(result))
+            {
+                var path = Assert.Single(document.GetPage(1).Paths);
+                var box = path.GetBoundingRectangle();
+
+                Assert.NotNull(box);
+                Assert.Equal(100, box.Value.Left, 4);
+                Assert.Equal(200, box.Value.Bottom, 4);
+                Assert.Equal(50, box.Value.Width, 4);
+                Assert.Equal(25, box.Value.Height, 4);
             }
         }
 
