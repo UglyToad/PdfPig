@@ -6,10 +6,6 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        // Pass class names on the command line to pick benchmarks, e.g.:
-        //     dotnet run -c Release -- --filter *ShadingAndColorBenchmarks*
-        // When no args are supplied default to the shading/colour suite that the
-        // feature/optimisations-shading work targets.
         if (args.Length == 0)
         {
             BenchmarkRunner.Run<IccProfileBenchmarks>();
@@ -18,6 +14,8 @@ internal class Program
         {
             BenchmarkSwitcher.FromTypes(new[]
             {
+                typeof(IccProfileBenchmarks),
+                typeof(ColorOperatorBenchmarks),
                 typeof(ShadingAndColorBenchmarks),
                 typeof(SystemFontFinderBenchmarks),
                 typeof(BruteForceBenchmarks),
