@@ -8,7 +8,10 @@
     using SkiaSharp;
     using UglyToad.PdfPig.AcroForms;
     using UglyToad.PdfPig.AcroForms.Fields;
+    using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState;
+    using UglyToad.PdfPig.Writer;
 
     public class GithubIssuesTests
     {
@@ -338,6 +341,82 @@
                 Assert.NotNull(page);
                 Assert.NotEmpty(page.Letters);
             }
+        }
+
+        [Fact]
+        public void Issues1245()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("16457_03-20-529-004-A.pdf");
+
+            // Translate by (150, 100) then write text at the origin. The text should end up in the
+            // same place whether ResetColor() is called before or after the 'cm' operation.
+            double[] translation = [1, 0, 0, 1, 150, 100];
+
+            byte[] Build(bool applyTransform, bool resetColorAfterTransform)
+            {
+                using (var document = PdfDocument.Open(path))
+                {
+                    var builder = new PdfDocumentBuilder();
+                    var page = builder.AddPage(document, 1);
+                    var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+                    page.SetTextAndFillColor(255, 0, 0);
+                    page.AddText("R", 12, new PdfPoint(10, 10), font);
+
+                    if (!resetColorAfterTransform)
+                    {
+                        page.ResetColor();
+                    }
+
+                    if (applyTransform)
+                    {
+                        page.CurrentStream.Operations.Add(new ModifyCurrentTransformationMatrix(translation));
+                    }
+
+                    if (resetColorAfterTransform)
+                    {
+                        page.ResetColor();
+                    }
+
+                    page.AddText("B", 12, new PdfPoint(0, 0), font);
+
+                    return builder.Build();
+                }
+            }
+
+            static (Letter red, Letter black) GetAddedLetters(byte[] bytes)
+            {
+                using (var document = PdfDocument.Open(bytes))
+                {
+                    // The letters added by the builder are the last drawn on the page.
+                    var letters = document.GetPage(1).Letters;
+                    var red = letters[letters.Count - 2];
+                    var black = letters[letters.Count - 1];
+                    Assert.Equal("R", red.Value);
+                    Assert.Equal("B", black.Value);
+                    return (red, black);
+                }
+            }
+
+            var (_, blackNoTransform) = GetAddedLetters(Build(false, false));
+            var (redBefore, blackBefore) = GetAddedLetters(Build(true, false));
+            var (redAfter, blackAfter) = GetAddedLetters(Build(true, true));
+
+            // The 'cm' must be honoured: 'B' moves by the length of the translation vector.
+            // (The page is rotated, so the translation is not axis aligned on the rendered page.)
+            var dx = blackBefore.Location.X - blackNoTransform.Location.X;
+            var dy = blackBefore.Location.Y - blackNoTransform.Location.Y;
+            Assert.Equal(Math.Sqrt(150.0 * 150.0 + 100.0 * 100.0), Math.Sqrt(dx * dx + dy * dy), 5);
+
+            // ResetColor() must only reset the colour, so the ordering makes no difference.
+            Assert.Equal(redBefore.Location.X, redAfter.Location.X, 5);
+            Assert.Equal(redBefore.Location.Y, redAfter.Location.Y, 5);
+            Assert.Equal(blackBefore.Location.X, blackAfter.Location.X, 5);
+            Assert.Equal(blackBefore.Location.Y, blackAfter.Location.Y, 5);
+
+            // ...and the colours are still correct.
+            Assert.Equal((1.0, 0.0, 0.0), redAfter.Color.ToRGBValues());
+            Assert.Equal(GrayColor.Black, blackAfter.Color);
         }
 
         [Fact]

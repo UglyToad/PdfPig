@@ -84,6 +84,10 @@
     /// </summary>
     public class PdfPageBuilder
     {
+        // the default (initial) colors of the graphics state, see ISO 32000-1 table 52
+        private static readonly SetStrokeColorDeviceGray SetStrokeColorBlack = new SetStrokeColorDeviceGray(0);
+        private static readonly SetNonStrokeColorDeviceGray SetNonStrokeColorBlack = new SetNonStrokeColorDeviceGray(0);
+
         // parent
         private readonly PdfDocumentBuilder documentBuilder;
 
@@ -403,7 +407,6 @@
         /// <param name="b">Blue - 0 to 255</param>
         public PdfPageBuilder SetStrokeColor(byte r, byte g, byte b)
         {
-            currentStream.Add(Push.Value);
             currentStream.Add(new SetStrokeColorDeviceRgb(RgbToDouble(r), RgbToDouble(g), RgbToDouble(b)));
 
             return this;
@@ -417,7 +420,6 @@
         /// <param name="b">Blue - 0 to 1</param>
         internal PdfPageBuilder SetStrokeColorExact(double r, double g, double b)
         {
-            currentStream.Add(Push.Value);
             currentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDouble(r, nameof(r)),
                 CheckRgbDouble(g, nameof(g)), CheckRgbDouble(b, nameof(b))));
 
@@ -432,7 +434,6 @@
         /// <param name="b">Blue - 0 to 255</param>
         public PdfPageBuilder SetTextAndFillColor(byte r, byte g, byte b)
         {
-            currentStream.Add(Push.Value);
             currentStream.Add(new SetNonStrokeColorDeviceRgb(RgbToDouble(r), RgbToDouble(g), RgbToDouble(b)));
 
             return this;
@@ -443,7 +444,10 @@
         /// </summary>
         public PdfPageBuilder ResetColor()
         {
-            currentStream.Add(Pop.Value);
+            // Only the colors are reset, the rest of the graphics state (current transformation
+            // matrix, clipping path, line width, etc.) is deliberately left untouched.
+            currentStream.Add(SetStrokeColorBlack);
+            currentStream.Add(SetNonStrokeColorBlack);
 
             return this;
         }
