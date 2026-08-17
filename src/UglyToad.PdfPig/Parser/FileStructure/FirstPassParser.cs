@@ -5,6 +5,7 @@ using Logging;
 using System.Linq;
 using Tokenization.Scanner;
 using Tokens;
+using Filters;
 
 internal static partial class FirstPassParser
 {
@@ -12,6 +13,7 @@ internal static partial class FirstPassParser
         FileHeaderOffset fileHeaderOffset,
         IInputBytes input,
         ISeekableTokenScanner scanner,
+        IFilterProvider filterProvider,
         ILog? log = null)
     {
         log ??= new NoOpLog();
@@ -28,13 +30,14 @@ internal static partial class FirstPassParser
             fileHeaderOffset,
             input,
             scanner,
+            filterProvider,
             startXrefLocation,
             log);
 
         if (streamsAndTables.Count == 0)
         {
             // 3. If we can't parse the XRefs using the file data then fall back to brute-forcing every part.
-            var bruteForce = XrefBruteForcer.FindAllXrefsInFileOrder(input, scanner, log);
+            var bruteForce = XrefBruteForcer.FindAllXrefsInFileOrder(input, scanner, filterProvider, log);
 
             streamsAndTables = bruteForce.XRefParts;
             bruteForceOffsets = bruteForce.ObjectOffsets;
@@ -125,6 +128,7 @@ internal static partial class FirstPassParser
         FileHeaderOffset offset,
         IInputBytes input,
         ISeekableTokenScanner scanner,
+        IFilterProvider filterProvider,
         StartXRefLocation startLocation,
         ILog log)
     {
@@ -143,6 +147,7 @@ internal static partial class FirstPassParser
                 offset,
                 input,
                 scanner,
+                filterProvider,
                 nextLocation.Value,
                 log);
 
@@ -170,6 +175,7 @@ internal static partial class FirstPassParser
                         offset,
                         input,
                         scanner,
+                        filterProvider,
                         xRefStmValue,
                         log);
 
@@ -193,6 +199,7 @@ internal static partial class FirstPassParser
         FileHeaderOffset fileHeaderOffset,
         IInputBytes input,
         ISeekableTokenScanner scanner,
+        IFilterProvider filterProvider,
         long location,
         ILog log)
     {
@@ -213,6 +220,7 @@ internal static partial class FirstPassParser
             location,
             input,
             scanner,
+            filterProvider,
             log);
 
         return stream;

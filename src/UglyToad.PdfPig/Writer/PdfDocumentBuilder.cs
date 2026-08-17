@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Writer
     using Actions;
     using Content;
     using Core;
-    using Filters;
     using Fonts;
     using Graphics;
     using Logging;
@@ -387,7 +386,7 @@ namespace UglyToad.PdfPig.Writer
                         // If we don't manage to do this it's not the end of the world.
                         if (DirectObjectFinder.TryGet<StreamToken>(indirectReferenceToken, document.Structure.TokenScanner, out var contentStream))
                         {
-                            var contentBytes = contentStream.Decode(DefaultFilterProvider.Instance);
+                            var contentBytes = contentStream.Decode(document.Structure.FilterProvider);
                             var parsedOperations = pcp.Parse(0, new MemoryInputBytes(contentBytes), new NoOpLog());
                             globalTransform = PdfContentTransformationReader.GetGlobalTransform(parsedOperations);
                         }

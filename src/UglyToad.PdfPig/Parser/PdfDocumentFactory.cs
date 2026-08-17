@@ -133,6 +133,7 @@
                 fileHeaderOffset,
                 inputBytes,
                 scanner,
+                filterProvider,
                 parsingOptions.Logger);
 
             if (initialParse.Trailer == null)

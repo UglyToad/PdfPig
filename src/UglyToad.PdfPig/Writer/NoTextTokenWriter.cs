@@ -16,10 +16,17 @@ namespace UglyToad.PdfPig.Writer
     /// </summary>
     internal sealed class NoTextTokenWriter : TokenWriter
     {
+        private readonly IFilterProvider filterProvider;
+
         /// <summary>
         /// Set this value prior to processing page to get the right page number in log messages
         /// </summary>
         internal int Page { get; set; }
+
+        public NoTextTokenWriter(IFilterProvider filterProvider)
+        {
+            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+        }
 
         /// <summary>
         /// Write stream without <see cref="ShowText"/> or <see cref="ShowTextsWithPositioning"/> operations
@@ -62,7 +69,6 @@ namespace UglyToad.PdfPig.Writer
         /// false if no text operation found (in which case <paramref name="outputStreamToken"/> is null)</returns>
         private bool TryGetStreamWithoutText(StreamToken streamToken, [NotNullWhen(true)] out StreamToken? outputStreamToken)
         {
-            var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
             ReadOnlyMemory<byte> bytes;
             try
             {
