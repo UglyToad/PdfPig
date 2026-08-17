@@ -98,11 +98,11 @@
         /// <summary>
         /// Get a known encoding instance with the given name.
         /// </summary>
-        public static bool TryGetNamedEncoding(NameToken name, out Encoding encoding)
+        public static bool TryGetNamedEncoding(NameToken? name, out Encoding? encoding)
         {
             encoding = null;
 
-            if (name == null)
+            if (name is null)
             {
                 return false;
             }
@@ -110,28 +110,26 @@
             if (name.Equals(NameToken.StandardEncoding))
             {
                 encoding = StandardEncoding.Instance;
-                return true;
             }
 
             if (name.Equals(NameToken.WinAnsiEncoding))
             {
                 encoding = WinAnsiEncoding.Instance;
-                return true;
             }
 
             if (name.Equals(NameToken.MacExpertEncoding))
             {
                 encoding = MacExpertEncoding.Instance;
-                return true;
             }
 
             if (name.Equals(NameToken.MacRomanEncoding))
             {
                 encoding = MacRomanEncoding.Instance;
-                return true;
             }
 
-            return false;
+            // NB: PDFDocEncoding is not valid here
+            
+            return encoding is not null;
         }
     }
 }
