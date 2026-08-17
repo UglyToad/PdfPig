@@ -273,7 +273,7 @@
 
             if (lineWidth != 1)
             {
-                currentStream.Add(new SetLineWidth(lineWidth));
+                currentStream.Add(new SetLineWidth(1));
             }
 
             return this;
@@ -319,7 +319,7 @@
 
             if (lineWidth != 1)
             {
-                currentStream.Add(new SetLineWidth(lineWidth));
+                currentStream.Add(new SetLineWidth(1));
             }
 
             return this;
@@ -393,7 +393,7 @@
 
             if (lineWidth != 1)
             {
-                currentStream.Add(new SetLineWidth(lineWidth));
+                currentStream.Add(new SetLineWidth(1));
             }
 
             return this;
