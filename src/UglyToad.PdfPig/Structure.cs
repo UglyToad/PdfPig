@@ -4,6 +4,7 @@
     using Content;
     using Core;
     using CrossReference;
+    using Filters;
     using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
@@ -39,15 +40,22 @@
         /// </summary>
         public IPdfTokenScanner TokenScanner { get; }
 
+        /// <summary>
+        /// Provides access to the filter provider this document was parsed with.
+        /// </summary>
+        public ILookupFilterProvider FilterProvider { get; }
+
         internal Structure(
             Catalog catalog,
             IPdfTokenScanner scanner,
+            ILookupFilterProvider filterProvider,
             TrailerDictionary trailer,
             CrossReferenceTable xrefTable)
         {
             Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             TokenScanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
+            FilterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             CrossReferenceTable = xrefTable ?? throw new ArgumentNullException(nameof(xrefTable));
             XrefOffset = CrossReferenceTable.Parts.Count > 0 ? CrossReferenceTable.Parts.Last().Offset : 0;
         }

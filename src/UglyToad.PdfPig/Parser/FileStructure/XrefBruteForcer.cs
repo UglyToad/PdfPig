@@ -5,6 +5,7 @@ using Logging;
 using System.Globalization;
 using Tokenization.Scanner;
 using Tokens;
+using Filters;
 using Util;
 
 internal static class XrefBruteForcer
@@ -12,6 +13,7 @@ internal static class XrefBruteForcer
     public static Result FindAllXrefsInFileOrder(
         IInputBytes bytes,
         ISeekableTokenScanner scanner,
+        IFilterProvider filterProvider,
         ILog log)
     {
         var results = new List<IXrefSection>();
@@ -192,6 +194,7 @@ internal static class XrefBruteForcer
                     offset,
                     bytes,
                     scanner,
+                    filterProvider,
                     log);
 
                 if (stream != null)

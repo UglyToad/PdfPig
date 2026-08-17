@@ -83,7 +83,7 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         public static void RemoveText(PdfDocument file, Stream output, IReadOnlyList<int>? pagesBundle = null)
         {
-            var tokenWriter = new NoTextTokenWriter();
+            var tokenWriter = new NoTextTokenWriter(file.Structure.FilterProvider);
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, file.Version, tokenWriter: tokenWriter))
             {
                 if (pagesBundle is null)

@@ -15,6 +15,7 @@ internal static class XrefStreamParser
         long xrefOffset,
         IInputBytes bytes,
         ISeekableTokenScanner scanner,
+        IFilterProvider filterProvider,
         ILog log)
     {
         if (xrefOffset >= bytes.Length || xrefOffset < 0)
@@ -85,7 +86,7 @@ internal static class XrefStreamParser
 
             var stream = new StreamToken(dictToken, data);
 
-            var decoded = stream.Decode(DefaultFilterProvider.Instance).Span;
+            var decoded = stream.Decode(filterProvider).Span;
 
             var fieldSizes = new XrefFieldSize(dictArray);
 

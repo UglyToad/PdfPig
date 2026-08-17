@@ -35,7 +35,7 @@
         private readonly ParsingOptions parsingOptions;
         private readonly Pages pages;
         private readonly NamedDestinations namedDestinations;
-
+        
         /// <summary>
         /// The metadata associated with this document.
         /// </summary>
@@ -92,7 +92,7 @@
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = catalog.Pages;
             namedDestinations = catalog.NamedDestinations;
-            Structure = new Structure(catalog, pdfScanner, trailer, crossReferenceTable);
+            Structure = new Structure(catalog, pdfScanner, filterProvider, trailer, crossReferenceTable);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog)!);
         }
