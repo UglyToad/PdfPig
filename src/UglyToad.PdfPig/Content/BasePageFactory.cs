@@ -122,11 +122,18 @@
                 {
                     var item = array.Data[i];
 
-                    if (!(item is IndirectReferenceToken obj))
+                    if (item is not IndirectReferenceToken obj)
                     {
+                        // Malformed pdf document
+                        if (ParsingOptions.UseLenientParsing)
+                        {
+                            // Should not be possible that the token is already a StreamToken
+                            continue; // We skip the token
+                        }
+
                         throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
                     }
-
+                    
                     var contentStream = DirectObjectFinder.Get<StreamToken>(obj, PdfScanner);
 
                     if (contentStream is null)

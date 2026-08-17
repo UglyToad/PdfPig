@@ -16,6 +16,27 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1286()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("issue_1286.pdf");
+
+            // Lenient parsing On
+            using (var document = PdfDocument.Open(path))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+                Assert.NotNull(document.GetPage(1));
+            }
+
+            // Lenient parsing Off
+            using (var document = PdfDocument.Open(path, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+                var ex = Assert.Throws<PdfDocumentFormatException>(() => document.GetPage(1));
+                Assert.Equal("The contents contained something which was not an indirect reference: null.", ex.Message);
+            }
+        }
+        
+        [Fact]
         public void Issues1371()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("094.-.Fiat.CR.32.Aces.of.the.Spanish.Civil.War.pdf");
