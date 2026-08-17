@@ -8,6 +8,7 @@
     using PdfPig.Tokens;
     using PdfPig.Writer;
     using Tests.Fonts.TrueType;
+    using UglyToad.PdfPig.Graphics.Operations.General;
     using UglyToad.PdfPig.Graphics.Operations.InlineImages;
     using UglyToad.PdfPig.Outline;
     using UglyToad.PdfPig.Outline.Destinations;
@@ -26,6 +27,66 @@
             var str = OtherEncodings.BytesAsLatin1String(result);
             Assert.StartsWith("%PDF", str);
             Assert.EndsWith("%%EOF", str);
+        }
+
+        [Fact]
+        public void DrawOperationsRestoreLineWidthToDefault()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            // Each shape drawn with a custom line width is followed by one drawn with the default
+            // line width. Since the default emits no 'w' operation it inherits the graphics state,
+            // so the preceding shape must have restored the line width to 1.
+            page.DrawRectangle(new PdfPoint(20, 700), 100, 50, 7);
+            page.DrawLine(new PdfPoint(20, 650), new PdfPoint(120, 650));
+
+            page.DrawTriangle(new PdfPoint(20, 600), new PdfPoint(70, 640), new PdfPoint(120, 600), 5);
+            page.DrawLine(new PdfPoint(20, 550), new PdfPoint(120, 550));
+
+            page.DrawCircle(new PdfPoint(70, 480), 60, 3);
+            page.DrawLine(new PdfPoint(20, 400), new PdfPoint(120, 400));
+
+            page.DrawEllipsis(new PdfPoint(70, 330), 100, 60, 9);
+            page.DrawLine(new PdfPoint(20, 250), new PdfPoint(120, 250));
+
+            var bytes = builder.Build();
+
+            WriteFile(nameof(DrawOperationsRestoreLineWidthToDefault), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var paths = document.GetPage(1).Paths;
+
+                Assert.Equal(
+                    [7.0, 1.0, 5.0, 1.0, 3.0, 1.0, 9.0, 1.0],
+                    paths.Select(p => p.LineWidth));
+            }
+        }
+
+        [Fact]
+        public void DrawOperationsWithDefaultLineWidthDoNotChangeLineWidth()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            // An explicit line width set by the caller must survive shapes drawn with the default
+            // line width, which are documented as leaving the graphics state alone.
+            page.CurrentStream.Operations.Add(new SetLineWidth(4));
+
+            page.DrawRectangle(new PdfPoint(20, 700), 100, 50);
+            page.DrawTriangle(new PdfPoint(20, 600), new PdfPoint(70, 640), new PdfPoint(120, 600));
+            page.DrawCircle(new PdfPoint(70, 480), 60);
+            page.DrawLine(new PdfPoint(20, 400), new PdfPoint(120, 400));
+
+            var bytes = builder.Build();
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var paths = document.GetPage(1).Paths;
+
+                Assert.Equal([4.0, 4.0, 4.0, 4.0], paths.Select(p => p.LineWidth));
+            }
         }
 
         [Fact]
