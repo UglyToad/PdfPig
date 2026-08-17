@@ -159,25 +159,32 @@
             contentStreams = new List<IPageContentStream>(copied);
 
             var writeableContentStream = new DefaultContentStream();
-            if (contentStreams.Count > 0)
-            {
-                var lastGlobalTransform = contentStreams.LastOrDefault(x => x.GlobalTransform.HasValue);
 
-                if (lastGlobalTransform?.GlobalTransform != null)
+            TransformationMatrix? globalTransform = null;
+            foreach (var contentStream in contentStreams)
+            {
+                if (contentStream.GlobalTransform.HasValue)
                 {
-                    var inverse = lastGlobalTransform.GlobalTransform.Value.Inverse();
-                    writeableContentStream.Add(
-                        new ModifyCurrentTransformationMatrix(
-                            [
-                                inverse.A,
-                                inverse.B,
-                                inverse.C,
-                                inverse.D,
-                                inverse.E,
-                                inverse.F
-                            ]
-                        ));
+                    globalTransform = globalTransform.HasValue
+                        ? contentStream.GlobalTransform.Value.Multiply(globalTransform.Value)
+                        : contentStream.GlobalTransform.Value;
                 }
+            }
+
+            if (globalTransform.HasValue)
+            {
+                var inverse = globalTransform.Value.Inverse();
+                writeableContentStream.Add(
+                    new ModifyCurrentTransformationMatrix(
+                        [
+                            inverse.A,
+                            inverse.B,
+                            inverse.C,
+                            inverse.D,
+                            inverse.E,
+                            inverse.F
+                        ]
+                    ));
             }
 
             currentStream = writeableContentStream;

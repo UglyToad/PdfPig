@@ -3,7 +3,6 @@
 using Core;
 using Graphics.Operations;
 using Graphics.Operations.SpecialGraphicsState;
-using System;
 using System.Collections.Generic;
 
 internal static class PdfContentTransformationReader
@@ -18,14 +17,15 @@ internal static class PdfContentTransformationReader
             {
                 if (stackDepth == 0 && cm.Value.Length == 6)
                 {
-                    activeMatrix = TransformationMatrix.FromArray(cm.Value);
+                    var matrix = TransformationMatrix.FromArray(cm.Value);
+                    activeMatrix = activeMatrix.HasValue ? matrix.Multiply(activeMatrix.Value) : matrix;
                 }
             }
-            else if (operation is Push push)
+            else if (operation is Push)
             {
                 stackDepth++;
             }
-            else if (operation is Pop pop)
+            else if (operation is Pop)
             {
                 stackDepth--;
             }
