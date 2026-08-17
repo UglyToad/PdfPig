@@ -12,10 +12,12 @@
     internal class EncodingReader : IEncodingReader
     {
         private readonly IPdfTokenScanner pdfScanner;
+        private readonly ParsingOptions parsingOptions;
 
-        public EncodingReader(IPdfTokenScanner pdfScanner)
+        public EncodingReader(IPdfTokenScanner pdfScanner, ParsingOptions parsingOptions)
         {
             this.pdfScanner = pdfScanner;
+            this.parsingOptions = parsingOptions;
         }
 
         public Encoding? Read(
@@ -65,12 +67,28 @@
                 return null;
             }
             
-            Encoding baseEncoding;
+            Encoding? baseEncoding;
             if (encodingDictionary.TryGet(NameToken.BaseEncoding, out var baseEncodingToken) && baseEncodingToken is NameToken baseEncodingName)
             {
                 if (!Encoding.TryGetNamedEncoding(baseEncodingName, out baseEncoding))
                 {
-                    throw new InvalidFontFormatException($"No encoding found with name {baseEncodingName} to use as base encoding.");
+                    if (!parsingOptions.UseLenientParsing)
+                    {
+                        throw new InvalidFontFormatException($"No encoding found with name '{baseEncodingName}' to use as base encoding.");
+                    }
+
+                    if (NameToken.PdfDocEncoding.Equals(baseEncodingName))
+                    {
+                        // PdfDocEncoding is not valid here, but we are using LenientParsing
+                        parsingOptions.Logger.Warn($"'{NameToken.PdfDocEncoding}' encoding found to use as base encoding, using it even if not valid.");
+                        baseEncoding = PdfDocEncoding.Instance;
+                    }
+                    else
+                    {
+                        // We treat the 'baseEncodingName' as absent
+                        parsingOptions.Logger.Warn($"No encoding found with name '{baseEncodingName}' to use as base encoding, falling back to the font encoding.");
+                        baseEncoding = fontEncoding ?? StandardEncoding.Instance;
+                    }
                 }
             }
             else
@@ -137,7 +155,7 @@
                 return false;
             }
 
-            return true;
+            return encoding is not null;
         }
     }
 }

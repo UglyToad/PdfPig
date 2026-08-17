@@ -8,6 +8,7 @@
     using SkiaSharp;
     using UglyToad.PdfPig.AcroForms;
     using UglyToad.PdfPig.AcroForms.Fields;
+    using UglyToad.PdfPig.Fonts;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState;
@@ -15,6 +16,25 @@
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issues1284()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("50058.pdf");
+
+            // UseLenientParsing = true
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                Assert.NotNull(document.GetPage(1));
+            }
+
+            // UseLenientParsing = false
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false }))
+            {
+                var ex = Assert.Throws<InvalidFontFormatException>(() => document.GetPage(1));
+                Assert.Equal("No encoding found with name '/PDFDocEncoding' to use as base encoding.", ex.Message);
+            }
+        }
+
         [Fact]
         public void Issues1286()
         {

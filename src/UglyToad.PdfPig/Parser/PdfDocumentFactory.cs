@@ -176,7 +176,7 @@
                 pdfScanner,
                 filterProvider);
             
-            var encodingReader = new EncodingReader(pdfScanner);
+            var encodingReader = new EncodingReader(pdfScanner, parsingOptions);
 
             var cmapCache = new CMapLocalCache(filterProvider, pdfScanner);
 
