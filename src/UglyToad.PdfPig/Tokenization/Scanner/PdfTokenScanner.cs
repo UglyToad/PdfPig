@@ -797,6 +797,13 @@
 
             if (found.Number.Equals(reference))
             {
+                // We don't cache StreamToken as this would keep
+                // the attached raw bytes (can be large)
+                if (found.Data is not StreamToken)
+                {
+                    objectLocationProvider.Cache(found);
+                }
+
                 return found;
             }
 

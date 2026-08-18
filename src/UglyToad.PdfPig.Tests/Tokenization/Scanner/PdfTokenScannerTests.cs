@@ -717,6 +717,39 @@ endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
             Assert.IsType<NumericToken>(lengthValue);
         }
 
+        [Fact]
+        public void GetResolvesObjectFromXrefTableOnlyOnce()
+        {
+            // Issue #1390: objects located via a classic xref table were re-read and re-tokenized
+            // on every lookup because only the object stream and brute force paths populated the cache.
+            const string s = "12 0 obj\n<< /Type /Page >>\nendobj\n";
+
+            var reference = new IndirectReference(12, 0);
+            var scanner = GetScannerWithRealLocationProvider(s, (reference, 0));
+
+            var first = scanner.Get(reference);
+            var second = scanner.Get(reference);
+
+            Assert.Same(first, second);
+        }
+
+        [Fact]
+        public void GetDoesNotCacheStreamObjects()
+        {
+            // Streams are deliberately left out of the object cache. Caching them would pin the raw
+            // bytes of every image and content stream ever resolved for the lifetime of the document.
+            const string s = "7 0 obj\n<< /Length 11 >>\nstream\nhello world\nendstream\nendobj\n";
+
+            var reference = new IndirectReference(7, 0);
+            var scanner = GetScannerWithRealLocationProvider(s, (reference, 0));
+
+            var first = scanner.Get(reference);
+            var second = scanner.Get(reference);
+
+            Assert.IsType<StreamToken>(first.Data);
+            Assert.NotSame(first, second);
+        }
+
         private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null, bool useLenientParsing = false)
         {
             var input = StringBytesTestConverter.Convert(s, false);
@@ -727,6 +760,23 @@ endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
                 NoOpEncryptionHandler.Instance,
                 new FileHeaderOffset(0),
                 useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff,
+                new StackDepthGuard(256));
+        }
+
+
+        private static PdfTokenScanner GetScannerWithRealLocationProvider(string s,
+            params (IndirectReference Reference, long Offset)[] offsets)
+        {
+            var input = StringBytesTestConverter.Convert(s, false);
+
+            var xrefOffsets = offsets.ToDictionary(x => x.Reference, x => XrefLocation.File(x.Offset));
+
+            return new PdfTokenScanner(input.Bytes,
+                new ObjectLocationProvider(xrefOffsets, null, input.Bytes),
+                new TestFilterProvider(),
+                NoOpEncryptionHandler.Instance,
+                new FileHeaderOffset(0),
+                ParsingOptions.LenientParsingOff,
                 new StackDepthGuard(256));
         }
 

@@ -8,6 +8,8 @@
     /// </summary>
     public sealed class StreamToken : IDataToken<Memory<byte>>
     {
+        private readonly int hashCode;
+
         /// <summary>
         /// The dictionary specifying the length of the stream, any applied compression filters and additional information.
         /// </summary>
@@ -17,7 +19,7 @@
         /// The compressed byte data of the stream.
         /// </summary>
         public Memory<byte> Data { get; }
-
+        
         /// <summary>
         /// Create a new <see cref="StreamToken"/>.
         /// </summary>
@@ -27,6 +29,7 @@
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
             Data = data ?? throw new ArgumentNullException(nameof(data));
+            hashCode = ComputeHashCode();
         }
 
         /// <summary>
@@ -38,10 +41,10 @@
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
             Data = data;
+            hashCode = ComputeHashCode();
         }
-
-        /// <inheritdoc />
-        public override int GetHashCode()
+        
+        private int ComputeHashCode()
         {
             var hash = new HashCode();
             hash.Add(StreamDictionary);
@@ -55,6 +58,12 @@
             }
 #endif
             return hash.ToHashCode();
+        }
+        
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return hashCode;
         }
 
         /// <inheritdoc />

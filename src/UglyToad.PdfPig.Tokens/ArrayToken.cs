@@ -12,6 +12,8 @@
     /// </summary>
     public sealed class ArrayToken : IDataToken<IReadOnlyList<IToken>>
     {
+        private readonly int hashCode;
+
         /// <summary>
         /// The tokens contained in this array.
         /// </summary>
@@ -58,6 +60,7 @@
 
             Data = result;
             Length = Data.Count;
+            hashCode = ComputeHashCode();
         }
 
         /// <inheritdoc />
@@ -83,9 +86,8 @@
 
             return builder.ToString();
         }
-        
-        /// <inheritdoc />
-        public override int GetHashCode()
+
+        private int ComputeHashCode()
         {
             HashCode hash = new HashCode();
             foreach (var t in Data)
@@ -94,6 +96,12 @@
             }
 
             return hash.ToHashCode();
+        }
+        
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return hashCode;
         }
 
         /// <inheritdoc />
