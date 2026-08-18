@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using Core;
     using Graphics.Colors;
     using PdfFonts;
     using Tokens;
@@ -31,6 +32,12 @@
         /// Try getting the XObject corresponding to the name.
         /// </summary>
         bool TryGetXObject(NameToken name, [NotNullWhen(true)] out StreamToken? stream);
+
+        /// <summary>
+        /// Try getting the reference of the XObject corresponding to the name, without resolving the object
+        /// it points at. Lets a caller identify an XObject it has already seen without re-reading its stream.
+        /// </summary>
+        bool TryGetXObjectReference(NameToken name, out IndirectReference reference);
 
         /// <summary>
         /// Get the extended graphics state dictionary corresponding to the name.

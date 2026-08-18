@@ -10,6 +10,8 @@
     /// </summary>
     public sealed class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>, IEquatable<DictionaryToken>
     {
+        private readonly int hashCode;
+
         /// <summary>
         /// The key value pairs in this dictionary.
         /// </summary>
@@ -39,11 +41,13 @@
             }
 
             Data = result;
+            hashCode = ComputeHashCode();
         }
 
         private DictionaryToken(IReadOnlyDictionary<string, IToken> data)
         {
             Data = data;
+            hashCode = ComputeHashCode();
         }
 
         /// <summary>
@@ -167,8 +171,7 @@
             return new DictionaryToken(data ?? throw new ArgumentNullException(nameof(data)));
         }
 
-        /// <inheritdoc />
-        public override int GetHashCode()
+        private int ComputeHashCode()
         {
             // Equals is insensitive to entry order so the hash must be too
             int hash = 0;
@@ -182,6 +185,12 @@
             }
 
             return hash;
+        }
+        
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return hashCode;
         }
 
         /// <inheritdoc />
