@@ -18,9 +18,9 @@
         
         private NameToken(string text)
         {
-            NameMap[text] = this;
-
             Data = text;
+
+            NameMap[text] = this;
         }
 
         /// <summary>
