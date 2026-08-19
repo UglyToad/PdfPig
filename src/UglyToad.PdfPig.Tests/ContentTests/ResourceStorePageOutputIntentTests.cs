@@ -303,8 +303,8 @@
                 scanner,
                 new NoOpFontFactory(),
                 filters,
-                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true },
-                Catalog(scanner, "GTS_PDFX", "CATALOG", profileObjectNumber: 7));
+                Catalog(scanner, "GTS_PDFX", "CATALOG", profileObjectNumber: 7),
+                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             var intent = Assert.Single(store.GetPageOutputIntents(null));
 
@@ -320,13 +320,13 @@
                 scanner,
                 new NoOpFontFactory(),
                 filters,
+                catalogDictionary,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
                     IccProfileService = new TestIccProfileService(4)
-                },
-                catalogDictionary);
+                });
         }
 
         private static DictionaryToken Catalog(TestPdfTokenScanner scanner, string subtype,

@@ -36,14 +36,14 @@
                     new ResourceStore(new TestPdfTokenScanner(),
                         new TestFontFactory(),
                         new TestFilterProvider(),
+                        null,
                         new ParsingOptions()
                         {
                             UseLenientParsing = true,
                             ClipPaths = false,
                             SkipMissingFonts = true,
                             Logger = new NoOpLog()
-                        },
-                        null))
+                        }))
             });
             CurrentSubpath = new PdfSubpath();
         }

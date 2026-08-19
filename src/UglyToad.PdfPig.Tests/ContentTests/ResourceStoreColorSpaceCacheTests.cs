@@ -16,12 +16,12 @@
                 scanner,
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                },
-                null);
+                });
         }
 
         private static ArrayToken CreateSeparationArray()

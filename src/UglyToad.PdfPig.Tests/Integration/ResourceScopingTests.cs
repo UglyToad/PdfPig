@@ -38,12 +38,12 @@ namespace UglyToad.PdfPig.Tests.Integration
             scanner,
             new NoOpFontFactory(),
             new FilterProviderWithLookup(DefaultFilterProvider.Instance),
+            null,
             new ParsingOptions
             {
                 UseLenientParsing = true,
                 SkipMissingFonts = true,
-            },
-            null);
+            });
 
         private static DictionaryToken Dict(params (NameToken Key, IToken Value)[] entries)
         {

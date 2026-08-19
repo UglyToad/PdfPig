@@ -102,13 +102,13 @@
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
                     IccProfileService = new PerIntentProfileService()
-                },
-                null);
+                });
 
             store.LoadResourceDictionary(IccResources(defaultRgb));
 

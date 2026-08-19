@@ -26,12 +26,12 @@
                 scanner,
                 new NoOpFontFactory(),
                 new FilterProviderWithLookup(DefaultFilterProvider.Instance),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                },
-                null);
+                });
 
             store.LoadResourceDictionary(resources);
 

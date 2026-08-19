@@ -16,12 +16,12 @@
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                },
-                null);
+                });
         }
 
         [Fact]

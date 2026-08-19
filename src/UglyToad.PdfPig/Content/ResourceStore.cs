@@ -66,8 +66,8 @@
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
-            ParsingOptions parsingOptions,
-            DictionaryToken? catalogDictionary)
+            DictionaryToken? catalogDictionary,
+            ParsingOptions parsingOptions)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;

@@ -78,13 +78,13 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
                     IccProfileService = new ProofingIccProfileService(useOutputIntent)
-                },
-                null);
+                });
 
             store.LoadResourceDictionary(new DictionaryToken(new Dictionary<NameToken, IToken>()));
 
@@ -190,13 +190,13 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
                     IccProfileService = new ProofingIccProfileService(useOutputIntent: true)
-                },
-                null);
+                });
 
             store.LoadResourceDictionary(new DictionaryToken(new Dictionary<NameToken, IToken>()));
 

@@ -95,8 +95,8 @@
                 scanner ?? new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
-                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true },
-                null);
+                null,
+                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             store.LoadResourceDictionary(resources ?? Empty);
 
@@ -281,8 +281,8 @@
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
-                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true },
-                null);
+                null,
+                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             store.LoadResourceDictionary(resources);
 
