@@ -28,6 +28,14 @@ namespace UglyToad.PdfPig.Encryption
             0x64, 0x53, 0x69, 0x7A
         ];
 
+        private static readonly byte[][] PlainTextMetadataPrefixes =
+        [
+            OtherEncodings.StringAsLatin1Bytes("<?xpacket"),
+            OtherEncodings.StringAsLatin1Bytes("<?xml"),
+            OtherEncodings.StringAsLatin1Bytes("<x:xmpmeta"),
+            OtherEncodings.StringAsLatin1Bytes("<rdf:RDF")
+        ];
+
         private readonly HashSet<IndirectReference> previouslyDecrypted = new HashSet<IndirectReference>();
         private readonly EncryptionDictionary encryptionDictionary;
         private readonly CryptHandler cryptHandler;
@@ -374,12 +382,11 @@ namespace UglyToad.PdfPig.Encryption
                                 return token;
                             }
 
-                            if (!encryptionDictionary.EncryptMetadata && NameToken.Metadata.Equals(typeName))
+                            if (NameToken.Metadata.Equals(typeName)
+                                && (!encryptionDictionary.EncryptMetadata || IsPlainTextMetadata(stream.Data.Span)))
                             {
                                 return token;
                             }
-
-                            // TODO: check unencrypted metadata
                         }
 
                         var streamDictionary = (DictionaryToken)DecryptInternal(reference, stream.StreamDictionary);
@@ -462,6 +469,24 @@ namespace UglyToad.PdfPig.Encryption
             }
 
             return token;
+        }
+
+        private static bool IsPlainTextMetadata(ReadOnlySpan<byte> data)
+        {
+            while (data.Length > 0 && ReadHelper.IsWhitespace(data[0]))
+            {
+                data = data.Slice(1);
+            }
+
+            foreach (var prefix in PlainTextMetadataPrefixes)
+            {
+                if (data.StartsWith(prefix))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static StringToken GetStringTokenFromDecryptedData(ReadOnlySpan<byte> data)

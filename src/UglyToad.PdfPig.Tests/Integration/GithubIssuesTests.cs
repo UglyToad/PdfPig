@@ -17,6 +17,32 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1393()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("BVCM050486_provided.pdf");
+
+            // The document is encrypted with AESV2 but stores its metadata streams as plain text
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var imageCount = 0;
+
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page);
+
+                    foreach (var image in page.GetImages())
+                    {
+                        Assert.NotNull(image);
+                        Assert.False(image.RawBytes.IsEmpty);
+                        imageCount++;
+                    }
+                }
+
+                Assert.Equal(99, imageCount);
+            }
+        }
+
+        [Fact]
         public void Issues1284()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("50058.pdf");
