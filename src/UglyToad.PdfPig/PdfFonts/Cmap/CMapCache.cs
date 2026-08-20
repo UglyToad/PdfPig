@@ -13,7 +13,7 @@
 
         private static readonly CMapParser CMapParser = new CMapParser();
 
-        public static bool TryGet(string name, [NotNullWhen(true)] out CMap? result)
+        public static bool TryGet(string name, StackDepthGuard stackDepthGuard, [NotNullWhen(true)] out CMap? result)
         {
             result = null;
 
@@ -24,7 +24,7 @@
                     return true;
                 }
 
-                if (CMapParser.TryParseExternal(name, out result))
+                if (CMapParser.TryParseExternal(name, stackDepthGuard, out result))
                 {
                     Cache[name] = result;
                     return true;
@@ -34,14 +34,14 @@
             }
         }
 
-        public static CMap Parse(IInputBytes bytes)
+        public static CMap Parse(IInputBytes bytes, StackDepthGuard stackDepthGuard)
         {
             if (bytes is null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }
 
-            return CMapParser.Parse(bytes);
+            return CMapParser.Parse(bytes, stackDepthGuard);
         }
     }
 }

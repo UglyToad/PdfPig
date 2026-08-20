@@ -25,6 +25,7 @@
         private readonly Dictionary<string, Dictionary<Guid, CMap>> _cache = new();
         private readonly ILookupFilterProvider _filterProvider;
         private readonly IPdfTokenScanner _scanner;
+        private readonly StackDepthGuard _stackDepthGuard;
 
         /// <summary>
         /// Provides a local (per document) cache for CMap objects, allowing efficient retrieval and storage of CMap instances based on
@@ -33,15 +34,16 @@
         /// <remarks>This class is designed to cache CMap objects to improve performance by avoiding redundant
         /// parsing of CMap data. It uses a combination of CMap names and GUIDs derived from the CMap data to uniquely
         /// identify and store CMap instances.</remarks>
-        public CMapLocalCache(ILookupFilterProvider filterProvider, IPdfTokenScanner scanner)
+        public CMapLocalCache(ILookupFilterProvider filterProvider, IPdfTokenScanner scanner, StackDepthGuard stackDepthGuard)
         {
             _filterProvider = filterProvider;
             _scanner = scanner;
+            _stackDepthGuard = stackDepthGuard;
         }
         
         public bool TryGet(string name, [NotNullWhen(true)] out CMap? result)
         {
-            return CMapCache.TryGet(name, out result);
+            return CMapCache.TryGet(name, _stackDepthGuard, out result);
         }
 
         private static Guid GetGuid(ReadOnlySpan<byte> bytes)
@@ -63,7 +65,7 @@
             
             if (!TryGetNameFast(decodedUnicodeCMap.Span, out string? cmapName))
             {
-                result = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
+                result = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap), _stackDepthGuard);
                 return true;
             }
 
@@ -82,7 +84,7 @@
                     return true;
                 }
 
-                result = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
+                result = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap), _stackDepthGuard);
                 cMaps[guid] = result;
             }
 
