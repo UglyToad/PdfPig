@@ -178,12 +178,13 @@
             
             var encodingReader = new EncodingReader(pdfScanner, parsingOptions);
 
-            var cmapCache = new CMapLocalCache(filterProvider, pdfScanner);
+            var cmapCache = new CMapLocalCache(filterProvider, pdfScanner, stackDepthGuard);
 
             var type0Handler = new Type0FontHandler(
                 cidFontFactory,
                 pdfScanner,
                 cmapCache,
+                stackDepthGuard,
                 parsingOptions);
 
             var type1Handler = new Type1FontHandler(

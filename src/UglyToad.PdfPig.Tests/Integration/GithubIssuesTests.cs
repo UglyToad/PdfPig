@@ -17,6 +17,18 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1394()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("repro_cmap_deep_array_so.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var ex = Assert.Throws<PdfDocumentStackDepthException>(() => document.GetPage(1));
+                Assert.Equal("Exceeded maximum nesting depth of 256.", ex.Message);
+            }
+        }
+
+        [Fact]
         public void Issues1393()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("BVCM050486_provided.pdf");

@@ -5,6 +5,7 @@
     using CidFonts;
     using Cmap;
     using Composite;
+    using Core;
     using Fonts;
     using Logging;
     using Parts;
@@ -20,11 +21,13 @@
         private readonly ILog logger;
         private readonly CMapLocalCache cmapLocalCache;
         private readonly ParsingOptions parsingOptions;
+        private readonly StackDepthGuard stackDepthGuard;
 
         public Type0FontHandler(
             CidFontFactory cidFontFactory,
             IPdfTokenScanner scanner,
             CMapLocalCache cmapLocalCache,
+            StackDepthGuard stackDepthGuard,
             ParsingOptions parsingOptions)
         {
             this.cidFontFactory = cidFontFactory;
@@ -32,6 +35,7 @@
             this.cmapLocalCache = cmapLocalCache;
             logger = parsingOptions.Logger;
             this.parsingOptions = parsingOptions;
+            this.stackDepthGuard = stackDepthGuard;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -172,7 +176,7 @@
             return result;
         }
 
-        private static (CMap?, bool isChineseJapaneseOrKorean) GetUcs2CMap(DictionaryToken dictionary, bool isCMapPredefined, ICidFont cidFont)
+        private (CMap?, bool isChineseJapaneseOrKorean) GetUcs2CMap(DictionaryToken dictionary, bool isCMapPredefined, ICidFont cidFont)
         {
             if (!isCMapPredefined)
             {
@@ -218,7 +222,7 @@
 
             string registry;
             string ordering;
-            if (CMapCache.TryGet(fullCmapName, out var nonUnicodeCMap))
+            if (CMapCache.TryGet(fullCmapName, stackDepthGuard, out var nonUnicodeCMap))
             {
                 registry = nonUnicodeCMap.Info.Registry;
                 ordering = nonUnicodeCMap.Info.Ordering;
@@ -231,7 +235,7 @@
             
             var unicodeCMapName = $"{registry}-{ordering}-UCS2";
 
-            if (!CMapCache.TryGet(unicodeCMapName, out var unicodeCMap))
+            if (!CMapCache.TryGet(unicodeCMapName, stackDepthGuard, out var unicodeCMap))
             {
                 throw new InvalidFontFormatException($"Could not locate CMap by name: {nonUnicodeCMap}.");
             }

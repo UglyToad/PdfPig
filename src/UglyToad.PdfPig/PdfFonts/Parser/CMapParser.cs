@@ -20,11 +20,11 @@
         private static readonly CodespaceRangeParser CodespaceRangeParser = new CodespaceRangeParser();
         private static readonly CidCharacterParser CidCharacterParser = new CidCharacterParser();
 
-        public CMap Parse(IInputBytes inputBytes)
+        public CMap Parse(IInputBytes inputBytes, StackDepthGuard stackDepthGuard)
         {
             var scanner = new CoreTokenScanner(inputBytes,
                 false,
-                StackDepthGuard.Infinite, // We don't check for stack overflows, we might want to change that.
+                stackDepthGuard,
                 namedDictionaryRequiredKeys: new Dictionary<NameToken, IReadOnlyList<NameToken>>
                 {
                     { NameToken.CidSystemInfo, new[] { NameToken.Registry, NameToken.Ordering, NameToken.Supplement } }
@@ -45,7 +45,7 @@
                     {
                         case "usecmap":
                             {
-                                if (previousToken is NameToken name && TryParseExternal(name.Data, out var external))
+                                if (previousToken is NameToken name && TryParseExternal(name.Data, stackDepthGuard, out var external))
                                 {
                                     builder.UseCMap(external);
                                 }
@@ -128,7 +128,7 @@
             return builder.Build();
         }
 
-        public bool TryParseExternal(string name, [NotNullWhen(true)] out CMap? result)
+        public bool TryParseExternal(string name, StackDepthGuard stackDepthGuard, [NotNullWhen(true)] out CMap? result)
         {
             result = null;
 
@@ -157,7 +157,7 @@
                 }
             }
 
-            result = Parse(new MemoryInputBytes(bytes));
+            result = Parse(new MemoryInputBytes(bytes), stackDepthGuard);
 
             return true;
         }

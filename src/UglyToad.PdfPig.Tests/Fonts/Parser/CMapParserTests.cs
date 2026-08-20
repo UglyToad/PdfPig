@@ -59,7 +59,7 @@ endbfchar";
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
-            var cmap = cMapParser.Parse(input.Bytes);
+            var cmap = cMapParser.Parse(input.Bytes, StackDepthGuard.Infinite);
 
             Assert.Equal("Adobe", cmap.Info.Registry);
             Assert.Equal("UCS", cmap.Info.Ordering);
@@ -74,7 +74,7 @@ endbfchar";
         {
             var input = StringBytesTestConverter.Convert(CmapMissingDictionaryEndToken, false);
 
-            var cmap = cMapParser.Parse(input.Bytes);
+            var cmap = cMapParser.Parse(input.Bytes, StackDepthGuard.Infinite);
 
             Assert.Equal("F2+0", cmap.Info.Registry);
             Assert.Equal("F2", cmap.Info.Ordering);
@@ -86,7 +86,7 @@ endbfchar";
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
-            var cmap = cMapParser.Parse(input.Bytes);
+            var cmap = cMapParser.Parse(input.Bytes, StackDepthGuard.Infinite);
 
             Assert.Single(cmap.CodespaceRanges);
 
@@ -100,7 +100,7 @@ endbfchar";
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
-            var cmap = cMapParser.Parse(input.Bytes);
+            var cmap = cMapParser.Parse(input.Bytes, StackDepthGuard.Infinite);
 
             Assert.True(cmap.BaseFontCharacterMap.Count >= 6);
 
@@ -120,7 +120,7 @@ endbfchar";
             
             var input = new MemoryInputBytes(ReadResourceBytes(resourceName));
 
-            var cmap = cMapParser.Parse(input);
+            var cmap = cMapParser.Parse(input, StackDepthGuard.Infinite);
 
             Assert.NotNull(cmap);
         }
@@ -130,7 +130,7 @@ endbfchar";
         {
             var input = new MemoryInputBytes(ReadResourceBytes("UglyToad.PdfPig.Resources.CMap.Identity-H"));
 
-            var cmap = cMapParser.Parse(input);
+            var cmap = cMapParser.Parse(input, StackDepthGuard.Infinite);
 
             Assert.Single(cmap.CodespaceRanges);
 
@@ -202,7 +202,7 @@ endbfchar";
 
             var input = StringBytesTestConverter.Convert(cmap, false);
 
-            var result = cMapParser.Parse(input.Bytes);
+            var result = cMapParser.Parse(input.Bytes, StackDepthGuard.Infinite);
 
             Assert.Equal("Adobe", result.Info.Registry);
             Assert.Equal("GB1", result.Info.Ordering);
