@@ -9,7 +9,7 @@
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Functions;
+    using Functions;
 
     internal static class ColorSpaceMapper
     {
@@ -41,6 +41,7 @@
             IPdfTokenScanner scanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
+            IccProfileCache iccProfileCache,
             bool cannotRecurse = false)
         {
             if ((imageDictionary.TryGet(NameToken.ImageMask, scanner, out BooleanToken isImageMask) && isImageMask.Data) ||
@@ -53,7 +54,7 @@
                     return DeviceGrayColorSpaceDetails.Instance;
                 }
 
-                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, true);
+                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, iccProfileCache, true);
                 return IndexedColorSpaceDetails.Stencil(colorSpaceDetails);
             }
 
@@ -208,8 +209,10 @@
                     }
                 case ColorSpace.ICCBased:
                     {
+                        // Two elements are what 8.6.5.5 defines, but only the first two are read and a file
+                        // with a trailing junk element is otherwise perfectly usable.
                         if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
-                            || colorSpaceArray.Length != 2)
+                            || colorSpaceArray.Length < 2)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -231,13 +234,23 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        // Alternate is optional
+                        // Alternate is optional, and may be either a name or an array
                         ColorSpaceDetails? alternateColorSpaceDetails = null;
-                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
-                            ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out var alternateColorSpaceToken))
                         {
-                            alternateColorSpaceDetails =
-                                GetColorSpaceDetails(alternateColorSpace, imageDictionary, scanner, resourceStore, filterProvider, true);
+                            var alternate = GetSecondaryColorSpace(alternateColorSpaceToken,
+                                imageDictionary, scanner, filterProvider, resourceStore,
+                                iccProfileCache, applyDefaultSubstitution: false);
+                            
+                            if (alternate is not UnsupportedColorSpaceDetails)
+                            {
+                                alternateColorSpaceDetails = alternate;
+                            }
+                            else
+                            {
+                                resourceStore.Logger.Warn("The /Alternate of an ICCBased colour space could not be interpreted; " +
+                                                          "using the device colour space implied by /N.");
+                            }
                         }
 
                         // Range is optional
@@ -253,8 +266,12 @@
                         {
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
+                        
+                        var profile = iccProfileCache.GetOrParse(second, streamToken, filterProvider, scanner,
+                            resourceStore.IccProfileService, resourceStore.Logger);
 
-                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata);
+                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range,
+                            metadata, profile, resourceStore.Logger);
                     }
                 case ColorSpace.Indexed:
                     {
@@ -282,7 +299,8 @@
                             imageDictionary,
                             scanner,
                             filterProvider,
-                            resourceStore);
+                            resourceStore,
+                            iccProfileCache);
 
                         if (baseDetails is UnsupportedColorSpaceDetails)
                         {
@@ -351,7 +369,8 @@
                                     imageDictionary,
                                     scanner,
                                     filterProvider,
-                                    resourceStore);
+                                    resourceStore,
+                                    iccProfileCache);
                             }
                         }
                         return new PatternColorSpaceDetails(resourceStore.GetPatterns(), underlyingColourSpace);
@@ -380,7 +399,8 @@
                             imageDictionary,
                             scanner,
                             filterProvider,
-                            resourceStore);
+                            resourceStore,
+                            iccProfileCache);
 
                         PdfFunction function;
                         var func = colorSpaceArray[3];
@@ -424,7 +444,8 @@
                             imageDictionary,
                             scanner,
                             filterProvider,
-                            resourceStore);
+                            resourceStore,
+                            iccProfileCache);
 
                         var func = colorSpaceArray[3];
                         PdfFunction tintFunc = PdfFunctionParser.Create(func, scanner, filterProvider);
@@ -477,7 +498,9 @@
             DictionaryToken dictionary,
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            IccProfileCache iccProfileCache,
+            bool applyDefaultSubstitution = true)
         {
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
                 && ColorSpaceMapper.TryMap(alternateNameToken, resourceStore, out var baseColorSpaceName))
@@ -486,7 +509,8 @@
                 // DefaultGray/DefaultRGB/DefaultCMYK substitution shall be used in place of that device
                 // space. This applies to the base of an Indexed space, the alternate of a Separation/DeviceN
                 // space and the underlying space of a Pattern - all of which are resolved here.
-                if (baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
+                if (applyDefaultSubstitution &&
+                    baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
                 {
                     return resourceStore.GetDeviceColorSpaceDetails(baseColorSpaceName);
                 }
@@ -497,6 +521,7 @@
                     scanner,
                     resourceStore,
                     filterProvider,
+                    iccProfileCache,
                     true);
             }
 
@@ -519,6 +544,7 @@
                     scanner,
                     resourceStore,
                     filterProvider,
+                    iccProfileCache,
                     true);
             }
 

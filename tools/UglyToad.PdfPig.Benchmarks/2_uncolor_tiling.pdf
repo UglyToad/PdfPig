@@ -1,0 +1,148 @@
+%PDF-1.7
+
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [5 0 R]
+  /Count 1
+>>
+endobj
+
+5 0 obj					% Page object
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /Resources 10 0 R
+  /Contents 30 0 R
+  /MediaBox [0 0 225 225]
+>>
+endobj
+
+10 0 obj				% Resource dictionary for page
+<<
+  /ColorSpace <</Cs12 12 0 R>>
+  /Pattern <</P1 15 0 R>>
+>>
+endobj
+
+12 0 obj				% Color space 
+[/Pattern /DeviceRGB]
+endobj
+
+15 0 obj				% Pattern definition
+<<
+  /Type /Pattern
+  /PatternType 1			% Tiling pattern
+  /PaintType 2				% Uncolored
+  /TilingType 2
+  /BBox [0 0 100 100]
+  /XStep 100
+  /YStep 100
+  /Resources 16 0 R
+  /Matrix [0.4 0.0 0.0 0.4 100.0 100.0]
+  /Length 0
+>>
+stream
+BT					% Begin text object
+  /F1 1 Tf				% Set text font and size
+  64 0 0 64 7.1771 2.4414 Tm		% Set text matrix
+  0 Tc					% Set character spacing
+  0 Tw					% Set word spacing
+  (\001) Tj				% Show spade glyph
+  0.7478 -0.007 TD			% Move text position
+  (\002) Tj				% Show heart glyph
+  -0.7323 0.7813 TD			% Move text position
+  (\003) Tj				% Show diamond glyph
+  0.6913 0.007 TD			% Move text position
+  (\004) Tj				% Show club glyph
+ET					% End text object
+endstream
+endobj
+
+16 0 obj				% Resource dictionary for pattern
+<<
+  /Font <</F1 20 0 R>>
+>>
+endobj
+
+20 0 obj				% Font for pattern
+<<
+  /Type /Font
+  /Subtype /Type1
+  /Encoding 21 0 R
+  /BaseFont /ZapfDingbats
+>>
+endobj
+
+21 0 obj				% Font encoding
+<<
+  /Type /Encoding
+  /Differences[1 /a109 /a110 /a111 /a112]
+>>
+endobj
+
+30 0 obj				% Contents of page
+<<
+  /Length 0
+>>
+stream
+0.0 G					% Set stroking color to black
+1.0 1.0 0.0 rg				% Set nonstroking color to yellow
+25 175 175 -150 re			% Construct rectangular path
+f					% Fill path
+
+			% Set nonstroking color and pattern
+					% Fill and stroke path
+99.92 49.92 m				% Start new path
+99.92 77.52 77.52 99.92 49.92 99.92 c	% Construct lower-left circle
+22.32 99.92 -0.08 77.52 -0.08 49.92 c
+-0.08 22.32 22.32 -0.08 49.92 -0.08 c
+77.52 -0.08 99.92 22.32 99.92 49.92 c
+
+224.96 49.92 m				% Start new path
+224.96 77.52 202.56 99.92 174.96 99.92 c	% Construct lower-right circle
+147.36 99.92 124.96 77.52 124.96 49.92 c
+124.96 22.32 147.36 -0.08 174.96 -0.08 c
+202.56 -0.08 224.96 22.32 224.96 49.92 c
+
+87.56 201.70 m				% Start new path
+63.66 187.90 55.46 157.32 69.26 133.40 c	% Construct upper circle
+83.06 109.50 113.66 101.30 137.56 115.10 c
+161.46 128.90 169.66 159.50 155.86 183.40 c
+142.06 207.30 111.46 215.50 87.56 201.70 c
+
+50 50 m					% Start new path
+175 50 l				% Construct triangular path
+112.5 158.253 l  h
+
+W S
+
+/Cs12 cs
+0.5 0.2 1.0 /P1 scn			% Change nonstroking color
+0 0 m 225 0 l 225 225 l 0 225 l b				% Construct triangular path
+
+				% Close, fill, and stroke path
+
+%0.5 0.2 1.0 /P1 scn
+%0 0 m 100 0 l 100 100 l 0 100 l b
+endstream
+endobj
+
+xref
+
+trailer
+<<
+  /Size 0
+  /Root 1 0 R
+>>
+startxref
+0
+
+%%EOF

@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(PdfPigVersion)' == 'Latest'">
-		<PackageReference Include="PdfPig" Version="0.1.16-alpha-20260714-a9ac3" />
+		<PackageReference Include="PdfPig" Version="0.1.16-alpha-20260809-c8266" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -58,6 +58,33 @@
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	  <None Update="PDFBOX-1869-4-1.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GWG230_Four_different Grays_x1a.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GWG206_ICC_V4-RGB-Image_x4.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GWG130_ICC_Source_Profile_x4.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GWG172_JPEG2000_compression_ICCBasedRGB_x4.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GWG221_OutputIntentChangeIndicator_x4.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="2_uncolor_tiling.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="DefaultColourSpaces.230802.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="DeviceN_CS_test.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Layer pdf - 322_High_Holborn_building_Brochure.pdf">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

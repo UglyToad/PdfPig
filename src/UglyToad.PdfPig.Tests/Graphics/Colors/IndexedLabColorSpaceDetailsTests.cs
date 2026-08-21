@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
     using PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// Indexed colour-table bytes must decode to the base colour space's native component
@@ -60,7 +61,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         {
             var indexed = CreateIndexedOverLab();
 
-            double[] rgb = indexed.Process(1);
+            double[] rgb = indexed.Process([1], RenderingIntent.RelativeColorimetric);
 
             Assert.Equal(3, rgb.Length);
             Assert.True(rgb[0] > 0.9 && rgb[1] > 0.9 && rgb[2] > 0.9,
@@ -74,7 +75,7 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
 
             var (cr, cg, cb) = indexed.GetColor([1]).ToRGBValues();
             indexed.GetRgb([1.0], out double rr, out double rg, out double rb);
-            double[] p = indexed.Process(1);
+            double[] p = indexed.Process([1], RenderingIntent.RelativeColorimetric);
 
             Assert.Equal(cr, rr, 12);
             Assert.Equal(cg, rg, 12);

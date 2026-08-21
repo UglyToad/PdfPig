@@ -9,14 +9,16 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Graphics.Colors;
-    using UglyToad.PdfPig.XObjects;
+    using Colors;
+    using XObjects;
 
     /// <summary>
     /// Inline Image Builder.
     /// </summary>
     public sealed class InlineImageBuilder
     {
+        private readonly ParsingOptions options;
+        
         /// <summary>
         /// Inline image properties.
         /// </summary>
@@ -27,6 +29,17 @@
         /// </summary>
         public Memory<byte> Bytes { get; internal set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InlineImageBuilder"/> class with the specified parsing options.
+        /// </summary>
+        /// <param name="options">
+        /// The <see cref="ParsingOptions"/> instance that configures the behavior of the inline image builder.
+        /// </param>
+        public InlineImageBuilder(ParsingOptions options)
+        {
+            this.options = options;
+        }
+        
         internal InlineImage CreateInlineImage(
             in TransformationMatrix transformationMatrix,
             ILookupFilterProvider filterProvider,
@@ -76,7 +89,7 @@
                 XObjectContentRecord softMaskImageRecord = new XObjectContentRecord(XObjectType.Image, sMaskToken, TransformationMatrix.Identity,
                     defaultRenderingIntent, DeviceGrayColorSpaceDetails.Instance);
 
-                softMaskImage = XObjectFactory.ReadImage(softMaskImageRecord, tokenScanner, filterProvider, resourceStore);
+                softMaskImage = XObjectFactory.ReadImage(softMaskImageRecord, tokenScanner, filterProvider, resourceStore, options);
             }
 
             if (!isMask)

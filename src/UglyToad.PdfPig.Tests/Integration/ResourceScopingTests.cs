@@ -38,6 +38,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             scanner,
             new NoOpFontFactory(),
             new FilterProviderWithLookup(DefaultFilterProvider.Instance),
+            null,
             new ParsingOptions
             {
                 UseLenientParsing = true,
@@ -281,7 +282,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             TransformationMatrix initialMatrix,
             ParsingOptions parsingOptions)
             : BaseStreamProcessor<IReadOnlyList<ShadingUsage>>(pageNumber, resourceStore, pdfScanner,
-                pageContentParser, filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix, parsingOptions)
+                pageContentParser, filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix, null, parsingOptions)
         {
             private readonly List<ShadingUsage> _usages = [];
             private int _formDepth;

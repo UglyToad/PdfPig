@@ -5,12 +5,14 @@
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
+    using Filters;
     using Graphics.Colors;
     using Parser.Parts;
     using PdfFonts;
     using Tokenization.Scanner;
     using Tokens;
-    using Filters;
+    using Graphics.Colors.Icc;
+    using Logging;
     using Util;
 
     internal sealed class ResourceStore : IResourceStore
@@ -31,6 +33,9 @@
         private readonly Dictionary<NameToken, ColorSpaceDetails> loadedNamedColorSpaceDetails = new Dictionary<NameToken, ColorSpaceDetails>();
         private readonly Dictionary<(NameToken? Name, IToken ColorSpace), ColorSpaceDetails> loadedColorSpaceDetailsCache = new Dictionary<(NameToken?, IToken), ColorSpaceDetails>();
 
+        // NOT cleared per resource dictionary: it is keyed by the profile stream's indirect reference (unique document-wide)
+        private readonly IccProfileCache iccProfileByteCache = new IccProfileCache();
+
         private readonly StackDictionary<NameToken, DictionaryToken> markedContentProperties = new StackDictionary<NameToken, DictionaryToken>();
 
         private readonly StackDictionary<NameToken, Shading> shadingsProperties = new StackDictionary<NameToken, Shading>();
@@ -48,15 +53,60 @@
 
         private (NameToken? name, IFont? font) lastLoadedFont;
 
+        public IIccProfileService? IccProfileService => parsingOptions.IccProfileService;
+
+        public ILog Logger => parsingOptions.Logger;
+
+        private readonly Lazy<IReadOnlyList<OutputIntent>> outputIntents;
+
+        public IReadOnlyList<OutputIntent> DocumentOutputIntents => outputIntents.Value;
+
+        private readonly Dictionary<IndirectReference, IReadOnlyList<OutputIntent>> pageOutputIntents = new();
+
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
+            DictionaryToken? catalogDictionary,
             ParsingOptions parsingOptions)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
             this.parsingOptions = parsingOptions;
+            this.outputIntents = catalogDictionary is null
+                ? new Lazy<IReadOnlyList<OutputIntent>>(() => [])
+                : new Lazy<IReadOnlyList<OutputIntent>>(() => OutputIntentParser.CreateAll(catalogDictionary,
+                    scanner, filterProvider, parsingOptions.IccProfileService, iccProfileByteCache, Logger));
+        }
+
+        /// <inheritdoc/>
+        public IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary)
+        {
+            if (pageDictionary is null || !pageDictionary.TryGet(NameToken.OutputIntents, out var outputIntentsToken))
+            {
+                return DocumentOutputIntents;
+            }
+
+            if (outputIntentsToken is not IndirectReferenceToken reference)
+            {
+                var parsed = ParsePageOutputIntents(pageDictionary);
+                return parsed.Count > 0 ? parsed : DocumentOutputIntents;
+            }
+
+            if (!pageOutputIntents.TryGetValue(reference.Data, out var cached))
+            {
+                cached = ParsePageOutputIntents(pageDictionary);
+                pageOutputIntents[reference.Data] = cached;
+            }
+
+            // A page whose own array yielded nothing usable still sits inside the document's declaration.
+            return cached.Count > 0 ? cached : DocumentOutputIntents;
+        }
+
+        private IReadOnlyList<OutputIntent> ParsePageOutputIntents(DictionaryToken pageDictionary)
+        {
+            return OutputIntentParser.CreateAll(pageDictionary, scanner, filterProvider,
+                parsingOptions.IccProfileService, iccProfileByteCache, Logger);
         }
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary)
@@ -474,17 +524,19 @@
             // Null color space for images
             if (name is null)
             {
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this, filterProvider);
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this,
+                    filterProvider, iccProfileByteCache);
             }
 
             if (name.TryMapToColorSpace(out ColorSpace colorSpaceActual))
             {
                 if (TryGetDefaultSubstitute(colorSpaceActual, out NameToken? substituteName))
                 {
-                    return ResolveDefaultSubstitute(substituteName, dictionary);
+                    return ResolveDefaultSubstitute(colorSpaceActual, substituteName, dictionary);
                 }
 
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this,
+                    filterProvider, iccProfileByteCache);
             }
 
             // Named color spaces
@@ -498,12 +550,14 @@
             {
                 if (namedColorSpace.Data is null)
                 {
-                    return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this, filterProvider);
+                    return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this,
+                        filterProvider, iccProfileByteCache);
                 }
                 
                 if (namedColorSpace.Data is ArrayToken array)
                 {
-                    var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this, filterProvider);
+                    var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this,
+                        filterProvider, iccProfileByteCache);
                     loadedNamedColorSpaceDetails[name] = csd;
                     return csd;
                 }
@@ -519,9 +573,14 @@
             // singleton is returned.
             if (TryGetDefaultSubstitute(deviceColorSpace, out NameToken? substituteName))
             {
-                return ResolveDefaultSubstitute(substituteName, null);
+                return ResolveDefaultSubstitute(deviceColorSpace, substituteName, null);
             }
 
+            return GetDeviceColorSpaceSingleton(deviceColorSpace);
+        }
+
+        private static ColorSpaceDetails GetDeviceColorSpaceSingleton(ColorSpace deviceColorSpace)
+        {
             return deviceColorSpace switch
             {
                 ColorSpace.DeviceGray => DeviceGrayColorSpaceDetails.Instance,
@@ -533,17 +592,61 @@
             };
         }
 
-        private ColorSpaceDetails ResolveDefaultSubstitute(NameToken substituteName, DictionaryToken? dictionary)
+        /// <summary>
+        /// Get the default substitute color space.
+        /// </summary>
+        /// <param name="requested"> The device colour space being substituted for, which stands if the substitute turns out to be unusable. </param>
+        /// <param name="substituteName"></param>
+        /// <param name="dictionary"></param>
+        private ColorSpaceDetails ResolveDefaultSubstitute(ColorSpace requested, NameToken substituteName,
+            DictionaryToken? dictionary)
         {
+            ColorSpaceDetails substitute;
+
             isResolvingDefaultSubstitute = true;
             try
             {
-                return GetColorSpaceDetails(substituteName, dictionary);
+                substitute = GetColorSpaceDetails(substituteName, dictionary);
             }
             finally
             {
                 isResolvingDefaultSubstitute = false;
             }
+
+            ColorSpaceDetails device = GetDeviceColorSpaceSingleton(requested);
+
+            // A substitute that failed to parse is not a colour space at all (every member of
+            // UnsupportedColorSpaceDetails throws) so handing it back turns a g/rg/k into an exception that
+            // takes the page down for every consumer, rather than merely losing the substitution. Drop the
+            // unusable default and let the genuine device space stand, exactly as TryGetDefaultSubstitute
+            // already does for a default of a family 8.6.5.6 forbids.
+            //
+            // Pattern is folded in here for two reasons: 8.6.5.6 forbids it as a default, and its
+            // NumberOfColorComponents throws, so covering it keeps the components count check below total
+            // rather than dependent on the upstream family check staying where it is.
+            if (substitute is UnsupportedColorSpaceDetails or PatternColorSpaceDetails)
+            {
+                Logger.Warn($"The {substituteName} colour space in the current resources cannot be used as a default " +
+                            $"colour space; using {requested} itself instead.");
+
+                return device;
+            }
+
+            // The substitute is handed the operands of the device operator verbatim, so one of the wrong
+            // width cannot be evaluated at all, GetColor throws on a component count it did not expect. The
+            // family check upstream sees only the substitute's name, which says nothing about its components
+            // count , and a /DefaultRGB naming a grey or CMYK profile is a plausible authoring mistake rather
+            // than a corrupt file. ICCBasedColorSpaceDetails drops a mismatched /Alternate for the same reason.
+            if (substitute.NumberOfColorComponents != device.NumberOfColorComponents)
+            {
+                Logger.Warn($"The {substituteName} colour space in the current resources takes " +
+                            $"{substitute.NumberOfColorComponents} components where {requested} has " +
+                            $"{device.NumberOfColorComponents}; ignoring it and using {requested} itself instead.");
+
+                return device;
+            }
+
+            return substitute;
         }
 
         private bool TryGetDefaultSubstitute(ColorSpace requested, [NotNullWhen(true)] out NameToken? substituteName)
@@ -604,7 +707,7 @@
                     return dictToken;
                 }
 
-                parsingOptions.Logger.Error($"The graphic state dictionary does not contain the key '{name}'.");
+                Logger.Error($"The graphic state dictionary does not contain the key '{name}'.");
                 return null;
             }
 

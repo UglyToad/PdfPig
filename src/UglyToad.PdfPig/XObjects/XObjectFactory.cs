@@ -9,6 +9,7 @@
     using Graphics.Colors;
     using Graphics.Core;
     using Images;
+    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -18,13 +19,32 @@
     /// </summary>
     public static class XObjectFactory
     {
+        private static DictionaryToken Resolve(DictionaryToken streamDictionary, IPdfTokenScanner pdfScanner)
+        {
+            if (streamDictionary.TryGet(NameToken.ColorSpace, out var rawColorSpace)
+                && DirectObjectFinder.TryGet(rawColorSpace, pdfScanner, out ArrayToken? rawColorSpaceArray)
+                && rawColorSpaceArray.Length > 0
+                && rawColorSpaceArray.Data[0] is NameToken)
+            {
+                // Avoid resolving the ColorSpace here (this can be a profile stream of an /ICCBased
+                // or the lookup table of an /Indexed). ColorSpaceDetailsParser resolves the elements it
+                // needs through the scanner anyway.
+                return streamDictionary.Without(NameToken.ColorSpace)
+                    .Resolve(pdfScanner)
+                    .With(NameToken.ColorSpace, rawColorSpaceArray);
+            }
+            
+            return streamDictionary.Resolve(pdfScanner);
+        }
+        
         /// <summary>
         /// Read the XObject image.
         /// </summary>
         public static XObjectImage ReadImage(XObjectContentRecord xObject,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            ParsingOptions options)
         {
             if (xObject is null)
             {
@@ -36,8 +56,8 @@
                 throw new InvalidOperationException($"Cannot create an image from an XObject with type: {xObject.Type}.");
             }
 
-            var dictionary = xObject.Stream.StreamDictionary.Resolve(pdfScanner);
-
+            var dictionary = Resolve(xObject.Stream.StreamDictionary, pdfScanner);
+            
             var bounds = xObject.AppliedTransformation.Transform(new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(1, 1)));
 
             var width = dictionary.GetInt(NameToken.Width);
@@ -69,7 +89,7 @@
                     xObject.DefaultRenderingIntent, // Ignored
                     DeviceGrayColorSpaceDetails.Instance);
 
-                softMaskImage = ReadImage(softMaskImageRecord, pdfScanner, filterProvider, resourceStore);
+                softMaskImage = ReadImage(softMaskImageRecord, pdfScanner, filterProvider, resourceStore, options);
             }
             else if (dictionary.TryGet(NameToken.Mask, out StreamToken maskStream))
             {
@@ -91,7 +111,7 @@
                     xObject.DefaultRenderingIntent,
                     null);
 
-                softMaskImage = ReadImage(maskImageRecord, pdfScanner, filterProvider, resourceStore);
+                softMaskImage = ReadImage(maskImageRecord, pdfScanner, filterProvider, resourceStore, options);
             }
 
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out NameToken filterName) && filterName.Equals(NameToken.JpxDecode);
@@ -179,7 +199,7 @@
                     // A JPXDecode image without an explicit /ColorSpace entry takes its colour space
                     // from the colour space information embedded in the JPEG2000 data (PDF 2.0, 7.4.9);
                     // otherwise ColorSpaceDetails stays null and the image cannot be interpreted.
-                    details = Jpeg2000Helper.GetJpxColorSpaceDetails(xObject.Stream.Data);
+                    details = Jpeg2000Helper.GetJpxColorSpaceDetails(xObject.Stream.Data, options);
                 }
                 else
                 {

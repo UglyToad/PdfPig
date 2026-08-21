@@ -4,6 +4,7 @@
     using Graphics.Colors;
     using System;
     using System.Collections.Generic;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// Utility for working with the bytes in <see cref="IPdfImage"/>s and converting according to their <see cref="ColorSpaceDetails"/>.s
@@ -18,7 +19,7 @@
         /// </summary>
         public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
-            return Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null);
+            return Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null, RenderingIntent.RelativeColorimetric);
         }
 
         /// <summary>
@@ -32,7 +33,8 @@
         /// colour space default" (which is a no-op for the common case). For <see cref="ColorSpace.Indexed"/> the
         /// sample is itself an index so the byte-level Decode applied here is skipped.
         /// </remarks>
-        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight, IReadOnlyList<double>? decode)
+        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight,
+            IReadOnlyList<double>? decode, RenderingIntent intent)
         {
             if (decoded.IsEmpty)
             {
@@ -69,7 +71,7 @@
 
             ApplyDecode(decoded, details, decode, bitsPerComponent);
 
-            return details.Transform(decoded);
+            return details.Transform(decoded, intent);
         }
 
         private static void ApplyDecode(Span<byte> samples, ColorSpaceDetails details, IReadOnlyList<double>? decode, int bitsPerComponent)
@@ -89,23 +91,18 @@
                 return;
             }
 
-            // Per-component output range:
-            //   - Indexed: byte stores a palette INDEX in [0, 2^bpc - 1]; default Decode is [0, 2^bpc - 1]
-            //              (identity), the subsequent palette lookup in Transform produces the actual colour.
-            //   - Non-Indexed: byte stores a colour-space VALUE in [0, 1] scaled to [0, 255]; default Decode
-            //                  is [0, 1].
-            bool isIndexed = details.Type == ColorSpace.Indexed;
-            double defaultDMax = isIndexed ? sampleMax : 1.0;
-            double outputScale = isIndexed ? 1.0 : 255.0;
-            int outputMax = isIndexed ? sampleMax : 255;
+            Span<double> defaults = components <= 16 ? stackalloc double[2 * components] : new double[2 * components];
+            details.GetDefaultDecode(bitsPerComponent, defaults);
 
+            bool isIndexed = details.Type == ColorSpace.Indexed;
             bool hasDecode = decode is not null && decode.Count >= components * 2;
 
-            // Fast-path: skip the loop when the per-byte transform would be the identity.
-            //   - Indexed: default Decode is identity for any bpc (S → S).
-            //   - Non-Indexed 8bpc: default Decode yields S / 255 * 255 = S.
-            // For non-Indexed sub-8bpc the default Decode still needs to stretch samples to bytes.
-            if (!hasDecode || IsDefaultDecode(decode!, components, defaultDMax))
+            // Fast path: the byte would come out as it went in.
+            //   - Indexed: the default Decode is the identity at any bit depth (S -> S).
+            //   - Non-Indexed 8bpc: the sample already IS the position within the default range, which is
+            //     exactly what a byte encodes (see below), so the round trip cancels.
+            // Sub-8bpc still has to be stretched from [0, 2^bpc - 1] to [0, 255].
+            if (!hasDecode || IsDefaultDecode(decode!, components, defaults))
             {
                 if (isIndexed || bitsPerComponent == 8)
                 {
@@ -115,15 +112,41 @@
 
             // Per PDF 2.0 8.9.5.10, for each component c with raw sample S in [0, sampleMax]:
             //     x_c = Dmin_c + S * (Dmax_c - Dmin_c) / sampleMax
-            // For non-Indexed x_c is a colour-space value (typically [0, 1]) re-scaled to a byte.
-            // For Indexed x_c is the post-Decode palette index, kept in [0, sampleMax].
-            // The result is clamped if the Decode range pushes the output beyond the valid byte range.
+            //
+            // What the byte then holds differs by colour space:
+            //   - Indexed: x_c is the palette index itself, kept as-is in [0, sampleMax].
+            //   - Non-Indexed: a byte cannot hold an L* of 100 or a negative a*, so it holds x_c's
+            //     POSITION within the component's default range, scaled to [0, 255]. The colour space
+            //     reverses this in its Transform via DecodeRawComponents, so the pair round-trips. For the
+            //     usual [0, 1] space position and value coincide and this is the historical behaviour.
             for (int i = 0; i < samples.Length; i++)
             {
                 int c = i % components;
-                double dMin = hasDecode ? decode![c * 2] : 0.0;
-                double dMax = hasDecode ? decode![c * 2 + 1] : defaultDMax;
+                double defaultMin = defaults[c * 2];
+                double defaultMax = defaults[c * 2 + 1];
+
+                double dMin = hasDecode ? decode![c * 2] : defaultMin;
+                double dMax = hasDecode ? decode![c * 2 + 1] : defaultMax;
                 double x = dMin + samples[i] * (dMax - dMin) / sampleMax;
+
+                double outputScale;
+                int outputMax;
+                if (isIndexed)
+                {
+                    outputScale = 1.0;
+                    outputMax = sampleMax;
+                }
+                else
+                {
+                    double span = defaultMax - defaultMin;
+
+                    // A degenerate range (Lab /Range [0 0 0 0] is legal) pins every sample to the single
+                    // valid value, which is position zero.
+                    x = span == 0.0 ? 0.0 : (x - defaultMin) / span;
+                    outputScale = 255.0;
+                    outputMax = 255;
+                }
+
                 int rounded = (int)Math.Round(x * outputScale, MidpointRounding.AwayFromZero);
                 if (rounded < 0)
                 {
@@ -138,11 +161,11 @@
             }
         }
 
-        private static bool IsDefaultDecode(IReadOnlyList<double> decode, int components, double defaultDMax)
+        private static bool IsDefaultDecode(IReadOnlyList<double> decode, int components, ReadOnlySpan<double> defaults)
         {
             for (int c = 0; c < components; c++)
             {
-                if (decode[c * 2] != 0.0 || decode[c * 2 + 1] != defaultDMax)
+                if (decode[c * 2] != defaults[c * 2] || decode[c * 2 + 1] != defaults[c * 2 + 1])
                 {
                     return false;
                 }

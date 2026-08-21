@@ -7,6 +7,11 @@
 
     internal static class ProfileStreamReader
     {
+        /// <summary>
+        /// The number of colour components of the profile returned by <see cref="GetSRgb2014"/>.
+        /// </summary>
+        public const int SRgb2014NumberOfComponents = 3;
+
         public static byte[] GetSRgb2014()
         {
             var resources = typeof(ProfileStreamReader).Assembly.GetManifestResourceNames();
