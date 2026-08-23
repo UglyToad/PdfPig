@@ -61,6 +61,20 @@
         }
 
         /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// An Indexed sample is a palette index, not a colour value, so it decodes to
+        /// <c>[0, 2^bitsPerComponent - 1]</c> (the identity for every bit depth).
+        /// The colour arrives from the subsequent table lookup instead.
+        /// </para>
+        /// </summary>
+        public override void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        {
+            destination[0] = 0.0;
+            destination[1] = (1 << bitsPerComponent) - 1;
+        }
+
+        /// <summary>
         /// Convert a colour index, which may be a real number or fall outside the valid
         /// range, into a valid table index. Per ISO 32000-2 (PDF 2.0) 8.6.6.3 the value is
         /// rounded to the nearest integer (0.5 rounds up) and any value outside 0..<see cref="HiVal"/>

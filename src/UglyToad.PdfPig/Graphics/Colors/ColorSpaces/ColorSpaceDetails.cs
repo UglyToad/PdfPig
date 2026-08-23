@@ -69,6 +69,27 @@
         internal abstract Span<byte> Transform(Span<byte> decoded);
 
         /// <summary>
+        /// The Decode array this colour space implies when an image declares none (PDF 2.0, 8.9.5.10,
+        /// Table 89): 2 x <see cref="NumberOfColorComponents"/> values <c>[min0 max0 min1 max1 ...]</c>
+        /// giving the range each sample decodes into.
+        /// <para>
+        /// This default is <c>[0, 1]</c> per component, which is right for the device spaces and for most
+        /// CIE ones. Spaces whose components are not measured in <c>[0, 1]</c> (Indexed, whose sample is an
+        /// index, and Lab, whose L* runs to 100) override it.
+        /// </para>
+        /// </summary>
+        /// <param name="bitsPerComponent">Bits per component of the image the samples came from.</param>
+        /// <param name="destination">Must be 2 x <see cref="NumberOfColorComponents"/> long.</param>
+        public virtual void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        {
+            for (int c = 0; c < destination.Length; c += 2)
+            {
+                destination[c] = 0.0;
+                destination[c + 1] = 1.0;
+            }
+        }
+
+        /// <summary>
         /// Decode raw 8-bit encoded component samples (e.g. an Indexed colour space's colour-table
         /// entry) into this colour space's native component ranges, writing in place into
         /// <paramref name="destination"/>. Per ISO 32000-2 (PDF 2.0) 8.6.6.3 each byte decodes to
