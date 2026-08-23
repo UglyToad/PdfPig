@@ -208,8 +208,10 @@
                     }
                 case ColorSpace.ICCBased:
                     {
+                        // Two elements are what 8.6.5.5 defines, but only the first two are read and a file
+                        // with a trailing junk element is otherwise perfectly usable.
                         if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
-                            || colorSpaceArray.Length != 2)
+                            || colorSpaceArray.Length < 2)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -231,13 +233,31 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        // Alternate is optional
-                        ColorSpaceDetails? alternateColorSpaceDetails = null;
-                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
-                            ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+                        if (!ICCBasedColorSpaceDetails.IsValidComponentCount(numeric.Int))
                         {
-                            alternateColorSpaceDetails =
-                                GetColorSpaceDetails(alternateColorSpace, imageDictionary, scanner, resourceStore, filterProvider, true);
+                            resourceStore.Logger.Warn($"The /N of an ICCBased colour space is {numeric.Int} where only " +
+                                                      "1, 3 or 4 are valid; treating the colour space as unsupported.");
+
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        // Alternate is optional, and may be either a name or an array
+                        ColorSpaceDetails? alternateColorSpaceDetails = null;
+                        if (!cannotRecurse && streamToken.StreamDictionary.TryGet(NameToken.Alternate, out var alternateColorSpaceToken))
+                        {
+                            var alternate = GetSecondaryColorSpace(alternateColorSpaceToken,
+                                imageDictionary, scanner, filterProvider, resourceStore,
+                                applyDefaultSubstitution: false, allowIccBased: false);
+
+                            if (alternate is not UnsupportedColorSpaceDetails)
+                            {
+                                alternateColorSpaceDetails = alternate;
+                            }
+                            else
+                            {
+                                resourceStore.Logger.Warn("The /Alternate of an ICCBased colour space could not be interpreted; " +
+                                                          "using the device colour space implied by /N.");
+                            }
                         }
 
                         // Range is optional
@@ -254,7 +274,8 @@
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
 
-                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata);
+                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range,
+                            metadata, resourceStore.Logger);
                     }
                 case ColorSpace.Indexed:
                     {
@@ -477,16 +498,24 @@
             DictionaryToken dictionary,
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            bool applyDefaultSubstitution = true,
+            bool allowIccBased = true)
         {
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
                 && ColorSpaceMapper.TryMap(alternateNameToken, resourceStore, out var baseColorSpaceName))
             {
+                if (!allowIccBased && baseColorSpaceName == ColorSpace.ICCBased)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
                 // 8.6.5.6: when a special colour space is based on an underlying device colour space, the
                 // DefaultGray/DefaultRGB/DefaultCMYK substitution shall be used in place of that device
                 // space. This applies to the base of an Indexed space, the alternate of a Separation/DeviceN
                 // space and the underlying space of a Pattern - all of which are resolved here.
-                if (baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
+                if (applyDefaultSubstitution &&
+                    baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
                 {
                     return resourceStore.GetDeviceColorSpaceDetails(baseColorSpaceName);
                 }
@@ -507,6 +536,11 @@
                     resourceStore,
                     out var alternateArrayColorSpace))
             {
+                if (!allowIccBased && alternateArrayColorSpace == ColorSpace.ICCBased)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
                 var pseudoImageDictionary = new DictionaryToken(
                     new Dictionary<NameToken, IToken>
                     {

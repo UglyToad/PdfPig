@@ -8,6 +8,7 @@
     using Graphics.Colors;
     using Parser.Parts;
     using PdfFonts;
+    using Logging;
     using Tokenization.Scanner;
     using Tokens;
     using Filters;
@@ -47,6 +48,8 @@
         private bool isResolvingDefaultSubstitute;
 
         private (NameToken? name, IFont? font) lastLoadedFont;
+
+        public ILog Logger => parsingOptions.Logger;
 
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
@@ -574,7 +577,7 @@
                 return substitute;
             }
 
-            parsingOptions.Logger.Warn($"The {substituteName} colour space in the current resources {rejection}; " +
+            Logger.Warn($"The {substituteName} colour space in the current resources {rejection}; " +
                                        $"ignoring it and using {requested} itself instead.");
 
             // Record the verdict under the default's own name, where the substitute's parse is already
@@ -645,7 +648,7 @@
                     return dictToken;
                 }
 
-                parsingOptions.Logger.Error($"The graphic state dictionary does not contain the key '{name}'.");
+                Logger.Error($"The graphic state dictionary does not contain the key '{name}'.");
                 return null;
             }
 

@@ -96,13 +96,22 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         }
 
         [Fact]
-        public void IccBased_OverASeparation_ReportsTheSeparationsOwnBaseWidth()
+        public void IccBased_OverADeviceN_ReportsTheDeviceNsOwnBaseWidth()
         {
-            // The alternate is what Transform delegates to, so a 3 component ICCBased over a Separation
+            // The alternate is what Transform delegates to, so a 3 component ICCBased over a DeviceN
             // that expands to CMYK still writes 4 bytes per sample. Reporting NumberOfColorComponents
             // here sized every downstream buffer to 3 and ran the write off the end.
-            var icc = new ICCBasedColorSpaceDetails(3, SeparationOverCmyk(), null, null);
+            //
+            // The alternate takes three components like the space itself, which is what lets it stand in
+            // for the profile at all; only the width it converts *into* differs.
+            var deviceN = new DeviceNColorSpaceDetails(
+                [NameToken.Create("A"), NameToken.Create("B"), NameToken.Create("C")],
+                DeviceCmykColorSpaceDetails.Instance,
+                Tint([0, 0, 0, 0], [0, 0, 0, 1]));
 
+            var icc = new ICCBasedColorSpaceDetails(3, deviceN, null, null);
+
+            Assert.Same(deviceN, icc.AlternateColorSpace);
             Assert.Equal(3, icc.NumberOfColorComponents);
             Assert.Equal(4, icc.BaseNumberOfColorComponents);
             Assert.Equal(ColorSpace.DeviceCMYK, icc.BaseType);

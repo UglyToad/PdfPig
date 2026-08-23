@@ -5,6 +5,7 @@
     using System.Linq;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Functions;
+    using UglyToad.PdfPig.Logging;
 
     /// <summary>
     /// The ICCBased color space is one of the CIE-based color spaces supported in PDFs. These color spaces
@@ -61,29 +62,54 @@
         internal ICCBasedColorSpaceDetails(int numberOfColorComponents,
             ColorSpaceDetails? alternateColorSpaceDetails,
             IReadOnlyList<double>? range,
-            XmpMetadata? metadata)
+            XmpMetadata? metadata,
+            ILog? log = null)
             : base(ColorSpace.ICCBased)
         {
-            if (numberOfColorComponents != 1 && numberOfColorComponents != 3 && numberOfColorComponents != 4)
+            Metadata = metadata;
+
+            if (!IsValidComponentCount(numberOfColorComponents))
             {
-                throw new ArgumentOutOfRangeException(nameof(numberOfColorComponents), "must be 1, 3 or 4");
+                throw new ArgumentOutOfRangeException(nameof(numberOfColorComponents), "Must be 1, 3 or 4.");
             }
 
             NumberOfColorComponents = numberOfColorComponents;
+
+            if (alternateColorSpaceDetails is not null &&
+                alternateColorSpaceDetails.NumberOfColorComponents != NumberOfColorComponents)
+            {
+                log?.Warn($"The /Alternate colour space of an ICCBased colour space takes " +
+                          $"{alternateColorSpaceDetails.NumberOfColorComponents} components where the colour space has " +
+                          $"{NumberOfColorComponents}; ignoring it and using the implied device colour space.");
+
+                alternateColorSpaceDetails = null;
+            }
+
             AlternateColorSpace = alternateColorSpaceDetails ??
                 (NumberOfColorComponents == 1 ? DeviceGrayColorSpaceDetails.Instance :
-                NumberOfColorComponents == 3 ? DeviceRgbColorSpaceDetails.Instance : DeviceCmykColorSpaceDetails.Instance);
+                NumberOfColorComponents == 3 ? DeviceRgbColorSpaceDetails.Instance :
+                DeviceCmykColorSpaceDetails.Instance);
+
+            if (range is not null && range.Count != 2 * NumberOfColorComponents)
+            {
+                log?.Warn($"The /Range of an ICCBased colour space has {range.Count} entries where " +
+                          $"{2 * NumberOfColorComponents} (2 x {NumberOfColorComponents}) are required; using the default.");
+
+                range = null;
+            }
+
+            Range = range ?? Enumerable.Range(0, NumberOfColorComponents)
+                .Select(x => new[] { 0.0, 1.0 })
+                .SelectMany(x => x)
+                .ToArray();
 
             BaseType = AlternateColorSpace.BaseType;
-            Range = range ??
-                Enumerable.Range(0, numberOfColorComponents).Select(x => new[] { 0.0, 1.0 }).SelectMany(x => x).ToArray();
-            if (Range.Count != 2 * numberOfColorComponents)
-            {
-                throw new ArgumentOutOfRangeException(nameof(range), range,
-                    $"Must consist of exactly {2 * numberOfColorComponents} (2 x NumberOfColorComponents), but was passed {range?.Count ?? 0}");
-            }
-            Metadata = metadata;
         }
+
+        /// <summary>
+        /// The component counts an ICCBased colour space may have (8.6.5.5).
+        /// </summary>
+        public static bool IsValidComponentCount(int components) => components is 1 or 3 or 4;
 
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
