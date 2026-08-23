@@ -83,9 +83,7 @@
 
             for (var i = 0; i < decoded.Length; i += 3)
             {
-                input[0] = decoded[i] / 255.0;
-                input[1] = decoded[i + 1] / 255.0;
-                input[2] = decoded[i + 2] / 255.0;
+                DecodeRawComponents(decoded.Slice(i, 3), input);
                 GetRgb(input, out double r, out double g, out double b);
                 transformed[index++] = ConvertToByte(r);
                 transformed[index++] = ConvertToByte(g);
@@ -93,6 +91,23 @@
             }
 
             return transformed;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// 8.9.5.10, Table 89: a Lab image's default Decode is <c>[0 100 amin amax bmin bmax]</c>, taken
+        /// from the colour space's Range entry (<see cref="Matrix"/>) - not <c>[0 1]</c>.
+        /// </para>
+        /// </summary>
+        public override void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        {
+            destination[0] = 0.0;
+            destination[1] = 100.0;
+            destination[2] = Matrix[0];
+            destination[3] = Matrix[1];
+            destination[4] = Matrix[2];
+            destination[5] = Matrix[3];
         }
 
         /// <summary>

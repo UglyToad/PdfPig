@@ -140,6 +140,34 @@
             AlternateColorSpace.GetRgb(clipped, out r, out g, out b);
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// The alternate colour space owns the conversion, so it owns the range the samples decode into
+        /// on the way there.
+        /// </para>
+        /// </summary>
+        public override void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        {
+            if (AlternateColorSpace.NumberOfColorComponents != NumberOfColorComponents)
+            {
+                base.GetDefaultDecode(bitsPerComponent, destination);
+                return;
+            }
+
+            AlternateColorSpace.GetDefaultDecode(bitsPerComponent, destination);
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// As with <see cref="GetDefaultDecode"/>, the alternate colour space owns the mapping because it
+        /// owns the conversion that follows it.
+        /// </para>
+        /// </summary>
+        internal override void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
+            => AlternateColorSpace.DecodeRawComponents(raw, destination);
+
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded)
         {
