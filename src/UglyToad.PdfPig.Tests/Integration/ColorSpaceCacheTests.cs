@@ -4,16 +4,10 @@ namespace UglyToad.PdfPig.Tests.Integration
     using PdfPig.Content;
     using PdfPig.Filters;
     using PdfPig.Graphics.Colors;
-    using PdfPig.PdfFonts;
     using PdfPig.Tokens;
 
     public class ColorSpaceCacheTests
     {
-        private sealed class NoOpFontFactory : IFontFactory
-        {
-            public IFont Get(DictionaryToken dictionary) => null!;
-        }
-
         [Fact]
         public void ShadingsSharingColorSpaceObjectShareOneInstance()
         {
