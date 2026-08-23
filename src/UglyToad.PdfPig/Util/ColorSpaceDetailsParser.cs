@@ -36,24 +36,39 @@
 
     internal static class ColorSpaceDetailsParser
     {
+        /// <summary>
+        /// How far one colour space may be nested inside another. Colour spaces name each other by
+        /// indirect reference, so a file can describe a cycle and lead to a stack overflow.
+        /// </summary>
+        private const int MaxNestingDepth = 8;
+
         public static ColorSpaceDetails GetColorSpaceDetails(ColorSpace? colorSpace,
             DictionaryToken imageDictionary,
             IPdfTokenScanner scanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
-            bool cannotRecurse = false)
+            int depth = 0)
         {
+            if (depth > MaxNestingDepth)
+            {
+                resourceStore.Logger.Warn($"Colour spaces are nested more than {MaxNestingDepth} deep, which " +
+                                          "a cycle in the references between them would explain; treating " +
+                                          "the innermost colour space as unsupported.");
+
+                return UnsupportedColorSpaceDetails.Instance;
+            }
+
             if ((imageDictionary.TryGet(NameToken.ImageMask, scanner, out BooleanToken isImageMask) && isImageMask.Data) ||
                 (imageDictionary.TryGet(NameToken.Im, scanner, out BooleanToken isImMask) && isImMask.Data) ||
                 filterProvider.GetFilters(imageDictionary, scanner).OfType<CcittFaxDecodeFilter>().Any())
             {
-                if (cannotRecurse)
+                if (depth > 0)
                 {
                     // Not sure if always Gray, it's just a single color.
                     return DeviceGrayColorSpaceDetails.Instance;
                 }
 
-                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, true);
+                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, depth + 1);
                 return IndexedColorSpaceDetails.Stencil(colorSpaceDetails);
             }
 
@@ -208,8 +223,10 @@
                     }
                 case ColorSpace.ICCBased:
                     {
+                        // Two elements are what 8.6.5.5 defines, but only the first two are read and a file
+                        // with a trailing junk element is otherwise perfectly usable.
                         if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
-                            || colorSpaceArray.Length != 2)
+                            || colorSpaceArray.Length < 2)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -231,13 +248,31 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        // Alternate is optional
-                        ColorSpaceDetails? alternateColorSpaceDetails = null;
-                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
-                            ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+                        if (!ICCBasedColorSpaceDetails.IsValidComponentCount(numeric.Int))
                         {
-                            alternateColorSpaceDetails =
-                                GetColorSpaceDetails(alternateColorSpace, imageDictionary, scanner, resourceStore, filterProvider, true);
+                            resourceStore.Logger.Warn($"The /N of an ICCBased colour space is {numeric.Int} where only " +
+                                                      "1, 3 or 4 are valid; treating the colour space as unsupported.");
+
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        // Alternate is optional, and may be either a name or an array
+                        ColorSpaceDetails? alternateColorSpaceDetails = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out var alternateColorSpaceToken))
+                        {
+                            var alternate = GetSecondaryColorSpace(alternateColorSpaceToken,
+                                imageDictionary, scanner, filterProvider, resourceStore, depth,
+                                applyDefaultSubstitution: false, allowIccBased: false);
+
+                            if (alternate is not UnsupportedColorSpaceDetails)
+                            {
+                                alternateColorSpaceDetails = alternate;
+                            }
+                            else
+                            {
+                                resourceStore.Logger.Warn("The /Alternate of an ICCBased colour space could not be interpreted; " +
+                                                          "using the device colour space implied by /N.");
+                            }
                         }
 
                         // Range is optional
@@ -254,11 +289,12 @@
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
 
-                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata);
+                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range,
+                            metadata, resourceStore.Logger);
                     }
                 case ColorSpace.Indexed:
                     {
-                        if (cannotRecurse)
+                        if (depth > 0)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -282,7 +318,8 @@
                             imageDictionary,
                             scanner,
                             filterProvider,
-                            resourceStore);
+                            resourceStore,
+                            depth);
 
                         if (baseDetails is UnsupportedColorSpaceDetails)
                         {
@@ -323,7 +360,7 @@
                     }
                 case ColorSpace.Pattern:
                     {
-                        if (cannotRecurse)
+                        if (depth > 0)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -351,7 +388,8 @@
                                     imageDictionary,
                                     scanner,
                                     filterProvider,
-                                    resourceStore);
+                                    resourceStore,
+                                    depth);
                             }
                         }
                         return new PatternColorSpaceDetails(resourceStore.GetPatterns(), underlyingColourSpace);
@@ -380,7 +418,8 @@
                             imageDictionary,
                             scanner,
                             filterProvider,
-                            resourceStore);
+                            resourceStore,
+                            depth);
 
                         PdfFunction function;
                         var func = colorSpaceArray[3];
@@ -424,7 +463,8 @@
                             imageDictionary,
                             scanner,
                             filterProvider,
-                            resourceStore);
+                            resourceStore,
+                            depth);
 
                         var func = colorSpaceArray[3];
                         PdfFunction tintFunc = PdfFunctionParser.Create(func, scanner, filterProvider);
@@ -477,16 +517,25 @@
             DictionaryToken dictionary,
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            int depth,
+            bool applyDefaultSubstitution = true,
+            bool allowIccBased = true)
         {
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
                 && ColorSpaceMapper.TryMap(alternateNameToken, resourceStore, out var baseColorSpaceName))
             {
+                if (!allowIccBased && baseColorSpaceName == ColorSpace.ICCBased)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
                 // 8.6.5.6: when a special colour space is based on an underlying device colour space, the
                 // DefaultGray/DefaultRGB/DefaultCMYK substitution shall be used in place of that device
                 // space. This applies to the base of an Indexed space, the alternate of a Separation/DeviceN
                 // space and the underlying space of a Pattern - all of which are resolved here.
-                if (baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
+                if (applyDefaultSubstitution &&
+                    baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
                 {
                     return resourceStore.GetDeviceColorSpaceDetails(baseColorSpaceName);
                 }
@@ -497,7 +546,7 @@
                     scanner,
                     resourceStore,
                     filterProvider,
-                    true);
+                    depth + 1);
             }
 
             if (DirectObjectFinder.TryGet(csToken, scanner, out ArrayToken? alternateArrayToken)
@@ -507,6 +556,11 @@
                     resourceStore,
                     out var alternateArrayColorSpace))
             {
+                if (!allowIccBased && alternateArrayColorSpace == ColorSpace.ICCBased)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
                 var pseudoImageDictionary = new DictionaryToken(
                     new Dictionary<NameToken, IToken>
                     {
@@ -519,7 +573,7 @@
                     scanner,
                     resourceStore,
                     filterProvider,
-                    true);
+                    depth + 1);
             }
 
             return UnsupportedColorSpaceDetails.Instance;
