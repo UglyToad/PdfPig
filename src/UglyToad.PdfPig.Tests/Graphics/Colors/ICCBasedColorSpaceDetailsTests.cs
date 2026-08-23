@@ -105,7 +105,7 @@
         }
 
         [Fact]
-        public void WithService_BaseTypeIsDeviceRgbAndComponentsIsThree()
+        public void WithService_BaseTypeStaysIccBasedAndComponentsIsThree()
         {
             var profile = new StubProfile(4, new Dictionary<RenderingIntent, IIccTransform>
             {
@@ -119,7 +119,10 @@
                 metadata: null,
                 profile: profile);
 
-            Assert.Equal(ColorSpace.DeviceRGB, details.BaseType);
+            // The profile converts to sRGB, so the width is three - but the colours are now placed
+            // absolutely, so BaseType does not hand them to anything that treats device colours as
+            // reinterpretable.
+            Assert.Equal(ColorSpace.ICCBased, details.BaseType);
             Assert.Equal(3, details.BaseNumberOfColorComponents);
             Assert.NotNull(details.IccProfile);
             Assert.NotNull(details.GetTransformWithFallback(RenderingIntent.RelativeColorimetric));

@@ -74,7 +74,7 @@
             Name = name;
             AlternateColorSpace = alternateColorSpaceDetails;
             TintFunction = tintFunction;
-            BaseType = AlternateColorSpace.Type;
+            BaseType = AlternateColorSpace.BaseType;
         }
 
         /// <inheritdoc/>

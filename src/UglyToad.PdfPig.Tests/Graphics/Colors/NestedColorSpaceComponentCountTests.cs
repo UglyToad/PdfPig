@@ -1,14 +1,19 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using PdfPig.Functions;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
     using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
 
     /// <summary>
     /// <see cref="ColorSpaceDetails.BaseNumberOfColorComponents"/> must report the component count of the
     /// space the samples are ultimately expressed in, i.e. the count that <see cref="ColorSpaceDetails.Process"/>
-    /// (and therefore <see cref="ColorSpaceDetails.Transform"/>) actually produces per sample.
+    /// (and therefore <see cref="ColorSpaceDetails.Transform"/>) actually produces per sample - and
+    /// <see cref="ColorSpaceDetails.BaseType"/> must name that same space, resolved to the same depth.
     /// </summary>
     public class NestedColorSpaceComponentCountTests
     {
@@ -80,8 +85,11 @@
         }
 
         [Fact]
-        public void Separation_OverIccBased_SetsBaseTypeToIccBased()
+        public void Separation_OverIccBasedWithoutAProfile_ResolvesToTheDeviceAlternate()
         {
+            // No profile, so the ICCBased space is really converting through DeviceCMYK - which is what
+            // BaseNumberOfColorComponents has always said, and what BaseType now says too. Naming the
+            // intermediate ICCBased here would describe a step the colours do not actually take.
             var icc = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
                 null, null, null);
             var separation = new SeparationColorSpaceDetails(
@@ -89,8 +97,46 @@
                 icc,
                 Tint([0, 0, 0, 0], [0, 0, 0, 1]));
 
-            Assert.Equal(ColorSpace.ICCBased, separation.BaseType);
+            Assert.Equal(ColorSpace.DeviceCMYK, separation.BaseType);
             Assert.Equal(4, separation.BaseNumberOfColorComponents);
+        }
+
+        [Fact]
+        public void Separation_OverIccBasedWithAProfile_StopsAtTheIccBasedSpace()
+        {
+            // With a profile the colours are placed absolutely, so the chain stops: they are not device
+            // colours, and an output intent must not be applied on top of a profile that has already
+            // decided what they are.
+            var icc = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance,
+                null, null, new WorkingProfile(4));
+            var separation = new SeparationColorSpaceDetails(
+                NameToken.Create("Spot"),
+                icc,
+                Tint([0, 0, 0, 0], [0, 0, 0, 1]));
+
+            Assert.Equal(ColorSpace.ICCBased, separation.BaseType);
+            Assert.Equal(3, separation.BaseNumberOfColorComponents);
+        }
+
+        /// <summary>
+        /// A profile that converts, so <see cref="ICCBasedColorSpaceDetails"/> keeps it rather than falling
+        /// back to the alternate.
+        /// </summary>
+        private sealed class WorkingProfile(int components) : IIccProfile, IIccTransform
+        {
+            public int NumberOfComponents { get; } = components;
+
+            public IReadOnlyList<double> ComponentRanges { get; } = new double[components * 2];
+
+            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
+            {
+                transform = this;
+                return true;
+            }
+
+            public (double r, double g, double b) ToRgb(ReadOnlySpan<double> values) => (0.0, 0.0, 0.0);
+
+            public void Transform(ReadOnlySpan<byte> src, Span<byte> dstRgb) => dstRgb.Clear();
         }
 
         [Fact]
@@ -209,7 +255,10 @@
 
             Assert.Equal(1, indexed.NumberOfColorComponents);
             Assert.Equal(4, indexed.BaseNumberOfColorComponents);
-            Assert.Equal(ColorSpace.Separation, indexed.BaseType);
+
+            // Through both Separations to the device space underneath, matching the component count
+            // beside it rather than naming the first link in the chain.
+            Assert.Equal(ColorSpace.DeviceCMYK, indexed.BaseType);
         }
     }
 }

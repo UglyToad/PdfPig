@@ -64,8 +64,10 @@
 
         /// <summary>
         /// The resolved ICC profile, or <c>null</c> when no <see cref="IIccProfileService"/> was configured,
-        /// or the service failed to parse the profile. When non-null, color conversions produce sRGB output
-        /// and <see cref="BaseType"/> reports <see cref="ColorSpace.DeviceRGB"/>.
+        /// or the service failed to parse the profile. When non-null, colour conversions produce sRGB output
+        /// - three components, hence <see cref="BaseNumberOfColorComponents"/> of 3 - and
+        /// <see cref="BaseType"/> stays <see cref="ColorSpace.ICCBased"/>, because a profile places the
+        /// colour absolutely and it is no longer a device colour anything may reinterpret.
         /// </summary>
         public IIccProfile? IccProfile { get; }
 
@@ -151,8 +153,10 @@
 
             if (IccProfile is not null)
             {
+                // BaseType is left as ICCBased: the profile has placed these colours absolutely, so they
+                // are not device colours for an output intent to reinterpret. The width still changes,
+                // because the profile converts to sRGB.
                 BaseNumberOfColorComponents = 3;
-                BaseType = ColorSpace.DeviceRGB;
                 profileRanges = GetProfileRanges(IccProfile, NumberOfColorComponents);
             }
             else
@@ -369,8 +373,8 @@
                 return AlternateColorSpace.Process(clipped, intent);
             }
 
-            // A profile is in use, so BaseType is DeviceRGB and three components are what a caller sizes its
-            // buffers from, however this particular colour ended up being produced. Reaching the alternate
+            // A profile is in use, so three components are what a caller sizes its buffers from, however
+            // this particular colour ended up being produced. Reaching the alternate
             // here says the profile could not convert this colour, not that the colour space has changed
             // shape: a CMYK alternate's four components would overrun the caller by one per sample.
             AlternateColorSpace.GetRgb(clipped, intent, out double red, out double green, out double blue);
@@ -465,8 +469,8 @@
                 return AlternateColorSpace.Transform(decoded, intent);
             }
 
-            // And as in Process, a profile in use pins the base to DeviceRGB. The alternate's own base may
-            // be any width - a CMYK alternate hands back four bytes a pixel where PngFromPdfImageFactory
+            // And as in Process, a profile in use pins the base width to three. The alternate's own base
+            // may be any width - a CMYK alternate hands back four bytes a pixel where PngFromPdfImageFactory
             // reads three - so the samples go through a colour at a time instead, the way Lab does.
             return TransformThroughAlternate(decoded, intent);
         }

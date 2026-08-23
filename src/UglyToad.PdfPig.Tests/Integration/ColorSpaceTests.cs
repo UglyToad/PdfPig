@@ -27,14 +27,14 @@
                 // image 12
                 var image12 = images1[12];
                 Assert.Equal(ColorSpace.Indexed, image12.ColorSpaceDetails.Type);
-                Assert.Equal(ColorSpace.DeviceN, image12.ColorSpaceDetails.BaseType);
+                Assert.Equal(ColorSpace.DeviceCMYK, image12.ColorSpaceDetails.BaseType);
                 Assert.True(image12.TryGetPng(out byte[] bytes1_12)); // Cyan square
                 File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-3136-0_1_12.png"), bytes1_12);
 
                 // image 13
                 var image13 = images1[13];
                 Assert.Equal(ColorSpace.Indexed, image13.ColorSpaceDetails.Type);
-                Assert.Equal(ColorSpace.DeviceN, image13.ColorSpaceDetails.BaseType);
+                Assert.Equal(ColorSpace.DeviceCMYK, image13.ColorSpaceDetails.BaseType);
                 Assert.True(image13.TryGetPng(out byte[] bytes1_13)); // Cyan square
                 File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-3136-0_1_13.png"), bytes1_13);
             }

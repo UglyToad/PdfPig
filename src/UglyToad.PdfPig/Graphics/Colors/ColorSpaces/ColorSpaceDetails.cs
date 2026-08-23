@@ -19,13 +19,29 @@
         public abstract int NumberOfColorComponents { get; }
 
         /// <summary>
-        /// The underlying type of <see cref="ColorSpace"/>, usually equal to <see cref="Type"/>
-        /// unless <see cref="ColorSpace.Indexed"/> or <see cref="ColorSpace.DeviceN"/>.
+        /// The device colour space this one's colours are ultimately expressed in, or this colour space
+        /// itself when they are not device colours at all.
+        /// <para>
+        /// Resolved all the way down, not one level: a Separation over an ICCBased that fell back to
+        /// DeviceCMYK reports <see cref="ColorSpace.DeviceCMYK"/>, because that is what its colours end up
+        /// being. It pairs with <see cref="BaseNumberOfColorComponents"/>, which counts the components of
+        /// that same space, and the two are always resolved to the same depth.
+        /// </para>
+        /// <para>
+        /// The chain stops at any colour space that defines its colours absolutely rather than by what a
+        /// device would do with them - <see cref="ColorSpace.Lab"/>, <see cref="ColorSpace.CalRGB"/>,
+        /// <see cref="ColorSpace.CalGray"/>, and an <see cref="ColorSpace.ICCBased"/> space with a usable
+        /// profile - each of which reports itself. Those colours are already colorimetric, so the question
+        /// this property answers, "may these be treated as device colours?", is answered "no" for them.
+        /// That is what keeps an output intent from being applied on top of a profile that has already
+        /// placed the colour (14.11.5 and 8.6.5.7).
+        /// </para>
         /// </summary>
         public ColorSpace BaseType { get; protected set; }
 
         /// <summary>
-        /// The number of components for the underlying color space.
+        /// The number of components of the colour space <see cref="BaseType"/> names, which is also the
+        /// number <see cref="Transform"/> writes per sample.
         /// </summary>
         public abstract int BaseNumberOfColorComponents { get; }
 
