@@ -68,13 +68,25 @@
         /// </summary>
         private byte ClampColorIndex(double value)
         {
-            double rounded = Math.Round(value, MidpointRounding.AwayFromZero);
-            if (rounded <= 0)
+            // Written as a pair of positive tests so that NaN, which compares false against everything,
+            // lands on 0 rather than falling through.
+            if (!(value > 0.0))
             {
                 return 0;
             }
 
-            return rounded >= HiVal ? HiVal : (byte)rounded;
+            byte bVal = 255;
+            if (value < 255)
+            {
+                bVal = (byte)Math.Round(value, MidpointRounding.AwayFromZero);
+            }       
+
+            if (bVal >= HiVal)
+            {
+                return HiVal;
+            }
+
+            return bVal;
         }
 
         /// <summary>

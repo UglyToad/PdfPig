@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
     using System;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// Contains more document-specific information about the <see cref="ColorSpace"/>.
@@ -86,12 +87,25 @@
         }
 
         /// <summary>
-        /// Convert to byte.
+        /// Convert a component in <c>[0, 1]</c> to the byte encoding it in <c>[0, 255]</c>, clipping anything outside that
+        /// range to the nearest end.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static byte ConvertToByte(double componentValue)
         {
-            var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
-            return (byte)rounded;
+            // Written as a pair of positive tests so that NaN, which compares false against everything,
+            // lands on 0 rather than falling through.
+            if (!(componentValue > 0.0))
+            {
+                return 0;
+            }
+
+            if (componentValue >= 1.0)
+            {
+                return 255;
+            }
+
+            return (byte)Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
         }
     }
 }

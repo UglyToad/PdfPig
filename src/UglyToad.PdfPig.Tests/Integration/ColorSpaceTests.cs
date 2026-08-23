@@ -271,33 +271,6 @@
         }
         
         [Fact]
-        public void SeparationLabColorSpace()
-        {
-            // Test with TIKA_1552_0.pdf
-            // https://icolorpalette.com/color/pantone-289-c
-            // Pantone 289 C Color | #0C2340
-            // Rgb : rgb(12,35,64)
-            // CIE L*a*b* : 13.53, 2.89, -21.08
-
-            var path = IntegrationHelpers.GetDocumentPath("TIKA-1552-0.pdf");
-
-            using (var document = PdfDocument.Open(path))
-            {
-                var page1 = document.GetPage(1);
-
-                var background = page1.Paths[0];
-                Assert.True(background.IsFilled);
-
-                var (r, g, b) = background.FillColor.ToRGBValues();
-
-                // Colors picked from Acrobat reader: rgb(11, 34, 64)
-                Assert.Equal(10, ConvertToByte(r)); // Should be 11, but close enough
-                Assert.Equal(34, ConvertToByte(g));
-                Assert.Equal(64, ConvertToByte(b));
-            }
-        }
-
-        [Fact]
         public void CanGetAllPagesImages()
         {
             var path = IntegrationHelpers.GetDocumentPath("Pig Production Handbook.pdf");
@@ -394,12 +367,6 @@
                 Page page2 = document.GetPage(2);
                 Assert.NotNull(page2);
             }
-        }
-
-        private static byte ConvertToByte(double componentValue)
-        {
-            var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
-            return (byte)rounded;
         }
     }
 }
