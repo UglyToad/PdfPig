@@ -103,6 +103,16 @@
             return cached.Count > 0 ? cached : DocumentOutputIntents;
         }
 
+        /// <inheritdoc/>
+        public IIccProfile? GetPageOutputIntentProfile(DictionaryToken? pageDictionary)
+        {
+            var service = parsingOptions.IccProfileService;
+
+            return service is null
+                ? null
+                : OutputIntentColorManagement.GetDeviceProfile(GetPageOutputIntents(pageDictionary), service);
+        }
+
         private IReadOnlyList<OutputIntent> ParsePageOutputIntents(DictionaryToken pageDictionary)
         {
             return OutputIntentParser.CreateAll(pageDictionary, scanner, filterProvider,

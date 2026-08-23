@@ -69,7 +69,7 @@ namespace UglyToad.PdfPig.Graphics
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            IReadOnlyList<OutputIntent>? outputIntents,
+            IIccProfile? outputIntentProfile,
             ParsingOptions parsingOptions)
             : base(pageNumber,
                 resourceStore,
@@ -80,7 +80,7 @@ namespace UglyToad.PdfPig.Graphics
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
-                outputIntents,
+                outputIntentProfile,
                 parsingOptions)
         {
         }

@@ -257,8 +257,7 @@
         {
             try
             {
-                (r, g, b) = transform.ToRgb(components);
-                return true;
+                return transform.TryToRgbClipped(components, out r, out g, out b);
             }
             catch
             {

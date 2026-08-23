@@ -56,11 +56,17 @@ namespace UglyToad.PdfPig.Graphics
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
 
         /// <summary>
-        /// Every output intent in effect for the content being processed (14.11.5, "Output intents"), in the
-        /// order the <c>/OutputIntents</c> array wrote them: the page's own array when it has one, otherwise
-        /// the document catalog's.
+        /// The profile device colours are colour-managed through for the content being processed
+        /// (14.11.5, "Output intents", and 8.6.5.7), or <see langword="null"/> when they are not managed at
+        /// all - no output intent, no <see cref="IIccProfileService"/>, or a service that did not opt in.
+        /// <para>
+        /// The <i>answer</i> rather than the material to work it out from: selecting an intent and reading
+        /// its profile is a per-page decision, so doing it once and carrying the result keeps it off the
+        /// path of every colour operator. Set it to <see langword="null"/> to suppress management for a
+        /// span of content, as a soft-mask group does.
+        /// </para>
         /// </summary>
-        public IReadOnlyList<OutputIntent>? OutputIntents { get; set; } = null;
+        public IIccProfile? OutputIntentProfile { get; set; } = null;
 
         /// <summary>
         /// Should a correction for rasterization effects be applied?
@@ -344,7 +350,7 @@ namespace UglyToad.PdfPig.Graphics
                 ColorSpaceContext = ColorSpaceContext?.DeepClone(),
                 BlendMode = BlendMode,
                 SoftMask = SoftMask,
-                OutputIntents = OutputIntents
+                OutputIntentProfile = OutputIntentProfile
             };
         }
     }

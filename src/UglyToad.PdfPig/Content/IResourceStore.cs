@@ -110,5 +110,18 @@
         /// </summary>
         /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
         IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary);
+
+        /// <summary>
+        /// The profile a page's device colours are colour-managed through, or <see langword="null"/> when
+        /// they are not managed: the <see cref="OutputIntent.DestOutputProfile"/> of whichever of
+        /// <see cref="GetPageOutputIntents"/> characterises the target output device.
+        /// <para>
+        /// Both halves of that question live here - the intents, and the <see cref="IccProfileService"/>
+        /// that decides whether to honour them - so the answer is worked out once per page rather than at
+        /// every colour operator.
+        /// </para>
+        /// </summary>
+        /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
+        IIccProfile? GetPageOutputIntentProfile(DictionaryToken? pageDictionary);
     }
 }

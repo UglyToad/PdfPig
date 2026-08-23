@@ -1,7 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics
 {
+    using System;
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Diagnostics.CodeAnalysis;
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Filters;
@@ -17,109 +18,166 @@
     using Xunit;
 
     /// <summary>
-    /// Which output intents a stream processor starts with (14.11.5). The processor is told; it never works
-    /// them out. A page factory resolves them with
-    /// <see cref="IResourceStore.GetPageOutputIntents"/>, and a processor for anything else - a form XObject,
-    /// a tiling pattern, a shading, a soft mask - is handed the intents in force where it was invoked.
+    /// Which output intent profile a stream processor starts with (14.11.5). The processor is told; it
+    /// never works it out. A page factory resolves the profile with
+    /// <see cref="IResourceStore.GetPageOutputIntentProfile"/>, and a processor for anything else - a form
+    /// XObject, a tiling pattern, a shading, a soft mask - is handed the profile in force where it was
+    /// invoked.
     /// </summary>
     public class OutputIntentInheritanceTests
     {
         [Fact]
-        public void APageProcessorTakesThePagesOwnIntents()
+        public void APageProcessorTakesThePagesOwnProfile()
         {
             var scanner = new TestPdfTokenScanner();
-            var store = BuildStore(scanner, Catalog(scanner, "CATALOG", profileObjectNumber: 7));
+            var store = BuildStore(scanner, Catalog(scanner, profileObjectNumber: 7, profileId: 1));
 
             var pageDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
-                { NameToken.OutputIntents, new ArrayToken([Intent(scanner, "PAGE", profileObjectNumber: 8)]) }
+                {
+                    NameToken.OutputIntents,
+                    new ArrayToken([Intent(scanner, profileObjectNumber: 8, profileId: 2)])
+                }
             });
 
-            var processor = Build(store, scanner, store.GetPageOutputIntents(pageDictionary));
+            var processor = Build(store, scanner, store.GetPageOutputIntentProfile(pageDictionary));
 
-            Assert.Equal(["PAGE"], Identifiers(processor));
+            Assert.Equal(2, IdOf(processor));
         }
 
         [Fact]
         public void APageProcessorFallsBackToTheCatalog()
         {
-            // A page declaring none sits inside the document's declaration - the fallback GetPageOutputIntents
-            // performs, which is why a page factory is the thing that calls it.
+            // A page declaring none sits inside the document's declaration - the fallback the resource store
+            // performs, which is why it is the thing that owns this question.
             var scanner = new TestPdfTokenScanner();
-            var store = BuildStore(scanner, Catalog(scanner, "CATALOG", profileObjectNumber: 7));
+            var store = BuildStore(scanner, Catalog(scanner, profileObjectNumber: 7, profileId: 1));
 
             var empty = new DictionaryToken(new Dictionary<NameToken, IToken>());
-            var processor = Build(store, scanner, store.GetPageOutputIntents(empty));
+            var processor = Build(store, scanner, store.GetPageOutputIntentProfile(empty));
 
-            Assert.Equal(["CATALOG"], Identifiers(processor));
+            Assert.Equal(1, IdOf(processor));
         }
 
         [Fact]
-        public void ANestedProcessorTakesTheIntentsItIsGiven()
+        public void AServiceThatDoesNotOptInLeavesNoProfileToManageThrough()
         {
-            // A tiling pattern invoked from a page that overrode the catalog paints under the page's intent,
-            // not the catalog's, even though the pattern stream is not a page and carries no /OutputIntents.
+            // 14.11.5 makes honouring an output intent the consumer's choice, and the choice is now made
+            // once per page rather than at every colour operator.
             var scanner = new TestPdfTokenScanner();
-            var store = BuildStore(scanner, Catalog(scanner, "CATALOG", profileObjectNumber: 7));
+            var store = BuildStore(scanner, Catalog(scanner, profileObjectNumber: 7, profileId: 1),
+                useOutputIntent: false);
+
+            var processor = Build(store, scanner, store.GetPageOutputIntentProfile(null));
+
+            Assert.Null(processor.GetCurrentState().OutputIntentProfile);
+        }
+
+        [Fact]
+        public void ANestedProcessorTakesTheProfileItIsGiven()
+        {
+            // A tiling pattern invoked from a page that overrode the catalog paints under the page's
+            // profile, not the catalog's, even though the pattern stream is not a page and carries no
+            // /OutputIntents of its own.
+            var scanner = new TestPdfTokenScanner();
+            var store = BuildStore(scanner, Catalog(scanner, profileObjectNumber: 7, profileId: 1));
 
             var pageDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
-                { NameToken.OutputIntents, new ArrayToken([Intent(scanner, "PAGE", profileObjectNumber: 8)]) }
+                {
+                    NameToken.OutputIntents,
+                    new ArrayToken([Intent(scanner, profileObjectNumber: 8, profileId: 2)])
+                }
             });
 
-            var page = Build(store, scanner, store.GetPageOutputIntents(pageDictionary));
-            var nested = Build(store, scanner, page.GetCurrentState().OutputIntents);
+            var page = Build(store, scanner, store.GetPageOutputIntentProfile(pageDictionary));
+            var nested = Build(store, scanner, page.GetCurrentState().OutputIntentProfile);
 
-            Assert.Equal(["PAGE"], Identifiers(nested));
+            Assert.Equal(2, IdOf(nested));
         }
 
         [Fact]
-        public void ANestedProcessorTakesNullAsNoneInEffect()
+        public void ANestedProcessorTakesNullAsNoManagement()
         {
-            // A soft-mask group suppresses the output intent, because its device values are an alpha
+            // A soft-mask group suppresses colour management, because its device values are an alpha
             // computation rather than output-device colour. Passing that suppression down is not the same
             // as saying nothing, which is why the processor has no "work it out yourself" path at all.
             var scanner = new TestPdfTokenScanner();
-            var store = BuildStore(scanner, Catalog(scanner, "CATALOG", profileObjectNumber: 7));
+            var store = BuildStore(scanner, Catalog(scanner, profileObjectNumber: 7, profileId: 1));
 
             var nested = Build(store, scanner, null);
 
-            Assert.Null(nested.GetCurrentState().OutputIntents);
+            Assert.Null(nested.GetCurrentState().OutputIntentProfile);
         }
 
         [Fact]
-        public void ANestedProcessorCannotReachForTheCatalog()
+        public void TheProfileSurvivesAGraphicsStateClone()
         {
-            // The trap this shape removes: there is no argument a nested processor can pass that quietly
-            // yields the catalog's intents, because it never consults the resource store for them.
+            // q/Q must not lose it: the profile is part of the state, like the rendering intent it pairs with.
             var scanner = new TestPdfTokenScanner();
-            var store = BuildStore(scanner, Catalog(scanner, "CATALOG", profileObjectNumber: 7));
+            var store = BuildStore(scanner, Catalog(scanner, profileObjectNumber: 7, profileId: 1));
 
-            var nested = Build(store, scanner, []);
+            var processor = Build(store, scanner, store.GetPageOutputIntentProfile(null));
+            var clone = processor.GetCurrentState().DeepClone();
 
-            Assert.Empty(nested.GetCurrentState().OutputIntents!);
+            Assert.Equal(1, ((IdProfile)clone.OutputIntentProfile!).Id);
         }
 
-        private static IEnumerable<string?> Identifiers(TestStreamProcessor processor)
-            => processor.GetCurrentState().OutputIntents!.Select(x => x.OutputConditionIdentifier);
+        private static int IdOf(TestStreamProcessor processor)
+            => ((IdProfile)processor.GetCurrentState().OutputIntentProfile!).Id;
 
         private static TestStreamProcessor Build(IResourceStore store, IPdfTokenScanner scanner,
-            IReadOnlyList<OutputIntent>? outputIntents)
-            => new(store, scanner, outputIntents);
+            IIccProfile? outputIntentProfile)
+            => new(store, scanner, outputIntentProfile);
+
+        /// <summary>
+        /// A profile that can be told apart from another, so a test can say <i>which</i> one reached the
+        /// graphics state rather than only that something did.
+        /// </summary>
+        private sealed class IdProfile(int id) : IIccProfile
+        {
+            public int Id { get; } = id;
+
+            public int NumberOfComponents => 4;
+
+            public IReadOnlyList<double> ComponentRanges { get; } = new double[8];
+
+            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
+            {
+                transform = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Reads the first byte of the profile stream as its identity.
+        /// </summary>
+        private sealed class IdProfileService(bool useOutputIntent) : IIccProfileService
+        {
+            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes, [NotNullWhen(true)] out IIccProfile? profile)
+            {
+                profile = new IdProfile(profileBytes.Span[0]);
+                return true;
+            }
+
+            public bool UseOutputIntent { get; } = useOutputIntent;
+
+            public string? PreferredOutputIntentSubtype => null;
+        }
 
         /// <summary>
         /// The smallest concrete <see cref="BaseStreamProcessor{TPageContent}"/> there can be: these tests
-        /// are about which output intents the constructors install, and nothing here is ever processed.
+        /// are about what the constructor installs, and nothing here is ever processed.
         /// </summary>
         private sealed class TestStreamProcessor : BaseStreamProcessor<object>
         {
             private static readonly CropBox Box = new(new PdfRectangle(0, 0, 100, 100));
 
             public TestStreamProcessor(IResourceStore resourceStore, IPdfTokenScanner scanner,
-                IReadOnlyList<OutputIntent>? outputIntents)
+                IIccProfile? outputIntentProfile)
                 : base(1, resourceStore, scanner, Parser,
                     new TestFilterProvider(), Box, PdfPig.Geometry.UserSpaceUnit.Default, default,
-                    TransformationMatrix.Identity, outputIntents, Options)
+                    TransformationMatrix.Identity, outputIntentProfile, Options)
             {
             }
 
@@ -183,7 +241,8 @@
             public override void PaintShading(NameToken shadingName) => throw new NotSupportedException();
         }
 
-        private static ResourceStore BuildStore(TestPdfTokenScanner scanner, DictionaryToken? catalogDictionary)
+        private static ResourceStore BuildStore(TestPdfTokenScanner scanner, DictionaryToken? catalogDictionary,
+            bool useOutputIntent = true)
         {
             return new ResourceStore(
                 scanner,
@@ -194,24 +253,22 @@
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
-                    IccProfileService = new TestIccProfileService(4)
+                    IccProfileService = new IdProfileService(useOutputIntent)
                 });
         }
 
-        private static DictionaryToken Catalog(TestPdfTokenScanner scanner, string conditionIdentifier,
-            long profileObjectNumber)
+        private static DictionaryToken Catalog(TestPdfTokenScanner scanner, long profileObjectNumber, byte profileId)
         {
             return new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 {
                     NameToken.OutputIntents,
-                    new ArrayToken([Intent(scanner, conditionIdentifier, profileObjectNumber)])
+                    new ArrayToken([Intent(scanner, profileObjectNumber, profileId)])
                 }
             });
         }
 
-        private static DictionaryToken Intent(TestPdfTokenScanner scanner, string conditionIdentifier,
-            long profileObjectNumber)
+        private static DictionaryToken Intent(TestPdfTokenScanner scanner, long profileObjectNumber, byte profileId)
         {
             var reference = new IndirectReference(profileObjectNumber, 0);
 
@@ -220,17 +277,17 @@
                 var streamDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
                     { NameToken.N, new NumericToken(4) },
-                    { NameToken.Length, new NumericToken(4) }
+                    { NameToken.Length, new NumericToken(1) }
                 });
 
                 scanner.Objects[reference] = new ObjectToken(XrefLocation.File(0), reference,
-                    new StreamToken(streamDictionary, [1, 2, 3, 4]));
+                    new StreamToken(streamDictionary, [profileId]));
             }
 
             return new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.S, NameToken.Create(OutputIntent.PdfXSubtype) },
-                { NameToken.OutputConditionIdentifier, new StringToken(conditionIdentifier) },
+                { NameToken.OutputConditionIdentifier, new StringToken($"PROFILE-{profileId}") },
                 { NameToken.DestOutputProfile, new IndirectReferenceToken(reference) }
             });
         }

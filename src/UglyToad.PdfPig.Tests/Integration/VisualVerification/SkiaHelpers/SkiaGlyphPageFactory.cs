@@ -32,7 +32,7 @@
 
             var context = new SkiaGlyphStreamProcessor(pageNumber, ResourceStore, PdfScanner, PageContentParser,
                 FilterProvider, effectiveCropBox, userSpaceUnit, rotation, initialMatrix,
-                ResourceStore.GetPageOutputIntents(dictionary), ParsingOptions);
+                ResourceStore.GetPageOutputIntentProfile(dictionary), ParsingOptions);
 
             return context.Process(pageNumber, operations);
         }

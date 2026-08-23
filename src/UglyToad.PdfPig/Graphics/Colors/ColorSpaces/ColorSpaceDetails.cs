@@ -159,12 +159,33 @@
         }
 
         /// <summary>
-        /// Convert to byte.
+        /// Convert a component in <c>[0, 1]</c> to the byte encoding it, clipping anything outside that
+        /// range to the nearest end.
+        /// <para>
+        /// The clipping is not belt and braces: converting a <see cref="double"/> that lies outside
+        /// <see cref="byte"/>'s range - or that is <see cref="double.NaN"/> - is undefined in C# and in
+        /// practice yields an arbitrary byte rather than a clipped one, so a colour space backed by a
+        /// third-party <see cref="Icc.IIccTransform"/> could turn a slightly out-of-gamut component into a
+        /// wildly wrong pixel.
+        /// </para>
         /// </summary>
         protected static byte ConvertToByte(double componentValue)
         {
-            var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
-            return (byte)rounded;
+            // Written as a pair of positive tests so that NaN, which compares false against everything,
+            // lands on 0 rather than falling through.
+            if (!(componentValue > 0.0))
+            {
+                return 0;
+            }
+
+            if (componentValue >= 1.0)
+            {
+                return 255;
+            }
+
+            // Now that the value is known to be in (0, 1), adding a half and truncating rounds away from
+            // zero exactly as Math.Round(x, MidpointRounding.AwayFromZero) did, without the call.
+            return (byte)(componentValue * 255.0 + 0.5);
         }
     }
 }

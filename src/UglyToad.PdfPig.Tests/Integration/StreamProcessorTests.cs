@@ -94,7 +94,7 @@
                     userSpaceUnit,
                     rotation,
                     initialMatrix,
-                    ResourceStore.GetPageOutputIntents(dictionary),
+                    ResourceStore.GetPageOutputIntentProfile(dictionary),
                     ParsingOptions);
 
                 TextOnlyPageContent content = context.Process(pageNumber, operations);
@@ -116,7 +116,7 @@
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<OutputIntent>? outputIntents,
+                IIccProfile? outputIntentProfile,
                 ParsingOptions parsingOptions)
                 : base(pageNumber,
                     resourceStore,
@@ -127,7 +127,7 @@
                     userSpaceUnit,
                     rotation,
                     initialMatrix,
-                    outputIntents,
+                    outputIntentProfile,
                     parsingOptions)
             {
             }

@@ -34,7 +34,7 @@
 
             // No operands: the colour space derives its own initial colour. A Pattern colour space has none
             // and answers null, which this has always stored as-is; scn supplies the colour for that space.
-            state.SetStrokingColor(CurrentStrokingColorSpace, null, GetOutputIntentIccProfile(state));
+            state.SetStrokingColor(CurrentStrokingColorSpace, null, state.OutputIntentProfile);
         }
 
         public void SetStrokingColor(double[] operands, NameToken? patternName)
@@ -53,11 +53,11 @@
                 // its cell in the colour they select from the underlying colour space (8.7.3.3), read back
                 // through CurrentGraphicsState.CurrentStrokingUnderlyingColor. That colour is an ordinary
                 // device colour, so it is output-intent managed like any other.
-                state.SetStrokingPatternColor(patternCs, patternName, operands, GetOutputIntentIccProfile(state));
+                state.SetStrokingPatternColor(patternCs, patternName, operands, state.OutputIntentProfile);
             }
             else
             {
-                state.SetStrokingColor(CurrentStrokingColorSpace, operands, GetOutputIntentIccProfile(state));
+                state.SetStrokingColor(CurrentStrokingColorSpace, operands, state.OutputIntentProfile);
             }
         }
 
@@ -88,7 +88,7 @@
 
             // No operands: the colour space derives its own initial colour. A Pattern colour space has none
             // and answers null, which this has always stored as-is; scn supplies the colour for that space.
-            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null, GetOutputIntentIccProfile(state));
+            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null, state.OutputIntentProfile);
         }
 
         public void SetNonStrokingColor(double[] operands, NameToken? patternName)
@@ -105,11 +105,11 @@
 
                 // See the stroking counterpart: the operands select the uncoloured tiling pattern's colour.
                 state.SetNonStrokingPatternColor(patternCs, patternName, operands,
-                    GetOutputIntentIccProfile(state));
+                    state.OutputIntentProfile);
             }
             else
             {
-                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands, GetOutputIntentIccProfile(state));
+                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands, state.OutputIntentProfile);
             }
         }
 
@@ -148,7 +148,7 @@
                 CurrentNonStrokingColorSpace = colorSpace;
             }
 
-            var outputIntentProfile = GetOutputIntentIccProfile(state);
+            var outputIntentProfile = state.OutputIntentProfile;
 
             // A managed colour varies by intent even when its colour space does not, because the profile
             // resolves its transform per intent - so the operands have to be kept in that case too.
@@ -182,14 +182,6 @@
             {
                 state.SetNonStrokingColor(color);
             }
-        }
-
-        private IIccProfile? GetOutputIntentIccProfile(CurrentGraphicsState state)
-        {
-            var iccService = resourceStore.IccProfileService;
-            return iccService?.UseOutputIntent == true ?
-                OutputIntentColorManagement.GetDeviceProfile(state.OutputIntents, iccService)
-                : null;
         }
 
         public IColorSpaceContext DeepClone()

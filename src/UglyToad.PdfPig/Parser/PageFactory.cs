@@ -74,7 +74,7 @@
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
-                ResourceStore.GetPageOutputIntents(dictionary),
+                ResourceStore.GetPageOutputIntentProfile(dictionary),
                 ParsingOptions);
 
             PageContent content = context.Process(pageNumber, operations);

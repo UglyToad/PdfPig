@@ -88,10 +88,9 @@
 
             store.LoadResourceDictionary(new DictionaryToken(new Dictionary<NameToken, IToken>()));
 
-            var intent = new OutputIntent(OutputIntent.PdfXSubtype, null, "FOGRA", null, null,
-                new ManagedProfile(profileComponents), null, null, null);
-
-            var state = new CurrentGraphicsState { OutputIntents = [intent] };
+            // The service still decides whether to manage at all; the state carries the answer.
+            var profile = useOutputIntent ? new ManagedProfile(profileComponents) : null;
+            var state = new CurrentGraphicsState { OutputIntentProfile = profile };
             var context = new ColorSpaceContext(() => state, store);
             state.ColorSpaceContext = context;
 
@@ -200,12 +199,9 @@
 
             store.LoadResourceDictionary(new DictionaryToken(new Dictionary<NameToken, IToken>()));
 
-            var outputIntent = new OutputIntent(OutputIntent.PdfXSubtype, null, "FOGRA", null, null,
-                new PerIntentProfile(), null, null, null);
-
             var state = new CurrentGraphicsState
             {
-                OutputIntents = [outputIntent],
+                OutputIntentProfile = new PerIntentProfile(),
                 RenderingIntent = RenderingIntent.RelativeColorimetric
             };
 
@@ -226,11 +222,11 @@
         [Fact]
         public void SuppressingTheOutputIntentRestoresTheBuiltInConversion()
         {
-            // A renderer clears OutputIntents for the duration of a soft-mask group, where device values are
+            // A renderer clears the profile for the duration of a soft-mask group, where device values are
             // an alpha computation rather than output-device colour.
             var (context, state) = Build(useOutputIntent: true);
 
-            state.OutputIntents = null;
+            state.OutputIntentProfile = null;
             context.SetNonStrokingColorCmyk(0.0, 1.0, 1.0, 0.0);
 
             var (r, _, _) = state.CurrentNonStrokingColor!.ToRGBValues();
@@ -297,12 +293,10 @@
 
             store.LoadResourceDictionary(UncolouredTilingPatternResources());
 
-            var outputIntent = new OutputIntent(OutputIntent.PdfXSubtype, null, "FOGRA", null, null,
-                profile, null, null, null);
-
             var state = new CurrentGraphicsState
             {
-                OutputIntents = [outputIntent],
+                // The service still decides whether to manage at all; the state carries the answer.
+                OutputIntentProfile = useOutputIntent ? profile : null,
                 RenderingIntent = intent
             };
 

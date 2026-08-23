@@ -49,12 +49,11 @@
             if (!TryGetDeviceComponents(color, colorSpaceType, out double[] values) ||
                 !TryMapDeviceToProfileComponents(colorSpaceType, values, profile.NumberOfComponents, out var deviceValues) ||
                 !profile.TryGetTransform(intent, out var transform) ||
-                transform is null)
+                !transform.TryToRgbClipped(deviceValues, out double r, out double g, out double b))
             {
                 return false;
             }
 
-            var (r, g, b) = transform.ToRgb(deviceValues);
             managed = new RGBColor(r, g, b);
             return true;
         }
@@ -75,21 +74,14 @@
         /// </summary>
         /// <param name="colorSpace">The image's colour space, or <see langword="null"/> if it has none.</param>
         /// <param name="imageRenderingIntent">The image's rendering intent.</param>
-        /// <param name="outputIntents">The output intents in effect, in array order. Page-scoped, and
-        /// <see langword="null"/> inside a soft-mask group, where device values are an alpha computation
-        /// rather than output-device colour.</param>
-        /// <param name="service">The configured service.</param>
+        /// <param name="profile">The output intent profile in effect, from
+        /// <see cref="CurrentGraphicsState.OutputIntentProfile"/>; <see langword="null"/> when none is,
+        /// which includes a soft-mask group, where device values are an alpha computation rather than
+        /// output-device colour.</param>
         public static IIccTransform? GetDeviceImageTransform(ColorSpaceDetails? colorSpace,
-            RenderingIntent imageRenderingIntent, IReadOnlyList<OutputIntent>? outputIntents,
-            IIccProfileService? service)
+            RenderingIntent imageRenderingIntent, IIccProfile? profile)
         {
-            if (service is null || colorSpace is null)
-            {
-                return null;
-            }
-            
-            var profile = GetDeviceProfile(outputIntents, service);
-            if (profile is null)
+            if (colorSpace is null || profile is null)
             {
                 return null;
             }

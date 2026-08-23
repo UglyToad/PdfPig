@@ -129,28 +129,9 @@
             }
         }
 
-        private sealed class ProofingService(IIccProfile profile) : IIccProfileService
-        {
-            public bool TryGetProfile(ReadOnlyMemory<byte> profileBytes, [NotNullWhen(true)] out IIccProfile? result)
-            {
-                result = profile;
-                return true;
-            }
-
-            public bool UseOutputIntent => true;
-
-            public string? PreferredOutputIntentSubtype => null;
-        }
-
         private static IIccTransform? ImageTransform(ColorSpaceDetails colorSpace, IIccTransform inner)
-        {
-            var profile = new RecordingProfile(inner);
-            var intent = new OutputIntent(OutputIntent.PdfXSubtype, null, "FOGRA", null, null, profile,
-                null, null, null);
-
-            return OutputIntentColorManagement.GetDeviceImageTransform(colorSpace,
-                RenderingIntent.RelativeColorimetric, [intent], new ProofingService(profile));
-        }
+            => OutputIntentColorManagement.GetDeviceImageTransform(colorSpace,
+                RenderingIntent.RelativeColorimetric, new RecordingProfile(inner));
 
         [Fact]
         public void MatchingComponentCounts_HandBackTheProfileTransformItself()
