@@ -9,6 +9,7 @@
     using Graphics.Colors;
     using Graphics.Core;
     using Images;
+    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -18,6 +19,24 @@
     /// </summary>
     public static class XObjectFactory
     {
+        private static DictionaryToken Resolve(DictionaryToken streamDictionary, IPdfTokenScanner pdfScanner)
+        {
+            if (streamDictionary.TryGet(NameToken.ColorSpace, out var rawColorSpace)
+                && DirectObjectFinder.TryGet(rawColorSpace, pdfScanner, out ArrayToken? rawColorSpaceArray)
+                && rawColorSpaceArray.Length > 0
+                && rawColorSpaceArray.Data[0] is NameToken)
+            {
+                // Avoid resolving the ColorSpace here (this can be a profile stream of an /ICCBased
+                // or the lookup table of an /Indexed). ColorSpaceDetailsParser resolves the elements it
+                // needs through the scanner anyway.
+                return streamDictionary.Without(NameToken.ColorSpace)
+                    .Resolve(pdfScanner)
+                    .With(NameToken.ColorSpace, rawColorSpaceArray);
+            }
+            
+            return streamDictionary.Resolve(pdfScanner);
+        }
+        
         /// <summary>
         /// Read the XObject image.
         /// </summary>
@@ -36,8 +55,8 @@
                 throw new InvalidOperationException($"Cannot create an image from an XObject with type: {xObject.Type}.");
             }
 
-            var dictionary = xObject.Stream.StreamDictionary.Resolve(pdfScanner);
-
+            var dictionary = Resolve(xObject.Stream.StreamDictionary, pdfScanner);
+            
             var bounds = xObject.AppliedTransformation.Transform(new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(1, 1)));
 
             var width = dictionary.GetInt(NameToken.Width);
