@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Graphics.Colors.Icc
+﻿namespace UglyToad.PdfPig.Graphics.Colors.Icc
 {
     using System;
     using System.Collections.Generic;
@@ -65,6 +65,13 @@ namespace UglyToad.PdfPig.Graphics.Colors.Icc
         /// <see cref="TryConvert"/> for the image path, so that the two cannot disagree about which images
         /// and colour spaces are eligible; applying it to the samples is the consumer's job, since that is
         /// rasterisation.
+        /// <para>
+        /// The returned transform consumes exactly <see cref="ColorSpaceDetails.BaseNumberOfColorComponents"/>
+        /// components per pixel - its <see cref="IIccTransform.NumberOfComponents"/> is the image's, not the
+        /// profile's. Where the two differ the profile transform is wrapped so that the DeviceGray expansion
+        /// happens here, beside the <see cref="TryMapDeviceToProfileComponents"/> that does the same job for a
+        /// single colour, rather than in each consumer where the two could drift apart.
+        /// </para>
         /// </summary>
         /// <param name="colorSpace">The image's colour space, or <see langword="null"/> if it has none.</param>
         /// <param name="imageRenderingIntent">The image's rendering intent.</param>
@@ -108,7 +115,109 @@ namespace UglyToad.PdfPig.Graphics.Colors.Icc
                 return null;
             }
 
-            return profile.TryGetTransform(imageRenderingIntent, out var transform) ? transform : null;
+            if (!profile.TryGetTransform(imageRenderingIntent, out var transform))
+            {
+                return null;
+            }
+
+            // canManage above admits exactly one mismatch: a single DeviceGray channel against a 3- or
+            // 4-component profile. Hand back a transform that consumes the image's own components so no
+            // caller has to notice.
+            return transform.NumberOfComponents == colorSpace.BaseNumberOfColorComponents
+                ? transform
+                : new DeviceGrayExpandingTransform(transform);
+        }
+
+        /// <summary>
+        /// Presents a 3- or 4-component profile transform as the single-component one a DeviceGray image
+        /// needs, expanding each grey neutrally exactly as <see cref="TryMapDeviceToProfileComponents"/> does
+        /// for a single colour.
+        /// <para>
+        /// A one-component source has only 256 possible values, so the packed path converts those 256 once
+        /// and then reads the answers off, rather than expanding every pixel into a 3- or 4-times larger
+        /// buffer and pushing all of it through the profile. For any image bigger than a thumbnail that is
+        /// the difference between 256 conversions and one per pixel.
+        /// </para>
+        /// </summary>
+        private sealed class DeviceGrayExpandingTransform : IIccTransform
+        {
+            private const int Levels = 256;
+
+            private readonly IIccTransform inner;
+
+            /// <summary>
+            /// sRGB for each of the 256 greys, three bytes apiece, built on first use because the scalar
+            /// entry point never needs it.
+            /// </summary>
+            private byte[]? lookup;
+
+            public DeviceGrayExpandingTransform(IIccTransform inner)
+            {
+                this.inner = inner;
+            }
+
+            /// <summary>
+            /// One: this only ever stands in for DeviceGray, the sole mismatch
+            /// <see cref="GetDeviceImageTransform"/> permits.
+            /// </summary>
+            public int NumberOfComponents => 1;
+
+            public (double r, double g, double b) ToRgb(ReadOnlySpan<double> values)
+                => TryMapDeviceToProfileComponents(ColorSpace.DeviceGray, values, inner.NumberOfComponents, out var mapped)
+                    ? inner.ToRgb(mapped)
+                    : inner.ToRgb(values);
+
+            public void Transform(ReadOnlySpan<byte> src, Span<byte> dstRgb)
+            {
+                byte[] table = lookup ??= BuildLookup();
+
+                for (int p = 0; p < src.Length; p++)
+                {
+                    int entry = src[p] * 3;
+                    int i = p * 3;
+
+                    dstRgb[i] = table[entry];
+                    dstRgb[i + 1] = table[entry + 1];
+                    dstRgb[i + 2] = table[entry + 2];
+                }
+            }
+
+            /// <summary>
+            /// Convert every grey the profile can be asked about, in one call.
+            /// </summary>
+            private byte[] BuildLookup()
+            {
+                int components = inner.NumberOfComponents;
+                Span<byte> greys = stackalloc byte[Levels * 4]; // 4 is the widest profile this stands in for
+                greys = greys.Slice(0, Levels * components);
+                greys.Clear();
+
+                if (components == 4)
+                {
+                    // grey g -> (0, 0, 0, 1 - g)
+                    for (int g = 0; g < Levels; g++)
+                    {
+                        greys[g * 4 + 3] = (byte)(255 - g);
+                    }
+                }
+                else
+                {
+                    // grey g -> (g, g, g)
+                    for (int g = 0; g < Levels; g++)
+                    {
+                        int i = g * components;
+
+                        for (int c = 0; c < components; c++)
+                        {
+                            greys[i + c] = (byte)g;
+                        }
+                    }
+                }
+
+                var table = new byte[Levels * 3];
+                inner.Transform(greys, table);
+                return table;
+            }
         }
 
         /// <summary>

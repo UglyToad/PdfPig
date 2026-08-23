@@ -10,7 +10,6 @@
     /// dictionary (see 7.7.2, "Document catalog dictionary") or a Page dictionary (see 7.7.3.3, "Page objects")
     /// holds an array of output intent dictionaries, each describing the colour reproduction characteristics of a
     /// possible output device.
-    /// remaining entries. 
     /// </summary>
     public sealed class OutputIntent
     {
@@ -60,13 +59,13 @@
         public IIccProfile? DestOutputProfile { get; }
 
         /// <summary>
-        /// (Optional; PDF 2. 0) A reference to an ICC profile that is not embedded in the document
+        /// (Optional; PDF 2.0) A reference to an ICC profile that is not embedded in the document
         /// (ISO 32000-2 Table 402).
         /// </summary>
         public IccProfileReference? DestOutputProfileRef { get; }
 
         /// <summary>
-        /// (Optional, PDF 2. 0) A DeviceN Mixing Hints dictionary ("Table 72 — Entries in a DeviceN mixing hints
+        /// (Optional, PDF 2.0) A DeviceN Mixing Hints dictionary ("Table 72 — Entries in a DeviceN mixing hints
         /// dictionary") which shall not contain a DotGain key. In addition, each key in the Solidities dictionary
         /// referenced from the MixingHints dictionary shall not also be present in the SpectralData dictionary within
         /// the same output intent.
@@ -74,7 +73,7 @@
         public DictionaryToken? MixingHints { get; }
 
         /// <summary>
-        /// (Optional, PDF 2. 0) A dictionary where each key represents a colourant name as defined in 8.6.6.4,
+        /// (Optional, PDF 2.0) A dictionary where each key represents a colourant name as defined in 8.6.6.4,
         /// "Separation colour spaces" and where the value of each key shall be a stream whose contents shall represent
         /// CxF/ X-4 spot colour characterisation data that conform to ISO 17972-4. This stream shall contain exactly
         /// one SpotInkCharacterisation element whose SpotInkName matches the colourant name (see 7.3.5, "Name objects").

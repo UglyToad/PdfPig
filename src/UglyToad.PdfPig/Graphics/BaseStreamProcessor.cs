@@ -6,6 +6,7 @@
     using System.Linq;
     
     using Colors;
+    using Colors.Icc;
     using Content;
     using Core;
     using Filters;
@@ -126,6 +127,18 @@
         /// <summary>
         /// Abstract stream processor constructor.
         /// </summary>
+        /// <param name="outputIntents">
+        /// The output intents in effect for this content, in array order (14.11.5); <see langword="null"/>
+        /// or empty when none are.
+        /// <para>
+        /// A processor for a <b>page</b> passes <c>resourceStore.GetPageOutputIntents(pageDictionary)</c>,
+        /// which applies the page's own <c>/OutputIntents</c> over the document catalog's. A processor for
+        /// anything else - a form XObject, a tiling pattern, a shading, a soft mask - passes the intents in
+        /// force where it was invoked: such content carries no <c>/OutputIntents</c> of its own, so
+        /// resolving any for itself would discard a page-level override, or reinstate one the invoking
+        /// context had deliberately suppressed.
+        /// </para>
+        /// </param>
         protected BaseStreamProcessor(
             int pageNumber,
             IResourceStore resourceStore,
@@ -136,7 +149,7 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
-            DictionaryToken? pageDictionary,
+            IReadOnlyList<OutputIntent>? outputIntents,
             ParsingOptions parsingOptions)
         {
             this.PageNumber = pageNumber;
@@ -153,7 +166,7 @@
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox, rotation),
                 ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
-                OutputIntents = resourceStore.GetPageOutputIntents(pageDictionary)
+                OutputIntents = outputIntents
             });
         }
 

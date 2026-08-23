@@ -17,8 +17,6 @@
     /// </summary>
     internal static class OutputIntentParser
     {
-        // TODO - Can we use IEnumerable<> instead of IReadOnlyList<> to make the call lazy?
-
         /// <summary>
         /// Parse every entry of the <c>/OutputIntents</c> array of the given dictionary, in the order the
         /// array wrote them. This works for both the document catalog and a page object (PDF 2.0, Table 31),

@@ -179,16 +179,13 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="operands">The selected component values, or <see langword="null"/> for the colour
         /// space's own initial colour. Stored by reference, the caller must not mutate the array afterward.
         /// </param>
-        public void SetStrokingColor(ColorSpaceDetails colorSpace, double[]? operands)
-            => SetStrokingColor(colorSpace, operands, null);
-
-        /// <summary>
-        /// As <see cref="SetStrokingColor(ColorSpaceDetails, double[])"/>, additionally colour-managing the
-        /// colour through <paramref name="outputIntentProfile"/> (14.11.5 / 8.6.5.7). The profile is retained
-        /// so that a later <c>ri</c> re-manages the colour: a profile resolves a different transform per
+        /// <param name="outputIntentProfile">
+        /// (Optional) The output intent profile to colour-manage the colour through (14.11.5 / 8.6.5.7).
+        /// Retained so that a later <c>ri</c> re-manages it: a profile resolves a different transform per
         /// intent, which makes even a device colour vary by one.
-        /// </summary>
-        public void SetStrokingColor(ColorSpaceDetails colorSpace, double[]? operands, IIccProfile? outputIntentProfile)
+        /// </param>
+        public void SetStrokingColor(ColorSpaceDetails colorSpace, double[]? operands,
+            IIccProfile? outputIntentProfile = null)
         {
             stroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent, outputIntentProfile);
         }
@@ -205,17 +202,13 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="patternName">The name of an entry in the <c>/Pattern</c> subdictionary of the current resource dictionary.</param>
         /// <param name="operands">The component values accompanying the name, in the pattern's underlying colour space, or empty
         /// when there are none. Stored by reference, the caller must not mutate the array afterward.</param>
-        public void SetStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName, double[]? operands)
-            => SetStrokingPatternColor(patternColorSpace, patternName, operands, null);
-
-        /// <summary>
-        /// As <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[])"/>, additionally
-        /// colour-managing an uncoloured tiling pattern's underlying colour through
-        /// <paramref name="outputIntentProfile"/> (14.11.5 / 8.6.5.7), exactly as
-        /// <see cref="SetStrokingColor(ColorSpaceDetails, double[], IIccProfile)"/> does for an ordinary colour.
-        /// </summary>
+        /// <param name="outputIntentProfile">
+        /// (Optional) The output intent profile to colour-manage an uncoloured tiling pattern's underlying
+        /// colour through (14.11.5 / 8.6.5.7), exactly as <see cref="SetStrokingColor"/> does for an
+        /// ordinary colour.
+        /// </param>
         public void SetStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName,
-            double[]? operands, IIccProfile? outputIntentProfile)
+            double[]? operands, IIccProfile? outputIntentProfile = null)
         {
             stroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent,
                 outputIntentProfile);
@@ -228,15 +221,11 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="patternName">The name of an entry in the <c>/Pattern</c> subdictionary of the current resource dictionary.</param>
         /// <param name="operands">The component values accompanying the name, in the pattern's underlying colour space, or empty
         /// when there are none. Stored by reference, the caller must not mutate the array afterward.</param>
-        public void SetNonStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName, double[]? operands)
-            => SetNonStrokingPatternColor(patternColorSpace, patternName, operands, null);
-
-        /// <summary>
-        /// The non-stroking counterpart of
-        /// <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[], IIccProfile)"/>.
-        /// </summary>
+        /// <param name="outputIntentProfile">
+        /// (Optional) See <see cref="SetStrokingPatternColor"/>.
+        /// </param>
         public void SetNonStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName,
-            double[]? operands, IIccProfile? outputIntentProfile)
+            double[]? operands, IIccProfile? outputIntentProfile = null)
         {
             nonStroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent,
                 outputIntentProfile);
@@ -251,8 +240,8 @@ namespace UglyToad.PdfPig.Graphics
         /// <para>
         /// Use it only for a colour a consumer has deliberately computed for itself. A colour selected from
         /// operands belongs on <see cref="SetStrokingColor(ColorSpaceDetails, double[])"/> and a Pattern
-        /// colour on <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[])"/>,
-        /// both of which keep what they need to answer a later <c>ri</c>.
+        /// colour on <see cref="SetStrokingPatternColor"/>, both of which keep what they need to answer a
+        /// later <c>ri</c>.
         /// </para>
         /// </summary>
         /// <param name="color">
@@ -265,21 +254,16 @@ namespace UglyToad.PdfPig.Graphics
         }
 
         /// <summary>
-        /// The non-stroking counterpart of <see cref="SetStrokingColor(ColorSpaceDetails, double[])"/>.
+        /// The non-stroking counterpart of <see cref="SetStrokingColor(ColorSpaceDetails, double[], IIccProfile)"/>.
         /// </summary>
         /// <param name="colorSpace">The colour space the operands belong to.</param>
         /// <param name="operands">The selected component values, or <see langword="null"/> for the colour
         /// space's own initial colour. Stored by reference, the caller must not mutate the array afterward.</param>
-        public void SetNonStrokingColor(ColorSpaceDetails colorSpace, double[]? operands)
-            => SetNonStrokingColor(colorSpace, operands, null);
-
-        /// <summary>
-        /// As <see cref="SetNonStrokingColor(ColorSpaceDetails, double[])"/>, additionally colour-managing the
-        /// colour through <paramref name="outputIntentProfile"/> (14.11.5 / 8.6.5.7). The profile is retained
-        /// so that a later <c>ri</c> re-manages the colour: a profile resolves a different transform per
-        /// intent, which makes even a device colour vary by one.
-        /// </summary>
-        public void SetNonStrokingColor(ColorSpaceDetails colorSpace, double[]? operands, IIccProfile? outputIntentProfile)
+        /// <param name="outputIntentProfile">
+        /// (Optional) See <see cref="SetStrokingColor"/>.
+        /// </param>
+        public void SetNonStrokingColor(ColorSpaceDetails colorSpace, double[]? operands,
+            IIccProfile? outputIntentProfile = null)
         {
             nonStroking = PdfColorInfo.FromOperands(colorSpace, operands, RenderingIntent, outputIntentProfile);
         }

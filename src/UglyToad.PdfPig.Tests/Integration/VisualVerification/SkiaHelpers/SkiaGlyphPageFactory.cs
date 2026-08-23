@@ -31,7 +31,8 @@
             var effectiveCropBox = new CropBox(mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds);
 
             var context = new SkiaGlyphStreamProcessor(pageNumber, ResourceStore, PdfScanner, PageContentParser,
-                FilterProvider, effectiveCropBox, userSpaceUnit, rotation, initialMatrix, dictionary, ParsingOptions);
+                FilterProvider, effectiveCropBox, userSpaceUnit, rotation, initialMatrix,
+                ResourceStore.GetPageOutputIntents(dictionary), ParsingOptions);
 
             return context.Process(pageNumber, operations);
         }
