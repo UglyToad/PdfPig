@@ -405,13 +405,13 @@
         /// <inheritdoc/>
         public override IColor GetInitializeColor(RenderingIntent intent)
         {
-            // Setting the current stroking or nonstroking colour space to any CIE-based colour space shall
-            // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
-            // values for a given component does not include 0.0, in which case the nearest valid value shall
-            // be substituted.)
-            double v = PdfFunction.ClipToRange(0.0, Range[0], Range[1]);
             Span<double> buffer = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
-            buffer.Fill(v);
+
+            for (int c = 0; c < buffer.Length; ++c)
+            {
+                buffer[c] = PdfFunction.ClipToRange(0.0, Range[2 * c], Range[2 * c + 1]);
+            }
+
             return GetColor(buffer, intent);
         }
 

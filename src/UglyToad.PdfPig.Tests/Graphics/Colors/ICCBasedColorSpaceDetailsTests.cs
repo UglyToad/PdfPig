@@ -192,6 +192,36 @@
         }
 
         [Fact]
+        public void GetInitializeColor_SubstitutesPerComponent_WithoutAProfile()
+        {
+            // 8.6.5.5: every component initializes to 0.0 "unless the range of valid values FOR A GIVEN
+            // COMPONENT does not include 0.0". A single clip broadcast across the buffer would push the
+            // first component's substitute into the other two, turning (0.2, 0, 0) into 20% grey.
+            var details = new ICCBasedColorSpaceDetails(3, DeviceRgbColorSpaceDetails.Instance,
+                [0.2, 1.0, 0.0, 1.0, 0.0, 1.0], null, null);
+
+            var (r, g, b) = details.GetInitializeColor()!.ToRGBValues();
+
+            Assert.Equal(0.2, r);
+            Assert.Equal(0.0, g);
+            Assert.Equal(0.0, b);
+        }
+
+        [Fact]
+        public void GetInitializeColor_SubstitutesPerComponent_OnTheProfilePath()
+        {
+            // The same rule as seen by the transform, and in both directions: a component whose range
+            // starts above 0.0 substitutes its minimum, one whose range ends below 0.0 substitutes its
+            // maximum, and one straddling 0.0 keeps it.
+            var (details, transform) = WithRange(3, DeviceRgbColorSpaceDetails.Instance,
+                [0.2, 1.0, 0.0, 1.0, -1.0, -0.25]);
+
+            details.GetInitializeColor(RenderingIntent.RelativeColorimetric);
+
+            Assert.Equal(new double[] { 0.2, 0.0, -0.25 }, transform.LastValues);
+        }
+
+        [Fact]
         public void WithService_TransformIntentOverloadProducesIntentSpecificBuffer()
         {
             var profile = new StubProfile(4, new Dictionary<RenderingIntent, IIccTransform>

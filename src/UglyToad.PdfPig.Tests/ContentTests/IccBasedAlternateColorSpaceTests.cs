@@ -214,6 +214,53 @@
         }
 
         [Fact]
+        public void AlternateNamingIccBased_IsRejectedRatherThanRecursed()
+        {
+            // Table 66: the alternate "shall not be an ICCBased colour space". It is not merely invalid.
+            // A name alternate is resolved against the OUTER image dictionary, so /Alternate /ICCBased
+            // re-enters this very colour space's /ColorSpace array and used to recurse until the stack
+            // was exhausted - on a single token, with no indirect references involved.
+            //
+            // NB: a regression here does not fail this assertion, it kills the test host, because
+            // StackOverflowException cannot be caught.
+            var details = Parse(NameToken.Iccbased, n: 3);
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details.AlternateColorSpace);
+        }
+
+        [Fact]
+        public void AlternateCyclingBackToItsOwnIccBasedArray_IsRejected()
+        {
+            // The array form of the same prohibition, wired into a genuine cycle: /Alternate 7 0 R, where
+            // object 7 is [/ICCBased 8 0 R] and the /Alternate of stream 8 points back at 7 0 R.
+            var scanner = new TestPdfTokenScanner();
+
+            var arrayReference = new IndirectReference(7, 0);
+            var streamReference = new IndirectReference(8, 0);
+
+            var innerProfile = new StreamToken(
+                new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.N, new NumericToken(3) },
+                    { NameToken.Alternate, new IndirectReferenceToken(arrayReference) }
+                }),
+                new byte[] { 0x01 });
+
+            scanner.Objects[streamReference] =
+                new ObjectToken(XrefLocation.File(0), streamReference, innerProfile);
+
+            scanner.Objects[arrayReference] = new ObjectToken(XrefLocation.File(0), arrayReference,
+                new ArrayToken(new IToken[]
+                {
+                    NameToken.Iccbased, new IndirectReferenceToken(streamReference)
+                }));
+
+            var details = Parse(new IndirectReferenceToken(arrayReference), n: 3, scanner);
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details.AlternateColorSpace);
+        }
+
+        [Fact]
         public void UnparseableAlternate_FallsBackToTheSpaceImpliedByN()
         {
             // A /CalRGB naming no dictionary cannot be built; /N decides instead of the space being lost.

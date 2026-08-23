@@ -241,7 +241,7 @@
                         {
                             var alternate = GetSecondaryColorSpace(alternateColorSpaceToken,
                                 imageDictionary, scanner, filterProvider, resourceStore,
-                                iccProfileCache, applyDefaultSubstitution: false);
+                                iccProfileCache, applyDefaultSubstitution: false, allowIccBased: false);
                             
                             if (alternate is not UnsupportedColorSpaceDetails)
                             {
@@ -501,11 +501,17 @@
             ILookupFilterProvider filterProvider,
             IResourceStore resourceStore,
             IccProfileCache iccProfileCache,
-            bool applyDefaultSubstitution = true)
+            bool applyDefaultSubstitution = true,
+            bool allowIccBased = true)
         {
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
                 && ColorSpaceMapper.TryMap(alternateNameToken, resourceStore, out var baseColorSpaceName))
             {
+                if (!allowIccBased && baseColorSpaceName == ColorSpace.ICCBased)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
                 // 8.6.5.6: when a special colour space is based on an underlying device colour space, the
                 // DefaultGray/DefaultRGB/DefaultCMYK substitution shall be used in place of that device
                 // space. This applies to the base of an Indexed space, the alternate of a Separation/DeviceN
@@ -533,6 +539,11 @@
                     resourceStore,
                     out var alternateArrayColorSpace))
             {
+                if (!allowIccBased && alternateArrayColorSpace == ColorSpace.ICCBased)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
                 var pseudoImageDictionary = new DictionaryToken(
                     new Dictionary<NameToken, IToken>
                     {
