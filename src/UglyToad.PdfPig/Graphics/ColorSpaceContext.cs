@@ -28,7 +28,7 @@
                 return;
             }
 
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
+            currentStateFunc().SetStrokingColor(CurrentStrokingColorSpace, null);
         }
 
         public void SetStrokingColor(double[] operands, NameToken? patternName)
@@ -38,14 +38,17 @@
                 return;
             }
 
-            if (patternName is not null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
-                currentStateFunc().CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
-                // TODO - use operands values for Uncoloured Tiling Patterns
+                // The operands travel with the pattern: an uncoloured tiling pattern (/PaintType 2) paints
+                // its cell in the colour they select from the underlying colour space (8.7.3.3), read back
+                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor.
+                state.SetStrokingPatternColor(patternCs, patternName, operands);
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands);
+                state.SetStrokingColor(CurrentStrokingColorSpace, operands);
             }
         }
 
@@ -72,7 +75,7 @@
                 return;
             }
 
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
+            currentStateFunc().SetNonStrokingColor(CurrentNonStrokingColorSpace, null);
         }
 
         public void SetNonStrokingColor(double[] operands, NameToken? patternName)
@@ -82,14 +85,15 @@
                 return;
             }
 
-            if (patternName is not null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentNonStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
-                currentStateFunc().CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
-                // TODO - use operands values for Uncoloured Tiling Patterns
+                // See the stroking counterpart: the operands select the uncoloured tiling pattern's colour.
+                state.SetNonStrokingPatternColor(patternCs, patternName, operands);
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands);
+                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands);
             }
         }
 
@@ -124,12 +128,12 @@
             if (stroking)
             {
                 CurrentStrokingColorSpace = colorSpace;
-                state.CurrentStrokingColor = color;
+                state.SetStrokingColor(color);
             }
             else
             {
                 CurrentNonStrokingColorSpace = colorSpace;
-                state.CurrentNonStrokingColor = color;
+                state.SetNonStrokingColor(color);
             }
         }
 
