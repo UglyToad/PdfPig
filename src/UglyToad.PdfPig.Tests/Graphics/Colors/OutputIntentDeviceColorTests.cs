@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
     using System;
     using System.Collections.Generic;
@@ -236,5 +236,162 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
             var (r, _, _) = state.CurrentNonStrokingColor!.ToRGBValues();
             Assert.Equal(1.0, r, 6);
         }
+
+        private static readonly NameToken PatternName = NameToken.Create("P0");
+
+        /// <summary>
+        /// A page resource dictionary holding one uncoloured tiling pattern (<c>/PatternType 1</c>,
+        /// <c>/PaintType 2</c>), so that both the Pattern colour space and the pattern itself come out of the
+        /// resource store the way a real document's would.
+        /// </summary>
+        private static DictionaryToken UncolouredTilingPatternResources()
+        {
+            var empty = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            var pattern = new StreamToken(
+                new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.PatternType, new NumericToken(1) },
+                    { NameToken.PaintType, new NumericToken(2) },
+                    { NameToken.TilingType, new NumericToken(1) },
+                    {
+                        NameToken.Bbox,
+                        new ArrayToken([
+                            new NumericToken(0), new NumericToken(0), new NumericToken(1), new NumericToken(1)
+                        ])
+                    },
+                    { NameToken.XStep, new NumericToken(1) },
+                    { NameToken.YStep, new NumericToken(1) },
+                    { NameToken.Resources, empty }
+                }),
+                []);
+
+            return new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                {
+                    NameToken.Pattern,
+                    new DictionaryToken(new Dictionary<NameToken, IToken> { { PatternName, pattern } })
+                }
+            });
+        }
+
+        /// <summary>
+        /// As <see cref="Build"/>, but with the uncoloured tiling pattern loaded and <c>[/Pattern /DeviceCMYK]</c>
+        /// installed as the non-stroking colour space, ready for an <c>scn</c> carrying both a name and operands.
+        /// </summary>
+        private static (ColorSpaceContext Context, CurrentGraphicsState State) BuildWithPattern(
+            IIccProfile profile, bool useOutputIntent = true,
+            RenderingIntent intent = RenderingIntent.RelativeColorimetric)
+        {
+            var store = new ResourceStore(
+                new TestPdfTokenScanner(),
+                new NoOpFontFactory(),
+                new TestFilterProvider(),
+                null,
+                new ParsingOptions
+                {
+                    UseLenientParsing = true,
+                    SkipMissingFonts = true,
+                    IccProfileService = new ProofingIccProfileService(useOutputIntent)
+                });
+
+            store.LoadResourceDictionary(UncolouredTilingPatternResources());
+
+            var outputIntent = new OutputIntent(OutputIntent.PdfXSubtype, null, "FOGRA", null, null,
+                profile, null, null, null);
+
+            var state = new CurrentGraphicsState
+            {
+                OutputIntents = [outputIntent],
+                RenderingIntent = intent
+            };
+
+            var context = new ColorSpaceContext(() => state, store);
+            state.ColorSpaceContext = context;
+
+            // 8.7.3.3: an uncoloured tiling pattern's operands are read in the underlying colour space the
+            // Pattern space was declared with.
+            context.SetNonStrokingColorspace(NameToken.Pattern, new DictionaryToken(
+                new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.ColorSpace, new ArrayToken([NameToken.Pattern, NameToken.Devicecmyk]) }
+                }));
+
+            return (context, state);
+        }
+
+        [Fact]
+        public void AnUncolouredTilingPatternsUnderlyingColourIsManagedThroughTheOutputIntent()
+        {
+            // The colour an uncoloured tiling pattern paints its cell in is an ordinary device colour
+            // selected in an ordinary device colour space (8.7.3.3). Leaving it unmanaged would render
+            // "0 0 0 1 /P0 scn" differently from the very same "0 0 0 1 k" written outside a pattern.
+            var (context, state) = BuildWithPattern(new ManagedProfile(4));
+
+            context.SetNonStrokingColor([0.0, 0.0, 0.0, 1.0], PatternName);
+
+            // The current colour is still the pattern - only the underlying colour is converted at all.
+            Assert.IsType<TilingPatternColor>(state.CurrentNonStrokingColor);
+
+            var (r, g, b) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.25, r, 6);
+            Assert.Equal(0.5, g, 6);
+            Assert.Equal(0.75, b, 6);
+        }
+
+        [Fact]
+        public void TheStrokingPatternOperatorManagesItsUnderlyingColourToo()
+        {
+            var (context, state) = BuildWithPattern(new ManagedProfile(4));
+
+            context.SetStrokingColorspace(NameToken.Pattern, new DictionaryToken(
+                new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.ColorSpace, new ArrayToken([NameToken.Pattern, NameToken.Devicecmyk]) }
+                }));
+
+            context.SetStrokingColor([0.0, 0.0, 0.0, 1.0], PatternName);
+
+            Assert.IsType<TilingPatternColor>(state.CurrentStrokingColor);
+
+            var (r, _, _) = state.CurrentStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.25, r, 6);
+        }
+
+        [Fact]
+        public void AServiceThatDoesNotOptInLeavesTheUnderlyingPatternColourAlone()
+        {
+            // The same opt-in as every other device colour: no proofing, no management.
+            var (context, state) = BuildWithPattern(new ManagedProfile(4), useOutputIntent: false);
+
+            context.SetNonStrokingColor([0.0, 1.0, 1.0, 0.0], PatternName);
+
+            var (r, g, b) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(1.0, r, 6);
+            Assert.Equal(0.0, g, 6);
+            Assert.Equal(0.0, b, 6);
+        }
+
+        [Fact]
+        public void AManagedUnderlyingPatternColourFollowsALaterIntentChange()
+        {
+            // The profile resolves a different transform per intent, so a ri arriving between the scn and
+            // the paint has to re-manage the underlying colour - the pattern itself never varies.
+            var (context, state) = BuildWithPattern(new PerIntentProfile());
+
+            context.SetNonStrokingColor([0.0, 0.0, 0.0, 1.0], PatternName);
+
+            var (r, _, _) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.9, r, 6);
+
+            state.RenderingIntent = RenderingIntent.Perceptual;
+
+            (r, _, _) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.1, r, 6);
+
+            // Still the same pattern, whatever the intent did to the colour it paints with.
+            Assert.IsType<TilingPatternColor>(state.CurrentNonStrokingColor);
+        }
+
     }
 }

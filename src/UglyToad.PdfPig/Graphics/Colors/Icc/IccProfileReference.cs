@@ -29,13 +29,13 @@
         /// version field).
         /// <para>Empty when not provided.</para>
         /// </summary>
-        public ReadOnlySpan<byte> ICCVersion => iccVersionBytes;
+        public ReadOnlyMemory<byte> ICCVersion => iccVersionBytes;
 
         /// <summary>
         /// (Optional) A checksum of the referenced profile (the 16-byte ICC profile ID / MD5).
         /// <para>Empty when not provided.</para>
         /// </summary>
-        public ReadOnlySpan<byte> CheckSum => checkSumBytes;
+        public ReadOnlyMemory<byte> CheckSum => checkSumBytes;
 
         /// <summary>
         /// (Optional) For an n-colourant (DeviceN) profile, a dictionary naming the colourants.

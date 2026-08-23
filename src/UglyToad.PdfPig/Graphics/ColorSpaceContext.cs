@@ -51,8 +51,9 @@
 
                 // The operands travel with the pattern: an uncoloured tiling pattern (/PaintType 2) paints
                 // its cell in the colour they select from the underlying colour space (8.7.3.3), read back
-                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor.
-                state.SetStrokingPatternColor(patternCs, patternName, operands);
+                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor. That colour is an ordinary
+                // device colour, so it is output-intent managed like any other.
+                state.SetStrokingPatternColor(patternCs, patternName, operands, GetOutputIntentIccProfile(state));
             }
             else
             {
@@ -103,7 +104,8 @@
                 Debug.Assert(CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern);
 
                 // See the stroking counterpart: the operands select the uncoloured tiling pattern's colour.
-                state.SetNonStrokingPatternColor(patternCs, patternName, operands);
+                state.SetNonStrokingPatternColor(patternCs, patternName, operands,
+                    GetOutputIntentIccProfile(state));
             }
             else
             {

@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Graphics
+﻿namespace UglyToad.PdfPig.Graphics
 {
     using Colors;
     using Colors.Icc;
@@ -127,8 +127,16 @@ namespace UglyToad.PdfPig.Graphics
         /// pattern) means there is no underlying colour to select. Stored by reference, the caller must not mutate it afterward.
         /// </param>
         /// <param name="intent">The intent in force when the colour was selected.</param>
+        /// <param name="outputIntentProfile">
+        /// (Optional) The output intent profile to colour-manage the <i>underlying</i> colour through, as
+        /// <see cref="FromOperands"/> does for an ordinary colour. The pattern itself is never managed - it
+        /// is a name, and the colours its content stream paints with are managed when that stream is
+        /// processed - but the colour an uncoloured tiling pattern is painted in is an ordinary device
+        /// colour selected in an ordinary device colour space, so leaving it unmanaged would render it
+        /// differently from the very same operands written outside a pattern.
+        /// </param>
         public static PdfColorInfo ForPattern(PatternColorSpaceDetails patternColorSpace, NameToken patternName,
-            double[]? operands, RenderingIntent intent)
+            double[]? operands, RenderingIntent intent, IIccProfile? outputIntentProfile = null)
         {
             // Normalise "no operands" to null so that the underlying space derives its own initial colour
             // rather than being asked to convert an empty component list.
@@ -140,9 +148,25 @@ namespace UglyToad.PdfPig.Graphics
             var patternColor = patternColorSpace.GetColor(patternName);
             var underlyingColorSpace = GetUnderlyingColorSpace(patternColorSpace, patternColor, operands);
 
-            return new PdfColorInfo(underlyingColorSpace, operands,
-                underlyingColorSpace is null ? null : Convert(underlyingColorSpace, operands, intent),
-                patternColor, intent);
+            if (underlyingColorSpace is null)
+            {
+                // No underlying colour at all - a coloured tiling pattern or a shading pattern - so there is
+                // nothing for an output intent to manage and nothing to reconvert on a later intent either.
+                return new PdfColorInfo(null, operands, null, patternColor, intent);
+            }
+
+            var underlyingColor = Convert(underlyingColorSpace, operands, intent);
+
+            // Retained only when it applied, as on FromOperands: the field means "the profile this colour
+            // was managed through", so a colour space the profile cannot express keeps null.
+            if (outputIntentProfile is not null &&
+                TryManage(underlyingColorSpace, underlyingColor, outputIntentProfile, intent, out var managed))
+            {
+                return new PdfColorInfo(underlyingColorSpace, operands, managed, patternColor, intent,
+                    outputIntentProfile);
+            }
+
+            return new PdfColorInfo(underlyingColorSpace, operands, underlyingColor, patternColor, intent);
         }
 
         private static ColorSpace GetEffectiveDeviceType(ColorSpaceDetails colorSpace)

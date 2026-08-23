@@ -111,13 +111,12 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The current active stroking color for paths.
         /// </summary>
-        /// <exception cref="NotSupportedException">Always, when set. See <see cref="PdfColorInfo"/>.</exception>
-        public IColor CurrentStrokingColor
+        public IColor? CurrentStrokingColor
         {
             get
             {
                 stroking = stroking.Resolved(RenderingIntent);
-                return stroking.Color!;
+                return stroking.Color;
             }
 
             [Obsolete(ColorSetterRemoved, error: true)]
@@ -127,13 +126,12 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The current active non-stroking color for text and fill.
         /// </summary>
-        /// <exception cref="NotSupportedException">Always, when set. See <see cref="PdfColorInfo"/>.</exception>
-        public IColor CurrentNonStrokingColor
+        public IColor? CurrentNonStrokingColor
         {
             get
             {
                 nonStroking = nonStroking.Resolved(RenderingIntent);
-                return nonStroking.Color!;
+                return nonStroking.Color;
             }
 
             [Obsolete(ColorSetterRemoved, error: true)]
@@ -208,8 +206,19 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="operands">The component values accompanying the name, in the pattern's underlying colour space, or empty
         /// when there are none. Stored by reference, the caller must not mutate the array afterward.</param>
         public void SetStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName, double[]? operands)
+            => SetStrokingPatternColor(patternColorSpace, patternName, operands, null);
+
+        /// <summary>
+        /// As <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[])"/>, additionally
+        /// colour-managing an uncoloured tiling pattern's underlying colour through
+        /// <paramref name="outputIntentProfile"/> (14.11.5 / 8.6.5.7), exactly as
+        /// <see cref="SetStrokingColor(ColorSpaceDetails, double[], IIccProfile)"/> does for an ordinary colour.
+        /// </summary>
+        public void SetStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName,
+            double[]? operands, IIccProfile? outputIntentProfile)
         {
-            stroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent);
+            stroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent,
+                outputIntentProfile);
         }
 
         /// <summary>
@@ -220,8 +229,17 @@ namespace UglyToad.PdfPig.Graphics
         /// <param name="operands">The component values accompanying the name, in the pattern's underlying colour space, or empty
         /// when there are none. Stored by reference, the caller must not mutate the array afterward.</param>
         public void SetNonStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName, double[]? operands)
+            => SetNonStrokingPatternColor(patternColorSpace, patternName, operands, null);
+
+        /// <summary>
+        /// The non-stroking counterpart of
+        /// <see cref="SetStrokingPatternColor(PatternColorSpaceDetails, NameToken, double[], IIccProfile)"/>.
+        /// </summary>
+        public void SetNonStrokingPatternColor(PatternColorSpaceDetails patternColorSpace, NameToken patternName,
+            double[]? operands, IIccProfile? outputIntentProfile)
         {
-            nonStroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent);
+            nonStroking = PdfColorInfo.ForPattern(patternColorSpace, patternName, operands, RenderingIntent,
+                outputIntentProfile);
         }
 
         /// <summary>
