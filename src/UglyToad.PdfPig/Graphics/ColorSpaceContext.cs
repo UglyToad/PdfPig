@@ -1,7 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
+    using System.Diagnostics;
     using Colors;
+    using Colors.Icc;
     using Content;
     using Tokens;
 
@@ -28,7 +30,11 @@
                 return;
             }
 
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
+            var state = currentStateFunc();
+
+            // No operands: the colour space derives its own initial colour. A Pattern colour space has none
+            // and answers null, which this has always stored as-is; scn supplies the colour for that space.
+            state.SetStrokingColor(CurrentStrokingColorSpace, null, GetOutputIntentIccProfile(state));
         }
 
         public void SetStrokingColor(double[] operands, NameToken? patternName)
@@ -38,14 +44,19 @@
                 return;
             }
 
-            if (patternName is not null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
-                currentStateFunc().CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
-                // TODO - use operands values for Uncoloured Tiling Patterns
+                Debug.Assert(CurrentStrokingColorSpace.Type == ColorSpace.Pattern);
+
+                // The operands travel with the pattern: an uncoloured tiling pattern (/PaintType 2) paints
+                // its cell in the colour they select from the underlying colour space (8.7.3.3), read back
+                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor.
+                state.SetStrokingPatternColor(patternCs, patternName, operands);
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands);
+                state.SetStrokingColor(CurrentStrokingColorSpace, operands, GetOutputIntentIccProfile(state));
             }
         }
 
@@ -72,7 +83,11 @@
                 return;
             }
 
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
+            var state = currentStateFunc();
+
+            // No operands: the colour space derives its own initial colour. A Pattern colour space has none
+            // and answers null, which this has always stored as-is; scn supplies the colour for that space.
+            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null, GetOutputIntentIccProfile(state));
         }
 
         public void SetNonStrokingColor(double[] operands, NameToken? patternName)
@@ -82,14 +97,17 @@
                 return;
             }
 
-            if (patternName is not null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentNonStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
-                currentStateFunc().CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
-                // TODO - use operands values for Uncoloured Tiling Patterns
+                Debug.Assert(CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern);
+
+                // See the stroking counterpart: the operands select the uncoloured tiling pattern's colour.
+                state.SetNonStrokingPatternColor(patternCs, patternName, operands);
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands);
+                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands, GetOutputIntentIccProfile(state));
             }
         }
 
@@ -119,18 +137,57 @@
             var colorSpace = resourceStore.GetDeviceColorSpaceDetails(deviceColorSpace);
             var state = currentStateFunc();
 
-            IColor color = colorSpace.GetColor(values);
-
             if (stroking)
             {
                 CurrentStrokingColorSpace = colorSpace;
-                state.CurrentStrokingColor = color;
             }
             else
             {
                 CurrentNonStrokingColorSpace = colorSpace;
-                state.CurrentNonStrokingColor = color;
             }
+
+            var outputIntentProfile = GetOutputIntentIccProfile(state);
+
+            // A managed colour varies by intent even when its colour space does not, because the profile
+            // resolves its transform per intent - so the operands have to be kept in that case too.
+            if (colorSpace.RenderingIntentAffectsOutput || outputIntentProfile is not null)
+            {
+                // Paying the cost of allocating operands only here: these are the cases where the graphics
+                // state keeps them, to reconvert from if the intent moves before the mark is made.
+                double[] operands = values.ToArray();
+
+                if (stroking)
+                {
+                    state.SetStrokingColor(colorSpace, operands, outputIntentProfile);
+                }
+                else
+                {
+                    state.SetNonStrokingColor(colorSpace, operands, outputIntentProfile);
+                }
+
+                return;
+            }
+
+            // The intent is still passed, even though it cannot affect the output; it is unconditionally
+            // the right value here.
+            var color = colorSpace.GetColor(values, state.RenderingIntent);
+
+            if (stroking)
+            {
+                state.SetStrokingColor(color);
+            }
+            else
+            {
+                state.SetNonStrokingColor(color);
+            }
+        }
+
+        private IIccProfile? GetOutputIntentIccProfile(CurrentGraphicsState state)
+        {
+            var iccService = resourceStore.IccProfileService;
+            return iccService?.UseOutputIntent == true ?
+                OutputIntentColorManagement.GetDeviceProfile(state.OutputIntents, iccService)
+                : null;
         }
 
         public IColorSpaceContext DeepClone()

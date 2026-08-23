@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-
+    
     using Colors;
     using Content;
     using Core;
@@ -136,6 +136,7 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
+            DictionaryToken? pageDictionary,
             ParsingOptions parsingOptions)
         {
             this.PageNumber = pageNumber;
@@ -151,7 +152,8 @@
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox, rotation),
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
+                OutputIntents = resourceStore.GetPageOutputIntents(pageDictionary)
             });
         }
 
@@ -1022,7 +1024,8 @@
                 FilterProvider,
                 PdfScanner,
                 GetCurrentState().RenderingIntent,
-                ResourceStore);
+                ResourceStore,
+                ParsingOptions);
 
             RenderInlineImage(image);
 
