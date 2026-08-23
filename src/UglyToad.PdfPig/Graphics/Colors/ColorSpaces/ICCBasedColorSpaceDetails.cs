@@ -26,7 +26,7 @@
         public override int NumberOfColorComponents { get; }
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        public override int BaseNumberOfColorComponents => AlternateColorSpace.BaseNumberOfColorComponents;
 
         /// <summary>
         /// An alternate color space that can be used in case the one specified in the stream data is not

@@ -75,7 +75,7 @@
             AlternateColorSpace = alternateColorSpaceDetails;
             Attributes = attributes;
             TintFunction = tintFunction;
-            BaseType = AlternateColorSpace.Type;
+            BaseType = AlternateColorSpace.BaseType;
 
 #if NET9_0_OR_GREATER
             lookup = cache.GetAlternateLookup<ReadOnlySpan<double>>();
