@@ -7,7 +7,8 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
     /// <summary>
     /// <see cref="ColorSpaceDetails.BaseNumberOfColorComponents"/> must report the component count of the
     /// space the samples are ultimately expressed in, i.e. the count that <see cref="ColorSpaceDetails.Process"/>
-    /// (and therefore <see cref="ColorSpaceDetails.Transform"/>) actually produces per sample.
+    /// (and therefore <see cref="ColorSpaceDetails.Transform"/>) actually produces per sample, and
+    /// <see cref="ColorSpaceDetails.BaseType"/> must name that same space, resolved to the same depth.
     /// </summary>
     public class NestedColorSpaceComponentCountTests
     {
@@ -79,16 +80,32 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         }
 
         [Fact]
-        public void Separation_OverIccBased_SetsBaseTypeToIccBased()
+        public void Separation_OverIccBased_ResolvesToTheDeviceAlternate()
         {
+            // The ICCBased space is really converting through DeviceCMYK, which is what
+            // BaseNumberOfColorComponents has always said, and what BaseType now says too. Naming the
+            // intermediate ICCBased here would describe a step the colours do not actually take.
             var icc = new ICCBasedColorSpaceDetails(4, DeviceCmykColorSpaceDetails.Instance, null, null);
             var separation = new SeparationColorSpaceDetails(
                 NameToken.Create("Spot"),
                 icc,
                 Tint([0, 0, 0, 0], [0, 0, 0, 1]));
 
-            Assert.Equal(ColorSpace.ICCBased, separation.BaseType);
+            Assert.Equal(ColorSpace.DeviceCMYK, separation.BaseType);
             Assert.Equal(4, separation.BaseNumberOfColorComponents);
+        }
+
+        [Fact]
+        public void IccBased_OverASeparation_ReportsTheSeparationsOwnBaseWidth()
+        {
+            // The alternate is what Transform delegates to, so a 3 component ICCBased over a Separation
+            // that expands to CMYK still writes 4 bytes per sample. Reporting NumberOfColorComponents
+            // here sized every downstream buffer to 3 and ran the write off the end.
+            var icc = new ICCBasedColorSpaceDetails(3, SeparationOverCmyk(), null, null);
+
+            Assert.Equal(3, icc.NumberOfColorComponents);
+            Assert.Equal(4, icc.BaseNumberOfColorComponents);
+            Assert.Equal(ColorSpace.DeviceCMYK, icc.BaseType);
         }
 
         [Fact]
@@ -207,7 +224,10 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
 
             Assert.Equal(1, indexed.NumberOfColorComponents);
             Assert.Equal(4, indexed.BaseNumberOfColorComponents);
-            Assert.Equal(ColorSpace.Separation, indexed.BaseType);
+
+            // Through both Separations to the device space underneath, matching the component count
+            // beside it rather than naming the first link in the chain.
+            Assert.Equal(ColorSpace.DeviceCMYK, indexed.BaseType);
         }
     }
 }

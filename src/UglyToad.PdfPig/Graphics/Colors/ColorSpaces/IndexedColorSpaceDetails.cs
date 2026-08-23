@@ -57,7 +57,7 @@
             BaseColorSpace = baseColorSpaceDetails ?? throw new ArgumentNullException(nameof(baseColorSpaceDetails));
             HiVal = hiVal;
             this.colorTable = colorTable;
-            BaseType = baseColorSpaceDetails.Type;
+            BaseType = baseColorSpaceDetails.BaseType;
         }
 
         /// <summary>
@@ -165,83 +165,32 @@
                 }
             }
 
-            switch (BaseType)
+            int components = BaseColorSpace.NumberOfColorComponents;
+
+            if (components == 1)
             {
-                case ColorSpace.DeviceRGB:
-                case ColorSpace.CalRGB:
-                case ColorSpace.Lab:
-                    {
-                        Span<byte> result = new byte[input.Length * 3];
-                        var i = 0;
-                        foreach (var x in input)
-                        {
-                            for (var j = 0; j < 3; ++j)
-                            {
-                                result[i++] = ColorTable[x * 3 + j];
-                            }
-                        }
+                // One index byte becomes one colour byte, so the lookup is done in place.
+                for (var i = 0; i < input.Length; ++i)
+                {
+                    ref byte b = ref input[i];
+                    b = ColorTable[b];
+                }
 
-                        return result;
-                    }
-
-                case ColorSpace.DeviceCMYK:
-                    {
-                        Span<byte> result = new byte[input.Length * 4];
-                        var i = 0;
-                        foreach (var x in input)
-                        {
-                            for (var j = 0; j < 4; ++j)
-                            {
-                                result[i++] = ColorTable[x * 4 + j];
-                            }
-                        }
-
-                        return result;
-                    }
-
-                case ColorSpace.DeviceGray:
-                case ColorSpace.CalGray:
-                case ColorSpace.Separation:
-                    {
-                        for (var i = 0; i < input.Length; ++i)
-                        {
-                            ref byte b = ref input[i];
-                            b = ColorTable[b];
-                        }
-
-                        return input;
-                    }
-
-                case ColorSpace.DeviceN:
-                case ColorSpace.ICCBased:
-                    {
-                        int i = 0;
-                        if (BaseColorSpace.NumberOfColorComponents == 1)
-                        {
-                            // In place
-                            for (i = 0; i < input.Length; ++i)
-                            {
-                                ref byte b = ref input[i];
-                                b = ColorTable[b];
-                            }
-
-                            return input;
-                        }
-
-                        Span<byte> result = new byte[input.Length * BaseColorSpace.NumberOfColorComponents];
-                        foreach (var x in input)
-                        {
-                            for (var j = 0; j < BaseColorSpace.NumberOfColorComponents; ++j)
-                            {
-                                result[i++] = ColorTable[x * BaseColorSpace.NumberOfColorComponents + j];
-                            }
-                        }
-
-                        return result;
-                    }
+                return input;
             }
 
-            return input;
+            Span<byte> result = new byte[input.Length * components];
+            int index = 0;
+
+            foreach (var x in input)
+            {
+                for (var j = 0; j < components; ++j)
+                {
+                    result[index++] = ColorTable[x * components + j];
+                }
+            }
+
+            return result;
         }
 
         /// <inheritdoc/>
