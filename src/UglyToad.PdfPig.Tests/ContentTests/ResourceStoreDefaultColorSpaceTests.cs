@@ -1,21 +1,18 @@
 ﻿namespace UglyToad.PdfPig.Tests.ContentTests
 {
+    using System;
     using System.Collections.Generic;
     using PdfPig.Content;
+    using PdfPig.Graphics;
     using PdfPig.Graphics.Colors;
-    using PdfPig.PdfFonts;
+    using PdfPig.Logging;
     using PdfPig.Tokens;
     using UglyToad.PdfPig.Tests.Tokens;
     using Xunit;
 
     public class ResourceStoreDefaultColorSpaceTests
     {
-        private sealed class NoOpFontFactory : IFontFactory
-        {
-            public IFont Get(DictionaryToken dictionary) => null!;
-        }
-
-        private static ResourceStore BuildStore()
+        private static ResourceStore BuildStore(ILog? log = null)
         {
             return new ResourceStore(
                 new TestPdfTokenScanner(),
@@ -25,7 +22,26 @@
                 {
                     UseLenientParsing = true,
                     SkipMissingFonts = true,
+                    Logger = log ?? new NoOpLog(),
                 });
+        }
+
+        /// <summary>
+        /// Counts what the resource store reports, so a test can hold it to reporting a problem once.
+        /// </summary>
+        private sealed class CountingLog : ILog
+        {
+            public int WarnCount { get; private set; }
+
+            public void Warn(string message) => WarnCount++;
+
+            public void Debug(string message) { }
+
+            public void Debug(string message, Exception ex) { }
+
+            public void Error(string message) { }
+
+            public void Error(string message, Exception ex) { }
         }
 
         [Fact]
@@ -317,6 +333,300 @@
             store.LoadResourceDictionary(resources);
 
             Assert.Same(DeviceRgbColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB));
+        }
+
+        /// <summary>
+        /// A default of a permitted family that nonetheless fails to parse. The family check in
+        /// <c>TryGetDefaultSubstitute</c> looks only at the name, so these get through it and only the parse
+        /// discovers they are unusable.
+        /// </summary>
+        public static IEnumerable<object[]> UnparseableDefaults()
+        {
+            // /N is required on an ICCBased stream; without it the parse yields UnsupportedColorSpaceDetails.
+            yield return
+            [
+                new ArrayToken(new IToken[]
+                {
+                    NameToken.Iccbased,
+                    new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>()), new byte[] { 0x01 })
+                })
+            ];
+
+            // 8.6.5.5 needs at least two elements, the name and the stream.
+            yield return [new ArrayToken(new IToken[] { NameToken.Iccbased })];
+
+            // A Separation array is four elements; three cannot be interpreted.
+            yield return
+            [
+                new ArrayToken(new IToken[] { NameToken.Separation, NameToken.Create("Spot"), NameToken.Devicegray })
+            ];
+        }
+
+        private static DictionaryToken ResourcesWithDefault(NameToken defaultName, IToken definition)
+        {
+            return new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                {
+                    NameToken.ColorSpace,
+                    new DictionaryToken(new Dictionary<NameToken, IToken> { { defaultName, definition } })
+                },
+            });
+        }
+
+        private static ResourceStore StoreWithDefault(NameToken defaultName, IToken definition, ILog? log = null)
+        {
+            var store = BuildStore(log);
+            store.LoadResourceDictionary(ResourcesWithDefault(defaultName, definition));
+            return store;
+        }
+
+        [Theory]
+        [MemberData(nameof(UnparseableDefaults))]
+        public void GetDeviceColorSpaceDetails_WithAnUnparseableDefaultRgb_ReturnsDeviceColorSpace(IToken definition)
+        {
+            // Handing back UnsupportedColorSpaceDetails would make the next rg throw
+            // InvalidOperationException from GetColor, and nothing catches a colour operator, so the whole
+            // page is lost. Losing only the substitution is the proportionate answer, and matches what a
+            // default of a forbidden family already does.
+            var store = StoreWithDefault(NameToken.DefaultRgb, definition);
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB));
+        }
+
+        [Theory]
+        [MemberData(nameof(UnparseableDefaults))]
+        public void GetColorSpaceDetails_WithAnUnparseableDefaultRgb_ReturnsDeviceColorSpace(IToken definition)
+        {
+            // The cs/CS operator resolves substitutes through a second site (GetColorSpaceDetailsInternal),
+            // which has to answer the same way, otherwise selecting /DeviceRGB by name would leave the
+            // colour space Unsupported and silently turn every following sc/scn into a no-op.
+            var store = StoreWithDefault(NameToken.DefaultRgb, definition);
+
+            var details = store.GetColorSpaceDetails(
+                NameToken.Devicergb,
+                new DictionaryToken(new Dictionary<NameToken, IToken>()));
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details);
+        }
+
+        [Fact]
+        public void GetDeviceColorSpaceDetails_WithAnUnparseableDefaultGray_ReturnsDeviceColorSpace()
+        {
+            var store = StoreWithDefault(NameToken.DefaultGray, new ArrayToken(new IToken[] { NameToken.Iccbased }));
+
+            Assert.Same(DeviceGrayColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceGray));
+        }
+
+        [Fact]
+        public void GetDeviceColorSpaceDetails_WithAnUnparseableDefaultCmyk_ReturnsDeviceColorSpace()
+        {
+            var store = StoreWithDefault(NameToken.DefaultCmyk, new ArrayToken(new IToken[] { NameToken.Iccbased }));
+
+            Assert.Same(DeviceCmykColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceCMYK));
+        }
+
+        [Fact]
+        public void AParseableDefaultIsStillSubstituted()
+        {
+            // The no-regression guard: dropping unusable defaults must not drop usable ones.
+            var calRgb = new ArrayToken(new IToken[]
+            {
+                NameToken.Calrgb,
+                new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    {
+                        NameToken.WhitePoint,
+                        new ArrayToken(new IToken[]
+                        {
+                            new NumericToken(0.9505), new NumericToken(1.0), new NumericToken(1.089)
+                        })
+                    }
+                })
+            });
+
+            var store = StoreWithDefault(NameToken.DefaultRgb, calRgb);
+
+            Assert.Equal(ColorSpace.CalRGB, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB).Type);
+        }
+
+        /// <summary>
+        /// Defaults that parse perfectly well but take a number of components the device operator does not
+        /// supply. Nothing is malformed here - <c>/DefaultRGB /DeviceGray</c> is one valid name, and an
+        /// <c>/ICCBased</c> with <c>/N 1</c> is a valid grey profile - so the family check upstream, which
+        /// sees only the name, cannot tell.
+        /// </summary>
+        public static IEnumerable<object[]> MismatchedWidthDefaultsForRgb()
+        {
+            yield return [NameToken.Devicegray];                                        // 1 component
+            yield return [NameToken.Devicecmyk];                                        // 4 components
+            yield return [IccBased(1)];
+            yield return [IccBased(4)];
+        }
+
+        private static ArrayToken IccBased(int numberOfComponents)
+        {
+            var stream = new StreamToken(
+                new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.N, new NumericToken(numberOfComponents) }
+                }),
+                new byte[] { 0x01 });
+
+            return new ArrayToken(new IToken[] { NameToken.Iccbased, stream });
+        }
+
+        [Theory]
+        [MemberData(nameof(MismatchedWidthDefaultsForRgb))]
+        public void GetDeviceColorSpaceDetails_WithAMismatchedWidthDefaultRgb_ReturnsDeviceColorSpace(IToken definition)
+        {
+            // The substitute receives the device operator's operands verbatim, so a three-operand rg against
+            // a one- or four-component default throws ArgumentException from GetColor. Same uncaught path,
+            // same lost page as an unparseable default, and from a file that is not even malformed.
+            var store = StoreWithDefault(NameToken.DefaultRgb, definition);
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB));
+        }
+
+        [Theory]
+        [MemberData(nameof(MismatchedWidthDefaultsForRgb))]
+        public void GetColorSpaceDetails_WithAMismatchedWidthDefaultRgb_ReturnsDeviceColorSpace(IToken definition)
+        {
+            var store = StoreWithDefault(NameToken.DefaultRgb, definition);
+
+            var details = store.GetColorSpaceDetails(
+                NameToken.Devicergb,
+                new DictionaryToken(new Dictionary<NameToken, IToken>()));
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, details);
+        }
+
+        [Fact]
+        public void GetDeviceColorSpaceDetails_WithAThreeComponentDefaultGray_ReturnsDeviceColorSpace()
+        {
+            // The mismatch is judged against the space being substituted for, not against RGB.
+            var store = StoreWithDefault(NameToken.DefaultGray, IccBased(3));
+
+            Assert.Same(DeviceGrayColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceGray));
+        }
+
+        [Fact]
+        public void ADefaultOfTheRightWidthIsStillSubstituted()
+        {
+            // The control for the width check, in the same family as the mismatched cases: only the count
+            // differs between this and the /N 1 and /N 4 cases above.
+            var store = StoreWithDefault(NameToken.DefaultRgb, IccBased(3));
+
+            Assert.Equal(ColorSpace.ICCBased, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB).Type);
+        }
+
+        [Theory]
+        [MemberData(nameof(MismatchedWidthDefaultsForRgb))]
+        public void TheRgOperatorSurvivesAMismatchedWidthDefaultRgb(IToken definition)
+        {
+            var store = StoreWithDefault(NameToken.DefaultRgb, definition);
+
+            var state = new CurrentGraphicsState();
+            var context = new ColorSpaceContext(() => state, store);
+            state.ColorSpaceContext = context;
+
+            var exception = Record.Exception(() => context.SetNonStrokingColorRgb(0.25, 0.5, 0.75));
+
+            Assert.Null(exception);
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, context.CurrentNonStrokingColorSpace);
+        }
+
+        [Theory]
+        [MemberData(nameof(UnparseableDefaults))]
+        public void TheRgOperatorSurvivesAnUnparseableDefaultRgb(IToken definition)
+        {
+            // What the guard is actually for. Nothing catches an exception from a colour operator
+            // (BaseStreamProcessor.ProcessOperations runs them straight) so an unusable default used to cost
+            // the whole page, in text extraction as much as in rendering. The operator now behaves as though
+            // no default had been declared.
+            var store = StoreWithDefault(NameToken.DefaultRgb, definition);
+
+            var state = new CurrentGraphicsState();
+            var context = new ColorSpaceContext(() => state, store);
+            state.ColorSpaceContext = context;
+
+            var exception = Record.Exception(() => context.SetNonStrokingColorRgb(0.25, 0.5, 0.75));
+
+            Assert.Null(exception);
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, context.CurrentNonStrokingColorSpace);
+
+            var (r, g, b) = state.CurrentNonStrokingColor.ToRGBValues();
+            Assert.Equal(0.25, r);
+            Assert.Equal(0.5, g);
+            Assert.Equal(0.75, b);
+        }
+
+        [Fact]
+        public void AnUnusableDefaultIsReportedOnceHoweverManyColourOperatorsSelectIt()
+        {
+            // A colour operator reaches the substitute through GetDeviceColorSpaceDetails, which holds no
+            // cache of its own, and a page can set the same device colour thousands of times. Diagnosing
+            // the default once per operator would bury the reader in identical warnings.
+            var log = new CountingLog();
+            var store = StoreWithDefault(NameToken.DefaultRgb, IccBased(1), log);
+
+            var state = new CurrentGraphicsState();
+            var context = new ColorSpaceContext(() => state, store);
+            state.ColorSpaceContext = context;
+
+            for (var i = 0; i < 50; i++)
+            {
+                context.SetNonStrokingColorRgb(0.25, 0.5, 0.75);
+
+                Assert.Same(DeviceRgbColorSpaceDetails.Instance, context.CurrentNonStrokingColorSpace);
+            }
+
+            Assert.Equal(1, log.WarnCount);
+        }
+
+        [Fact]
+        public void AnUnusableDefaultIsReportedOnceHoweverManyTimesTheDeviceSpaceIsNamed()
+        {
+            // The other uncached route: `cs` passes no image dictionary either, so it lands in
+            // GetColorSpaceDetailsInternal with an empty one and misses loadedColorSpaceDetailsCache.
+            var log = new CountingLog();
+            var store = StoreWithDefault(NameToken.DefaultRgb, new ArrayToken(new IToken[] { NameToken.Iccbased }), log);
+
+            for (var i = 0; i < 50; i++)
+            {
+                Assert.Same(DeviceRgbColorSpaceDetails.Instance, store.GetColorSpaceDetails(NameToken.Devicergb, null));
+            }
+
+            Assert.Equal(1, log.WarnCount);
+        }
+
+        [Fact]
+        public void AnUnusableDefaultIsReportedAgainAfterTheResourcesChange()
+        {
+            // The verdict is remembered in a cache that both LoadResourceDictionary and
+            // UnloadResourceDictionary clear. Keeping it past that would silence the same problem in a
+            // resource dictionary that has not been looked at yet - and, worse, could answer for a
+            // /DefaultRGB that is not the one just rejected.
+            var log = new CountingLog();
+            var store = StoreWithDefault(NameToken.DefaultRgb, IccBased(4), log);
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB));
+            Assert.Equal(1, log.WarnCount);
+
+            store.LoadResourceDictionary(ResourcesWithDefault(NameToken.DefaultRgb, IccBased(4)));
+
+            Assert.Same(DeviceRgbColorSpaceDetails.Instance, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB));
+            Assert.Equal(2, log.WarnCount);
+        }
+
+        [Fact]
+        public void AParseableDefaultIsNotReported()
+        {
+            // The counterpart to the tests above: silence is only earned by a default that is used.
+            var log = new CountingLog();
+            var store = StoreWithDefault(NameToken.DefaultRgb, IccBased(3), log);
+
+            Assert.Equal(ColorSpace.ICCBased, store.GetDeviceColorSpaceDetails(ColorSpace.DeviceRGB).Type);
+            Assert.Equal(0, log.WarnCount);
         }
     }
 }

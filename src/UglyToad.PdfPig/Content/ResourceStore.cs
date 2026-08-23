@@ -481,7 +481,7 @@
             {
                 if (TryGetDefaultSubstitute(colorSpaceActual, out NameToken? substituteName))
                 {
-                    return ResolveDefaultSubstitute(substituteName, dictionary);
+                    return ResolveDefaultSubstitute(colorSpaceActual, substituteName, dictionary);
                 }
 
                 return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
@@ -519,9 +519,14 @@
             // singleton is returned.
             if (TryGetDefaultSubstitute(deviceColorSpace, out NameToken? substituteName))
             {
-                return ResolveDefaultSubstitute(substituteName, null);
+                return ResolveDefaultSubstitute(deviceColorSpace, substituteName, null);
             }
 
+            return GetDeviceColorSpaceSingleton(deviceColorSpace);
+        }
+
+        private static ColorSpaceDetails GetDeviceColorSpaceSingleton(ColorSpace deviceColorSpace)
+        {
             return deviceColorSpace switch
             {
                 ColorSpace.DeviceGray => DeviceGrayColorSpaceDetails.Instance,
@@ -533,17 +538,53 @@
             };
         }
 
-        private ColorSpaceDetails ResolveDefaultSubstitute(NameToken substituteName, DictionaryToken? dictionary)
+        private ColorSpaceDetails ResolveDefaultSubstitute(ColorSpace requested, NameToken substituteName,
+            DictionaryToken? dictionary)
         {
+            ColorSpaceDetails substitute;
+
             isResolvingDefaultSubstitute = true;
             try
             {
-                return GetColorSpaceDetails(substituteName, dictionary);
+                substitute = GetColorSpaceDetails(substituteName, dictionary);
             }
             finally
             {
                 isResolvingDefaultSubstitute = false;
             }
+
+            ColorSpaceDetails device = GetDeviceColorSpaceSingleton(requested);
+
+            string? rejection;
+
+            if (substitute is UnsupportedColorSpaceDetails or PatternColorSpaceDetails)
+            {
+                // If substitute failed to parse, then we revert back to device cs (G/RGB/CMYK).
+                // Pattern is also substituted here because 8.6.5.6 forbids it as a default, and its
+                // NumberOfColorComponents throws.
+                rejection = "cannot be used as a default colour space";
+            }
+            else if (substitute.NumberOfColorComponents != device.NumberOfColorComponents)
+            {
+                rejection = $"takes {substitute.NumberOfColorComponents} components where {requested} has " +
+                            $"{device.NumberOfColorComponents}";
+            }
+            else
+            {
+                return substitute;
+            }
+
+            parsingOptions.Logger.Warn($"The {substituteName} colour space in the current resources {rejection}; " +
+                                       $"ignoring it and using {requested} itself instead.");
+
+            // Record the verdict under the default's own name, where the substitute's parse is already
+            // cached for the current resource dictionary.
+            if (dictionary is null || dictionary.Data.Count == 0)
+            {
+                loadedNamedColorSpaceDetails[substituteName] = device;
+            }
+
+            return device;
         }
 
         private bool TryGetDefaultSubstitute(ColorSpace requested, [NotNullWhen(true)] out NameToken? substituteName)
