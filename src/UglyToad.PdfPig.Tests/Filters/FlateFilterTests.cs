@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
+    using System.Text;
     using PdfPig.Core;
     using PdfPig.Filters;
     using PdfPig.Tokens;
@@ -38,6 +39,51 @@
             var text = OtherEncodings.BytesAsLatin1String(result.ToArray());
 
             Assert.StartsWith("q", text);
+        }
+
+        [Fact]
+        public void DataThatIsNoDeflateStreamDoesNotComeBackAsThoughItWereDecoded()
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+            var input = OtherEncodings.StringAsLatin1Bytes("This is not a deflate stream.");
+
+            var decoded = filter.Decode(input, parameters, TestFilterProvider.Instance, 0);
+
+            // The input used to be handed straight back, which a caller cannot tell apart
+            // from content that happens to look like that.
+            Assert.NotEqual(input, decoded.ToArray());
+        }
+
+        [Fact]
+        public void TruncatedStreamKeepsWhatInflated()
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            // Comfortably more than one deflate block: the inflater of .NET Framework
+            // hands over completed blocks only, so a stream small enough to be a single
+            // block yields nothing there while .NET yields a prefix of it.
+            var content = new StringBuilder();
+            for (var i = 0; content.Length < 200000; i++)
+            {
+                content.Append("Line ").Append(i).Append(" of a document spanning several blocks.\n");
+            }
+
+            var original = OtherEncodings.StringAsLatin1Bytes(content.ToString());
+
+            byte[] compressed;
+            using (var inputStream = new MemoryStream(original))
+            {
+                compressed = filter.Encode(inputStream, parameters);
+            }
+
+            var half = new byte[compressed.Length / 2];
+            Array.Copy(compressed, half, half.Length);
+
+            var decoded = filter.Decode(half, parameters, TestFilterProvider.Instance, 0).ToArray();
+
+            Assert.NotEmpty(decoded);
+            Assert.True(decoded.Length < original.Length, "a truncated stream cannot yield everything");
+            Assert.Equal(original.AsSpan(0, decoded.Length).ToArray(), decoded);
         }
     }
 }

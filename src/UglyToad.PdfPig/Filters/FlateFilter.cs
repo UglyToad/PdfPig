@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using Fonts;
+    using System.Buffers;
     using System;
     using System.IO;
     using System.IO.Compression;
@@ -24,6 +24,9 @@
         private const int DefaultColors = 1;
         private const int DefaultBitsPerComponent = 8;
         private const int DefaultColumns = 1;
+
+        /// <summary>How much is inflated per read; a damaged stream costs at most one block.</summary>
+        private const int BlockLength = 8192;
 
         private const byte Deflate32KbWindow = 120;
         private const byte ChecksumBits = 1;
@@ -65,21 +68,50 @@
             memoryStream.ReadByte();
             memoryStream.ReadByte();
 
-            try
-            {
-                using var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress);
-                using var output = new MemoryStream((int)(input.Length * 1.5));
-                using var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns);
-                
-                deflate.CopyTo(f);
-                f.Flush();
+            using var output = new MemoryStream((int)(input.Length * 1.5));
 
-                return output.AsMemory();
-            }
-            catch (InvalidDataException ex)
+            using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+            using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
             {
-                throw new CorruptCompressedDataException("Invalid Flate compressed stream encountered", ex);
+                // Copied a block at a time rather than with CopyTo, because a damaged
+                // stream throws out of the read and CopyTo would discard the whole buffer
+                // it was filling. Keeping each block that did inflate is what PDFBox's
+                // FlateFilterDecoderStream does, and it is worth a lot on a large stream.
+                var block = ArrayPool<byte>.Shared.Rent(BlockLength);
+
+                try
+                {
+                    while (true)
+                    {
+                        int read;
+
+                        try
+                        {
+                            read = deflate.Read(block, 0, block.Length);
+                        }
+                        catch (InvalidDataException)
+                        {
+                            // Damaged from here on; what came before still stands.
+                            break;
+                        }
+
+                        if (read == 0)
+                        {
+                            break;
+                        }
+
+                        f.Write(block, 0, read);
+                    }
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(block);
+                }
+
+                f.Flush();
             }
+
+            return output.AsMemory();
         }
 
         /// <summary>
