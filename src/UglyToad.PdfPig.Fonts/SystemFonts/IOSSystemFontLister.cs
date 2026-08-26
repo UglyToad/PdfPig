@@ -7,7 +7,17 @@
     {
         // Very early version, intended to help developing support for iOS
 
-        public IEnumerable<SystemFontRecord> GetAllFonts()
+        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts()
+        {
+            return GetAllFonts(null);
+        }
+
+        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts(IEnumerable<string> additionalDirectories)
+        {
+            return GetAllFonts(additionalDirectories);
+        }
+
+        private IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             yield break;
         }

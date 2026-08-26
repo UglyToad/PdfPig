@@ -6,30 +6,46 @@
 
     internal sealed class WindowsSystemFontLister : ISystemFontLister
     {
-        public IEnumerable<SystemFontRecord> GetAllFonts()
+        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts()
+        {
+            return GetAllFonts(null);
+        }
+
+        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts(IEnumerable<string> additionalDirectories)
+        {
+            return GetAllFonts(additionalDirectories);
+        }
+
+        private IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
-            var fonts = Path.Combine(winDir, "Fonts");
-
-            if (Directory.Exists(fonts))
+            var directories = new List<string>
             {
-                var files = Directory.GetFiles(fonts);
+                Path.Combine(winDir, "Fonts"),
+                Path.Combine(winDir, "PSFonts")
+            };
 
-                foreach (var file in files)
-                {
-                    if (SystemFontRecord.TryCreate(file, out var record))
-                    {
-                        yield return record;
-                    }
-                }
+
+            if (additionalDirectories != null)
+            {
+                directories.AddRange(additionalDirectories);
             }
 
-            var psFonts = Path.Combine(winDir, "PSFonts");
-
-            if (Directory.Exists(psFonts))
+            foreach (var directory in directories)
             {
-                var files = Directory.GetFiles(psFonts);
+                foreach (var record in GetForDirectory(directory))
+                {
+                    yield return record;
+                }
+            }
+        }
+
+        private IEnumerable<SystemFontRecord> GetForDirectory(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                var files = Directory.GetFiles(path);
 
                 foreach (var file in files)
                 {
