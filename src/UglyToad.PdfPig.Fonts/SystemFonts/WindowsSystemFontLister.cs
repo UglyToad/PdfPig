@@ -29,7 +29,7 @@
 
             if (Directory.Exists(psFonts))
             {
-                var files = Directory.GetFiles(fonts);
+                var files = Directory.GetFiles(psFonts);
 
                 foreach (var file in files)
                 {
