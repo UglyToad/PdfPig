@@ -117,6 +117,35 @@
             pageFactoryCache.Add(type, pageFactory);
         }
 
+        /// <exception cref="InvalidOperationException"></exception>
+        internal IPageFactory<TPage> GetPageFactory<TPage>()
+        {
+            Type type = typeof(TPage);
+            if (!pageFactoryCache.ContainsKey(type))
+            {
+                throw new InvalidOperationException($"Could not get page factory for page type '{type}' as it was not added.");
+            }
+
+            if (pageFactoryCache[type] is IPageFactory<TPage> pageFactory)
+            {
+                return pageFactory;
+            }
+
+            throw new InvalidOperationException($"Could not get page factory for page type '{type}' as it is not {typeof(IPageFactory<TPage>).FullName}.");
+        }
+
+        internal bool TryGetPageFactory<TPage>(out IPageFactory<TPage>? pageFactory)
+        {
+            if (pageFactoryCache.TryGetValue(typeof(TPage), out var f) && f is IPageFactory<TPage> pf)
+            {
+                pageFactory = pf;
+                return true;
+            }
+
+            pageFactory = null;
+            return false;
+        }
+
 #if NET
         internal void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>() where TPageFactory : IPageFactory<TPage>
 #else

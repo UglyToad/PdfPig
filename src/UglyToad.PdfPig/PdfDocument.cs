@@ -146,6 +146,23 @@
         }
 
         /// <summary>
+        /// Get a page factory instance.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
+        public IPageFactory<TPage> TryGetPageFactory<TPage>()
+        {
+            return pages.GetPageFactory<TPage>();
+        }
+
+        /// <summary>
+        /// Try get a page factory instance.
+        /// </summary>
+        public bool TryGetPageFactory<TPage>(out IPageFactory<TPage>? pageFactory)
+        {
+            return pages.TryGetPageFactory(out pageFactory);
+        }
+
+        /// <summary>
         /// Add a page factory.
         /// </summary>
 #if NET
