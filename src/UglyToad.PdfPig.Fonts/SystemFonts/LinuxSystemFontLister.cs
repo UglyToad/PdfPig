@@ -6,17 +6,7 @@
 
     internal sealed class LinuxSystemFontLister : ISystemFontLister
     {
-        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts()
-        {
-            return GetAllFonts(null);
-        }
-
-        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts(IEnumerable<string> additionalDirectories)
-        {
-            return GetAllFonts(additionalDirectories);
-        }
-
-        private IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
+        public IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             var directories = new List<string>
             {
@@ -26,7 +16,7 @@
                 "/usr/X11R6/lib/X11/fonts" // X
             };
 
-            if (additionalDirectories != null)
+            if (additionalDirectories is not null)
             {
                 directories.AddRange(additionalDirectories);
             }
