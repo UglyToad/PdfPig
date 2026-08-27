@@ -149,7 +149,7 @@
         /// Get a page factory instance.
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        public IPageFactory<TPage> TryGetPageFactory<TPage>()
+        public IPageFactory<TPage> GetPageFactory<TPage>()
         {
             return pages.GetPageFactory<TPage>();
         }
