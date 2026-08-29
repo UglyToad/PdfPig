@@ -41,6 +41,7 @@
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
+            var context = filterProvider as IFilterContext;
 
             try
             {
@@ -48,8 +49,7 @@
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                return Decompress(input, predictor, colors, bitsPerComponent, columns,
-                    filterProvider as IFilterContext);
+                return Decompress(input, predictor, colors, bitsPerComponent, columns, context);
             }
             catch (CorruptCompressedDataException)
             {
@@ -57,12 +57,30 @@
                 // answer they wanted rather than something to swallow.
                 throw;
             }
-            catch
+            catch (Exception exception)
             {
-                // ignored.
-            }
+                // This used to hand the compressed input back without a word. Nothing
+                // above can tell that apart from content, so a stream that failed to
+                // decode arrived at the checks looking like a document full of noise -
+                // and a defect in here looked the same, which is the more expensive
+                // half: the failure is invisible to a test run as well.
+                //
+                // Every other filter in this folder lets its exceptions out. This one
+                // keeps catching because it is the filter that meets damaged documents,
+                // but it now says so and returns nothing rather than the input, and it
+                // steps aside entirely for a caller who asked not to be lenient.
+                if (context?.UseLenientParsing == false)
+                {
+                    throw;
+                }
 
-            return input;
+                context?.Log.Error(
+                    $"FlateFilter: {exception.GetType().Name} while decoding, "
+                    + "no content recovered.",
+                    exception);
+
+                return Memory<byte>.Empty;
+            }
         }
 
         private static Memory<byte> Decompress(Memory<byte> input,

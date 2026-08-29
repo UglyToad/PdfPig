@@ -160,9 +160,47 @@
             Assert.Empty(log.Warnings);
         }
 
+        [Fact]
+        public void AFailureIsReportedAndYieldsNothingRatherThanTheInput()
+        {
+            // A predictor row wide enough to overflow the length of the buffer it is
+            // allocated from. Nothing here decodes, and the input must not come back
+            // dressed as content.
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                // The resolver only hands the parameters over when a filter is named.
+                { NameToken.Filter, NameToken.FlateDecode },
+                {
+                    NameToken.DecodeParms, new DictionaryToken(new Dictionary<NameToken, IToken>
+                    {
+                        { NameToken.Predictor, new NumericToken(12) },
+                        { NameToken.Colors, new NumericToken(32) },
+                        { NameToken.BitsPerComponent, new NumericToken(16) },
+                        { NameToken.Columns, new NumericToken(4194304) },
+                    })
+                },
+            });
+
+            byte[] compressed;
+            using (var inputStream = new MemoryStream(OtherEncodings.StringAsLatin1Bytes("content")))
+            {
+                compressed = filter.Encode(inputStream, new DictionaryToken(new Dictionary<NameToken, IToken>()));
+            }
+
+            var log = new RecordingLog();
+            var provider = new FilterProviderWithLookup(DefaultFilterProvider.Instance, log, true);
+
+            var decoded = filter.Decode(compressed, parameters, provider, 0);
+
+            Assert.NotEqual(compressed, decoded.ToArray());
+            Assert.Contains(log.Errors, x => x.StartsWith("FlateFilter:"));
+        }
+
         private sealed class RecordingLog : ILog
         {
             public List<string> Warnings { get; } = new List<string>();
+
+            public List<string> Errors { get; } = new List<string>();
 
             public void Debug(string message)
             {
@@ -174,13 +212,9 @@
 
             public void Warn(string message) => Warnings.Add(message);
 
-            public void Error(string message)
-            {
-            }
+            public void Error(string message) => Errors.Add(message);
 
-            public void Error(string message, Exception ex)
-            {
-            }
+            public void Error(string message, Exception ex) => Errors.Add(message);
         }
     }
 }
