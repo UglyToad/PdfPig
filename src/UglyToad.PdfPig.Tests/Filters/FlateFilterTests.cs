@@ -117,6 +117,49 @@
                 () => new FlateFilter().Decode(input, parameters, provider, 0));
         }
 
+        [Fact]
+        public void TruncationIsReportedToTheLog()
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            byte[] compressed;
+            using (var inputStream = new MemoryStream(OtherEncodings.StringAsLatin1Bytes(
+                       string.Concat(Enumerable.Repeat("a document that compresses. ", 4000)))))
+            {
+                compressed = filter.Encode(inputStream, parameters);
+            }
+
+            var half = new byte[compressed.Length / 2];
+            Array.Copy(compressed, half, half.Length);
+
+            var log = new RecordingLog();
+            var provider = new FilterProviderWithLookup(DefaultFilterProvider.Instance, log, true);
+
+            filter.Decode(half, parameters, provider, 0);
+
+            Assert.Contains(log.Warnings, x => x.Contains("ended without terminating"));
+        }
+
+        [Fact]
+        public void AnIntactStreamIsNotReported()
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            byte[] compressed;
+            using (var inputStream = new MemoryStream(OtherEncodings.StringAsLatin1Bytes(
+                       string.Concat(Enumerable.Repeat("a document that compresses. ", 4000)))))
+            {
+                compressed = filter.Encode(inputStream, parameters);
+            }
+
+            var log = new RecordingLog();
+            var provider = new FilterProviderWithLookup(DefaultFilterProvider.Instance, log, true);
+
+            filter.Decode(compressed, parameters, provider, 0);
+
+            Assert.Empty(log.Warnings);
+        }
+
         private sealed class RecordingLog : ILog
         {
             public List<string> Warnings { get; } = new List<string>();

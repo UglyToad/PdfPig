@@ -72,10 +72,8 @@
             int columns,
             IFilterContext? context)
         {
-            using var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input);
             // The first 2 bytes are the header which DeflateStream does not support.
-            memoryStream.ReadByte();
-            memoryStream.ReadByte();
+            using var memoryStream = new TailAwareStream(input, 2);
 
             using var output = new MemoryStream((int)(input.Length * 1.5));
 
@@ -129,7 +127,87 @@
                 f.Flush();
             }
 
-            return output.AsMemory();
+            // Read before anything asks the stream itself: where there is no predictor
+            // the wrapper above is the output stream, so it has just been disposed and
+            // its Length would raise.
+            var decoded = output.AsMemory();
+
+            if (memoryStream.ConsumedEverything)
+            {
+                // A deflate stream that ends properly stops at its final block and
+                // leaves whatever follows - the zlib checksum, normally - untouched.
+                // Nothing left over therefore means the data ran out before the
+                // inflater was done. Not conclusive: a producer that writes no
+                // checksum ends here too, which is why this only warns.
+                context?.Log.Warn(
+                    "FlateFilter: the compressed data ended without terminating, "
+                    + $"keeping the {decoded.Length} bytes that inflated.");
+            }
+
+            return decoded;
+        }
+
+        /// <summary>
+        /// A read only view over the input that serves the bulk in one go and the last
+        /// few bytes one at a time.
+        /// </summary>
+        /// <remarks>
+        /// Only so that <see cref="ConsumedEverything"/> means something.
+        /// <see cref="DeflateStream"/> reads ahead into a buffer of its own, so over a
+        /// plain <see cref="MemoryStream"/> the position says nothing about how far the
+        /// inflater actually got. Holding the tail back a byte at a time costs at most
+        /// a few dozen extra reads per stream and makes the difference visible.
+        /// </remarks>
+        private sealed class TailAwareStream : Stream
+        {
+            private const int TailLength = 4;
+
+            private readonly ReadOnlyMemory<byte> data;
+            private int position;
+
+            public TailAwareStream(ReadOnlyMemory<byte> data, int offset)
+            {
+                this.data = data;
+                position = Math.Min(offset, data.Length);
+            }
+
+            /// <summary>Whether the inflater asked for every byte there was.</summary>
+            public bool ConsumedEverything => position >= data.Length;
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                if (count <= 0 || position >= data.Length)
+                {
+                    return 0;
+                }
+
+                var bulkEnd = data.Length - TailLength;
+                var take = position < bulkEnd ? Math.Min(count, bulkEnd - position) : 1;
+
+                data.Span.Slice(position, take).CopyTo(buffer.AsSpan(offset, take));
+                position += take;
+                return take;
+            }
+
+            public override bool CanRead => true;
+            public override bool CanSeek => false;
+            public override bool CanWrite => false;
+            public override long Length => data.Length;
+            public override long Position
+            {
+                get => position;
+                set => throw new NotSupportedException();
+            }
+
+            public override void Flush()
+            {
+            }
+
+            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+            public override void SetLength(long value) => throw new NotSupportedException();
+
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
         }
 
         /// <summary>
