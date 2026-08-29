@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System.Buffers;
+    using Fonts;
     using System;
     using System.IO;
     using System.IO.Compression;
@@ -47,7 +48,14 @@
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                return Decompress(input, predictor, colors, bitsPerComponent, columns);
+                return Decompress(input, predictor, colors, bitsPerComponent, columns,
+                    filterProvider as IFilterContext);
+            }
+            catch (CorruptCompressedDataException)
+            {
+                // Raised only when the caller asked not to be lenient, so it is the
+                // answer they wanted rather than something to swallow.
+                throw;
             }
             catch
             {
@@ -61,7 +69,8 @@
             int predictor,
             int colors,
             int bitsPerComponent,
-            int columns)
+            int columns,
+            IFilterContext? context)
         {
             using var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input);
             // The first 2 bytes are the header which DeflateStream does not support.
@@ -89,9 +98,18 @@
                         {
                             read = deflate.Read(block, 0, block.Length);
                         }
-                        catch (InvalidDataException)
+                        catch (InvalidDataException exception)
                         {
                             // Damaged from here on; what came before still stands.
+                            if (context?.UseLenientParsing == false)
+                            {
+                                throw new CorruptCompressedDataException(
+                                    "Invalid Flate compressed stream encountered", exception);
+                            }
+
+                            context?.Log.Warn(
+                                "FlateFilter: damaged deflate stream, keeping the "
+                                + $"{output.Length} bytes that inflated. {exception.Message}");
                             break;
                         }
 

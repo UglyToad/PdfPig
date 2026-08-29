@@ -8,14 +8,31 @@
     using Tokenization.Scanner;
     using Tokens;
     using UglyToad.PdfPig.Util;
+    using Logging;
 
-    internal class FilterProviderWithLookup : ILookupFilterProvider
+    internal class FilterProviderWithLookup : ILookupFilterProvider, IFilterContext
     {
         private readonly IFilterProvider inner;
 
-        public FilterProviderWithLookup(IFilterProvider inner)
+        /// <inheritdoc />
+        public ILog Log { get; }
+
+        /// <inheritdoc />
+        public bool UseLenientParsing { get; }
+
+        public FilterProviderWithLookup(IFilterProvider inner, ILog log, bool useLenientParsing)
         {
             this.inner = inner;
+            Log = log;
+            UseLenientParsing = useLenientParsing;
+        }
+
+        /// <summary>
+        /// Without a log, and lenient, for a caller that decodes outside a document.
+        /// </summary>
+        public FilterProviderWithLookup(IFilterProvider inner)
+            : this(inner, new NoOpLog(), true)
+        {
         }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)

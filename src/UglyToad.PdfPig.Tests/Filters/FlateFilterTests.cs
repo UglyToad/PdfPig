@@ -2,6 +2,8 @@
 {
     using System.Text;
     using PdfPig.Core;
+    using PdfPig.Fonts;
+    using PdfPig.Logging;
     using PdfPig.Filters;
     using PdfPig.Tokens;
 
@@ -84,6 +86,58 @@
             Assert.NotEmpty(decoded);
             Assert.True(decoded.Length < original.Length, "a truncated stream cannot yield everything");
             Assert.Equal(original.AsSpan(0, decoded.Length).ToArray(), decoded);
+        }
+
+        [Fact]
+        public void DamageIsReportedToTheLog()
+        {
+            var log = new RecordingLog();
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+            var input = OtherEncodings.StringAsLatin1Bytes("This is not a deflate stream.");
+
+            var provider = new FilterProviderWithLookup(DefaultFilterProvider.Instance, log, true);
+
+            new FlateFilter().Decode(input, parameters, provider, 0);
+
+            Assert.Contains(log.Warnings, x => x.StartsWith("FlateFilter:"));
+        }
+
+        [Fact]
+        public void DamageRaisesWhenTheCallerAskedNotToBeLenient()
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+            var input = OtherEncodings.StringAsLatin1Bytes("This is not a deflate stream.");
+
+            var provider = new FilterProviderWithLookup(
+                DefaultFilterProvider.Instance,
+                new RecordingLog(),
+                useLenientParsing: false);
+
+            Assert.Throws<CorruptCompressedDataException>(
+                () => new FlateFilter().Decode(input, parameters, provider, 0));
+        }
+
+        private sealed class RecordingLog : ILog
+        {
+            public List<string> Warnings { get; } = new List<string>();
+
+            public void Debug(string message)
+            {
+            }
+
+            public void Debug(string message, Exception ex)
+            {
+            }
+
+            public void Warn(string message) => Warnings.Add(message);
+
+            public void Error(string message)
+            {
+            }
+
+            public void Error(string message, Exception ex)
+            {
+            }
         }
     }
 }
