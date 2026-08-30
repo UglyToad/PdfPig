@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
 
     /// <summary>
@@ -23,13 +24,13 @@
         { }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             return values;
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -53,13 +54,14 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
             return RGBColor.Black;
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
             r = values[0];
             g = values[1];
@@ -67,7 +69,7 @@
         }
 
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             return decoded;
         }

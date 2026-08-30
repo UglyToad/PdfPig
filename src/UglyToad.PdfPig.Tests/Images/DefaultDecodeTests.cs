@@ -2,6 +2,7 @@
 {
     using System;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Core;
     using PdfPig.Images;
     using Xunit;
 
@@ -66,7 +67,7 @@
             byte[] expected = samples.ToArray();
 
             var result = ColorSpaceDetailsByteConverter.Convert(DeviceRgbColorSpaceDetails.Instance,
-                samples, 8, 2, 1, null);
+                samples, 8, 2, 1, null, RenderingIntent.RelativeColorimetric);
 
             Assert.Equal(expected, result.ToArray());
         }
@@ -80,7 +81,8 @@
         {
             var lab = new LabColorSpaceDetails(D50WhitePoint, null, range);
 
-            var rgb = ColorSpaceDetailsByteConverter.Convert(lab, pixel, 8, 1, 1, decode);
+            var rgb = ColorSpaceDetailsByteConverter.Convert(lab, pixel, 8, 1, 1, decode,
+                RenderingIntent.RelativeColorimetric);
 
             return (rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0);
         }
@@ -161,7 +163,8 @@
 
             // Two 4-bit samples per byte: indices 1 and 2.
             Span<byte> packed = stackalloc byte[1] { 0x12 };
-            var rgb = ColorSpaceDetailsByteConverter.Convert(indexed, packed, 4, 2, 1, null);
+            var rgb = ColorSpaceDetailsByteConverter.Convert(indexed, packed, 4, 2, 1, null,
+                RenderingIntent.RelativeColorimetric);
 
             Assert.Equal(6, rgb.Length);
             Assert.Equal(new byte[] { 255, 0, 0 }, rgb.Slice(0, 3).ToArray()); // index 1 -> red

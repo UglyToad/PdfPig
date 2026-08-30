@@ -25,6 +25,7 @@ namespace UglyToad.PdfPig.Tests.ContentTests
                 scanner,
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,

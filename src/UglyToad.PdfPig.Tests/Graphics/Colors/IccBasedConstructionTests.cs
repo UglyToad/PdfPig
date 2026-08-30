@@ -15,7 +15,7 @@
     {
         private static ICCBasedColorSpaceDetails Create(int n, ColorSpaceDetails? alternate = null,
             IReadOnlyList<double>? range = null)
-            => new ICCBasedColorSpaceDetails(n, alternate, range, null);
+            => new ICCBasedColorSpaceDetails(n, alternate, range, null, profile: null);
 
         [Fact]
         public void ARangeOfTheWrongLength_IsIgnoredRatherThanThrown()

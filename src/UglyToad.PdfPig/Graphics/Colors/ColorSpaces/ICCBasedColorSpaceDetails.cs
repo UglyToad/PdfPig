@@ -1,46 +1,50 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using UglyToad.PdfPig.Content;
-    using UglyToad.PdfPig.Functions;
-    using UglyToad.PdfPig.Logging;
+    using Content;
+    using Functions;
+    using Icc;
+    using Logging;
 
     /// <summary>
     /// The ICCBased color space is one of the CIE-based color spaces supported in PDFs. These color spaces
     /// enable a page description to specify color values in a way that is related to human visual perception.
     /// The goal is for the same color specification to produce consistent results on different output devices,
     /// within the limitations of each device.
-    /// <para>
-    /// Currently support for this color space is limited in PdfPig. Calculations will only be based on
-    /// the color space of <see cref="AlternateColorSpace"/>.
-    /// </para>
     /// </summary>
     public sealed class ICCBasedColorSpaceDetails : ColorSpaceDetails
     {
         /// <summary>
+        /// See <see cref="GetProfileRanges"/>. Null whenever <see cref="Range"/> is the authority.
+        /// </summary>
+        private readonly IReadOnlyList<double>? profileRanges;
+
+        /// <summary>
         /// The number of color components in the color space described by the ICC profile data.
-        /// This numbers shall match the number of components actually in the ICC profile.
+        /// This number shall match the number of components actually in the ICC profile.
         /// Valid values are 1, 3 and 4.
         /// </summary>
         public override int NumberOfColorComponents { get; }
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => AlternateColorSpace.BaseNumberOfColorComponents;
+        public override int BaseNumberOfColorComponents { get; }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// <c>true</c> whenever a profile is in use: <see cref="GetTransformWithFallback"/> resolves a different
+        /// <see cref="IIccTransform"/> per intent. Without one it returns null and every conversion falls
+        /// through to <see cref="AlternateColorSpace"/>, whose own answer then applies.
+        /// </para>
+        /// </summary>
+        public override bool RenderingIntentAffectsOutput => IccProfile is not null || AlternateColorSpace.RenderingIntentAffectsOutput;
 
         /// <summary>
         /// An alternate color space that can be used in case the one specified in the stream data is not
-        /// supported. Non-conforming readers may use this color space. The alternate color space may be any
-        /// valid color space (except a Pattern color space). If this property isn't explicitly set during
-        /// construction, it will assume one of the color spaces, DeviceGray, DeviceRGB or DeviceCMYK depending
-        /// on whether the value of <see cref="NumberOfColorComponents"/> is 1, 3 or respectively.
-        /// <para>
-        /// Conversion of the source color values should not be performed when using the alternate color space.
-        /// Color values within the range of the ICCBased color space might not be within the range of the
-        /// alternate color space. In this case, the nearest values within the range of the alternate space
-        /// must be substituted.
-        /// </para>
+        /// supported. The alternate color space may be any valid color space (except a Pattern color space).
         /// </summary>
         public ColorSpaceDetails AlternateColorSpace { get; }
 
@@ -57,15 +61,44 @@
         public XmpMetadata? Metadata { get; }
 
         /// <summary>
+        /// The resolved ICC profile, or <c>null</c> when no <see cref="IIccProfileService"/> was configured,
+        /// or the service failed to parse the profile. When non-null, colour conversions produce sRGB output
+        /// (three components, hence <see cref="BaseNumberOfColorComponents"/> of 3) and <see cref="BaseType"/>
+        /// stays <see cref="ColorSpace.ICCBased"/>, because a profile places the colour absolutely and it is
+        /// no longer a device colour anything may reinterpret.
+        /// </summary>
+        public IIccProfile? IccProfile { get; }
+
+        /// <summary>
         /// Create a new <see cref="ICCBasedColorSpaceDetails"/>.
         /// </summary>
         internal ICCBasedColorSpaceDetails(int numberOfColorComponents,
             ColorSpaceDetails? alternateColorSpaceDetails,
             IReadOnlyList<double>? range,
             XmpMetadata? metadata,
+            IIccProfile? profile,
             ILog? log = null)
             : base(ColorSpace.ICCBased)
         {
+            // 8.6.5.5 requires /N to match the profile, and when they disagree the profile is the one that
+            // cannot be wrong about itself: a transform reads its own number of components no matter what
+            // the dictionary claims.
+            if (profile is not null && profile.NumberOfComponents != numberOfColorComponents)
+            {
+                if (IsValidComponentCount(profile.NumberOfComponents))
+                {
+                    log?.Warn($"Using {profile.NumberOfComponents} components from the ICC profile instead of the " +
+                              $"{numberOfColorComponents} declared by the /N entry of the ICCBased colour space.");
+                    numberOfColorComponents = profile.NumberOfComponents;
+                }
+                else
+                {
+                    log?.Warn($"The ICC profile declares {profile.NumberOfComponents} components, which no ICCBased " +
+                              "colour space may have; ignoring the profile and using the alternate colour space.");
+                    profile = null;
+                }
+            }
+
             if (!IsValidComponentCount(numberOfColorComponents))
             {
                 throw new ArgumentOutOfRangeException(nameof(numberOfColorComponents), "Must be 1, 3 or 4.");
@@ -74,6 +107,19 @@
             Metadata = metadata;
             NumberOfColorComponents = numberOfColorComponents;
 
+            // NumberOfColorComponents needs to be set before using IsUsable(...).
+            // We need to make sure the icc profile will at least fall back with RelativeColorimetric to be valid
+            if (profile is not null && !IsUsable(profile, NumberOfColorComponents, log))
+            {
+                log?.Warn("The ICC profile resolved but could not convert a colour; using the alternate colour space.");
+                profile = null;
+            }
+
+            IccProfile = profile;
+
+            // The alternate stands in for the profile and is handed the very same operands, so one of the
+            // wrong width cannot be evaluated at all. This is also where a /N corrected above lands: an
+            // alternate chosen against the declared /N may no longer fit.
             if (alternateColorSpaceDetails is not null &&
                 alternateColorSpaceDetails.NumberOfColorComponents != NumberOfColorComponents)
             {
@@ -102,7 +148,19 @@
                 .SelectMany(x => x)
                 .ToArray();
 
-            BaseType = AlternateColorSpace.BaseType;
+            if (IccProfile is not null)
+            {
+                // BaseType is left as ICCBased: the profile has placed these colours absolutely, so they
+                // are not device colours for an output intent to reinterpret.
+                // The width still changes, because the profile converts to sRGB.
+                BaseNumberOfColorComponents = 3;
+                profileRanges = GetProfileRanges(IccProfile, NumberOfColorComponents);
+            }
+            else
+            {
+                BaseNumberOfColorComponents = AlternateColorSpace.BaseNumberOfColorComponents;
+                BaseType = AlternateColorSpace.BaseType;
+            }
         }
 
         /// <summary>
@@ -110,95 +168,336 @@
         /// </summary>
         public static bool IsValidComponentCount(int components) => components is 1 or 3 or 4;
 
-        /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        /// <summary>
+        /// The profile's own component ranges, or <c>null</c> when it encodes everything in <c>[0, 1]</c>
+        /// and the colour space's <c>/Range</c> entry should therefore be left in charge.
+        /// </summary>
+        private static IReadOnlyList<double>? GetProfileRanges(IIccProfile profile, int numberOfColorComponents)
         {
-            // TODO - use ICC profile
+            var ranges = profile.ComponentRanges;
 
-            return AlternateColorSpace.Process(values);
+            if (ranges is null || ranges.Count != 2 * numberOfColorComponents)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < ranges.Count; i += 2)
+            {
+                if (ranges[i] != 0.0 || ranges[i + 1] != 1.0)
+                {
+                    return ranges;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Whether the profile can actually convert, not merely hand out a transform.
+        /// </summary>
+        private static bool IsUsable(IIccProfile profile, int numberOfColorComponents, ILog? log)
+        {
+            // Obtaining an IIccTransform proves nothing: the interface lets a service build its transforms lazily,
+            // so the work that a malformed profile fails at may not have happened yet. Both conversion entry points
+            // are therefore exercised here, inside the construction that can still choose AlternateColorSpace instead.
+            //
+            // PDFBox does exactly this for the same reason, see PDICCBased.loadICCProfile, which calls both 'toRGB'
+            // and 'new ComponentColorModel' inside the try that falls back, each citing a different profile that parsed
+            // cleanly and then threw on use (PDFBOX-1295, 1740, 3610, 4015, 5563).
+
+            if (!profile.TryGetTransform(RenderingIntent.RelativeColorimetric, out var transform))
+            {
+                return false;
+            }
+
+            try
+            {
+                // Zero is in range for every data colour space a profile may declare, L*a*b* included.
+                Span<double> components = stackalloc double[numberOfColorComponents]; // 1, 3 or 4
+                transform.ToRgb(components);
+
+                // The packed-byte path is a separate implementation and fails separately.
+                Span<byte> onePixel = stackalloc byte[numberOfColorComponents];
+                Span<byte> rgb = stackalloc byte[3];
+                transform.Transform(onePixel, rgb);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log?.Error("ICC profile is malformed and is not usable. Falling back to alternate color space.", ex);
+                return false;
+            }
+        }
+
+        internal IIccTransform? GetTransformWithFallback(RenderingIntent intent)
+        {
+            if (IccProfile is null)
+            {
+                return null;
+            }
+
+            if (intent != RenderingIntent.RelativeColorimetric &&
+                IccProfile.TryGetTransform(intent, out var t))
+            {
+                return t;
+            }
+
+            return IccProfile.TryGetTransform(RenderingIntent.RelativeColorimetric, out var rct) ? rct : null;
+        }
+
+        /// <summary>
+        /// Convert through <paramref name="transform"/>, reporting <see langword="false"/> rather than
+        /// throwing so the caller can fall back to <see cref="AlternateColorSpace"/> for this colour.
+        /// A failure is not held against the profile: the next colour tries it again.
+        /// </summary>
+        private static bool TryToRgb(IIccTransform transform, ReadOnlySpan<double> components,
+            out double r, out double g, out double b)
+        {
+            try
+            {
+                return transform.TryToRgbClipped(components, out r, out g, out b);
+            }
+            catch
+            {
+                r = g = b = 0.0;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// The bounds the profile path clips against, and the range a sample byte is understood to span:
+        /// the profile's own encoding when it declares one, otherwise the colour space's <c>/Range</c>.
+        /// </summary>
+        private IReadOnlyList<double> EffectiveRanges => profileRanges ?? Range;
+
+        /// <summary>
+        /// Clip each component to its <paramref name="bounds"/> pair, <c>[min0 max0 min1 max1 ...]</c>.
+        /// </summary>
+        private static void Clip(ReadOnlySpan<double> values, IReadOnlyList<double> bounds, Span<double> destination)
+        {
+            for (int c = 0; c < destination.Length; c++)
+            {
+                int i = 2 * c;
+                destination[c] = PdfFunction.ClipToRange(values[c], bounds[i], bounds[i + 1]);
+            }
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// Taken from the resolved profile's own encoding, which is the only thing that knows an L*a*b*
+        /// profile's L* runs to 100. With no profile the alternate colour space decides.
+        /// </para>
+        /// </summary>
+        public override void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        {
+            if (profileRanges is null)
+            {
+                if (IccProfile is null)
+                {
+                    AlternateColorSpace.GetDefaultDecode(bitsPerComponent, destination);
+                    return;
+                }
+
+                base.GetDefaultDecode(bitsPerComponent, destination);
+                return;
+            }
+
+            for (int i = 0; i < destination.Length; i++)
+            {
+                destination[i] = profileRanges[i];
+            }
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// Colour-table bytes reach this colour space's components through its own ranges, so an Indexed
+        /// space over an L*a*b* profile decodes L* into [0, 100] rather than [0, 1]. Without a profile the
+        /// alternate colour space owns the mapping, as it owns the conversion that follows it.
+        /// </para>
+        /// </summary>
+        internal override void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
+        {
+            if (profileRanges is null)
+            {
+                if (IccProfile is null)
+                {
+                    AlternateColorSpace.DecodeRawComponents(raw, destination);
+                    return;
+                }
+
+                base.DecodeRawComponents(raw, destination);
+                return;
+            }
+
+            for (int i = 0; i < raw.Length; i++)
+            {
+                int c = 2 * (i % NumberOfColorComponents);
+                double min = profileRanges[c];
+                destination[i] = min + (raw[i] / 255.0) * (profileRanges[c + 1] - min);
+            }
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
+        {
+            Span<double> operands = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
+            Normalise(values, operands);
+
+            IIccTransform? transform = GetTransformWithFallback(intent);
+            if (transform is not null)
+            {
+                Span<double> forProfile = stackalloc double[NumberOfColorComponents];
+                Clip(operands, EffectiveRanges, forProfile);
+
+                if (TryToRgb(transform, forProfile, out double r, out double g, out double b))
+                {
+                    return [r, g, b];
+                }
+            }
+
+            double[] clipped = new double[NumberOfColorComponents];
+            Clip(operands, Range, clipped);
+
+            if (IccProfile is null)
+            {
+                // BaseType and BaseNumberOfColorComponents are the alternate's own, so its components are
+                // already the ones the caller is expecting.
+                return AlternateColorSpace.Process(clipped, intent);
+            }
+
+            // A profile is in use, so three components are what a caller sizes its buffers from, however
+            // this particular colour ended up being produced. Reaching the alternate
+            // here says the profile could not convert this colour, not that the colour space has changed
+            // shape: a CMYK alternate's four components would overrun the caller by one per sample.
+            AlternateColorSpace.GetRgb(clipped, intent, out double red, out double green, out double blue);
+            return [red, green, blue];
+        }
+
+        /// <inheritdoc/>
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
-            // TODO - use ICC profile
-
-            Span<double> buffer = stackalloc double[values.Length]; // 1, 3 or 4
-            for (int c = 0; c < values.Length; c++)
-            {
-                int i = 2 * c;
-                buffer[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
-            }
-
-            return AlternateColorSpace.GetColor(buffer);
-        }
-
-        /// <inheritdoc/>
-        public override IColor GetInitializeColor()
-        {
-            // Setting the current stroking or nonstroking colour space to any CIE-based colour space shall
-            // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
-            // values for a given component does not include 0.0, in which case the nearest valid value shall
-            // be substituted.)
-            double v = PdfFunction.ClipToRange(0.0, Range[0], Range[1]);
             Span<double> buffer = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
-            buffer.Fill(v);
-            return GetColor(buffer);
+
+            var transform = GetTransformWithFallback(intent);
+            if (transform is not null)
+            {
+                Clip(values, EffectiveRanges, buffer);
+                if (TryToRgb(transform, buffer, out double r, out double g, out double b))
+                {
+                    return new RGBColor(r, g, b);
+                }
+            }
+
+            Clip(values, Range, buffer);
+            return AlternateColorSpace.GetColor(buffer, intent);
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
-            // TODO - use ICC profile
+            Span<double> buffer = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
 
+            for (int c = 0; c < buffer.Length; ++c)
+            {
+                buffer[c] = PdfFunction.ClipToRange(0.0, Range[2 * c], Range[2 * c + 1]);
+            }
+
+            return GetColor(buffer, intent);
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
+        {
             Span<double> clipped = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
-            for (int c = 0; c < NumberOfColorComponents; c++)
+
+            var transform = GetTransformWithFallback(intent);
+            if (transform is not null)
             {
-                int i = 2 * c;
-                clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
+                Clip(values, EffectiveRanges, clipped);
+                if (TryToRgb(transform, clipped, out r, out g, out b))
+                {
+                    return;
+                }
             }
-            AlternateColorSpace.GetRgb(clipped, out r, out g, out b);
+
+            Clip(values, Range, clipped);
+            AlternateColorSpace.GetRgb(clipped, intent, out r, out g, out b);
+        }
+
+        /// <inheritdoc/>
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
+        {
+            var transform = GetTransformWithFallback(intent);
+            if (transform is not null)
+            {
+                int pixelCount = decoded.Length / NumberOfColorComponents;
+                byte[] dst = new byte[pixelCount * 3];
+
+                try
+                {
+                    // pixelCount truncates, so the samples are sliced to the whole pixels dst has room for:
+                    // IIccTransform.Transform is contracted for src.Length == pixelCount x NumberOfComponents,
+                    // and an implementation holding to that either throws on a trailing partial pixel or runs
+                    // off the end of dst.
+                    transform.Transform(decoded.Slice(0, pixelCount * NumberOfColorComponents), dst);
+                    return dst;
+                }
+                catch
+                {
+                    // The source is read-only by contract, so it is still intact for the alternate.
+                }
+            }
+
+            if (IccProfile is null)
+            {
+                // As in Process: with no profile the alternate's own base is this colour space's base, so
+                // its output is already the right width.
+                return AlternateColorSpace.Transform(decoded, intent);
+            }
+
+            // And as in Process, a profile in use pins the base width to three. The alternate's own base
+            // may be any width - a CMYK alternate hands back four bytes a pixel where PngFromPdfImageFactory
+            // reads three - so the samples go through a colour at a time instead, the way Lab does.
+            return TransformAlternate(decoded, intent);
         }
 
         /// <summary>
-        /// <inheritdoc/>
+        /// Convert image samples to RGB one colour at a time, for the profile-in-use case where
+        /// <see cref="AlternateColorSpace"/>'s packed output would be the wrong width.
         /// <para>
-        /// The alternate colour space owns the conversion, so it owns the range the samples decode into
-        /// on the way there.
+        /// Each colour goes back through <see cref="GetRgb"/> rather than straight to the alternate, so a
+        /// profile whose packed entry point failed is still asked for the colours its scalar one can convert
+        /// - the same "a failure is not held against the profile" rule the other entry points follow.
         /// </para>
         /// </summary>
-        public override void GetDefaultDecode(int bitsPerComponent, Span<double> destination)
+        private byte[] TransformAlternate(Span<byte> decoded, RenderingIntent intent)
         {
-            if (AlternateColorSpace.NumberOfColorComponents != NumberOfColorComponents)
+            int pixelCount = decoded.Length / NumberOfColorComponents;
+            var transformed = new byte[pixelCount * 3];
+
+            Span<double> components = stackalloc double[NumberOfColorComponents]; // 1, 3 or 4
+            int index = 0;
+
+            for (int i = 0; i < pixelCount; i++)
             {
-                base.GetDefaultDecode(bitsPerComponent, destination);
-                return;
+                DecodeRawComponents(decoded.Slice(i * NumberOfColorComponents, NumberOfColorComponents), components);
+                GetRgb(components, intent, out double r, out double g, out double b);
+
+                transformed[index++] = ConvertToByte(r);
+                transformed[index++] = ConvertToByte(g);
+                transformed[index++] = ConvertToByte(b);
             }
 
-            AlternateColorSpace.GetDefaultDecode(bitsPerComponent, destination);
-        }
-
-        /// <summary>
-        /// <inheritdoc/>
-        /// <para>
-        /// As with <see cref="GetDefaultDecode"/>, the alternate colour space owns the mapping because it
-        /// owns the conversion that follows it.
-        /// </para>
-        /// </summary>
-        internal override void DecodeRawComponents(ReadOnlySpan<byte> raw, Span<double> destination)
-            => AlternateColorSpace.DecodeRawComponents(raw, destination);
-
-        /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
-        {
-            // TODO - use ICC profile
-
-            return AlternateColorSpace.Transform(decoded);
+            return transformed;
         }
     }
 }
