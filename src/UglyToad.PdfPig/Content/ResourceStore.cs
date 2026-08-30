@@ -5,13 +5,14 @@
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
+    using Filters;
     using Graphics.Colors;
     using Parser.Parts;
     using PdfFonts;
-    using Logging;
     using Tokenization.Scanner;
     using Tokens;
-    using Filters;
+    using Graphics.Colors.Icc;
+    using Logging;
     using Util;
 
     internal sealed class ResourceStore : IResourceStore
@@ -32,6 +33,8 @@
         private readonly Dictionary<NameToken, ColorSpaceDetails> loadedNamedColorSpaceDetails = new Dictionary<NameToken, ColorSpaceDetails>();
         private readonly Dictionary<(NameToken? Name, IToken ColorSpace), ColorSpaceDetails> loadedColorSpaceDetailsCache = new Dictionary<(NameToken?, IToken), ColorSpaceDetails>();
 
+        private readonly IccProfileCache iccProfileCache = new IccProfileCache();
+
         private readonly StackDictionary<NameToken, DictionaryToken> markedContentProperties = new StackDictionary<NameToken, DictionaryToken>();
 
         private readonly StackDictionary<NameToken, Shading> shadingsProperties = new StackDictionary<NameToken, Shading>();
@@ -49,17 +52,70 @@
 
         private (NameToken? name, IFont? font) lastLoadedFont;
 
+        public IIccProfileService? IccProfileService => parsingOptions.IccProfileService;
+
         public ILog Logger => parsingOptions.Logger;
+
+        private readonly Lazy<IReadOnlyList<OutputIntent>> outputIntents;
+
+        public IReadOnlyList<OutputIntent> DocumentOutputIntents => outputIntents.Value;
+
+        private readonly Dictionary<IndirectReference, IReadOnlyList<OutputIntent>> pageOutputIntents = new();
 
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
+            DictionaryToken? catalogDictionary,
             ParsingOptions parsingOptions)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
             this.parsingOptions = parsingOptions;
+            this.outputIntents = catalogDictionary is null
+                ? new Lazy<IReadOnlyList<OutputIntent>>(() => [])
+                : new Lazy<IReadOnlyList<OutputIntent>>(() => OutputIntentParser.CreateAll(catalogDictionary,
+                    scanner, filterProvider, parsingOptions.IccProfileService, iccProfileCache, Logger));
+        }
+
+        /// <inheritdoc/>
+        public IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary)
+        {
+            if (pageDictionary is null || !pageDictionary.TryGet(NameToken.OutputIntents, out var outputIntentsToken))
+            {
+                return DocumentOutputIntents;
+            }
+
+            if (outputIntentsToken is not IndirectReferenceToken reference)
+            {
+                var parsed = ParsePageOutputIntents(pageDictionary);
+                return parsed.Count > 0 ? parsed : DocumentOutputIntents;
+            }
+
+            if (!pageOutputIntents.TryGetValue(reference.Data, out var cached))
+            {
+                cached = ParsePageOutputIntents(pageDictionary);
+                pageOutputIntents[reference.Data] = cached;
+            }
+
+            // A page whose own array yielded nothing usable still sits inside the document's declaration.
+            return cached.Count > 0 ? cached : DocumentOutputIntents;
+        }
+
+        /// <inheritdoc/>
+        public IIccProfile? GetPageOutputIntentProfile(DictionaryToken? pageDictionary)
+        {
+            var service = parsingOptions.IccProfileService;
+
+            return service is null
+                ? null
+                : OutputIntentColorManagement.GetDeviceProfile(GetPageOutputIntents(pageDictionary), service);
+        }
+
+        private IReadOnlyList<OutputIntent> ParsePageOutputIntents(DictionaryToken pageDictionary)
+        {
+            return OutputIntentParser.CreateAll(pageDictionary, scanner, filterProvider,
+                parsingOptions.IccProfileService, iccProfileCache, Logger);
         }
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary)
@@ -477,7 +533,8 @@
             // Null color space for images
             if (name is null)
             {
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this, filterProvider);
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this,
+                    filterProvider, iccProfileCache);
             }
 
             if (name.TryMapToColorSpace(out ColorSpace colorSpaceActual))
@@ -487,7 +544,8 @@
                     return ResolveDefaultSubstitute(colorSpaceActual, substituteName, dictionary);
                 }
 
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this,
+                    filterProvider, iccProfileCache);
             }
 
             // Named color spaces
@@ -501,12 +559,14 @@
             {
                 if (namedColorSpace.Data is null)
                 {
-                    return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this, filterProvider);
+                    return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this,
+                        filterProvider, iccProfileCache);
                 }
                 
                 if (namedColorSpace.Data is ArrayToken array)
                 {
-                    var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this, filterProvider);
+                    var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this,
+                        filterProvider, iccProfileCache);
                     loadedNamedColorSpaceDetails[name] = csd;
                     return csd;
                 }

@@ -70,11 +70,12 @@
         public void AddXObject(XObjectContentRecord xObject,
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            ParsingOptions options)
         {
             if (top != null && xObject.Type == XObjectType.Image)
             {
-                var image = XObjectFactory.ReadImage(xObject, scanner, filterProvider, resourceStore);
+                var image = XObjectFactory.ReadImage(xObject, scanner, filterProvider, resourceStore, options);
                 top?.AddImage(image);
             }
         }

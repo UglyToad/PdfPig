@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Concurrent;
 
@@ -9,7 +10,7 @@
     /// </summary>
     public sealed class IndexedColorSpaceDetails : ColorSpaceDetails
     {
-        private readonly ConcurrentDictionary<double, IColor> cache = new ConcurrentDictionary<double, IColor>();
+        private readonly ConcurrentDictionary<(double Index, RenderingIntent Intent), IColor> cache = new();
 
         /// <summary>
         /// Creates an indexed color space useful for extracting stencil masks as black-and-white images,
@@ -28,6 +29,15 @@
         /// <para>In the case of <see cref="IndexedColorSpaceDetails"/>, gets the <see cref="BaseColorSpace"/>' <c>BaseNumberOfColorComponents</c>.</para>
         /// </summary>
         public override int BaseNumberOfColorComponents => BaseColorSpace.BaseNumberOfColorComponents;
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// An index selects an entry from the colour table and that entry is converted through
+        /// <see cref="BaseColorSpace"/>, so this varies exactly when the base space does.
+        /// </para>
+        /// </summary>
+        public override bool RenderingIntentAffectsOutput => BaseColorSpace.RenderingIntentAffectsOutput;
 
         /// <summary>
         /// The base color space in which the values in the color table are to be interpreted.
@@ -124,27 +134,36 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
-            return cache.GetOrAdd(values[0], v =>
+            double index = values[0];
+            var key = (index, intent);
+
+            if (cache.TryGetValue(key, out var color))
             {
-                var components = new double[BaseColorSpace.NumberOfColorComponents];
-                DecodeTableEntry(ClampColorIndex(v), components);
-                return BaseColorSpace.GetColor(components);
-            });
+                return color;
+            }
+
+            int components = BaseColorSpace.NumberOfColorComponents;
+            Span<double> buffer = components <= 32 ? stackalloc double[components] : new double[components];
+            DecodeTableEntry(ClampColorIndex(index), buffer);
+            color = BaseColorSpace.GetColor(buffer, intent);
+
+            cache.TryAdd(key, color);
+            return color;
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             var components = new double[BaseColorSpace.NumberOfColorComponents];
             DecodeTableEntry(ClampColorIndex(values[0]), components);
-            return BaseColorSpace.Process(components);
+            return BaseColorSpace.Process(components, intent);
         }
 
         internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input)
@@ -194,24 +213,24 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
             // Setting the current stroking or nonstroking colour space to an Indexed colour space shall
             // initialize the corresponding current colour to 0.
-            return GetColor([0]);
+            return GetColor([0], intent);
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
             // Look up the index into the colour table and let the base colour space decode its
             // own table bytes into its native component ranges.
             byte index = ClampColorIndex(values[0]);
             int components = BaseColorSpace.NumberOfColorComponents;
-            Span<double> buffer = components <= 16 ? stackalloc double[16] : new double[components];
-            buffer = buffer.Slice(0, components);
+            Span<double> buffer = components <= 32 ? stackalloc double[components] : new double[components];
             DecodeTableEntry(index, buffer);
-            BaseColorSpace.GetRgb(buffer, out r, out g, out b);
+            BaseColorSpace.GetRgb(buffer, intent, out r, out g, out b);
         }
 
         /// <summary>
@@ -220,10 +239,10 @@
         /// Unwrap then transform using base color space details.
         /// </para>
         /// </summary>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             var unwraped = UnwrapIndexedColorSpaceBytes(decoded);
-            return BaseColorSpace.Transform(unwraped);
+            return BaseColorSpace.Transform(unwraped, intent);
         }
     }
 }

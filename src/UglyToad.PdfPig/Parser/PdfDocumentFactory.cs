@@ -17,12 +17,12 @@
     using Outline;
     using Parts;
     using PdfFonts;
+    using PdfFonts.Cmap;
     using PdfFonts.Parser;
     using PdfFonts.Parser.Handlers;
     using PdfFonts.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.PdfFonts.Cmap;
 
     internal static class PdfDocumentFactory
     {
@@ -210,8 +210,8 @@
                 trueTypeHandler,
                 type1Handler,
                 new Type3FontHandler(pdfScanner, encodingReader, cmapCache));
-
-            var resourceContainer = new ResourceStore(pdfScanner, fontFactory, filterProvider, parsingOptions);
+            
+            var resourceContainer = new ResourceStore(pdfScanner, fontFactory, filterProvider, rootDictionary, parsingOptions);
 
             var information = DocumentInformationFactory.Create(
                 pdfScanner,

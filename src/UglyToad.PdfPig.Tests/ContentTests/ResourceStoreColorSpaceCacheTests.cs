@@ -1,11 +1,11 @@
-namespace UglyToad.PdfPig.Tests.ContentTests
+﻿namespace UglyToad.PdfPig.Tests.ContentTests
 {
     using System.Collections.Generic;
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Graphics.Colors;
     using PdfPig.Tokens;
-    using UglyToad.PdfPig.Tests.Tokens;
+    using PdfPig.Tests.Tokens;
     using Xunit;
 
     public class ResourceStoreColorSpaceCacheTests
@@ -16,6 +16,7 @@ namespace UglyToad.PdfPig.Tests.ContentTests
                 scanner,
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions
                 {
                     UseLenientParsing = true,

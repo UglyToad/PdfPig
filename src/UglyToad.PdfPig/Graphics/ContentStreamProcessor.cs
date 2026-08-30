@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using Colors.Icc;
     using Content;
     using Filters;
     using Geometry;
@@ -68,6 +69,7 @@ namespace UglyToad.PdfPig.Graphics
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
+            IIccProfile? outputIntentProfile,
             ParsingOptions parsingOptions)
             : base(pageNumber,
                 resourceStore,
@@ -78,6 +80,7 @@ namespace UglyToad.PdfPig.Graphics
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
+                outputIntentProfile,
                 parsingOptions)
         {
         }
@@ -96,7 +99,8 @@ namespace UglyToad.PdfPig.Graphics
                 markedContents,
                 PdfScanner,
                 FilterProvider,
-                ResourceStore);
+                ResourceStore,
+                ParsingOptions);
         }
 
         public override void RenderGlyph(IFont font,
@@ -208,7 +212,7 @@ namespace UglyToad.PdfPig.Graphics
         {
             images.Add(Union<XObjectContentRecord, InlineImage>.One(xObjectContentRecord));
 
-            markedContentStack.AddXObject(xObjectContentRecord, PdfScanner, FilterProvider, ResourceStore);
+            markedContentStack.AddXObject(xObjectContentRecord, PdfScanner, FilterProvider, ResourceStore, ParsingOptions);
         }
 
         public override void BeginSubpath()
