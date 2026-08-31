@@ -94,7 +94,10 @@
         public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands,
             RenderingIntent intent, IIccProfile? outputIntentProfile = null)
         {
-            var color = Convert(colorSpace, operands, intent);
+            if (!TryConvert(colorSpace, operands, intent, out var color))
+            {
+                return Fixed(null);
+            }
 
             if (outputIntentProfile is not null &&
                 TryManage(colorSpace, color, outputIntentProfile, intent, out var managed))
@@ -161,7 +164,10 @@
                 return new PdfColorInfo(null, operands, null, patternColor, intent);
             }
 
-            var underlyingColor = TryConvert(underlyingColorSpace, operands, intent);
+            if (!TryConvert(underlyingColorSpace, operands, intent, out var underlyingColor))
+            {
+                return new PdfColorInfo(null, operands, null, patternColor, intent);
+            }
 
             // Retained only when it applied, as on FromOperands
             if (outputIntentProfile is not null &&
@@ -248,7 +254,10 @@
                 return this;
             }
 
-            var converted = Convert(colorSpace, operands, currentIntent);
+            if (!TryConvert(colorSpace, operands, currentIntent, out var converted))
+            {
+                return new PdfColorInfo(null, operands, color, patternColor, intent);
+            }
 
             // Re-run the output intent under the new intent too: the profile resolves its transform per
             // intent, so re-converting the operands without re-managing them would answer with the old
@@ -269,18 +278,20 @@
                 : colorSpace.GetColor(operands, intent);
 
         /// <summary>
-        /// <see cref="Convert"/>, but answering <see langword="null"/> instead of throwing when the
-        /// underlying space cannot turn the operands into a colour.
+        /// <see cref="Convert"/>, but reporting failure instead of throwing when the underlying space
+        /// cannot turn the operands into a colour.
         /// </summary>
-        private static IColor? TryConvert(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent)
+        private static bool TryConvert(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent, out IColor? color)
         {
             try
             {
-                return Convert(colorSpace, operands, intent);
+                color = Convert(colorSpace, operands, intent);
+                return true;
             }
             catch
             {
-                return null;
+                color = null;
+                return false; // TODO - Log
             }
         }
     }
