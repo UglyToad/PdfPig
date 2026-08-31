@@ -30,6 +30,7 @@
             => new ResourceStore(scanner,
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
         private static void Register(TestPdfTokenScanner scanner, int number, IToken token)
@@ -59,7 +60,8 @@
                 RenderingIntent.RelativeColorimetric,
                 null);
 
-            return XObjectFactory.ReadImage(record, scanner, new TestFilterProvider(), Store(scanner));
+            return XObjectFactory.ReadImage(record, scanner, new TestFilterProvider(), Store(scanner),
+                new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
         }
 
         [Fact]

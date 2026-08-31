@@ -260,15 +260,32 @@ namespace UglyToad.PdfPig.Functions
         {
             if (samples is null)
             {
-                int arraySize = 1;
                 int nIn = NumberOfInputParameters;
                 int nOut = NumberOfOutputParameters;
+                int bitsPerSample = BitsPerSample;
+
+                // The number of samples is the product of the per-dimension /Size values. Compute it
+                // in 64-bit to avoid the 32-bit wraparound a crafted /Size could trigger, and reject a
+                // table that claims more samples than the sample stream can hold before allocating -
+                // otherwise a tiny document can drive a multi-gigabyte array allocation.
+                long sampleCount = 1;
                 for (int i = 0; i < nIn; i++)
                 {
-                    arraySize *= (int)sizeValues[i];
+                    sampleCount *= (long)sizeValues[i];
                 }
+
+                long maxSamples = nOut > 0 && bitsPerSample > 0
+                    ? ((long)FunctionStream!.Data.Length * 8) / ((long)nOut * bitsPerSample)
+                    : 0;
+
+                if (sampleCount <= 0 || sampleCount > maxSamples)
+                {
+                    throw new PdfDocumentFormatException(
+                        $"Type 0 function /Size implies {sampleCount} samples but the sample stream holds at most {maxSamples}.");
+                }
+
+                int arraySize = (int)sampleCount;
                 samples = new int[arraySize][];
-                int bitsPerSample = BitsPerSample;
 
                 // PDF spec 1.7 p.171:
                 // Each sample value is represented as a sequence of BitsPerSample bits.

@@ -23,6 +23,7 @@ internal class Program
                 typeof(BruteForceBenchmarks),
                 typeof(LayoutAnalysisBenchmarks),
                 typeof(Type4FunctionBenchmarks),
+                typeof(IccColorManagementBenchmarks),
             }).Run(args);
         }
 

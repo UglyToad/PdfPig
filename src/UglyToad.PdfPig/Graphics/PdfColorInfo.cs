@@ -1,10 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using Colors;
+    using Colors.Icc;
+    using Core;
     using Tokens;
 
     /// <summary>
-    /// A current colour, together with the Pattern it was selected through when it was selected that way.
+    /// A current colour, kept as the operands it was selected with so that it can be reconverted if the
+    /// rendering intent changes before anything is painted with it.
     /// <para>
     /// A Pattern colour is two things at once: the pattern itself, which is what the colour <i>is</i>, and
     /// (for an uncoloured tiling pattern) the colour its cell is painted in, which is selected by the same
@@ -14,43 +17,114 @@
     internal readonly struct PdfColorInfo
     {
         /// <summary>
-        /// What the operands convert to. For a Pattern colour this is the <i>underlying</i> colour an
-        /// uncoloured tiling pattern paints with, and <see cref="patternColor"/> is the colour itself.
+        /// The colour space <see cref="operands"/> belong to, or <see langword="null"/> when
+        /// <see cref="color"/> was handed over ready-made and there is nothing to reconvert from.
+        /// <para>
+        /// For a Pattern colour this is the <i>underlying</i> colour space of an uncoloured tiling pattern
+        /// (8.7.3.3) rather than the Pattern space itself, which cannot convert anything.
+        /// </para>
+        /// </summary>
+        private readonly ColorSpaceDetails? colorSpace;
+
+        /// <summary>
+        /// The selected component values, or <see langword="null"/> for the colour space's initial colour,
+        /// which <see cref="ColorSpaceDetails.GetInitializeColor(RenderingIntent)"/> derives itself and no
+        /// operand array stands behind.
+        /// </summary>
+        private readonly double[]? operands;
+
+        /// <summary>
+        /// What <see cref="operands"/> convert to. For a Pattern colour this is the <i>underlying</i> colour
+        /// an uncoloured tiling pattern paints with, and <see cref="patternColor"/> is the colour itself.
         /// </summary>
         private readonly IColor? color;
 
         /// <summary>
         /// The Pattern colour, when one was selected; <see langword="null"/> otherwise. A pattern is chosen
-        /// by name rather than by component values, so it never converts.
+        /// by name rather than by component values, so it never converts and never varies by intent, but
+        /// the operands that may accompany the name still do, hence the two fields.
         /// </summary>
         private readonly IColor? patternColor;
 
-        private PdfColorInfo(IColor? color, IColor? patternColor)
+        /// <summary>
+        /// The output intent profile <see cref="color"/> was managed through, or <see langword="null"/> when
+        /// it was not managed (14.11.5 / 8.6.5.7). Retained because the profile resolves a <i>different</i>
+        /// transform per <see cref="RenderingIntent"/>, so a managed colour has to be re-managed when the
+        /// intent moves - even for a device colour space, whose own conversion cannot vary.
+        /// </summary>
+        private readonly IIccProfile? outputIntentProfile;
+
+        private readonly RenderingIntent intent;
+
+        private PdfColorInfo(ColorSpaceDetails? colorSpace, double[]? operands, IColor? color,
+            IColor? patternColor, RenderingIntent intent, IIccProfile? outputIntentProfile = null)
         {
+            this.colorSpace = colorSpace;
+            this.operands = operands;
             this.color = color;
             this.patternColor = patternColor;
+            this.intent = intent;
+            this.outputIntentProfile = outputIntentProfile;
         }
 
         /// <summary>
-        /// A colour with nothing behind it, which is what a consumer handing over an already-converted
-        /// colour stores.
+        /// A colour with no operands behind it, which therefore stands exactly as given whatever the intent
+        /// does afterward. This is what a consumer handing over an already-converted colour stores.
         /// </summary>
-        public static PdfColorInfo Fixed(IColor? color) => new(color, null);
+        public static PdfColorInfo Fixed(IColor? color)
+            => new(null, null, color, null, RenderingIntent.RelativeColorimetric);
 
         /// <summary>
-        /// A colour selected in <paramref name="colorSpace"/>.
+        /// A colour selected in <paramref name="colorSpace"/>, converted now under <paramref name="intent"/>
+        /// and reconvertible later under another.
+        /// <para>
+        /// If <see cref="ColorSpaceDetails.RenderingIntentAffectsOutput"/> is <see langword="false"/>, <see cref="Fixed"/> is used.
+        /// </para>
         /// </summary>
         /// <param name="colorSpace">The colour space the operands belong to.</param>
-        /// <param name="operands">The selected component values, or <see langword="null"/> for the colour
-        /// space's initial colour.</param>
-        public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands)
-            => new(Convert(colorSpace, operands), null);
+        /// <param name="operands">The selected component values, or <see langword="null"/> for the colour space's initial colour.
+        /// Stored by reference, the caller must not mutate it afterward.</param>
+        /// <param name="intent">The intent in force when the colour was selected.</param>
+        /// <param name="outputIntentProfile">
+        /// (Optional) The output intent profile to colour-manage the converted colour through, when the
+        /// document declares one and the configured <see cref="IIccProfileService"/> opted in. Managing a
+        /// colour makes it vary by intent whatever its colour space says, so a managed colour keeps its
+        /// operands however <see cref="ColorSpaceDetails.RenderingIntentAffectsOutput"/> answered.
+        /// </param>
+        public static PdfColorInfo FromOperands(ColorSpaceDetails colorSpace, double[]? operands,
+            RenderingIntent intent, IIccProfile? outputIntentProfile = null)
+        {
+            if (!TryConvert(colorSpace, operands, intent, out var color))
+            {
+                return Fixed(null);
+            }
+
+            if (outputIntentProfile is not null &&
+                TryManage(colorSpace, color, outputIntentProfile, intent, out var managed))
+            {
+                return new(colorSpace, operands, managed, null, intent, outputIntentProfile);
+            }
+
+            // Not managed - either no output intent applies, or this colour space is not one the profile can
+            // express - so the colour space's own answer decides whether anything is worth retaining.
+            return colorSpace.RenderingIntentAffectsOutput
+                ? new(colorSpace, operands, color, null, intent)
+                : Fixed(color);
+        }
 
         /// <summary>
-        /// A Pattern colour selected by <c>SCN</c>/<c>scn</c>. The pattern itself comes from a name, but an
-        /// <b>uncoloured</b> tiling pattern (<c>/PaintType 2</c>) also carries the colour its content is
-        /// painted in, as operands in the <i>underlying</i> colour space that the Pattern space was declared
-        /// with (8.7.3.3). Those operands are converted here and read back through
+        /// Convert <paramref name="color"/> through the output intent profile, reporting whether it applied.
+        /// </summary>
+        private static bool TryManage(ColorSpaceDetails colorSpace, IColor? color, IIccProfile profile,
+            RenderingIntent intent, out IColor? managed)
+            => OutputIntentColorManagement.TryConvert(color, GetEffectiveDeviceType(colorSpace), profile, intent, out managed);
+
+        /// <summary>
+        /// A Pattern colour selected by <c>SCN</c>/<c>scn</c>. The pattern itself is fixed (it comes from a
+        /// name, not from component values) but an <b>uncoloured</b> tiling pattern (<c>/PaintType 2</c>)
+        /// also carries the colour its content is painted in, as operands in the <i>underlying</i> colour
+        /// space that the Pattern space was declared with (8.7.3.3). Those operands are kept here, converted
+        /// like any other colour and reconvertible under a later intent, and read back through
         /// <see cref="UnderlyingColor"/>.
         /// </summary>
         /// <param name="patternColorSpace">The Pattern colour space the name is resolved against.</param>
@@ -59,9 +133,19 @@
         /// Empty or <see langword="null"/> is the normal case for a coloured tiling pattern and for a shading
         /// pattern, neither of which has an underlying colour at all. For an uncoloured tiling pattern it is
         /// malformed, the operator owes a colour and supplied none, and the underlying space's own initial
-        /// colour stands in for it.</param>
+        /// colour stands in for it. Stored by reference, the caller must not mutate it afterward.
+        /// </param>
+        /// <param name="intent">The intent in force when the colour was selected.</param>
+        /// <param name="outputIntentProfile">
+        /// (Optional) The output intent profile to colour-manage the <i>underlying</i> colour through, as
+        /// <see cref="FromOperands"/> does for an ordinary colour. The pattern itself is never managed - it
+        /// is a name, and the colours its content stream paints with are managed when that stream is
+        /// processed - but the colour an uncoloured tiling pattern is painted in is an ordinary device
+        /// colour selected in an ordinary device colour space, so leaving it unmanaged would render it
+        /// differently from the very same operands written outside a pattern.
+        /// </param>
         public static PdfColorInfo ForPattern(PatternColorSpaceDetails patternColorSpace, NameToken patternName,
-            double[]? operands)
+            double[]? operands, RenderingIntent intent, IIccProfile? outputIntentProfile = null)
         {
             // Normalise "no operands" to null so that the underlying space derives its own initial colour
             // rather than being asked to convert an empty component list.
@@ -73,11 +157,38 @@
             var patternColor = patternColorSpace.GetColor(patternName);
             var underlyingColorSpace = GetUnderlyingColorSpace(patternColorSpace, patternColor, operands);
 
-            // No underlying colour at all: a coloured tiling pattern or a shading pattern.
-            return underlyingColorSpace is null
-                ? new PdfColorInfo(null, patternColor)
-                : new PdfColorInfo(TryConvert(underlyingColorSpace, operands), patternColor);
+            if (underlyingColorSpace is null)
+            {
+                // No underlying colour at all (coloured tiling pattern or shading pattern) so there is
+                // nothing for an output intent to manage and nothing to reconvert on a later intent either.
+                return new PdfColorInfo(null, operands, null, patternColor, intent);
+            }
+
+            if (!TryConvert(underlyingColorSpace, operands, intent, out var underlyingColor))
+            {
+                return new PdfColorInfo(null, operands, null, patternColor, intent);
+            }
+
+            // Retained only when it applied, as on FromOperands
+            if (outputIntentProfile is not null &&
+                TryManage(underlyingColorSpace, underlyingColor, outputIntentProfile, intent, out var managed))
+            {
+                return new PdfColorInfo(underlyingColorSpace, operands, managed, patternColor, intent,
+                    outputIntentProfile);
+            }
+
+            // Not managed, so (exactly as in FromOperands) the underlying space is worth retaining only
+            // when it can answer differently later. Anything else re-runs a tint transform or a profile
+            // lookup on every read for an answer that cannot change.
+            return new PdfColorInfo(
+                underlyingColorSpace.RenderingIntentAffectsOutput ? underlyingColorSpace : null,
+                operands, underlyingColor, patternColor, intent);
         }
+
+        private static ColorSpace GetEffectiveDeviceType(ColorSpaceDetails colorSpace)
+            => colorSpace.Type is ColorSpace.Separation or ColorSpace.DeviceN
+                ? colorSpace.BaseType
+                : colorSpace.Type;
 
         /// <summary>
         /// The underlying colour space to convert <paramref name="operands"/> through, or
@@ -108,35 +219,79 @@
         }
 
         /// <summary>
-        /// The converted colour. For a Pattern colour this is the pattern itself; see
-        /// <see cref="UnderlyingColor"/> for the colour an uncoloured tiling pattern paints in.
+        /// The converted colour, valid for the intent this was last resolved under. For a Pattern colour
+        /// this is the pattern itself; see <see cref="UnderlyingColor"/> for the colour an uncoloured tiling
+        /// pattern paints in.
         /// </summary>
         public IColor? Color => patternColor ?? color;
 
         /// <summary>
-        /// The colour an uncoloured tiling pattern paints its content in. <see langword="null"/> unless a
-        /// Pattern colour was selected <i>and</i> its colour space declared a usable underlying space.
+        /// The colour an uncoloured tiling pattern paints its content in, converted for the intent this was
+        /// last resolved under. <see langword="null"/> unless a Pattern colour was selected <i>and</i> its
+        /// colour space declared a usable underlying space.
+        /// <para>As a result, <see langword="null"/> for every ordinary colour, for a coloured tiling pattern and for a shading pattern.</para>
         /// </summary>
         public IColor? UnderlyingColor => patternColor is null ? null : color;
 
-        private static IColor? Convert(ColorSpaceDetails colorSpace, double[]? operands)
-            => operands is null
-                ? colorSpace.GetInitializeColor()
-                : colorSpace.GetColor(operands);
+        /// <summary>
+        /// Whether <see cref="Resolve"/> would answer with anything other than this value. Lets a caller
+        /// skip the read-modify-write of a 48-byte struct for the overwhelmingly common case of a colour
+        /// that has nothing to reconvert from.
+        /// </summary>
+        public bool NeedsResolve(RenderingIntent currentIntent) => colorSpace is not null && currentIntent != intent;
 
         /// <summary>
-        /// <see cref="Convert"/>, but answering <see langword="null"/> instead of throwing when the
-        /// underlying space cannot turn the operands into a colour.
+        /// This colour converted for <paramref name="currentIntent"/>, or itself when it already is.
+        /// <para>
+        /// The caller is expected to store the result back, so that a page painted entirely under a changed
+        /// intent converts once rather than once per letter.
+        /// </para>
         /// </summary>
-        private static IColor? TryConvert(ColorSpaceDetails colorSpace, double[]? operands)
+        public PdfColorInfo Resolve(RenderingIntent currentIntent)
+        {
+            if (colorSpace is null || currentIntent == intent)
+            {
+                return this;
+            }
+
+            if (!TryConvert(colorSpace, operands, currentIntent, out var converted))
+            {
+                return new PdfColorInfo(null, operands, color, patternColor, intent);
+            }
+
+            // Re-run the output intent under the new intent too: the profile resolves its transform per
+            // intent, so re-converting the operands without re-managing them would answer with the old
+            // device's colour under the new intent.
+            if (outputIntentProfile is not null &&
+                TryManage(colorSpace, converted, outputIntentProfile, currentIntent, out var managed))
+            {
+                converted = managed;
+            }
+
+            return new PdfColorInfo(colorSpace, operands, converted, patternColor, currentIntent,
+                outputIntentProfile);
+        }
+
+        private static IColor? Convert(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent)
+            => operands is null
+                ? colorSpace.GetInitializeColor(intent)
+                : colorSpace.GetColor(operands, intent);
+
+        /// <summary>
+        /// <see cref="Convert"/>, but reporting failure instead of throwing when the underlying space
+        /// cannot turn the operands into a colour.
+        /// </summary>
+        private static bool TryConvert(ColorSpaceDetails colorSpace, double[]? operands, RenderingIntent intent, out IColor? color)
         {
             try
             {
-                return Convert(colorSpace, operands);
+                color = Convert(colorSpace, operands, intent);
+                return true;
             }
             catch
             {
-                return null;
+                color = null;
+                return false; // TODO - Log
             }
         }
     }

@@ -7,7 +7,7 @@
     using PdfPig.Filters;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
-    using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
     using PdfPig.Graphics.Operations;
     using PdfPig.Parser;
     using PdfPig.Tokenization.Scanner;
@@ -94,6 +94,7 @@
                     userSpaceUnit,
                     rotation,
                     initialMatrix,
+                    ResourceStore.GetPageOutputIntentProfile(dictionary),
                     ParsingOptions);
 
                 TextOnlyPageContent content = context.Process(pageNumber, operations);
@@ -115,6 +116,7 @@
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
+                IIccProfile? outputIntentProfile,
                 ParsingOptions parsingOptions)
                 : base(pageNumber,
                     resourceStore,
@@ -125,6 +127,7 @@
                     userSpaceUnit,
                     rotation,
                     initialMatrix,
+                    outputIntentProfile,
                     parsingOptions)
             {
             }

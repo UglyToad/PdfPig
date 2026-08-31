@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using DocumentLayoutAnalysis.PageSegmenter;
     using DocumentLayoutAnalysis.WordExtractor;
@@ -11,11 +12,28 @@
     using UglyToad.PdfPig.Fonts;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.Graphics.Colors.Icc;
+    using UglyToad.PdfPig.Graphics.Core;
     using UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState;
     using UglyToad.PdfPig.Writer;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issues1426()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("minimal_iccbased_scn.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.Equal("hello world", page.Text);
+                Assert.Equal(11, page.Letters.Count);
+                Assert.All(page.Letters, l => Assert.Same(GrayColor.Black, l.Color)); // Fall back to black
+            }
+        }
+
         [Fact]
         public void Issues1394()
         {

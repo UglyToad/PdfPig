@@ -30,11 +30,11 @@
                 // or the lookup table of an /Indexed). ColorSpaceDetailsParser resolves the elements it
                 // needs through the scanner anyway.
                 return streamDictionary.Without(NameToken.ColorSpace)
-                    .Resolve(pdfScanner)
+                    .Resolve(pdfScanner)!
                     .With(NameToken.ColorSpace, rawColorSpaceArray);
             }
             
-            return streamDictionary.Resolve(pdfScanner);
+            return streamDictionary.Resolve(pdfScanner)!;
         }
         
         /// <summary>
@@ -43,7 +43,8 @@
         public static XObjectImage ReadImage(XObjectContentRecord xObject,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            ParsingOptions options)
         {
             if (xObject is null)
             {
@@ -88,20 +89,16 @@
                     xObject.DefaultRenderingIntent, // Ignored
                     DeviceGrayColorSpaceDetails.Instance);
 
-                softMaskImage = ReadImage(softMaskImageRecord, pdfScanner, filterProvider, resourceStore);
+                softMaskImage = ReadImage(softMaskImageRecord, pdfScanner, filterProvider, resourceStore, options);
             }
             else if (dictionary.TryGet(NameToken.Mask, out StreamToken maskStream))
             {
-                /* As per Pdf Specifications:
-                 *  "The image dictionary shall not contain a ColorSpace entry because sample values represent masking properties (1 bit per sample) rather than colours."
-                 *
-                 * TODO - We assume here lenient parsing, but we should actually get the value from parsing options. See Issue #1054
-                 *
-                 * if (maskStream.StreamDictionary.ContainsKey(NameToken.ColorSpace))
-                 * {
-                 *      throw new Exception("The SMask dictionary contains a 'ColorSpace'.");
-                 * }
-                 */
+                if (!options.UseLenientParsing && maskStream.StreamDictionary.ContainsKey(NameToken.ColorSpace))
+                {
+                    // As per Pdf Specifications:
+                    // "The image dictionary shall not contain a ColorSpace entry because sample values represent masking properties (1 bit per sample) rather than colours.".
+                    throw new PdfDocumentFormatException("The SMask dictionary contains a 'ColorSpace'.");
+                }
 
                 // Stencil masking
                 XObjectContentRecord maskImageRecord = new XObjectContentRecord(XObjectType.Image,
@@ -110,7 +107,7 @@
                     xObject.DefaultRenderingIntent,
                     null);
 
-                softMaskImage = ReadImage(maskImageRecord, pdfScanner, filterProvider, resourceStore);
+                softMaskImage = ReadImage(maskImageRecord, pdfScanner, filterProvider, resourceStore, options);
             }
 
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out NameToken filterName) && filterName.Equals(NameToken.JpxDecode);
@@ -198,7 +195,7 @@
                     // A JPXDecode image without an explicit /ColorSpace entry takes its colour space
                     // from the colour space information embedded in the JPEG2000 data (PDF 2.0, 7.4.9);
                     // otherwise ColorSpaceDetails stays null and the image cannot be interpreted.
-                    details = Jpeg2000Helper.GetJpxColorSpaceDetails(xObject.Stream.Data);
+                    details = Jpeg2000Helper.GetJpxColorSpaceDetails(xObject.Stream.Data, options);
                 }
                 else
                 {

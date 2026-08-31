@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(PdfPigVersion)' == 'Latest'">
-		<PackageReference Include="PdfPig" Version="0.1.16-alpha-20260714-a9ac3" />
+		<PackageReference Include="PdfPig" Version="0.1.17-alpha-202608270140-4a0ec" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -58,6 +58,18 @@
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	  <None Update="PDFBOX-1869-4-1.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GHOSTSCRIPT-700236-1.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GHOSTSCRIPT-699375-5.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="issue_671.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Pig Production Handbook.pdf">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

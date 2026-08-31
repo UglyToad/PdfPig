@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Functions
 {
+    using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Tests.Tokens;
     using UglyToad.PdfPig.Tokens;
@@ -210,6 +211,32 @@
             result = function0.Eval(new double[] { 0.3333 });
             Assert.Equal(3, result.Length);
             Assert.Equal(new double[] { 0.6667, 0.0, 0.3333 }, result); // 1/3 point
+        }
+
+        [Fact]
+        public void OversizedSizeThrowsInsteadOfAllocating()
+        {
+            // A crafted /Size whose product far exceeds what the (tiny) sample stream can hold used to
+            // drive an unchecked 32-bit multiply and a multi-gigabyte allocation before any bounds check.
+            // It must now fail fast with a catchable format exception.
+            DictionaryToken dictionaryToken = new DictionaryToken(new Dictionary<NameToken, IToken>()
+            {
+                { NameToken.FunctionType, new NumericToken(0) },
+                { NameToken.Domain, GetArrayToken(0, 1, 0, 1) },
+                { NameToken.Range, GetArrayToken(0, 1, 0, 1, 0, 1) },
+
+                { NameToken.BitsPerSample, new NumericToken(8) },
+                { NameToken.Size, GetArrayToken(100000, 100000) }
+            });
+
+            byte[] data = new byte[] { 0, 0, 0 };
+
+            StreamToken function = new StreamToken(dictionaryToken, data);
+
+            var func = PdfFunctionParser.Create(function, testPdfTokenScanner, testFilterProvider);
+            var function0 = func as PdfFunctionType0;
+
+            Assert.Throws<PdfDocumentFormatException>(() => function0.Eval(new double[] { 0.5, 0.5 }));
         }
     }
 }

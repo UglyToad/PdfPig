@@ -4,6 +4,7 @@
     using System.Diagnostics.CodeAnalysis;
     using Core;
     using Graphics.Colors;
+    using Graphics.Colors.Icc;
     using Logging;
     using PdfFonts;
     using Tokens;
@@ -85,8 +86,36 @@
         Shading GetShading(NameToken name);
 
         /// <summary>
+        /// The configured ICC profile service (from <see cref="ParsingOptions.IccProfileService"/>),
+        /// or <see langword="null"/>. When <see langword="null"/>, ICC-based color spaces will fall
+        /// back to their alternate color space.
+        /// </summary>
+        IIccProfileService? IccProfileService { get; }
+
+        /// <summary>
         /// The log from <see cref="ParsingOptions.Logger"/>.
         /// </summary>
         ILog Logger { get; }
+
+        /// <summary>
+        /// Every output intent declared by the document catalog (see 14.11.5, "Output intents"), in the order
+        /// the <c>/OutputIntents</c> array wrote them; empty when the catalog declares none.
+        /// </summary>
+        IReadOnlyList<OutputIntent> DocumentOutputIntents { get; }
+
+        /// <summary>
+        /// Every output intent in effect for the content of a given page: a page-level <c>/OutputIntents</c>
+        /// entry (PDF 2.0, Table 31) overrides the document catalog's <see cref="DocumentOutputIntents"/>, which is
+        /// what is returned when the page carries none.
+        /// </summary>
+        /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
+        IReadOnlyList<OutputIntent> GetPageOutputIntents(DictionaryToken? pageDictionary);
+
+        /// <summary>
+        /// The profile a page's device colours are colour-managed through, or <see langword="null"/> when
+        /// they are not managed.
+        /// </summary>
+        /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
+        IIccProfile? GetPageOutputIntentProfile(DictionaryToken? pageDictionary);
     }
 }

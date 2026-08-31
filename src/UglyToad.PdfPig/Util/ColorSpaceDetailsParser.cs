@@ -9,7 +9,7 @@
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Functions;
+    using Functions;
 
     internal static class ColorSpaceMapper
     {
@@ -47,6 +47,7 @@
             IPdfTokenScanner scanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
+            IccProfileCache iccProfileCache,
             int depth = 0)
         {
             if (depth > MaxNestingDepth)
@@ -68,7 +69,8 @@
                     return DeviceGrayColorSpaceDetails.Instance;
                 }
 
-                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, depth + 1);
+                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F),
+                    scanner, resourceStore, filterProvider, iccProfileCache, depth + 1);
                 return IndexedColorSpaceDetails.Stencil(colorSpaceDetails);
             }
 
@@ -261,8 +263,8 @@
                         if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out var alternateColorSpaceToken))
                         {
                             var alternate = GetSecondaryColorSpace(alternateColorSpaceToken,
-                                imageDictionary, scanner, filterProvider, resourceStore, depth,
-                                applyDefaultSubstitution: false, allowIccBased: false);
+                                imageDictionary, scanner, filterProvider, resourceStore, iccProfileCache,
+                                depth, applyDefaultSubstitution: false, allowIccBased: false);
 
                             if (alternate is not UnsupportedColorSpaceDetails)
                             {
@@ -288,9 +290,12 @@
                         {
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
+                        
+                        var profile = iccProfileCache.GetOrParse(second, streamToken, filterProvider, scanner,
+                            resourceStore.IccProfileService, resourceStore.Logger);
 
                         return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range,
-                            metadata, resourceStore.Logger);
+                            metadata, profile, resourceStore.Logger);
                     }
                 case ColorSpace.Indexed:
                     {
@@ -319,6 +324,7 @@
                             scanner,
                             filterProvider,
                             resourceStore,
+                            iccProfileCache,
                             depth);
 
                         if (baseDetails is UnsupportedColorSpaceDetails)
@@ -389,6 +395,7 @@
                                     scanner,
                                     filterProvider,
                                     resourceStore,
+                                    iccProfileCache,
                                     depth);
                             }
                         }
@@ -419,6 +426,7 @@
                             scanner,
                             filterProvider,
                             resourceStore,
+                            iccProfileCache,
                             depth);
 
                         PdfFunction function;
@@ -464,6 +472,7 @@
                             scanner,
                             filterProvider,
                             resourceStore,
+                            iccProfileCache,
                             depth);
 
                         var func = colorSpaceArray[3];
@@ -518,6 +527,7 @@
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
             IResourceStore resourceStore,
+            IccProfileCache iccProfileCache,
             int depth,
             bool applyDefaultSubstitution = true,
             bool allowIccBased = true)
@@ -546,6 +556,7 @@
                     scanner,
                     resourceStore,
                     filterProvider,
+                    iccProfileCache,
                     depth + 1);
             }
 
@@ -573,6 +584,7 @@
                     scanner,
                     resourceStore,
                     filterProvider,
+                    iccProfileCache,
                     depth + 1);
             }
 
