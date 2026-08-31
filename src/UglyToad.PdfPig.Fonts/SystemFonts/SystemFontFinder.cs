@@ -29,7 +29,7 @@ public sealed class SystemFontFinder : ISystemFontFinder
     /// <summary>
     /// Additional directories where to search fonts
     /// </summary>
-    private static readonly ConcurrentBag<string> AdditionalFontSearchDirectories = new ConcurrentBag<string>();
+    private static readonly HashSet<string> AdditionalFontSearchDirectories = new HashSet<string>();
     private static readonly object FontSearchDirectoryLock = new();
 
     /// <summary>
@@ -130,7 +130,10 @@ public sealed class SystemFontFinder : ISystemFontFinder
 
         AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() =>
         {
-            return lister.GetAllFonts(AdditionalFontSearchDirectories).ToArray();
+            lock (FontSearchDirectoryLock)
+            {
+                return lister.GetAllFonts(AdditionalFontSearchDirectories).ToArray();
+            }
         });
 
         FontsByFirstChar = new Lazy<IReadOnlyDictionary<char, SystemFontRecord[]>>(() =>
