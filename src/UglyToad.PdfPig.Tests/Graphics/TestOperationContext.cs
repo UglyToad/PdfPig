@@ -36,6 +36,7 @@
                     new ResourceStore(new TestPdfTokenScanner(),
                         new TestFontFactory(),
                         new TestFilterProvider(),
+                        null,
                         new ParsingOptions()
                         {
                             UseLenientParsing = true,

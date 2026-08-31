@@ -72,7 +72,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
         {
             var parsingOptions = new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true };
 
-            var resourceStore = new ResourceStore(scanner, new NoOpFontFactory(), new TestFilterProvider(), parsingOptions);
+            var resourceStore = new ResourceStore(scanner, new NoOpFontFactory(), new TestFilterProvider(), null, parsingOptions);
 
             resourceStore.LoadResourceDictionary(new DictionaryToken(new Dictionary<NameToken, IToken>
             {
@@ -94,6 +94,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
                 UserSpaceUnit.Default,
                 new PageRotationDegrees(0),
                 TransformationMatrix.Identity,
+                null,
                 parsingOptions);
         }
 

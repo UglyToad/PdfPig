@@ -1,8 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using Core;
     using System;
     using System.Collections.Generic;
-    using UglyToad.PdfPig.Functions;
+    using Functions;
 
     /// <summary>
     /// CIE (Commission Internationale de l'Éclairage) colorspace.
@@ -75,7 +76,7 @@
         /// the Range entry in the colour space dictionary
         /// </summary>
         /// <inheritdoc/>
-        internal override Span<byte> Transform(Span<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
             var transformed = new byte[decoded.Length];
             int index = 0;
@@ -141,14 +142,14 @@
         }
 
         /// <inheritdoc/>
-        internal override double[] Process(params double[] values)
+        internal override double[] Process(double[] values, RenderingIntent intent)
         {
             GetRgb(values, out double r, out double g, out double b);
             return [r, g, b];
         }
 
         /// <inheritdoc/>
-        public override IColor GetColor(ReadOnlySpan<double> values)
+        public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
         {
             if (values.Length != NumberOfColorComponents)
             {
@@ -160,7 +161,7 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor GetInitializeColor(RenderingIntent intent)
         {
             // Setting the current stroking or nonstroking colour space to any CIE-based colour space shall
             // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
@@ -169,12 +170,13 @@
             double b = PdfFunction.ClipToRange(0, Matrix[0], Matrix[1]);
             double c = PdfFunction.ClipToRange(0, Matrix[2], Matrix[3]);
             Span<double> init = stackalloc double[3] { 0, b, c };
-            GetRgb(init, out double rr, out double gg, out double bb);
+            GetRgb(init, intent, out double rr, out double gg, out double bb);
             return new RGBColor(rr, gg, bb);
         }
 
         /// <inheritdoc/>
-        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+            out double r, out double g, out double b)
         {
             // Component Ranges: L*: [0 100]; a* and b*: [-128 127]
             double bClip = PdfFunction.ClipToRange(values[1], Matrix[0], Matrix[1]);

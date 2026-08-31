@@ -6,6 +6,7 @@
     using PdfPig.Functions;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
     using Xunit;
 
@@ -13,11 +14,48 @@
     /// <c>SCN</c>/<c>scn</c> selects a pattern by name, and for an uncoloured tiling pattern
     /// (<c>/PaintType 2</c>) it also supplies the colour the pattern's cell is painted in, as operands in the
     /// underlying colour space the Pattern space was declared with (8.7.3.3). The graphics state keeps those
-    /// operands rather than dropping them, so the colour they select is available to every consumer.
+    /// operands rather than dropping them, so the colour they select is available to every consumer and -
+    /// like every other colour - follows the rendering intent in force when the mark is made.
     /// </summary>
     public class UncolouredTilingPatternColorTests
     {
         private static readonly NameToken PatternName = NameToken.Create("P0");
+
+        /// <summary>
+        /// A colour space whose conversion depends on the intent, which is otherwise true only of an
+        /// ICCBased space backed by a real profile. Answers a different colour per intent so that which
+        /// conversion ran is visible in the output.
+        /// </summary>
+        private class PerIntentColorSpaceDetails : ColorSpaceDetails
+        {
+            public PerIntentColorSpaceDetails() : base(ColorSpace.DeviceRGB)
+            {
+            }
+
+            public override int NumberOfColorComponents => 3;
+
+            public override int BaseNumberOfColorComponents => 3;
+
+            public override bool RenderingIntentAffectsOutput => true;
+
+            public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent)
+                => intent == RenderingIntent.Perceptual
+                    ? new RGBColor(0.10, 0.20, 0.30)
+                    : new RGBColor(0.60, 0.70, 0.80);
+
+            public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent,
+                out double r, out double g, out double b)
+            {
+                (r, g, b) = GetColor(values, intent).ToRGBValues();
+            }
+
+            public override IColor? GetInitializeColor(RenderingIntent intent)
+                => GetColor([0.0, 0.0, 0.0], intent);
+
+            internal override double[] Process(double[] values, RenderingIntent intent) => values;
+
+            internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent) => decoded;
+        }
 
         private static TilingPatternColor UncolouredPattern()
             => TilingPattern(PatternPaintType.Uncoloured);
@@ -77,11 +115,12 @@
         /// pattern or a shading pattern, which supply their own colours - is parsed.
         /// </summary>
         private static (CurrentGraphicsState State, PatternColorSpaceDetails Space) Build(
-            ColorSpaceDetails? underlying, PatternColor? pattern = null)
+            ColorSpaceDetails? underlying, RenderingIntent intent = RenderingIntent.RelativeColorimetric,
+            PatternColor? pattern = null)
         {
             var patterns = new Dictionary<NameToken, PatternColor> { { PatternName, pattern ?? UncolouredPattern() } };
 
-            return (new CurrentGraphicsState(),
+            return (new CurrentGraphicsState { RenderingIntent = intent },
                 new PatternColorSpaceDetails(patterns, underlying!));
         }
 
@@ -238,16 +277,16 @@
 
             public override int BaseNumberOfColorComponents => 1;
 
-            public override IColor GetColor(ReadOnlySpan<double> values) => throw new InvalidOperationException();
+            public override IColor GetColor(ReadOnlySpan<double> values, RenderingIntent intent) => throw new InvalidOperationException();
 
-            public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+            public override void GetRgb(ReadOnlySpan<double> values, RenderingIntent intent, out double r, out double g, out double b)
                 => throw new InvalidOperationException();
 
-            public override IColor? GetInitializeColor() => throw new InvalidOperationException();
+            public override IColor? GetInitializeColor(RenderingIntent intent) => throw new InvalidOperationException();
 
-            internal override double[] Process(params double[] values) => throw new InvalidOperationException();
+            internal override double[] Process(double[] values, RenderingIntent intent) => throw new InvalidOperationException();
 
-            internal override Span<byte> Transform(Span<byte> decoded) => throw new InvalidOperationException();
+            internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent) => throw new InvalidOperationException();
         }
 
         [Fact]
@@ -264,20 +303,80 @@
         }
 
         [Fact]
-        public void DeepCloneCarriesBothThePatternAndItsUnderlyingColour()
+        public void IntentSetAfterTheOperatorStillAppliesToTheUnderlyingColour()
         {
-            var (state, space) = Build(DeviceRgbColorSpaceDetails.Instance);
+            // scn selects the pattern and its colour, ri then changes the intent, and only then is the mark
+            // made. Rendering intent is a graphics state parameter consumed when the mark is made (8.6.5.8),
+            // so the second intent decides the colour - which the renderer could not do while it was
+            // converting the operands itself, with the intent-less overload.
+            var (state, space) = Build(new PerIntentColorSpaceDetails());
 
-            state.SetNonStrokingPatternColor(space, PatternName, [1.0, 0.0, 0.0]);
+            state.SetNonStrokingPatternColor(space, PatternName, [0.0, 0.0, 0.0]);
+
+            var (r, g, b) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.60, r);
+            Assert.Equal(0.70, g);
+            Assert.Equal(0.80, b);
+
+            state.RenderingIntent = RenderingIntent.Perceptual;
+
+            (r, g, b) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.10, r);
+            Assert.Equal(0.20, g);
+            Assert.Equal(0.30, b);
+        }
+
+        /// <summary>
+        /// The same space, but declaring that the intent cannot change its answer. The declaration is what
+        /// is believed, so this stands in for every underlying space that converts once and for all.
+        /// </summary>
+        private sealed class IntentIndifferentColorSpaceDetails : PerIntentColorSpaceDetails
+        {
+            public override bool RenderingIntentAffectsOutput => false;
+        }
+
+        [Fact]
+        public void AnUnderlyingSpaceTheIntentCannotChangeIsNotReconverted()
+        {
+            // An ordinary colour drops its operands when the space says the intent cannot change the answer
+            // (FromOperands), and a pattern's underlying colour is no different: reconverting it costs a
+            // tint transform or a profile lookup per read for an answer that cannot differ, and reaches back
+            // into a space that has already had its one chance to fail.
+            var (state, space) = Build(new IntentIndifferentColorSpaceDetails());
+
+            state.SetNonStrokingPatternColor(space, PatternName, [0.0, 0.0, 0.0]);
+
+            state.RenderingIntent = RenderingIntent.Perceptual;
+
+            var (r, g, b) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.60, r);
+            Assert.Equal(0.70, g);
+            Assert.Equal(0.80, b);
+        }
+
+        [Fact]
+        public void DeepCloneCarriesTheOperandsSoTheCloneFollowsItsOwnIntent()
+        {
+            var (state, space) = Build(new PerIntentColorSpaceDetails());
+
+            state.SetNonStrokingPatternColor(space, PatternName, [0.0, 0.0, 0.0]);
 
             var clone = state.DeepClone();
-
-            Assert.IsType<TilingPatternColor>(clone.CurrentNonStrokingColor);
+            clone.RenderingIntent = RenderingIntent.Perceptual;
 
             var (r, g, b) = clone.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
-            Assert.Equal(1.0, r);
-            Assert.Equal(0.0, g);
-            Assert.Equal(0.0, b);
+            Assert.Equal(0.10, r);
+            Assert.Equal(0.20, g);
+            Assert.Equal(0.30, b);
+
+            // ... and the original is unaffected by the clone's intent.
+            (r, g, b) = state.CurrentNonStrokingUnderlyingColor!.ToRGBValues();
+            Assert.Equal(0.60, r);
+            Assert.Equal(0.70, g);
+            Assert.Equal(0.80, b);
+
+            // The pattern survives the clone too.
+            Assert.IsType<TilingPatternColor>(clone.CurrentNonStrokingColor);
         }
     }
 }

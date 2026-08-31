@@ -4,6 +4,7 @@
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
     using PdfPig.Tests.Tokens;
     using Xunit;
@@ -91,6 +92,7 @@
                 scanner ?? new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             store.LoadResourceDictionary(resources ?? Empty);
@@ -132,7 +134,7 @@
             Assert.Equal(4, details.BaseNumberOfColorComponents);
 
             Span<byte> samples = stackalloc byte[2] { 0, 255 };
-            var transformed = details.Transform(samples);
+            var transformed = details.Transform(samples, RenderingIntent.RelativeColorimetric);
             Assert.Equal(2 * details.BaseNumberOfColorComponents, transformed.Length);
         }
 
@@ -271,6 +273,7 @@
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             store.LoadResourceDictionary(Empty);
@@ -397,6 +400,7 @@
                 scanner,
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             store.LoadResourceDictionary(Empty);
@@ -504,6 +508,7 @@
                 new TestPdfTokenScanner(),
                 new NoOpFontFactory(),
                 new TestFilterProvider(),
+                null,
                 new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
 
             store.LoadResourceDictionary(resources);

@@ -7,6 +7,7 @@
     using PdfPig.Geometry;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
     using PdfPig.Graphics.Operations;
     using PdfPig.Graphics.Operations.PathConstruction;
     using PdfPig.Parser;
@@ -25,10 +26,10 @@
         public SkiaGlyphStreamProcessor(int pageNumber, IResourceStore resourceStore, IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser, ILookupFilterProvider filterProvider, CropBox cropBox,
             UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, TransformationMatrix initialMatrix,
-            ParsingOptions parsingOptions)
+            IIccProfile? outputIntentProfile, ParsingOptions parsingOptions)
             : base(pageNumber, resourceStore, pdfScanner, pageContentParser,
-            filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
-            parsingOptions)
+                filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
+                outputIntentProfile, parsingOptions)
         {
             // The crop box is defined in unrotated default user space; account for the page
             // rotation to get the visible dimensions of the rendering surface.

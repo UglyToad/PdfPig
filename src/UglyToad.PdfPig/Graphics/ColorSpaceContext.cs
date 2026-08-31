@@ -2,6 +2,7 @@
 {
     using System;
     using Colors;
+    using Colors.Icc;
     using Content;
     using Tokens;
 
@@ -28,7 +29,11 @@
                 return;
             }
 
-            currentStateFunc().SetStrokingColor(CurrentStrokingColorSpace, null);
+            var state = currentStateFunc();
+
+            // No operands: the colour space derives its own initial colour. A Pattern colour space has none
+            // and answers null, which this has always stored as-is; scn supplies the colour for that space.
+            state.SetStrokingColor(CurrentStrokingColorSpace, null, state.OutputIntentProfile);
         }
 
         public void SetStrokingColor(double[] operands, NameToken? patternName)
@@ -43,12 +48,13 @@
             {
                 // The operands travel with the pattern: an uncoloured tiling pattern (/PaintType 2) paints
                 // its cell in the colour they select from the underlying colour space (8.7.3.3), read back
-                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor.
-                state.SetStrokingPatternColor(patternCs, patternName, operands);
+                // through CurrentGraphicsState.CurrentStrokingUnderlyingColor. That colour is an ordinary
+                // device colour, so it is output-intent managed like any other.
+                state.SetStrokingPatternColor(patternCs, patternName, operands, state.OutputIntentProfile);
             }
             else
             {
-                state.SetStrokingColor(CurrentStrokingColorSpace, operands);
+                state.SetStrokingColor(CurrentStrokingColorSpace, operands, state.OutputIntentProfile);
             }
         }
 
@@ -75,7 +81,11 @@
                 return;
             }
 
-            currentStateFunc().SetNonStrokingColor(CurrentNonStrokingColorSpace, null);
+            var state = currentStateFunc();
+
+            // No operands: the colour space derives its own initial colour. A Pattern colour space has none
+            // and answers null, which this has always stored as-is; scn supplies the colour for that space.
+            state.SetNonStrokingColor(CurrentNonStrokingColorSpace, null, state.OutputIntentProfile);
         }
 
         public void SetNonStrokingColor(double[] operands, NameToken? patternName)
@@ -89,11 +99,11 @@
             if (patternName is not null && CurrentNonStrokingColorSpace is PatternColorSpaceDetails patternCs)
             {
                 // See the stroking counterpart: the operands select the uncoloured tiling pattern's colour.
-                state.SetNonStrokingPatternColor(patternCs, patternName, operands);
+                state.SetNonStrokingPatternColor(patternCs, patternName, operands, state.OutputIntentProfile);
             }
             else
             {
-                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands);
+                state.SetNonStrokingColor(CurrentNonStrokingColorSpace, operands, state.OutputIntentProfile);
             }
         }
 
@@ -123,16 +133,47 @@
             var colorSpace = resourceStore.GetDeviceColorSpaceDetails(deviceColorSpace);
             var state = currentStateFunc();
 
-            IColor color = colorSpace.GetColor(values);
-
             if (stroking)
             {
                 CurrentStrokingColorSpace = colorSpace;
-                state.SetStrokingColor(color);
             }
             else
             {
                 CurrentNonStrokingColorSpace = colorSpace;
+            }
+
+            var outputIntentProfile = state.OutputIntentProfile;
+
+            // A managed colour varies by intent even when its colour space does not, because the profile
+            // resolves its transform per intent, so the operands have to be kept in that case too.
+            if (colorSpace.RenderingIntentAffectsOutput || outputIntentProfile is not null)
+            {
+                // Paying the cost of allocating operands only here: these are the cases where the graphics
+                // state keeps them, to reconvert from if the intent moves before the mark is made.
+                double[] operands = values.ToArray();
+
+                if (stroking)
+                {
+                    state.SetStrokingColor(colorSpace, operands, outputIntentProfile);
+                }
+                else
+                {
+                    state.SetNonStrokingColor(colorSpace, operands, outputIntentProfile);
+                }
+
+                return;
+            }
+
+            // The intent is still passed, even though it cannot affect the output; it is unconditionally
+            // the right value here.
+            var color = colorSpace.GetColor(values, state.RenderingIntent);
+
+            if (stroking)
+            {
+                state.SetStrokingColor(color);
+            }
+            else
+            {
                 state.SetNonStrokingColor(color);
             }
         }
