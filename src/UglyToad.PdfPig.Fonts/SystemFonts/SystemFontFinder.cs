@@ -387,7 +387,7 @@ public sealed class SystemFontFinder : ISystemFontFinder
 
         lock (FontSearchDirectoryLock)
         {
-            if (!string.IsNullOrWhiteSpace(directory) && !AdditionalFontSearchDirectories.Contains(directory))
+            if (!string.IsNullOrWhiteSpace(directory))
             {
                 AdditionalFontSearchDirectories.Add(directory);
             }
