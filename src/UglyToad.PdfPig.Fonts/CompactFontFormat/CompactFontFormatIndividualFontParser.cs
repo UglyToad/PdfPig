@@ -238,9 +238,21 @@
             {
                 var topLevelDictionaryCid = topLevelDictionaryReader.Read(new CompactFontFormatData(index), stringIndex);
 
-                if (!topLevelDictionaryCid.PrivateDictionaryLocation.HasValue)
+                if (!topLevelDictionaryCid.PrivateDictionaryLocation.HasValue
+                    || topLevelDictionaryCid.PrivateDictionaryLocation.Value.Size <= 0)
                 {
-                    throw new InvalidFontFormatException("The CID keyed Compact Font Format font did not contain a private dictionary for the font dictionary.");
+                    // CFFParser.java parseCIDFontDicts - a font dictionary without a usable
+                    // private dictionary gets an empty one rather than failing the font.
+                    // Subsetters leave such entries behind: the FDArray keeps its original
+                    // length so that the indices FDSelect yields stay valid, and every
+                    // entry whose glyphs were dropped is emptied. An entry reached this way
+                    // owns no charstring, so the defaults are all it can need.
+                    // The three lists are addressed by the font dictionary index later on,
+                    // so the placeholder has to be added rather than skipped.
+                    fontDictionaries.Add(topLevelDictionaryCid);
+                    privateDictionaries.Add(CompactFontFormatPrivateDictionary.GetDefault());
+                    fontLocalSubroutines.Add(null);
+                    continue;
                 }
 
                 var privateDictionaryBytes = data.SnapshotPortion(topLevelDictionaryCid.PrivateDictionaryLocation.Value.Offset,
