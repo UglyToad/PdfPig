@@ -380,13 +380,13 @@ public sealed class SystemFontFinder : ISystemFontFinder
     /// </exception>
     public static void AddFontSearchDirectory(string directory)
     {
-        if (AvailableFonts.IsValueCreated)
-        {
-            throw new InvalidOperationException("A font search directory cannot be added after the font collection has been initialized.");
-        }
-
         lock (FontSearchDirectoryLock)
         {
+            if (AvailableFonts.IsValueCreated)
+            {
+                throw new InvalidOperationException("A font search directory cannot be added after the font collection has been initialized.");
+            }
+
             if (!string.IsNullOrWhiteSpace(directory))
             {
                 AdditionalFontSearchDirectories.Add(directory);
