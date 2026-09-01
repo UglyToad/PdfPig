@@ -538,14 +538,20 @@
         {
             outputStream.WriteByte(StringStart);
 
-            if (stringToken.EncodedWith == StringToken.Encoding.Iso88591 || stringToken.EncodedWith == StringToken.Encoding.PdfDocEncoding)
+            if (stringToken.EncodedWith == StringToken.Encoding.Iso88591
+                || stringToken.EncodedWith == StringToken.Encoding.PdfDocEncoding
+                || stringToken.EncodedWith == StringToken.Encoding.Utf8)
             {
                 // iso 88591 (or really PdfDocEncoding in non-contentstream circumstances shouldn't
                 // have these chars but seems like internally this isn't obeyed (see:
                 // CanCreateDocumentInformationDictionaryWithNonAsciiCharacters test) and it may
                 // happen during parsing as well -> switch to unicode
 
-                var data = stringToken.Data.ToCharArray();
+                // UTF-8 goes through the same escaping. Its bytes are written as they stand, and unlike
+                // UTF-16 they include unescaped parentheses and backslashes wherever the text has them.
+                var data = stringToken.EncodedWith == StringToken.Encoding.Utf8
+                    ? stringToken.GetBytes().Select(b => (char)b).ToArray()
+                    : stringToken.Data.ToCharArray();
                 if (data.Any(x => x > 255))
                 {
                     data = new StringToken(stringToken.Data, StringToken.Encoding.Utf16BE)

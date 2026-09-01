@@ -78,6 +78,19 @@ namespace UglyToad.PdfPig.Tokens
                     Array.Copy(data, 0, result, 2, data.Length);
                     return result;
                 }
+                case Encoding.Utf8:
+                {
+                    var data = System.Text.Encoding.UTF8.GetBytes(Data);
+
+                    var result = new byte[data.Length + 3];
+                    result[0] = 0xEF;
+                    result[1] = 0xBB;
+                    result[2] = 0xBF;
+
+                    Array.Copy(data, 0, result, 3, data.Length);
+
+                    return result;
+                }
                 case Encoding.PdfDocEncoding:
                     return PdfDocEncoding.StringToBytes(Data);
                 default:
@@ -140,6 +153,10 @@ namespace UglyToad.PdfPig.Tokens
             /// The PdfDocEncoding for strings in the body of a PDF file.
             /// </summary>
             PdfDocEncoding = 3,
+            /// <summary>
+            /// UTF-8, which a text string may use from PDF 2.0 onwards.
+            /// </summary>
+            Utf8 = 4,
         }
     }
 }
