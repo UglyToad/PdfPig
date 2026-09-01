@@ -207,6 +207,19 @@
                 }
             }
         }
+#else
+        [Fact]
+        public void BrotliDecodeReportsTheMissingDecoder()
+        {
+            // The reason has to reach the caller instead of arriving as "could not find an xref
+            // trailer", which is what a swallowed filter failure used to look like from outside.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("Brotli-Prototype-FileA.pdf");
+
+            var exception = Assert.Throws<NotSupportedException>(
+                () => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
+
+            Assert.Contains("BrotliDecode", exception.Message);
+        }
 #endif
 
         [Theory]
