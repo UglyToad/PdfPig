@@ -18,7 +18,6 @@
             "ErcotFacts.pdf"
         ];
 
-//#if NET || NETSTANDARD2_1_OR_GREATER
 /*
         [Fact]
         public void BrotliDecodeRoundTripsCompressedData()
@@ -49,7 +48,11 @@
         [Fact]
         public void BrotliDecodeFilterReportsSupported()
         {
+#if NET || NETSTANDARD2_1_OR_GREATER
             Assert.True(new BrotliFilter().IsSupported);
+#else
+            Assert.False(new BrotliFilter().IsSupported);
+#endif
         }
 
         [Fact]
@@ -91,6 +94,9 @@
 #endif
         
 
+#if NET || NETSTANDARD2_1_OR_GREATER
+        // The cross-reference stream of this document is itself Brotli compressed, so on a target
+        // without a Brotli decoder it cannot be opened at all.
         [Fact]
         public void BrotliDecode()
         {
@@ -103,7 +109,7 @@
                 }
             }
         }
-//#endif
+#endif
 
         [Theory]
         [MemberData(nameof(GetAllDocuments))]
