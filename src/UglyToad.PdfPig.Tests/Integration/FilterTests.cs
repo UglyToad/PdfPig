@@ -301,11 +301,14 @@
         public void BrotliDecodeIsRefusedForInlineImagesWhenNotLenient()
         {
             // ISO 32000, Clause 8.9.7 as amended by the extension: BrotliDecode SHALL NOT be
-            // used for inline images. The document carries a 1.7 header only because a 2.0 one
-            // cannot be read at all when not lenient - FileHeaderParser accepts PDF-1.x alone.
+            // used for inline images.
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("Brotli-InlineImage.pdf");
 
             using var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false });
+
+            // BrotliDecode is a 2.0 extension, so the document declares 2.0. A strict read of that
+            // header has to succeed before anything in the document can be reached.
+            Assert.Equal(2.0, document.Version);
 
             var exception = Assert.Throws<PdfDocumentFormatException>(() => document.GetPage(1));
 
@@ -319,6 +322,8 @@
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("Brotli-InlineImage.pdf");
 
             using var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true });
+
+            Assert.Equal(2.0, document.Version);
 
             var image = Assert.Single(document.GetPage(1).GetImages());
 
@@ -343,6 +348,9 @@
             var path = IntegrationHelpers.GetSpecificTestDocumentPath(documentName);
 
             using var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true });
+
+            // All three carry a 2.0 header
+            Assert.Equal(2.0, document.Version);
 
             Assert.Equal(expectedPages, document.NumberOfPages);
 
