@@ -27,6 +27,7 @@
         private readonly Lazy<AcroForm> documentForm;
 
         private readonly HeaderVersion version;
+        private readonly double? catalogVersion;
         private readonly IInputBytes inputBytes;
         private readonly EncryptionDictionary? encryptionDictionary;
         private readonly IPdfTokenScanner pdfScanner;
@@ -54,7 +55,11 @@
         /// <summary>
         /// The version number of the PDF specification which this file conforms to, for example 1.4.
         /// </summary>
-        public double Version => version.Version;
+        /// <remarks>
+        /// This is the version from the file header unless the document catalog declares a later one, which is
+        /// how a document upgraded by an incremental update reports its version, see ISO 32000-2, 7.5.2.
+        /// </remarks>
+        public double Version => catalogVersion > version.Version ? catalogVersion.Value : version.Version;
 
         /// <summary>
         /// Get the number of pages in this document.
@@ -83,6 +88,7 @@
         {
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
+            this.catalogVersion = catalog?.Version;
             this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
