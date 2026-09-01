@@ -163,5 +163,45 @@ namespace UglyToad.PdfPig.Tests.Functions.Type4
                 Type4Compiler.Parse("1 2 -1 index").Execute(ref stack);
             });
         }
+
+        [Fact]
+        public void DeeplyNestedProceduresDoNotOverflowTheStack()
+        {
+            // Each level pushes the procedure of the level below, which is then executed. This used
+            // to recurse once per level and crashed the process with an uncatchable
+            // StackOverflowException after a few hundred levels (github issue #1421).
+            const int depth = 10_000;
+
+            Operand[] result = Run(new string('{', depth) + new string('}', depth));
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void DeeplyNestedIfProceduresDoNotOverflowTheStack()
+        {
+            // 'if' is the other place nested procedures were executed recursively.
+            const int depth = 10_000;
+
+            Operand[] result = Run(string.Concat(Enumerable.Repeat("true {", depth))
+                                   + "1"
+                                   + string.Concat(Enumerable.Repeat("} if ", depth)));
+
+            Assert.Single(result);
+            Assert.Equal(1, result[0].AsInteger);
+        }
+
+        [Fact]
+        public void DeeplyNestedIfElseProceduresDoNotOverflowTheStack()
+        {
+            const int depth = 10_000;
+
+            Operand[] result = Run(string.Concat(Enumerable.Repeat("true {", depth))
+                                   + "1"
+                                   + string.Concat(Enumerable.Repeat("} {2} ifelse ", depth)));
+
+            Assert.Single(result);
+            Assert.Equal(1, result[0].AsInteger);
+        }
     }
 }

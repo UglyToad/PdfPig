@@ -127,6 +127,7 @@
                 "UglyToad.PdfPig.Filters.ILookupFilterProvider",
                 "UglyToad.PdfPig.Filters.Ascii85Filter",
                 "UglyToad.PdfPig.Filters.AsciiHexDecodeFilter",
+                "UglyToad.PdfPig.Filters.BrotliFilter",
                 "UglyToad.PdfPig.Filters.CcittFaxDecodeFilter",
                 "UglyToad.PdfPig.Filters.DctDecodeFilter",
                 "UglyToad.PdfPig.Filters.FlateFilter",

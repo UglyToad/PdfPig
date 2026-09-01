@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Diagnostics.CodeAnalysis;
     using Content;
     using DocumentLayoutAnalysis.PageSegmenter;
     using DocumentLayoutAnalysis.WordExtractor;
@@ -12,13 +11,23 @@
     using UglyToad.PdfPig.Fonts;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Graphics.Colors;
-    using UglyToad.PdfPig.Graphics.Colors.Icc;
-    using UglyToad.PdfPig.Graphics.Core;
     using UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState;
     using UglyToad.PdfPig.Writer;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issues1421()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("t3000.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+            }
+        }
+
         [Fact]
         public void Issues1426()
         {

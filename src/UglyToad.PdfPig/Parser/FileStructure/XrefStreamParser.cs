@@ -142,6 +142,13 @@ internal static class XrefStreamParser
                 offsetCorrectionType,
                 offsetCorrection);
         }
+        catch (NotSupportedException)
+        {
+            // A filter this build cannot decode will not decode on a second attempt, and brute
+            // forcing the file cannot get past it either. Letting it out keeps the reason in the
+            // exception the caller sees, rather than ending as "could not find an xref trailer".
+            throw;
+        }
         catch (Exception ex)
         {
             log.Error($"Failed to parse the XRef stream at {xrefOffset}", ex);
