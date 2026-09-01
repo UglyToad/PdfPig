@@ -117,6 +117,55 @@
             Assert.Empty(DecodeWithBrotli([]).ToArray());
         }
 
+        [Fact]
+        public void BrotliDecodeAppliesPngPredictor()
+        {
+            // The extension extends the LZWDecode and FlateDecode predictor parameters of
+            // ISO 32000, Clause 7.4.4.3 to BrotliDecode, so a predictor has to be honoured here
+            // exactly as the Flate filter honours it.
+            const int columns = 6;
+            const int rows = 4;
+
+            var expected = new byte[columns * rows];
+            for (var i = 0; i < expected.Length; i++)
+            {
+                expected[i] = (byte)(i * 7);
+            }
+
+            // PNG "Up" prediction: each row carries its filter type, then the difference to the
+            // row above it.
+            var predicted = new byte[rows * (columns + 1)];
+            for (var row = 0; row < rows; row++)
+            {
+                predicted[row * (columns + 1)] = 2;
+
+                for (var column = 0; column < columns; column++)
+                {
+                    var current = expected[(row * columns) + column];
+                    var above = row == 0 ? 0 : expected[((row - 1) * columns) + column];
+
+                    predicted[(row * (columns + 1)) + 1 + column] = (byte)(current - above);
+                }
+            }
+
+            var streamDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Filter, NameToken.BrotliDecode },
+                {
+                    NameToken.DecodeParms, new DictionaryToken(new Dictionary<NameToken, IToken>
+                    {
+                        { NameToken.Predictor, new NumericToken(12) },
+                        { NameToken.Columns, new NumericToken(columns) }
+                    })
+                }
+            });
+
+            var decoded = new BrotliFilter().Decode(CompressWithBrotli(predicted), streamDictionary,
+                DefaultFilterProvider.Instance, 0);
+
+            Assert.Equal(expected, decoded.ToArray());
+        }
+
         private static readonly byte[] SampleContent = System.Text.Encoding.ASCII.GetBytes(
             new string('A', 2000) + "Hello Brotli compression coming to PDF!" + new string('B', 2000));
 
