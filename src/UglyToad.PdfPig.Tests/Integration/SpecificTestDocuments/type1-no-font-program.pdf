@@ -1,0 +1,117 @@
+%PDF-1.3
+%‚„œ”
+1 0 obj
+<<
+/Producer (pypdf)
+/Title (PdfPig unembedded Type 1 regression fixture)
+/Author (PdfPig test suite)
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Count 1
+/Kids [ 4 0 R ]
+>>
+endobj
+3 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+4 0 obj
+<<
+/Type /Page
+/Resources <<
+/Font <<
+/F1 7 0 R
+/F2 8 0 R
+>>
+>>
+/MediaBox [ 0.0 0.0 300 200 ]
+/Parent 2 0 R
+/Contents 9 0 R
+>>
+endobj
+5 0 obj
+<<
+/Type /FontDescriptor
+/FontName /Helvetica
+/Flags 32
+/FontBBox [ -166 -225 1000 931 ]
+/ItalicAngle 0
+/Ascent 718
+/Descent -207
+/CapHeight 718
+/StemV 88
+/MissingWidth 500
+>>
+endobj
+6 0 obj
+<<
+/Type /FontDescriptor
+/FontName /CustomUnembedded
+/Flags 32
+/FontBBox [ -50 -150 800 600 ]
+/ItalicAngle 0
+/Ascent 600
+/Descent -150
+/CapHeight 600
+/StemV 88
+/MissingWidth 450
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+/FirstChar 32
+/LastChar 103
+/Widths [ 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 900 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 600 910 ]
+/Encoding /WinAnsiEncoding
+/FontDescriptor 5 0 R
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /CustomUnembedded
+/FirstChar 88
+/LastChar 89
+/Widths [ 700 710 ]
+/Encoding /WinAnsiEncoding
+/FontDescriptor 6 0 R
+>>
+endobj
+9 0 obj
+<<
+/Length 66
+>>
+stream
+BT /F1 20 Tf 40 110 Td (Hg) Tj ET BT /F2 20 Tf 40 60 Td (XY) Tj ET
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000135 00000 n 
+0000000194 00000 n 
+0000000243 00000 n 
+0000000385 00000 n 
+0000000576 00000 n 
+0000000772 00000 n 
+0000001219 00000 n 
+0000001392 00000 n 
+trailer
+<<
+/Size 10
+/Root 3 0 R
+/Info 1 0 R
+>>
+startxref
+1508
+%%EOF

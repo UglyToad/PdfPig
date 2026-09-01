@@ -4,6 +4,7 @@
     using Core;
     using Filters;
     using Fonts;
+    using Fonts.AdobeFontMetrics;
     using Fonts.CompactFontFormat;
     using Fonts.Encodings;
     using Fonts.Standard14Fonts;
@@ -140,7 +141,13 @@
                 encoding = new BuiltInEncoding(t1FontReplacement.Encoding);
             }
 
-            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding!, toUnicodeCMap!, font!);
+            AdobeFontMetrics? standard14Metrics = null;
+            if (font is null && dictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken? baseFont))
+            {
+                standard14Metrics = Standard14.GetAdobeFontMetrics(baseFont.Data);
+            }
+
+            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding!, toUnicodeCMap!, font!, standard14Metrics);
         }
 
         private Union<Type1Font, CompactFontFormatFontCollection>? ParseFontProgram(FontDescriptor descriptor)
