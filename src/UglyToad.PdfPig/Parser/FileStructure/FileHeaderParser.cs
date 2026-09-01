@@ -14,7 +14,7 @@
     /// Used to retrieve the version header from the PDF file.
     /// </summary>
     /// <remarks>
-    /// The first line of a PDF file should be a header consisting of the 5 characters %PDF– followed by a version number of the form 1.N, where N is a digit between 0 and 7.
+    /// The first line of a PDF file should be a header consisting of the 5 characters %PDF– followed by a version number of the form N.M, where N and M are single digits.
     /// A conforming reader should accept files with any of the following headers:
     /// %PDF–1.0
     /// %PDF–1.1
@@ -24,8 +24,9 @@
     /// %PDF–1.5
     /// %PDF–1.6
     /// %PDF–1.7
-    /// This parser allows versions up to 1.9.
-    /// For versions equal or greater to PDF 1.4, the optional Version entry in the document's catalog dictionary should be used instead of the header version.
+    /// %PDF–2.0
+    /// This parser accepts any header of the form %PDF-N.M or %FDF-N.M so that future versions are read as-is rather than rejected.
+    /// For versions equal or greater to PDF 1.4, the optional Version entry in the document's catalog dictionary supersedes this one where it is later, see CatalogFactory.
     /// </remarks>
     internal static class FileHeaderParser
     {
@@ -62,14 +63,21 @@
             return GetHeaderVersionAndResetScanner(comment, scanner, isLenientParsing, log);
         }
 
+        private static ReadOnlySpan<char> PdfPrefix => "PDF-".AsSpan();
+        private static ReadOnlySpan<char> FdfPrefix => "FDF-".AsSpan();
+
         private static HeaderVersion GetHeaderVersionAndResetScanner(CommentToken comment, ISeekableTokenScanner scanner, bool isLenientParsing, ILog log)
         {
-            if (!comment.Data.StartsWith("PDF-1.", StringComparison.OrdinalIgnoreCase) && !comment.Data.StartsWith("FDF-1.", StringComparison.OrdinalIgnoreCase))
+            const int toDoubleStartLength = 4;
+
+            var data = comment.Data.AsSpan();
+
+            if (data.Length < toDoubleStartLength + 3
+                || (!data.StartsWith(PdfPrefix, StringComparison.OrdinalIgnoreCase) && !data.StartsWith(FdfPrefix, StringComparison.OrdinalIgnoreCase))
+                || !IsDigit(data[toDoubleStartLength]) || data[toDoubleStartLength + 1] != '.' || !IsDigit(data[toDoubleStartLength + 2]))
             {
                 return HandleMissingVersion(comment, isLenientParsing, log);
             }
-
-            const int toDoubleStartLength = 4;
 
             if (!double.TryParse(comment.Data.AsSpanOrSubstring(toDoubleStartLength),
                 NumberStyles.Number,
@@ -145,6 +153,8 @@
 
             return false;
         }
+
+        private static bool IsDigit(char c) => c is >= '0' and <= '9';
 
         private static HeaderVersion HandleMissingVersion(CommentToken comment, bool isLenientParsing, ILog log)
         {
