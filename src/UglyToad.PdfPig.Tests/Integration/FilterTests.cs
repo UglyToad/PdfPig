@@ -190,6 +190,39 @@
                 0);
         }
 #endif
+
+        [Fact]
+        public void BrotliDecodeIsRefusedForInlineImagesWhenNotLenient()
+        {
+            // ISO 32000, Clause 8.9.7 as amended by the extension: BrotliDecode SHALL NOT be
+            // used for inline images. The document carries a 1.7 header only because a 2.0 one
+            // cannot be read at all when not lenient - FileHeaderParser accepts PDF-1.x alone.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("Brotli-InlineImage.pdf");
+
+            using var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false });
+
+            var exception = Assert.Throws<PdfDocumentFormatException>(() => document.GetPage(1));
+
+            Assert.Contains("inline images", exception.Message);
+        }
+
+        [Fact]
+        public void BrotliDecodeInlineImageIsStillReadWhenLenient()
+        {
+            // Forbidden, but decodable, so a lenient read keeps the content rather than losing it.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("Brotli-InlineImage.pdf");
+
+            using var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true });
+
+            var image = Assert.Single(document.GetPage(1).GetImages());
+
+            Assert.True(image.IsInlineImage);
+
+#if NET || NETSTANDARD2_1_OR_GREATER
+            Assert.True(image.TryGetBytesAsMemory(out var bytes));
+            Assert.Equal(16, bytes.Length);
+#endif
+        }
         
 
 #if NET || NETSTANDARD2_1_OR_GREATER
