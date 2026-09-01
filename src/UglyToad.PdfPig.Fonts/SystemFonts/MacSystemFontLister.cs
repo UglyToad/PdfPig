@@ -6,7 +6,7 @@
 
     internal sealed class MacSystemFontLister : ISystemFontLister
     {
-        public IEnumerable<SystemFontRecord> GetAllFonts()
+        public IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             var directories = new List<string>
             {
@@ -14,6 +14,11 @@
                 "/System/Library/Fonts/", // system
                 "/Network/Library/Fonts/" // network
             };
+
+            if (additionalDirectories is not null)
+            {
+                directories.AddRange(additionalDirectories);
+            }
 
             try
             {

@@ -6,12 +6,17 @@
 
     internal sealed class AndroidSystemFontLister : ISystemFontLister
     {
-        public IEnumerable<SystemFontRecord> GetAllFonts()
+        public IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             var directories = new List<string>
             {
                 "/system/fonts",
             };
+
+            if (additionalDirectories is not null)
+            {
+                directories.AddRange(additionalDirectories);
+            }
 
             foreach (var directory in directories)
             {
