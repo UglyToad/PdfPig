@@ -18,7 +18,7 @@
             "ErcotFacts.pdf"
         ];
 
-/*
+#if NET || NETSTANDARD2_1_OR_GREATER
         [Fact]
         public void BrotliDecodeRoundTripsCompressedData()
         {
@@ -43,7 +43,7 @@
 
             Assert.Equal(expected, decoded.ToArray());
         }
-        */
+#endif
         
         [Fact]
         public void BrotliDecodeFilterReportsSupported()
@@ -90,6 +90,55 @@
                 () => new BrotliFilter().Decode(largeWindow, parameters, DefaultFilterProvider.Instance, 0));
 
             Assert.Contains("RFC 9841", exception.Message);
+        }
+
+        [Fact]
+        public void BrotliDecodeRejectsTruncatedStream()
+        {
+            var compressed = CompressWithBrotli(SampleContent);
+
+            Assert.Throws<CorruptCompressedDataException>(
+                () => DecodeWithBrotli(compressed[..(compressed.Length / 2)]));
+        }
+
+        [Fact]
+        public void BrotliDecodeRejectsDamagedStream()
+        {
+            var compressed = CompressWithBrotli(SampleContent);
+            compressed[compressed.Length / 2] ^= 0xFF;
+
+            Assert.Throws<CorruptCompressedDataException>(() => DecodeWithBrotli(compressed));
+        }
+
+        [Fact]
+        public void BrotliDecodeAcceptsEmptyInput()
+        {
+            // Not a Brotli stream, but PDFs carry empty streams and they are not an error.
+            Assert.Empty(DecodeWithBrotli([]).ToArray());
+        }
+
+        private static readonly byte[] SampleContent = System.Text.Encoding.ASCII.GetBytes(
+            new string('A', 2000) + "Hello Brotli compression coming to PDF!" + new string('B', 2000));
+
+        private static byte[] CompressWithBrotli(byte[] data)
+        {
+            using var ms = new System.IO.MemoryStream();
+
+            using (var brotli = new System.IO.Compression.BrotliStream(ms,
+                       System.IO.Compression.CompressionMode.Compress, leaveOpen: true))
+            {
+                brotli.Write(data, 0, data.Length);
+            }
+
+            return ms.ToArray();
+        }
+
+        private static Memory<byte> DecodeWithBrotli(byte[] input)
+        {
+            return new BrotliFilter().Decode(input,
+                new DictionaryToken(new Dictionary<NameToken, IToken>()),
+                DefaultFilterProvider.Instance,
+                0);
         }
 #endif
         
