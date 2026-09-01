@@ -2,6 +2,7 @@
 {
     using PdfPig.Core;
     using PdfPig.Filters;
+    using PdfPig.Fonts;
     using PdfPig.Tokens;
     using System;
     using System.Collections.Generic;
@@ -64,6 +65,30 @@
             var filter = Assert.Single(filters);
             Assert.IsType<BrotliFilter>(filter);
         }
+
+#if NET || NETSTANDARD2_1_OR_GREATER
+        [Fact]
+        public void BrotliDecodeRejectsLargeWindowStream()
+        {
+            // "Large window brotli" compressed by the reference implementation with
+            // --large_window=30, which is the bitstream of IETF RFC 9841. The extension requires
+            // support for it, but no decoder available to us provides it: BrotliStream is limited
+            // to the RFC 7932 window of 2^24 bytes, as is the C# decoder in google/brotli. The
+            // filter has to report such a stream rather than let the failure escape untyped.
+            byte[] largeWindow =
+            [
+                0x11, 0x1e, 0x24, 0x00, 0x02, 0x4c, 0x61, 0x72, 0x67, 0x65, 0x20, 0x77, 0x69,
+                0x6e, 0x64, 0x6f, 0x77, 0x20, 0x62, 0x72, 0x6f, 0x74, 0x6c, 0x69, 0x03
+            ];
+
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            var exception = Assert.Throws<CorruptCompressedDataException>(
+                () => new BrotliFilter().Decode(largeWindow, parameters, DefaultFilterProvider.Instance, 0));
+
+            Assert.Contains("RFC 9841", exception.Message);
+        }
+#endif
         
 
         [Fact]
