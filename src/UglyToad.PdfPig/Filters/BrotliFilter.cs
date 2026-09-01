@@ -51,8 +51,17 @@ namespace UglyToad.PdfPig.Filters
         private const int DefaultBitsPerComponent = 8;
         private const int DefaultColumns = 1;
 
-        /// <summary>How much is decompressed per call.</summary>
-        private const int BlockLength = 8192;
+        /// <summary>
+        /// Where the decompressed data starts out, as a multiple of the compressed length. Brotli
+        /// reaches far higher ratios than this, but a bigger rent costs more than the doubling it
+        /// saves - measured over the streams of the sample documents, which average about 9x.
+        /// </summary>
+        private const int InitialCapacityFactor = 2;
+
+        private const int MinimumCapacity = 1024;
+
+        /// <summary>The largest array the runtime will hand out.</summary>
+        private const int MaximumCapacity = 0x7FFFFFC7;
 
         private const string InvalidStreamMessage =
             "Invalid Brotli compressed stream encountered. A stream using large window Brotli "
@@ -71,55 +80,68 @@ namespace UglyToad.PdfPig.Filters
             var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
             var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-            using var output = new MemoryStream((int)(input.Length * 1.5));
-            using var predicted = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns);
+            var decoded = Decompress(input);
 
-            try
+            // Below 2 PngPredictor.WrapPredictor hands the stream straight back, and most streams
+            // carry no predictor at all, so there is nothing to copy through a second stream.
+            if (predictor <= 1)
             {
-                Decompress(input, predicted);
-            }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is InvalidDataException)
-            {
-                throw new CorruptCompressedDataException(InvalidStreamMessage, ex);
+                return decoded;
             }
 
-            predicted.Flush();
+            using var output = new MemoryStream(decoded.Length);
+
+            using (var predicted = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
+            {
+                predicted.Write(decoded, 0, decoded.Length);
+                predicted.Flush();
+            }
 
             return output.AsMemory();
         }
 
-        private static void Decompress(Memory<byte> input, Stream destination)
+        private static byte[] Decompress(Memory<byte> input)
         {
             if (input.Length == 0)
             {
                 // No bytes is not a Brotli stream at all, but PDFs do carry empty streams and the
                 // other filters hand back nothing rather than object to them.
-                return;
+                return [];
             }
 
-            using var decoder = new BrotliDecoder();
+            // The decoder writes straight into this buffer, so there is no copy per block, and the
+            // buffer is rented because only the finished length is handed to the caller.
+            var buffer = ArrayPool<byte>.Shared.Rent(
+                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * InitialCapacityFactor)));
 
-            var block = ArrayPool<byte>.Shared.Rent(BlockLength);
+            var total = 0;
 
             try
             {
+                using var decoder = new BrotliDecoder();
+
                 var remaining = (ReadOnlyMemory<byte>)input;
 
                 while (true)
                 {
-                    var status = decoder.Decompress(remaining.Span, block, out var consumed, out var written);
+                    var status = decoder.Decompress(remaining.Span, buffer.AsSpan(total), out var consumed, out var written);
 
-                    if (written > 0)
-                    {
-                        destination.Write(block, 0, written);
-                    }
-
+                    total += written;
                     remaining = remaining.Slice(consumed);
 
                     if (status == OperationStatus.Done)
                     {
                         // Anything left in the input after the stream ended is not ours to read.
-                        return;
+#if NET
+                        // Every byte is overwritten by the copy below, so the runtime does not
+                        // need to clear the array first.
+                        var decoded = GC.AllocateUninitializedArray<byte>(total);
+#else
+                        var decoded = new byte[total];
+#endif
+                        buffer.AsSpan(0, total).CopyTo(decoded);
+
+                        return decoded;
                     }
 
                     if (status == OperationStatus.NeedMoreData)
@@ -129,18 +151,37 @@ namespace UglyToad.PdfPig.Filters
                         // a bitstream that was altered no longer reaches its end marker.
                         throw new CorruptCompressedDataException(
                             "Truncated or damaged Brotli compressed stream encountered: the data "
-                            + $"ran out before the compressed stream ended, after {destination.Position} bytes.");
+                            + $"ran out before the compressed stream ended, after {total} bytes.");
                     }
 
                     if (status != OperationStatus.DestinationTooSmall || (consumed == 0 && written == 0))
                     {
                         throw new CorruptCompressedDataException(InvalidStreamMessage);
                     }
+
+                    var grownLength = (int)Math.Min(MaximumCapacity, (long)buffer.Length * 2);
+
+                    if (grownLength == buffer.Length)
+                    {
+                        throw new CorruptCompressedDataException(
+                            "Brotli compressed stream decodes to more than can be held in one array.");
+                    }
+
+                    var grown = ArrayPool<byte>.Shared.Rent(grownLength);
+
+                    buffer.AsSpan(0, total).CopyTo(grown);
+                    ArrayPool<byte>.Shared.Return(buffer);
+
+                    buffer = grown;
                 }
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is InvalidDataException)
+            {
+                throw new CorruptCompressedDataException(InvalidStreamMessage, ex);
             }
             finally
             {
-                ArrayPool<byte>.Shared.Return(block);
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 #else
