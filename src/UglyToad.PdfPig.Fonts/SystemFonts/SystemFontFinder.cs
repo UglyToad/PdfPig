@@ -27,6 +27,12 @@ public sealed class SystemFontFinder : ISystemFontFinder
     private static readonly Lazy<IReadOnlyDictionary<char, SystemFontRecord[]>> FontsByFirstChar;
 
     /// <summary>
+    /// Additional directories where to search fonts
+    /// </summary>
+    private static readonly HashSet<string> AdditionalFontSearchDirectories = new HashSet<string>();
+    private static readonly object FontSearchDirectoryLock = new();
+
+    /// <summary>
     /// The instance of <see cref="SystemFontFinder"/>.
     /// </summary>
     public static readonly ISystemFontFinder Instance = new SystemFontFinder();
@@ -95,22 +101,22 @@ public sealed class SystemFontFinder : ISystemFontFinder
             lister = new LinuxSystemFontLister();
         }
 #if NET
-            else if (OperatingSystem.IsAndroid())
-            {
-                lister = new AndroidSystemFontLister();
-            }
-            else if (OperatingSystem.IsBrowser())
-            {
-                lister = new BrowserSystemFontLister();
-            }
-            else if (OperatingSystem.IsMacCatalyst())
-            {
-                lister = new MacSystemFontLister();
-            }
-            else if (OperatingSystem.IsIOS())
-            {
-                lister = new IOSSystemFontLister();
-            }
+        else if (OperatingSystem.IsAndroid())
+        {
+            lister = new AndroidSystemFontLister();
+        }
+        else if (OperatingSystem.IsBrowser())
+        {
+            lister = new BrowserSystemFontLister();
+        }
+        else if (OperatingSystem.IsMacCatalyst())
+        {
+            lister = new MacSystemFontLister();
+        }
+        else if (OperatingSystem.IsIOS())
+        {
+            lister = new IOSSystemFontLister();
+        }
 #endif
         else
         {
@@ -122,7 +128,13 @@ public sealed class SystemFontFinder : ISystemFontFinder
 #error Missing ISystemFontLister for target framework
 #endif
 
-        AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToArray());
+        AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() =>
+        {
+            lock (FontSearchDirectoryLock)
+            {
+                return lister.GetAllFonts(AdditionalFontSearchDirectories).ToArray();
+            }
+        });
 
         FontsByFirstChar = new Lazy<IReadOnlyDictionary<char, SystemFontRecord[]>>(() =>
         {
@@ -357,5 +369,28 @@ public sealed class SystemFontFinder : ISystemFontFinder
         readFiles.TryAdd(fileName, 0);
 
         return true;
+    }
+
+    /// <summary>
+    /// Add a directory to the list of additional directories where to search for fonts.
+    /// </summary>
+    /// <param name="directory"></param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the available fonts have already been initialized and the font search directory is added too late.
+    /// </exception>
+    public static void AddFontSearchDirectory(string directory)
+    {
+        lock (FontSearchDirectoryLock)
+        {
+            if (AvailableFonts.IsValueCreated)
+            {
+                throw new InvalidOperationException("A font search directory cannot be added after the font collection has been initialized.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                AdditionalFontSearchDirectories.Add(directory);
+            }
+        }
     }
 }

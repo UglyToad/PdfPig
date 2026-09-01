@@ -6,8 +6,7 @@
     internal sealed class IOSSystemFontLister : ISystemFontLister
     {
         // Very early version, intended to help developing support for iOS
-
-        public IEnumerable<SystemFontRecord> GetAllFonts()
+        public IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             yield break;
         }
