@@ -5,5 +5,6 @@
     internal interface ISystemFontLister
     {
         IEnumerable<SystemFontRecord> GetAllFonts();
+        IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string> additonalFontSearchPaths);
     }
 }
