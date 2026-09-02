@@ -9,8 +9,8 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Graphics.Colors;
-    using UglyToad.PdfPig.XObjects;
+    using Colors;
+    using XObjects;
 
     /// <summary>
     /// Inline Image Builder.
@@ -26,13 +26,14 @@
         /// Inline image bytes.
         /// </summary>
         public Memory<byte> Bytes { get; internal set; }
-
+        
         internal InlineImage CreateInlineImage(
             in TransformationMatrix transformationMatrix,
             ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,
-            IResourceStore resourceStore)
+            IResourceStore resourceStore,
+            ParsingOptions options)
         {
             if (Properties is null)
             {
@@ -76,7 +77,7 @@
                 XObjectContentRecord softMaskImageRecord = new XObjectContentRecord(XObjectType.Image, sMaskToken, TransformationMatrix.Identity,
                     defaultRenderingIntent, DeviceGrayColorSpaceDetails.Instance);
 
-                softMaskImage = XObjectFactory.ReadImage(softMaskImageRecord, tokenScanner, filterProvider, resourceStore);
+                softMaskImage = XObjectFactory.ReadImage(softMaskImageRecord, tokenScanner, filterProvider, resourceStore, options);
             }
 
             if (!isMask)
@@ -121,6 +122,28 @@
             else
             {
                 filterNames.Add(filterName);
+            }
+
+            // The Brotli extension forbids BrotliDecode for inline images (ISO 32000, Clause 8.9.7),
+            // which is also why it was given no abbreviated form. The data is still decodable, so a
+            // lenient read says so and carries on; a caller who asked not to be lenient is told.
+            foreach (var name in filterNames)
+            {
+                if (!string.Equals(name.Data, NameToken.BrotliDecode.Data, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (!options.UseLenientParsing)
+                {
+                    throw new PdfDocumentFormatException(
+                        "The BrotliDecode filter is not permitted for inline images.");
+                }
+
+                options.Logger.Warn(
+                    "Inline image declares the BrotliDecode filter, which is not permitted for inline images.");
+
+                break;
             }
 
             var decodeRaw = GetByKeys<ArrayToken>(NameToken.Decode, NameToken.D, false) ?? new ArrayToken(Array.Empty<IToken>());

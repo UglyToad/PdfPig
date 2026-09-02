@@ -6,7 +6,7 @@
 
     internal sealed class WindowsSystemFontLister : ISystemFontLister
     {
-        IEnumerable<SystemFontRecord> ISystemFontLister.GetAllFonts()
+        public IEnumerable<SystemFontRecord> GetAllFonts(IEnumerable<string>? additionalDirectories)
         {
             return GetAllFonts(null);
         }
@@ -27,7 +27,7 @@
             };
 
 
-            if (additionalDirectories != null)
+            if (additionalDirectories is not null)
             {
                 directories.AddRange(additionalDirectories);
             }

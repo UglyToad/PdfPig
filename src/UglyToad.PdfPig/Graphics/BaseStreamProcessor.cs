@@ -4,8 +4,9 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-
+    
     using Colors;
+    using Colors.Icc;
     using Content;
     using Core;
     using Filters;
@@ -126,6 +127,10 @@
         /// <summary>
         /// Abstract stream processor constructor.
         /// </summary>
+        /// <param name="outputIntentProfile">
+        /// The profile device colours are colour-managed through for this content (14.11.5), or
+        /// <see langword="null"/> when they are not managed.
+        /// </param>
         protected BaseStreamProcessor(
             int pageNumber,
             IResourceStore resourceStore,
@@ -136,6 +141,7 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
+            IIccProfile? outputIntentProfile,
             ParsingOptions parsingOptions)
         {
             this.PageNumber = pageNumber;
@@ -151,7 +157,8 @@
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox, rotation),
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
+                OutputIntentProfile = outputIntentProfile
             });
         }
 
@@ -1022,7 +1029,8 @@
                 FilterProvider,
                 PdfScanner,
                 GetCurrentState().RenderingIntent,
-                ResourceStore);
+                ResourceStore,
+                ParsingOptions);
 
             RenderInlineImage(image);
 

@@ -7,6 +7,8 @@
 
     public class Jpeg2000HelperTests
     {
+        private static readonly ParsingOptions ParsingOptions = new();
+
         private static readonly Lazy<string> DocumentFolder = new Lazy<string>(() => Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Images", "Files", "Jpx")));
 
         public static IEnumerable<object[]> GetAllJp2Files
@@ -57,7 +59,7 @@
         public void GetJpxColorSpaceDetails_ReturnsDeviceRgb_ForEnumeratedSrgbJp2(string path)
         {
             byte[] image = File.ReadAllBytes(Path.Combine(DocumentFolder.Value, path));
-            var colorSpace = Jpeg2000Helper.GetJpxColorSpaceDetails(image);
+            var colorSpace = Jpeg2000Helper.GetJpxColorSpaceDetails(image, ParsingOptions);
             // The JP2 test files all declare enumerated colour space 16 (sRGB) with three components,
             // which maps to DeviceRGB.
             Assert.IsType<DeviceRgbColorSpaceDetails>(colorSpace);
@@ -75,14 +77,14 @@
                 var page1 = document.GetPage(1);
                 var jpxImage = page1.GetImages().Single();
 
-                Assert.IsType<DeviceRgbColorSpaceDetails>(Jpeg2000Helper.GetJpxColorSpaceDetails(jpxImage.RawMemory));
+                Assert.IsType<DeviceRgbColorSpaceDetails>(Jpeg2000Helper.GetJpxColorSpaceDetails(jpxImage.RawMemory, ParsingOptions));
             }
         }
 
         [Fact]
         public void GetJpxColorSpaceDetails_ThrowsException_WhenInputIsTooShort()
         {
-            Assert.Throws<InvalidOperationException>(() => Jpeg2000Helper.GetJpxColorSpaceDetails(new byte[11]));
+            Assert.Throws<InvalidOperationException>(() => Jpeg2000Helper.GetJpxColorSpaceDetails(new byte[11], ParsingOptions));
         }
 
         [Fact]

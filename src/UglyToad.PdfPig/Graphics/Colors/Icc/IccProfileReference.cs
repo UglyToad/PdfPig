@@ -1,0 +1,62 @@
+﻿namespace UglyToad.PdfPig.Graphics.Colors.Icc
+{
+    using Tokens;
+
+    /// <summary>
+    /// An ICC profile reference dictionary (PDF 2.0, ISO 32000-2 Table 402), referenced from an output
+    /// intent's <c>DestOutputProfileRef</c> entry. It identifies an ICC profile that is <b>not</b> embedded
+    /// in the document but may be obtained elsewhere (for example an industry-standard registry, or one of
+    /// the locations listed in <see cref="Urls"/>).
+    /// </summary>
+    public sealed class IccProfileReference
+    {
+        private readonly byte[] checkSumBytes;
+        private readonly byte[] iccVersionBytes;
+
+        /// <summary>
+        /// (Optional) The colour space of the referenced profile, as the ICC data colour space signature
+        /// (for example '<c>CMYK</c>', '<c>RGB </c>' or '<c>GRAY</c>').
+        /// </summary>
+        public string? ProfileCS { get; }
+
+        /// <summary>
+        /// (Optional) A human-readable name identifying the referenced profile.
+        /// </summary>
+        public string? ProfileName { get; }
+
+        /// <summary>
+        /// (Optional) The ICC version of the referenced profile (the raw bytes of the ICC profile header
+        /// version field).
+        /// <para>Empty when not provided.</para>
+        /// </summary>
+        public ReadOnlyMemory<byte> ICCVersion => iccVersionBytes;
+
+        /// <summary>
+        /// (Optional) A checksum of the referenced profile (the 16-byte ICC profile ID / MD5).
+        /// <para>Empty when not provided.</para>
+        /// </summary>
+        public ReadOnlyMemory<byte> CheckSum => checkSumBytes;
+
+        /// <summary>
+        /// (Optional) For an n-colourant (DeviceN) profile, a dictionary naming the colourants.
+        /// </summary>
+        public DictionaryToken? ColorantTable { get; }
+
+        /// <summary>
+        /// (Optional) An array of URL file specifications giving locations from which the referenced profile
+        /// may be obtained.
+        /// </summary>
+        public ArrayToken? Urls { get; }
+
+        internal IccProfileReference(string? profileCS, string? profileName, byte[]? iccVersion,
+            byte[]? checkSum, DictionaryToken? colorantTable, ArrayToken? urls)
+        {
+            ProfileCS = profileCS;
+            ProfileName = profileName;
+            iccVersionBytes = iccVersion ?? [];
+            checkSumBytes = checkSum ?? [];
+            ColorantTable = colorantTable;
+            Urls = urls;
+        }
+    }
+}

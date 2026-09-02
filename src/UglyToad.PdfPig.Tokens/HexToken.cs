@@ -86,8 +86,13 @@ namespace UglyToad.PdfPig.Tokens
                 bytes[index++] = b;
             }
 
+            // PDF 2.0 added UTF-8, marked by a byte order mark, as a text string encoding, see ISO 32000-2, 7.9.2.2.
+            if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            {
+                Data = Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+            }
             // Handle UTF-16BE format strings.
-            if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            else if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
             {
                 Data = Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
             }

@@ -29,7 +29,8 @@ public sealed class SystemFontFinder : ISystemFontFinder
     /// <summary>
     /// Additional directories where to search fonts
     /// </summary>
-    public static readonly ConcurrentBag<string> AdditionalFontSearchDirectories = new ConcurrentBag<string>();
+    private static readonly HashSet<string> AdditionalFontSearchDirectories = new HashSet<string>();
+    private static readonly object FontSearchDirectoryLock = new();
 
     /// <summary>
     /// The instance of <see cref="SystemFontFinder"/>.
@@ -129,7 +130,10 @@ public sealed class SystemFontFinder : ISystemFontFinder
 
         AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() =>
         {
-            return lister.GetAllFonts(AdditionalFontSearchDirectories).ToArray();
+            lock (FontSearchDirectoryLock)
+            {
+                return lister.GetAllFonts(AdditionalFontSearchDirectories).ToArray();
+            }
         });
 
         FontsByFirstChar = new Lazy<IReadOnlyDictionary<char, SystemFontRecord[]>>(() =>
@@ -365,5 +369,28 @@ public sealed class SystemFontFinder : ISystemFontFinder
         readFiles.TryAdd(fileName, 0);
 
         return true;
+    }
+
+    /// <summary>
+    /// Add a directory to the list of additional directories where to search for fonts.
+    /// </summary>
+    /// <param name="directory"></param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the available fonts have already been initialized and the font search directory is added too late.
+    /// </exception>
+    public static void AddFontSearchDirectory(string directory)
+    {
+        lock (FontSearchDirectoryLock)
+        {
+            if (AvailableFonts.IsValueCreated)
+            {
+                throw new InvalidOperationException("A font search directory cannot be added after the font collection has been initialized.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                AdditionalFontSearchDirectories.Add(directory);
+            }
+        }
     }
 }

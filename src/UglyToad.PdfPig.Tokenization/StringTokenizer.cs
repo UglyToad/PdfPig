@@ -155,49 +155,44 @@ namespace UglyToad.PdfPig.Tokenization
             StringToken.Encoding encodedWith;
             string tokenStr;
             byte[] originalRawBytes = null;
-            if (builder.Length >= 2)
+            // A byte order mark identifies the encoding of a text string. The operand of a text showing
+            // operator is a sequence of character codes rather than a text string, so it is left as it
+            // stands however it happens to start, which is the distinction usePdfDocEncoding draws.
+            if (!usePdfDocEncoding)
             {
-                if (builder[0] == 0xFE && builder[1] == 0xFF)
-                {
-                    var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                    originalRawBytes = rawBytes;
+                tokenStr = builder.ToString();
 
-                    tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
-
-                    encodedWith = StringToken.Encoding.Utf16BE;
-                }
-                else if (builder[0] == 0xFF && builder[1] == 0xFE)
-                {
-                    var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                    originalRawBytes = rawBytes;
-
-                    tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
-
-                    encodedWith = StringToken.Encoding.Utf16;
-                }
-                else if (usePdfDocEncoding)
-                {
-                    var builtStr = builder.ToString();
-                    var rawBytes = OtherEncodings.StringAsLatin1Bytes(builtStr);
-                    if (PdfDocEncoding.TryConvertBytesToString(rawBytes, out var str))
-                    {
-                        tokenStr = str;
-                        encodedWith = StringToken.Encoding.PdfDocEncoding;
-                    }
-                    else
-                    {
-                        tokenStr = builtStr;
-                        encodedWith = StringToken.Encoding.Iso88591;
-                    }
-                }
-                else
-                {
-                    tokenStr = builder.ToString();
-
-                    encodedWith = StringToken.Encoding.Iso88591;
-                }
+                encodedWith = StringToken.Encoding.Iso88591;
             }
-            else if (usePdfDocEncoding)
+            // PDF 2.0 added UTF-8, marked by a byte order mark, as a text string encoding, see ISO 32000-2, 7.9.2.2.
+            else if (builder.Length >= 3 && builder[0] == 0xEF && builder[1] == 0xBB && builder[2] == 0xBF)
+            {
+                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+                originalRawBytes = rawBytes;
+
+                tokenStr = Encoding.UTF8.GetString(rawBytes, 3, rawBytes.Length - 3);
+
+                encodedWith = StringToken.Encoding.Utf8;
+            }
+            else if (builder.Length >= 2 && builder[0] == 0xFE && builder[1] == 0xFF)
+            {
+                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+                originalRawBytes = rawBytes;
+
+                tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
+
+                encodedWith = StringToken.Encoding.Utf16BE;
+            }
+            else if (builder.Length >= 2 && builder[0] == 0xFF && builder[1] == 0xFE)
+            {
+                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+                originalRawBytes = rawBytes;
+
+                tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
+
+                encodedWith = StringToken.Encoding.Utf16;
+            }
+            else
             {
                 var builtStr = builder.ToString();
                 var rawBytes = OtherEncodings.StringAsLatin1Bytes(builtStr);
@@ -211,12 +206,6 @@ namespace UglyToad.PdfPig.Tokenization
                     tokenStr = builtStr;
                     encodedWith = StringToken.Encoding.Iso88591;
                 }
-            }
-            else
-            {
-                tokenStr = builder.ToString();
-
-                encodedWith = StringToken.Encoding.Iso88591;
             }
 
             builder.Clear();

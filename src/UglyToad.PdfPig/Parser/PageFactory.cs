@@ -51,7 +51,8 @@
                     Array.Empty<MarkedContentElement>(),
                     PdfScanner,
                     FilterProvider,
-                    ResourceStore);
+                    ResourceStore,
+                    ParsingOptions);
 
                 return new Page(pageNumber,
                     dictionary,
@@ -73,6 +74,7 @@
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
+                ResourceStore.GetPageOutputIntentProfile(dictionary),
                 ParsingOptions);
 
             PageContent content = context.Process(pageNumber, operations);

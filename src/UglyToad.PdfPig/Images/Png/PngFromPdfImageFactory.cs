@@ -3,7 +3,7 @@
     using System.Diagnostics.CodeAnalysis;
     using Content;
     using Graphics.Colors;
-    using UglyToad.PdfPig.Core;
+    using Core;
 
     internal static class PngFromPdfImageFactory
     {
@@ -86,7 +86,7 @@
             try
             {
                 bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails!, bytesPure,
-                    image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples, image.Decode);
+                    image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples, image.Decode, image.RenderingIntent);
 
                 var numberOfComponents = image.ColorSpaceDetails!.BaseNumberOfColorComponents;
 

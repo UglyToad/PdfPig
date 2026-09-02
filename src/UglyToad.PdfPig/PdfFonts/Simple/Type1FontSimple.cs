@@ -7,6 +7,7 @@
     using Composite;
     using Core;
     using Fonts;
+    using Fonts.AdobeFontMetrics;
     using Fonts.CompactFontFormat;
     using Fonts.Encodings;
     using Fonts.Type1;
@@ -33,6 +34,8 @@
 
         private readonly Union<Type1Font, CompactFontFormatFontCollection>? fontProgram;
 
+        private readonly AdobeFontMetrics? standard14Metrics;
+
         private readonly ToUnicodeCMap toUnicodeCMap;
 
         private readonly TransformationMatrix fontMatrix;
@@ -55,7 +58,8 @@
             FontDescriptor fontDescriptor,
             Encoding encoding,
             CMap toUnicodeCMap,
-            Union<Type1Font, CompactFontFormatFontCollection> fontProgram)
+            Union<Type1Font, CompactFontFormatFontCollection> fontProgram,
+            AdobeFontMetrics? standard14Metrics = null)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;
@@ -63,6 +67,7 @@
             this.fontDescriptor = fontDescriptor;
             this.encoding = encoding;
             this.fontProgram = fontProgram;
+            this.standard14Metrics = standard14Metrics;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
 
             var matrix = DefaultTransformationMatrix;
@@ -262,14 +267,23 @@
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
+            if (fontProgram == null)
+            {
+                var name = encoding is not null
+                    ? encoding.GetName(characterCode)
+                    : UnicodeCodePointToName(characterCode);
+
+                if (standard14Metrics?.CharacterMetrics.TryGetValue(name, out var metrics) == true)
+                {
+                    return metrics.BoundingBox;
+                }
+
+                return GetFallbackBoundingBox(characterCode);
+            }
+
             if (characterCode < firstChar || characterCode > lastChar)
             {
                 return new PdfRectangle(0, 0, 250, 0);
-            }
-
-            if (fontProgram == null)
-            {
-                return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
             }
 
             PdfRectangle? rect = null;
@@ -310,6 +324,18 @@
 
             // ReSharper disable once PossibleInvalidOperationException
             return rect.Value;
+        }
+
+        private PdfRectangle GetFallbackBoundingBox(int characterCode)
+        {
+            var widthIndex = characterCode - firstChar;
+            var width = widthIndex >= 0 && widthIndex < widths.Length
+                ? widths[widthIndex]
+                : fontDescriptor.MissingWidth;
+            var bottom = Math.Abs(fontDescriptor.Descent) > double.Epsilon ? fontDescriptor.Descent : -250;
+            var top = Math.Abs(fontDescriptor.Ascent) > double.Epsilon ? fontDescriptor.Ascent : 750;
+
+            return new PdfRectangle(0, bottom, width, top);
         }
 
         public TransformationMatrix GetFontMatrix()

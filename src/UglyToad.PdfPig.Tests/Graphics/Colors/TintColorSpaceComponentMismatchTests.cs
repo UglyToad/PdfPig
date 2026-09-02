@@ -1,7 +1,12 @@
-namespace UglyToad.PdfPig.Tests.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Tests.Graphics.Colors
 {
+    using System.Linq;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using PdfPig.Functions;
     using PdfPig.Graphics.Colors;
+    using PdfPig.Graphics.Colors.Icc;
+    using PdfPig.Graphics.Core;
     using PdfPig.Tokens;
 
     /// <summary>
@@ -19,6 +24,14 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         /// </summary>
         private static PdfFunction Tint(double[] c0, double[] c1)
         {
+            var domain = new ArrayToken([new NumericToken(0), new NumericToken(1)]);
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.FunctionType, new NumericToken(2) }
+            });
+
+            return new PdfFunctionType2(dictionary, domain, null, Numbers(c0), Numbers(c1), 1);
+
             static ArrayToken Numbers(double[] values)
             {
                 var tokens = new IToken[values.Length];
@@ -29,14 +42,6 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
 
                 return new ArrayToken(tokens);
             }
-
-            var domain = new ArrayToken([new NumericToken(0), new NumericToken(1)]);
-            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
-            {
-                { NameToken.FunctionType, new NumericToken(2) }
-            });
-
-            return new PdfFunctionType2(dictionary, domain, null, Numbers(c0), Numbers(c1), 1);
         }
 
         private static void AssertGetColorMatchesGetRgb(ColorSpaceDetails colorSpace, double[] values)
@@ -130,12 +135,13 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
         [Fact]
         public void ICCBased_GetColor_DoesNotClipIntoTheCallersBuffer()
         {
-            // The caller's span may be over an array the caller keeps -- notably the Operands array held by
-            // a parsed SetStrokeColorAdvanced operation -- so range clipping must not write through it.
+            // The caller's span may be over an array the caller keeps, notably the Operands array held by
+            // a parsed SetStrokeColorAdvanced operation, so range clipping must not write through it.
             var icc = new ICCBasedColorSpaceDetails(
                 3,
                 DeviceRgbColorSpaceDetails.Instance,
                 [0.0, 0.5, 0.0, 0.5, 0.0, 0.5],
+                null,
                 null);
 
             double[] values = [1.0, 1.0, 1.0];
@@ -147,6 +153,52 @@ namespace UglyToad.PdfPig.Tests.Graphics.Colors
             Assert.Equal(0.5, b, 12);
 
             Assert.Equal(new[] { 1.0, 1.0, 1.0 }, values);
+        }
+
+        /// <summary>
+        /// An <see cref="IIccProfile"/> that parses but resolves no transform for any rendering intent,
+        /// which <see cref="IIccProfile.TryGetTransform"/> explicitly permits.
+        /// </summary>
+        private sealed class TransformlessProfile : IIccProfile
+        {
+            public TransformlessProfile(int components) => NumberOfComponents = components;
+
+            public int NumberOfComponents { get; }
+
+            public IReadOnlyList<double> ComponentRanges =>
+                Enumerable.Repeat(new[] { 0.0, 1.0 }, NumberOfComponents).SelectMany(x => x).ToArray();
+
+            public bool TryGetTransform(RenderingIntent intent, [NotNullWhen(true)] out IIccTransform? transform)
+            {
+                transform = null;
+                return false;
+            }
+        }
+
+        [Fact]
+        public void SeparationOverProfileThatResolvesNoTransform_TransformFillsItsBuffer()
+        {
+            // Separation.Transform sizes its output as values.Length * BaseNumberOfColorComponents but
+            // fills it with whatever Process returns per sample. When the ICC alternate reports a
+            // 3-component DeviceRGB base it cannot actually deliver, Process falls back to the 4-component
+            // CMYK alternate and the write runs off the end of the buffer.
+            var icc = new ICCBasedColorSpaceDetails(
+                4,
+                DeviceCmykColorSpaceDetails.Instance,
+                null,
+                null,
+                new TransformlessProfile(4));
+
+            var separation = new SeparationColorSpaceDetails(
+                NameToken.Create("Spot"),
+                icc,
+                Tint([0, 0, 0, 0], [1, 1, 1, 1]));
+
+            byte[] samples = [0, 128, 255];
+
+            var transformed = ((ColorSpaceDetails)separation).Transform(samples, RenderingIntent.RelativeColorimetric);
+
+            Assert.Equal(samples.Length * separation.BaseNumberOfColorComponents, transformed.Length);
         }
     }
 }

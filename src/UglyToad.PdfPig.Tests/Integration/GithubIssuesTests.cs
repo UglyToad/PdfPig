@@ -17,6 +17,33 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1421()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("t3000.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+            }
+        }
+
+        [Fact]
+        public void Issues1426()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("minimal_iccbased_scn.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.Equal("hello world", page.Text);
+                Assert.Equal(11, page.Letters.Count);
+                Assert.All(page.Letters, l => Assert.Same(GrayColor.Black, l.Color)); // Fall back to black
+            }
+        }
+
+        [Fact]
         public void Issues1394()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("repro_cmap_deep_array_so.pdf");
