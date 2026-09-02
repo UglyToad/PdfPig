@@ -63,6 +63,9 @@
 	  <None Update="ssm2163.pdf">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
+	  <None Update="GHOSTSCRIPT-697234-0.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	  <None Update="GHOSTSCRIPT-700236-1.pdf">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
