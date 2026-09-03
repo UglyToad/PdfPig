@@ -25,8 +25,21 @@
         private const int DefaultBitsPerComponent = 8;
         private const int DefaultColumns = 1;
 
-        /// <summary>How much is inflated per read; a damaged stream costs at most one block.</summary>
-        private const int BlockLength = 8192;
+        /// <summary>
+        /// How much is inflated per read. Every read is a call into native zlib that leaves and
+        /// re-enters its fast path, which is a fixed cost per call; with zlib-ng on .NET 9 the
+        /// inflating itself got fast enough for 8 KB reads to cost a sixth of the total.
+        /// </summary>
+        private const int FastBlockLength = 64 * 1024;
+
+        /// <summary>
+        /// A damaged stream throws out of the read that meets the damage, and what that read had
+        /// inflated so far is lost with it. So a stream that turns out damaged is inflated again in
+        /// small reads, which keeps everything up to a few kilobytes before the damage - what
+        /// PDFBox's FlateFilterDecoderStream salvages - at the price of a second pass over that
+        /// one stream only.
+        /// </summary>
+        private const int SalvageBlockLength = 4096;
 
         /// <summary>
         /// Where the inflated data starts out, as a multiple of the compressed length. Content streams
@@ -80,14 +93,35 @@
             int columns,
             DictionaryToken streamDictionary)
         {
+            var decoded = Inflate(input, predictor, colors, bitsPerComponent, columns, streamDictionary, FastBlockLength, out var damaged);
+
+            if (damaged)
+            {
+                decoded = Inflate(input, predictor, colors, bitsPerComponent, columns, streamDictionary, SalvageBlockLength, out _);
+            }
+
+            return decoded;
+        }
+
+        private static Memory<byte> Inflate(Memory<byte> input,
+            int predictor,
+            int colors,
+            int bitsPerComponent,
+            int columns,
+            DictionaryToken streamDictionary,
+            int blockLength,
+            out bool damaged)
+        {
             using var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input);
             // The first 2 bytes are the header which DeflateStream does not support.
             memoryStream.ReadByte();
             memoryStream.ReadByte();
 
+            damaged = false;
+
             if (predictor > 1 && TryGetImageHeight(streamDictionary, out var height))
             {
-                return DecompressImage(memoryStream, predictor, colors, bitsPerComponent, columns, height);
+                return DecompressImage(memoryStream, predictor, colors, bitsPerComponent, columns, height, blockLength, out damaged);
             }
 
             // The inflater writes straight into this buffer, and the predictor is undone in the
@@ -114,20 +148,21 @@
                     // FlateFilterDecoderStream does, and it is worth a lot on a large stream.
                     while (true)
                     {
-                        if (buffer.Length - length < BlockLength)
+                        if (buffer.Length - length < blockLength)
                         {
-                            Grow(ref buffer, length, length + BlockLength);
+                            Grow(ref buffer, length, length + blockLength);
                         }
 
                         int read;
 
                         try
                         {
-                            read = deflate.Read(buffer, length, BlockLength);
+                            read = deflate.Read(buffer, length, blockLength);
                         }
                         catch (InvalidDataException)
                         {
                             // Damaged from here on; what came before still stands.
+                            damaged = true;
                             break;
                         }
 
@@ -189,7 +224,7 @@
         /// produces them, from a small input buffer that stays in the cache; nothing is moved or copied
         /// afterwards. A /Height that turns out wrong is grown around or trimmed at the end.
         /// </summary>
-        private static Memory<byte> DecompressImage(Stream compressed, int predictor, int colors, int bitsPerComponent, int columns, int height)
+        private static Memory<byte> DecompressImage(Stream compressed, int predictor, int colors, int bitsPerComponent, int columns, int height, int blockLength, out bool damaged)
         {
             var decoder = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
             var rowLength = decoder.RowLength;
@@ -198,8 +233,10 @@
             var output = AllocateResult((int)Math.Min(MaximumCapacity, (long)height * rowLength));
 
             // One block of inflated data plus the row it may complete.
-            var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(MinimumCapacity, stride + BlockLength));
+            var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(MinimumCapacity, stride + blockLength));
             var length = 0;
+
+            damaged = false;
 
             try
             {
@@ -207,20 +244,21 @@
                 {
                     while (true)
                     {
-                        if (buffer.Length - length < BlockLength)
+                        if (buffer.Length - length < blockLength)
                         {
-                            Grow(ref buffer, length, length + BlockLength);
+                            Grow(ref buffer, length, length + blockLength);
                         }
 
                         int read;
 
                         try
                         {
-                            read = deflate.Read(buffer, length, BlockLength);
+                            read = deflate.Read(buffer, length, blockLength);
                         }
                         catch (InvalidDataException)
                         {
                             // Damaged from here on; what came before still stands.
+                            damaged = true;
                             break;
                         }
 

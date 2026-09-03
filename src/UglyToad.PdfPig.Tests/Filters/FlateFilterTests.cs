@@ -87,6 +87,50 @@
         }
 
         [Fact]
+        public void DamagedStreamKeepsWhatInflatedBeforeTheDamage()
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+
+            var content = new StringBuilder();
+            for (var i = 0; content.Length < 400_000; i++)
+            {
+                content.Append("Line ").Append(i).Append(" of a document whose compressed form is damaged part way.\n");
+            }
+
+            var original = OtherEncodings.StringAsLatin1Bytes(content.ToString());
+
+            byte[] compressed;
+            using (var inputStream = new MemoryStream(original))
+            {
+                compressed = filter.Encode(inputStream, parameters);
+            }
+
+            // Damage about three fifths of the way in. Uniform text inflates evenly, so the
+            // first half of the output lies well before the damage and has to come out intact.
+            // The inflater notices damage a little after meeting it, so the bytes between the
+            // damage and the failure are noise, as they are with every inflater.
+            var damage = (compressed.Length * 3) / 5;
+            compressed[damage] ^= 0xFF;
+            compressed[damage + 1] ^= 0xFF;
+
+            var decoded = filter.Decode(compressed, parameters, TestFilterProvider.Instance, 0).ToArray();
+            var half = original.Length / 2;
+
+            Assert.True(decoded.Length < original.Length, "a damaged stream cannot yield everything");
+
+#if NET
+            // Read many kilobytes at a time, the read that meets the damage would take its
+            // output down with it and the first half would not survive; the filter inflates a
+            // damaged stream again in small reads so that it does. The inflater of .NET
+            // Framework hands over whole deflate blocks only, so the bound cannot hold there.
+            Assert.True(decoded.Length >= half, $"only {decoded.Length} of {original.Length} bytes survived the damage");
+#endif
+
+            var intact = Math.Min(half, decoded.Length);
+            Assert.Equal(original.AsSpan(0, intact).ToArray(), decoded.AsSpan(0, intact).ToArray());
+        }
+
+        [Fact]
         public void AFailureYieldsNothingRatherThanTheInput()
         {
             // A predictor row too wide for any buffer to hold. Nothing here decodes, and the
