@@ -210,6 +210,111 @@
         }
 
         /// <summary>
+        /// Decoding rows where they lie and gathering them afterwards has to give the same result as
+        /// moving them up as they are decoded.
+        /// </summary>
+        [Theory]
+        [MemberData(nameof(ParameterSets))]
+        public void DecodingInPlaceAndGatheringMatchesDecodingTheWholeBuffer(int predictor, int colors, int bitsPerComponent, int columns)
+        {
+            var random = new Random((predictor * 104729) + (colors * 977) + bitsPerComponent + columns);
+            var rowLength = PngPredictor.CalculateRowLength(colors, bitsPerComponent, columns);
+            var stride = predictor >= 10 ? rowLength + 1 : rowLength;
+
+            foreach (var length in new[] { 0, 1, stride, (stride * 13) + (stride / 2), stride * 40 })
+            {
+                var data = new byte[length];
+                random.NextBytes(data);
+
+                if (predictor >= 10)
+                {
+                    for (var row = 0; row * stride < data.Length; row++)
+                    {
+                        data[row * stride] = (byte)(row % 5);
+                    }
+                }
+
+                var expected = PngPredictor.Decode((byte[])data.Clone(), predictor, colors, bitsPerComponent, columns).ToArray();
+
+                // Room for the padded last row where its input lies, as the filter guarantees before finishing.
+                var buffer = new byte[data.Length + stride];
+                var decoder = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns, compact: false);
+                var appended = 0;
+
+                while (appended < data.Length)
+                {
+                    var chunk = Math.Min(data.Length - appended, random.Next(1, (2 * stride) + 3));
+                    Array.Copy(data, appended, buffer, appended, chunk);
+                    appended += chunk;
+
+                    decoder.Advance(buffer, appended);
+                }
+
+                Assert.True(decoder.RequiredCapacity(appended) <= buffer.Length);
+
+                var actualLength = decoder.Finish(buffer, appended);
+                var actual = new byte[actualLength];
+                decoder.CopyTo(buffer, actual);
+
+                Assert.Equal(expected, actual);
+            }
+        }
+
+        /// <summary>
+        /// Decoding from a small, recycled input buffer straight into a separate output, as the Flate
+        /// filter does for images, has to give the same result as decoding the complete data.
+        /// </summary>
+        [Theory]
+        [MemberData(nameof(ParameterSets))]
+        public void DecodingIntoASeparateOutputMatchesDecodingTheWholeBuffer(int predictor, int colors, int bitsPerComponent, int columns)
+        {
+            var random = new Random((predictor * 7907) + (colors * 613) + bitsPerComponent + columns);
+            var rowLength = PngPredictor.CalculateRowLength(colors, bitsPerComponent, columns);
+            var stride = predictor >= 10 ? rowLength + 1 : rowLength;
+
+            foreach (var length in new[] { 0, 1, stride, (stride * 13) + (stride / 2), stride * 40 })
+            {
+                var data = new byte[length];
+                random.NextBytes(data);
+
+                if (predictor >= 10)
+                {
+                    for (var row = 0; row * stride < data.Length; row++)
+                    {
+                        data[row * stride] = (byte)(row % 5);
+                    }
+                }
+
+                var expected = PngPredictor.Decode((byte[])data.Clone(), predictor, colors, bitsPerComponent, columns).ToArray();
+
+                var decoder = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
+                var input = new byte[stride + 7];
+                var output = new byte[((data.Length / stride) + 1) * rowLength];
+                var offset = 0;
+                var buffered = 0;
+
+                while (offset < data.Length)
+                {
+                    var chunk = Math.Min(Math.Min(data.Length - offset, input.Length - buffered), random.Next(1, stride + 4));
+                    Array.Copy(data, offset, input, buffered, chunk);
+                    offset += chunk;
+                    buffered += chunk;
+
+                    decoder.Advance(input, buffered, output);
+
+                    var tail = buffered - decoder.ConsumedLength;
+                    Array.Copy(input, decoder.ConsumedLength, input, 0, tail);
+                    buffered = tail;
+                    decoder.RestartInput();
+                }
+
+                var actualLength = decoder.Finish(input, buffered, output);
+
+                Assert.Equal(expected, output.AsSpan(0, actualLength).ToArray());
+            }
+        }
+
+        /// <summary>
         /// Streams with predictors from real producers, with the content they decoded to before the
         /// rewrite: PNG predictors on RGB, CMYK, grey and 1-bit images, the TIFF predictor on grey
         /// images, and the PNG Up predictor on cross-reference streams.

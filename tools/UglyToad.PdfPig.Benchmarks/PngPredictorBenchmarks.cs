@@ -25,7 +25,7 @@ public class PngPredictorBenchmarks
     private (byte[] Raw, byte[] Scratch, int Colors, int BitsPerComponent, int Columns)[] realSub = [];
     private (Memory<byte> Data, DictionaryToken Dictionary)[] realStreams = [];
 
-    private byte[] sub1 = [], sub3 = [], sub4 = [], up3 = [], average3 = [], average4 = [], paeth3 = [], paeth4 = [], scratch = [];
+    private byte[] sub1 = [], sub3 = [], sub4 = [], up3 = [], average3 = [], average4 = [], paeth3 = [], paeth4 = [], none3 = [], mix3 = [], scratch = [];
 
     /// <summary>Decodes (buffer, length, predictor, colors, bitsPerComponent, columns) and yields the decoded length.</summary>
     private Func<byte[], int, int, int, int, int, int> undoPredictor = null!;
@@ -98,8 +98,57 @@ public class PngPredictorBenchmarks
         average4 = Filtered(cmyk, 4, 3);
         paeth3 = Filtered(rgb, 3, 4);
         paeth4 = Filtered(cmyk, 4, 4);
+        none3 = Filtered(rgb, 3, 0);
+        mix3 = FilteredLikeTheCorpus(rgb, 3);
         scratch = new byte[sub4.Length];
+
+        flateMix3Dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+        {
+            { NameToken.Filter, NameToken.FlateDecode },
+            { NameToken.Width, new NumericToken(SyntheticColumns) },
+            { NameToken.Height, new NumericToken(SyntheticRows) },
+            {
+                NameToken.DecodeParms, new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.Predictor, new NumericToken(15) },
+                    { NameToken.Colors, new NumericToken(3) },
+                    { NameToken.BitsPerComponent, new NumericToken(8) },
+                    { NameToken.Columns, new NumericToken(SyntheticColumns) }
+                })
+            }
+        });
+
+        flatePlainDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+        {
+            { NameToken.Filter, NameToken.FlateDecode }
+        });
+
+        flateMix3 = filter.Encode(new MemoryStream(mix3), flateMix3Dictionary);
+        flateNone3 = filter.Encode(new MemoryStream(none3), flateMix3Dictionary);
     }
+
+    private byte[] flateMix3 = [], flateNone3 = [];
+    private DictionaryToken flateMix3Dictionary = null!, flatePlainDictionary = null!;
+
+    /// <summary>An RGB image with no filtering at all: what the row move alone costs.</summary>
+    [Benchmark]
+    public int SyntheticNone3() => Run(none3, 3);
+
+    /// <summary>Rows filtered in the proportions the invoice corpus shows: 59 percent None, 36 percent Sub, 4 percent Up, the rest Average and Paeth.</summary>
+    [Benchmark]
+    public int SyntheticCorpusMix3() => Run(mix3, 3);
+
+    /// <summary>The corpus mix through the Flate filter: inflating plus the predictor, the way a document is read.</summary>
+    [Benchmark]
+    public int FlateCorpusMix3() => filter.Decode(flateMix3, flateMix3Dictionary, DefaultFilterProvider.Instance, 0).Length;
+
+    /// <summary>Unfiltered rows through the Flate filter: inflating plus dropping the filter type bytes.</summary>
+    [Benchmark]
+    public int FlateNone3() => filter.Decode(flateNone3, flateMix3Dictionary, DefaultFilterProvider.Instance, 0).Length;
+
+    /// <summary>The same bytes as FlateNone3 without a predictor declared: the inflater and the filter's buffering alone.</summary>
+    [Benchmark]
+    public int FlatePlain3() => filter.Decode(flateNone3, flatePlainDictionary, DefaultFilterProvider.Instance, 0).Length;
 
     /// <summary>The 33 Sub filtered images of the two documents, 8 MB of rows, predictor only.</summary>
     [Benchmark]
@@ -195,12 +244,28 @@ public class PngPredictorBenchmarks
 
     /// <summary>Applies one PNG filter type to every row, the way an encoder would.</summary>
     private static byte[] Filtered(byte[] image, int bytesPerPixel, byte filterType)
+        => Filtered(image, bytesPerPixel, _ => filterType);
+
+    /// <summary>Filter types distributed by row as the invoice corpus has them, weighed by bytes.</summary>
+    private static byte[] FilteredLikeTheCorpus(byte[] image, int bytesPerPixel)
+    {
+        var random = new Random(11);
+
+        return Filtered(image, bytesPerPixel, _ =>
+        {
+            var draw = random.Next(1000);
+            return draw < 593 ? (byte)0 : draw < 954 ? (byte)1 : draw < 991 ? (byte)2 : draw < 993 ? (byte)3 : (byte)4;
+        });
+    }
+
+    private static byte[] Filtered(byte[] image, int bytesPerPixel, Func<int, byte> filterTypeOfRow)
     {
         var rowLength = SyntheticColumns * bytesPerPixel;
         var output = new byte[SyntheticRows * (rowLength + 1)];
 
         for (var y = 0; y < SyntheticRows; y++)
         {
+            var filterType = filterTypeOfRow(y);
             output[y * (rowLength + 1)] = filterType;
 
             for (var i = 0; i < rowLength; i++)

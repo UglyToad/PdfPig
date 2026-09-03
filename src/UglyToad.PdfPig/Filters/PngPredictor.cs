@@ -117,17 +117,33 @@
             /// <summary>The bytes a row occupies in the input: the row, plus its filter type for the PNG predictors.</summary>
             private readonly int stride;
 
+            /// <summary>
+            /// Whether decoded rows are moved up to the start of the buffer as they are decoded. If not,
+            /// they stay where their input lies and <see cref="CopyTo"/> leaves the filter type bytes out.
+            /// </summary>
+            private readonly bool compact;
+
             private byte[]? zeroRow;
 
             /// <summary>
             /// Creates a decoder for the given decode parameters. The predictor must be 2 or more.
             /// </summary>
-            public Decoder(int predictor, int colors, int bitsPerComponent, int columns)
+            /// <param name="predictor">The Predictor decode parameter.</param>
+            /// <param name="colors">The Colors decode parameter.</param>
+            /// <param name="bitsPerComponent">The BitsPerComponent decode parameter.</param>
+            /// <param name="columns">The Columns decode parameter.</param>
+            /// <param name="compact">
+            /// True to move each decoded row up so the output is contiguous from the start of the
+            /// buffer; false to decode rows where they lie and gather them with <see cref="CopyTo"/>.
+            /// The latter saves a pass over the data when the output is copied out anyway.
+            /// </param>
+            public Decoder(int predictor, int colors, int bitsPerComponent, int columns, bool compact = true)
             {
                 this.predictor = predictor;
                 this.colors = colors;
                 this.bitsPerComponent = bitsPerComponent;
                 this.columns = columns;
+                this.compact = compact;
 
                 rowLength = CalculateRowLength(colors, bitsPerComponent, columns);
                 bytesPerPixel = ((colors * bitsPerComponent) + 7) / 8;
@@ -138,11 +154,20 @@
                 ConsumedLength = 0;
             }
 
-            /// <summary>How many bytes of decoded rows the buffer holds, from its start.</summary>
+            /// <summary>
+            /// How many bytes of decoded rows there are. When rows are moved up they occupy this many
+            /// bytes from the start of the buffer.
+            /// </summary>
             public int DecodedLength { get; private set; }
 
             /// <summary>How many bytes of input have been decoded; input from here on is still waiting for its row to complete.</summary>
             public int ConsumedLength { get; private set; }
+
+            /// <summary>The number of bytes in a decoded row.</summary>
+            public int RowLength => rowLength;
+
+            /// <summary>The number of input bytes a complete row takes: the row plus, for the PNG predictors, its filter type byte.</summary>
+            public int Stride => stride;
 
             /// <summary>
             /// Decodes every row that is complete within the first <paramref name="available"/> bytes of
@@ -157,6 +182,46 @@
             }
 
             /// <summary>
+            /// Decodes every complete row among the first <paramref name="available"/> bytes of
+            /// <paramref name="input"/> into <paramref name="output"/>, where the decoded rows follow each
+            /// other from the start. The output must have room for them: <see cref="DecodedLength"/> plus a
+            /// row for every complete row in the input. Input and output are separate buffers, so the input
+            /// need only hold what is not yet decoded, see <see cref="RestartInput"/>.
+            /// </summary>
+            public void Advance(ReadOnlySpan<byte> input, int available, Span<byte> output)
+            {
+                while (available - ConsumedLength >= stride)
+                {
+                    DecodeNextRow(input, output, rowLength);
+                }
+            }
+
+            /// <summary>
+            /// Tells the decoder that the input not yet consumed has been moved to the start of the input
+            /// buffer, so that the buffer can be small and stay in the cache.
+            /// </summary>
+            public void RestartInput()
+            {
+                ConsumedLength = 0;
+            }
+
+            /// <summary>
+            /// Decodes a last row that was cut short into <paramref name="output"/>, padding it with zeros, and
+            /// returns the length of the decoded data. The output must hold <see cref="FinalLength"/> bytes.
+            /// </summary>
+            public int Finish(ReadOnlySpan<byte> input, int available, Span<byte> output)
+            {
+                var partial = PartialRowLength(available);
+
+                if (partial > 0)
+                {
+                    DecodeNextRow(input, output, partial);
+                }
+
+                return DecodedLength;
+            }
+
+            /// <summary>
             /// The length the decoded data has once the input ends after <paramref name="available"/>
             /// bytes: the complete rows, plus a padded row if input for part of one is left over.
             /// </summary>
@@ -166,8 +231,22 @@
             }
 
             /// <summary>
+            /// How large the buffer has to be for <see cref="Finish"/>: room for the padded last row,
+            /// either at the start of the output or, when rows stay in place, where its input lies.
+            /// </summary>
+            public int RequiredCapacity(int available)
+            {
+                if (PartialRowLength(available) == 0)
+                {
+                    return available;
+                }
+
+                return compact ? FinalLength(available) : ConsumedLength + stride;
+            }
+
+            /// <summary>
             /// Decodes a last row that was cut short, padding it with zeros, and returns the length of the
-            /// decoded data. The buffer must hold at least <see cref="FinalLength"/> bytes.
+            /// decoded data. The buffer must hold at least <see cref="RequiredCapacity"/> bytes.
             /// </summary>
             public int Finish(Span<byte> buffer, int available)
             {
@@ -179,6 +258,27 @@
                 }
 
                 return DecodedLength;
+            }
+
+            /// <summary>
+            /// Copies the decoded rows to <paramref name="destination"/>, which must hold
+            /// <see cref="DecodedLength"/> bytes. When the rows stayed in place this is where the filter
+            /// type bytes between them are left out.
+            /// </summary>
+            public void CopyTo(ReadOnlySpan<byte> buffer, Span<byte> destination)
+            {
+                if (compact || stride == rowLength)
+                {
+                    buffer.Slice(0, DecodedLength).CopyTo(destination);
+                    return;
+                }
+
+                var rows = DecodedLength / rowLength;
+
+                for (var row = 0; row < rows; row++)
+                {
+                    buffer.Slice((row * stride) + 1, rowLength).CopyTo(destination.Slice(row * rowLength, rowLength));
+                }
             }
 
             /// <summary>
@@ -203,18 +303,58 @@
                 // move overlaps with the destination ahead of the source, which CopyTo handles.
                 var isPng = stride != rowLength;
                 var filterType = isPng ? buffer[ConsumedLength] : (byte)0;
-                var source = buffer.Slice(ConsumedLength + (isPng ? 1 : 0), dataLength);
-                var row = buffer.Slice(DecodedLength, rowLength);
+                var sourceStart = ConsumedLength + (isPng ? 1 : 0);
 
-                if (isPng || dataLength < rowLength)
+                if (!compact)
                 {
-                    source.CopyTo(row);
+                    // The row is decoded where its input lies; the row before it lies one stride
+                    // back. A short last row is padded in place, which the caller made room for.
+                    var here = buffer.Slice(sourceStart, rowLength);
+
+                    if (dataLength < rowLength)
+                    {
+                        here.Slice(dataLength).Clear();
+                    }
+
+                    ReadOnlySpan<byte> above;
+                    if (ConsumedLength == 0)
+                    {
+                        zeroRow ??= new byte[rowLength];
+                        above = zeroRow;
+                    }
+                    else
+                    {
+                        above = buffer.Slice(sourceStart - stride, rowLength);
+                    }
+
+                    if (isPng)
+                    {
+                        DecodePngRow(filterType, here, above, bytesPerPixel);
+                    }
+                    else if (predictor == TiffPredictor)
+                    {
+                        DecodeTiffRow(here, colors, bitsPerComponent, columns);
+                    }
+
+                    ConsumedLength += (isPng ? 1 : 0) + dataLength;
+                    DecodedLength += rowLength;
+                    return;
                 }
 
-                if (dataLength < rowLength)
-                {
-                    row.Slice(dataLength).Clear();
-                }
+                DecodeNextRow(buffer, buffer, dataLength);
+            }
+
+            /// <summary>
+            /// Moves the next row from <paramref name="input"/> up to <see cref="DecodedLength"/> in
+            /// <paramref name="output"/>, pads it to the row length if it is short, and decodes it against
+            /// the row before. Input and output may be the same buffer.
+            /// </summary>
+            private void DecodeNextRow(ReadOnlySpan<byte> input, Span<byte> output, int dataLength)
+            {
+                var isPng = stride != rowLength;
+                var filterType = isPng ? input[ConsumedLength] : (byte)0;
+                var source = input.Slice(ConsumedLength + (isPng ? 1 : 0), dataLength);
+                var row = output.Slice(DecodedLength, rowLength);
 
                 ReadOnlySpan<byte> previous;
                 if (DecodedLength == 0)
@@ -224,16 +364,42 @@
                 }
                 else
                 {
-                    previous = buffer.Slice(DecodedLength - rowLength, rowLength);
+                    previous = output.Slice(DecodedLength - rowLength, rowLength);
                 }
 
-                if (isPng)
+                if (isPng && dataLength == rowLength && (filterType == PngSub || filterType == PngUp))
                 {
-                    DecodePngRow(filterType, row, previous, bytesPerPixel);
+                    // The two common filters read the residuals where they lie and write the
+                    // decoded row where it goes, so the move up over the filter type byte and the
+                    // decoding are one pass over the row instead of two.
+                    if (filterType == PngSub)
+                    {
+                        Sub(source, row, bytesPerPixel);
+                    }
+                    else
+                    {
+                        Up(source, row, previous);
+                    }
                 }
-                else if (predictor == TiffPredictor)
+                else
                 {
-                    DecodeTiffRow(row, colors, bitsPerComponent, columns);
+                    // Where input and output are one buffer and the row does not move, this copies
+                    // the row onto itself, which costs nothing worth a special case.
+                    source.CopyTo(row);
+
+                    if (dataLength < rowLength)
+                    {
+                        row.Slice(dataLength).Clear();
+                    }
+
+                    if (isPng)
+                    {
+                        DecodePngRow(filterType, row, previous, bytesPerPixel);
+                    }
+                    else if (predictor == TiffPredictor)
+                    {
+                        DecodeTiffRow(row, colors, bitsPerComponent, columns);
+                    }
                 }
 
                 // Values 3 to 9 are not defined and leave the rows as they are.
@@ -268,21 +434,34 @@
         }
 
         /// <summary>Each byte was stored as the difference to the byte one pixel to its left.</summary>
-        private static void Sub(Span<byte> row, int bytesPerPixel)
+        private static void Sub(Span<byte> row, int bytesPerPixel) => Sub(row, row, bytesPerPixel);
+
+        /// <summary>
+        /// Undoes Sub while reading the residuals from <paramref name="source"/> and writing the row to
+        /// <paramref name="row"/>. The two may be the same span, or overlap with the row starting
+        /// before its source in one buffer, which is how a row moves up over its filter type byte:
+        /// every byte is read before the byte at its index is written, and nothing is read from
+        /// behind the write position, so the move and the decoding happen in one pass.
+        /// </summary>
+        private static void Sub(ReadOnlySpan<byte> source, Span<byte> row, int bytesPerPixel)
         {
 #if NET7_0_OR_GREATER
             if (HasByteShuffle && bytesPerPixel <= SubMasks.MaxBytesPerPixel && row.Length >= 2 * Vector128<byte>.Count)
             {
-                SubVectorized(row, bytesPerPixel);
+                SubVectorized(source, row, bytesPerPixel);
                 return;
             }
 #endif
+
+            // The first pixel has nothing to its left and is copied as it is.
+            var head = Math.Min(bytesPerPixel, row.Length);
+            source.Slice(0, head).CopyTo(row);
 
             // Every byte depends on the byte one pixel back, which the plain loop has only just
             // stored: reading it back costs the store-to-load latency per byte, and that, not the
             // arithmetic, is what bounds the loop. For the usual pixel widths the left pixel is
             // carried in locals instead, so the chain is a register add.
-            var i = bytesPerPixel;
+            var i = head;
 
             switch (bytesPerPixel)
             {
@@ -292,7 +471,7 @@
 
                     for (; i < row.Length; i++)
                     {
-                        a = row[i] += a;
+                        a = row[i] = (byte)(source[i] + a);
                     }
 
                     break;
@@ -306,9 +485,9 @@
 
                     for (; i + 2 < row.Length; i += 3)
                     {
-                        a = row[i] += a;
-                        b = row[i + 1] += b;
-                        c = row[i + 2] += c;
+                        a = row[i] = (byte)(source[i] + a);
+                        b = row[i + 1] = (byte)(source[i + 1] + b);
+                        c = row[i + 2] = (byte)(source[i + 2] + c);
                     }
 
                     break;
@@ -323,10 +502,10 @@
 
                     for (; i + 3 < row.Length; i += 4)
                     {
-                        a = row[i] += a;
-                        b = row[i + 1] += b;
-                        c = row[i + 2] += c;
-                        d = row[i + 3] += d;
+                        a = row[i] = (byte)(source[i] + a);
+                        b = row[i + 1] = (byte)(source[i + 1] + b);
+                        c = row[i + 2] = (byte)(source[i + 2] + c);
+                        d = row[i + 3] = (byte)(source[i + 3] + d);
                     }
 
                     break;
@@ -336,7 +515,7 @@
             // Other widths, and whatever is left when the row is not a whole number of pixels.
             for (; i < row.Length; i++)
             {
-                row[i] += row[i - bytesPerPixel];
+                row[i] = (byte)(source[i] + row[i - bytesPerPixel]);
             }
         }
 
@@ -375,7 +554,7 @@
         /// is carried into the next one. This is the approach of connorskees/simd-png; the scalar
         /// loop is bound by the chain from each byte to the one a pixel back, this one is not.
         /// </summary>
-        private static void SubVectorized(Span<byte> row, int bytesPerPixel)
+        private static void SubVectorized(ReadOnlySpan<byte> source, Span<byte> row, int bytesPerPixel)
         {
             var block = SubMasks.Block[bytesPerPixel];
             var shifts = SubMasks.Shifts[bytesPerPixel];
@@ -383,15 +562,17 @@
 
             var carry = Vector128<byte>.Zero;
             var i = 0;
-            var current = Vector128.Create<byte>(row.Slice(0, Vector128<byte>.Count));
+            var current = Vector128.Create<byte>(source.Slice(0, Vector128<byte>.Count));
 
-            while (true)
+            // Every store is a whole vector, so the vector loop stops where one would reach past
+            // the row and the scalar loop finishes. The block is shorter than a vector when the
+            // pixel width does not divide 16, and the store then spills into the next block; the
+            // next block is therefore loaded before the store. After the last store the spilt
+            // residuals may be gone from the buffer, so they are decoded from the loaded vector.
+            while (i + Vector128<byte>.Count <= row.Length)
             {
-                // The block is shorter than a vector when the pixel width does not divide 16, and
-                // the store then spills into the next block. So the next block is loaded first,
-                // and the spilt bytes are put back when there is no next block to overwrite them.
                 var hasNext = i + block + Vector128<byte>.Count <= row.Length;
-                var next = hasNext ? Vector128.Create<byte>(row.Slice(i + block, Vector128<byte>.Count)) : default;
+                var next = hasNext ? Vector128.Create<byte>(source.Slice(i + block, Vector128<byte>.Count)) : default;
 
                 var sum = current;
                 foreach (var shift in shifts)
@@ -403,24 +584,27 @@
                 sum.CopyTo(row.Slice(i, Vector128<byte>.Count));
 
                 carry = ShuffleBytes(sum, carryMask);
-                i += block;
 
                 if (!hasNext)
                 {
-                    for (var spilt = block; spilt < Vector128<byte>.Count; spilt++)
+                    var spillEnd = Math.Min(i + Vector128<byte>.Count, row.Length);
+
+                    for (var j = i + block; j < spillEnd; j++)
                     {
-                        row[i + spilt - block] = current.GetElement(spilt);
+                        row[j] = (byte)(current.GetElement(j - i) + row[j - bytesPerPixel]);
                     }
 
+                    i = spillEnd;
                     break;
                 }
 
+                i += block;
                 current = next;
             }
 
             for (; i < row.Length; i++)
             {
-                row[i] += row[i - bytesPerPixel];
+                row[i] = (byte)(source[i] + row[i - bytesPerPixel]);
             }
         }
 
@@ -476,19 +660,28 @@
 #endif
 
         /// <summary>Each byte was stored as the difference to the byte above it.</summary>
-        private static void Up(Span<byte> row, ReadOnlySpan<byte> previous)
+        private static void Up(Span<byte> row, ReadOnlySpan<byte> previous) => Up(row, row, previous);
+
+        /// <summary>
+        /// Undoes Up while reading the residuals from <paramref name="source"/> and writing the row to
+        /// <paramref name="row"/>; the two may be the same, or overlap as described for Sub.
+        /// </summary>
+        private static void Up(ReadOnlySpan<byte> source, Span<byte> row, ReadOnlySpan<byte> previous)
         {
             // No byte depends on another in this row, so whole vectors of them are added at once.
+            // Each vector is read from the source and the row above before it is written, and the
+            // write never reaches the vectors still to be read.
             var i = 0;
 
             if (Vector.IsHardwareAccelerated && row.Length >= Vector<byte>.Count)
             {
                 var rowVectors = MemoryMarshal.Cast<byte, Vector<byte>>(row);
+                var sourceVectors = MemoryMarshal.Cast<byte, Vector<byte>>(source.Slice(0, row.Length));
                 var previousVectors = MemoryMarshal.Cast<byte, Vector<byte>>(previous.Slice(0, row.Length));
 
                 for (var v = 0; v < rowVectors.Length; v++)
                 {
-                    rowVectors[v] += previousVectors[v];
+                    rowVectors[v] = sourceVectors[v] + previousVectors[v];
                 }
 
                 i = rowVectors.Length * Vector<byte>.Count;
@@ -496,7 +689,7 @@
 
             for (; i < row.Length; i++)
             {
-                row[i] += previous[i];
+                row[i] = (byte)(source[i] + previous[i]);
             }
         }
 
