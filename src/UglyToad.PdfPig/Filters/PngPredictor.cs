@@ -91,8 +91,16 @@
         /// </summary>
         public static int CalculateRowLength(int colors, int bitsPerComponent, int columns)
         {
-            var bitsPerPixel = colors * bitsPerComponent;
-            return ((columns * bitsPerPixel) + 7) / 8;
+            // Wide enough not to wrap around on absurd parameters, which are then refused
+            // rather than turned into a negative or a tiny row.
+            var rowLength = (((long)columns * colors * bitsPerComponent) + 7) / 8;
+
+            if (rowLength < 0 || rowLength > int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(columns), $"The predictor parameters describe a row of {rowLength} bytes.");
+            }
+
+            return (int)rowLength;
         }
 
         /// <summary>
@@ -175,7 +183,9 @@
             /// </summary>
             public void Advance(Span<byte> buffer, int available)
             {
-                while (available - ConsumedLength >= stride)
+                // A stride of zero, from a row of no bytes without filter type bytes, would never
+                // consume anything; such rows are left to Finish.
+                while (stride > 0 && available - ConsumedLength >= stride)
                 {
                     DecodeNextRow(buffer, rowLength);
                 }
@@ -190,7 +200,7 @@
             /// </summary>
             public void Advance(ReadOnlySpan<byte> input, int available, Span<byte> output)
             {
-                while (available - ConsumedLength >= stride)
+                while (stride > 0 && available - ConsumedLength >= stride)
                 {
                     DecodeNextRow(input, output, rowLength);
                 }

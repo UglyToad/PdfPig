@@ -62,10 +62,15 @@
             }
             catch
             {
-                // ignored.
+                // This used to hand the compressed input back without a word. Nothing above
+                // can tell that apart from content, so a stream that failed to decode arrived
+                // at the checks looking like a document full of noise - and a defect in here
+                // looked the same, which is the more expensive half: the failure is invisible
+                // to a test run as well. Every other filter in this folder lets its exceptions
+                // out. This one keeps catching because it is the filter that meets damaged
+                // documents, but it returns nothing rather than the input.
+                return Memory<byte>.Empty;
             }
-
-            return input;
         }
 
         private static Memory<byte> Decompress(Memory<byte> input,

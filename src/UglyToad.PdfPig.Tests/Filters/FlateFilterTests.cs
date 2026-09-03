@@ -85,5 +85,36 @@
             Assert.True(decoded.Length < original.Length, "a truncated stream cannot yield everything");
             Assert.Equal(original.AsSpan(0, decoded.Length).ToArray(), decoded);
         }
+
+        [Fact]
+        public void AFailureYieldsNothingRatherThanTheInput()
+        {
+            // A predictor row too wide for any buffer to hold. Nothing here decodes, and the
+            // input must not come back dressed as content.
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                // The resolver only hands the parameters over when a filter is named.
+                { NameToken.Filter, NameToken.FlateDecode },
+                {
+                    NameToken.DecodeParms, new DictionaryToken(new Dictionary<NameToken, IToken>
+                    {
+                        { NameToken.Predictor, new NumericToken(12) },
+                        { NameToken.Colors, new NumericToken(32) },
+                        { NameToken.BitsPerComponent, new NumericToken(16) },
+                        { NameToken.Columns, new NumericToken(int.MaxValue) },
+                    })
+                },
+            });
+
+            byte[] compressed;
+            using (var inputStream = new MemoryStream(OtherEncodings.StringAsLatin1Bytes("content")))
+            {
+                compressed = filter.Encode(inputStream, new DictionaryToken(new Dictionary<NameToken, IToken>()));
+            }
+
+            var decoded = filter.Decode(compressed, parameters, TestFilterProvider.Instance, 0);
+
+            Assert.Empty(decoded.ToArray());
+        }
     }
 }
