@@ -70,15 +70,17 @@
             var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
             var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-            return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns);
+            return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns, streamDictionary);
         }
 
-        private static Memory<byte> Decode(ReadOnlySpan<byte> input, bool isEarlyChange, int predictor, int colors, int bitsPerComponent, int columns)
+        private static Memory<byte> Decode(ReadOnlySpan<byte> input, bool isEarlyChange, int predictor, int colors, int bitsPerComponent, int columns, DictionaryToken streamDictionary)
         {
             // The output is decoded into a rented buffer and only the finished length is handed to
-            // the caller, so nothing oversized stays alive behind the result.
+            // the caller, so nothing oversized stays alive behind the result. The buffer is sized
+            // from the dictionary where that states the decoded length, plus the literal preamble
+            // the decoder keeps in front of the data.
             var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * ExpectedExpansion)));
+                (int)Math.Min(MaximumCapacity, (long)DecodeBuffer.Capacity(input.Length, streamDictionary, ExpectedExpansion, MinimumCapacity) + LiteralPreamble));
 
             try
             {
