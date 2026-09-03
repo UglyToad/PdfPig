@@ -3,7 +3,6 @@
     using System;
     using System.Buffers;
     using System.Buffers.Binary;
-    using System.IO;
     using Core;
     using Lzw;
     using Tokens;
@@ -85,29 +84,17 @@
             {
                 var length = Decode(input, isEarlyChange, ref buffer);
 
-                // Below 2 PngPredictor.WrapPredictor hands the stream straight back, and most
-                // streams carry no predictor at all, so there is nothing to copy through a stream.
-                if (predictor <= 1)
-                {
 #if NET
-                    // Every byte is overwritten by the copy, so the runtime need not clear the array.
-                    var decoded = GC.AllocateUninitializedArray<byte>(length);
+                // Every byte is overwritten by the copy, so the runtime need not clear the array.
+                var decoded = GC.AllocateUninitializedArray<byte>(length);
 #else
-                    var decoded = new byte[length];
+                var decoded = new byte[length];
 #endif
-                    buffer.AsSpan(LiteralPreamble, length).CopyTo(decoded);
+                buffer.AsSpan(LiteralPreamble, length).CopyTo(decoded);
 
-                    return decoded;
-                }
-
-                using (var output = new MemoryStream(length))
-                using (var predicted = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
-                {
-                    predicted.Write(buffer, LiteralPreamble, length);
-                    predicted.Flush();
-
-                    return output.AsMemory();
-                }
+                // Undone in place on the result; below 2 the data comes straight back, and most
+                // streams carry no predictor at all.
+                return PngPredictor.Decode(decoded, predictor, colors, bitsPerComponent, columns);
             }
             finally
             {

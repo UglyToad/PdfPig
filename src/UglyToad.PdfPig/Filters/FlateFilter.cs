@@ -28,6 +28,17 @@
         /// <summary>How much is inflated per read; a damaged stream costs at most one block.</summary>
         private const int BlockLength = 8192;
 
+        /// <summary>
+        /// Where the inflated data starts out, as a multiple of the compressed length. Content streams
+        /// inflate to three to five times their size; the buffer doubles when that is not enough.
+        /// </summary>
+        private const int InitialCapacityFactor = 4;
+
+        private const int MinimumCapacity = 4096;
+
+        /// <summary>The largest array the runtime will hand out.</summary>
+        private const int MaximumCapacity = 0x7FFFFFC7;
+
         private const byte Deflate32KbWindow = 120;
         private const byte ChecksumBits = 1;
 
@@ -68,26 +79,38 @@
             memoryStream.ReadByte();
             memoryStream.ReadByte();
 
-            using var output = new MemoryStream((int)(input.Length * 1.5));
+            // The inflater writes straight into this buffer, and the predictor is undone in the
+            // same buffer as the rows arrive; the caller gets a copy of just the finished length.
+            var buffer = ArrayPool<byte>.Shared.Rent(
+                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * InitialCapacityFactor)));
 
-            using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
-            using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
+            var length = 0;
+
+            var hasPredictor = predictor > 1;
+            var decoder = hasPredictor
+                ? new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns)
+                : default;
+
+            try
             {
-                // Copied a block at a time rather than with CopyTo, because a damaged
-                // stream throws out of the read and CopyTo would discard the whole buffer
-                // it was filling. Keeping each block that did inflate is what PDFBox's
-                // FlateFilterDecoderStream does, and it is worth a lot on a large stream.
-                var block = ArrayPool<byte>.Shared.Rent(BlockLength);
-
-                try
+                using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
                 {
+                    // Read a block at a time rather than with CopyTo, because a damaged stream
+                    // throws out of the read and CopyTo would discard the whole buffer it was
+                    // filling. Keeping each block that did inflate is what PDFBox's
+                    // FlateFilterDecoderStream does, and it is worth a lot on a large stream.
                     while (true)
                     {
+                        if (buffer.Length - length < BlockLength)
+                        {
+                            Grow(ref buffer, length, length + BlockLength);
+                        }
+
                         int read;
 
                         try
                         {
-                            read = deflate.Read(block, 0, block.Length);
+                            read = deflate.Read(buffer, length, BlockLength);
                         }
                         catch (InvalidDataException)
                         {
@@ -100,18 +123,53 @@
                             break;
                         }
 
-                        f.Write(block, 0, read);
+                        length += read;
+
+                        if (hasPredictor)
+                        {
+                            // The rows this block completed are decoded while the block is still
+                            // in the cache; a pass over the whole stream afterwards would be cold.
+                            decoder.Advance(buffer, length);
+                        }
                     }
                 }
-                finally
+
+                if (hasPredictor)
                 {
-                    ArrayPool<byte>.Shared.Return(block);
+                    var finalLength = decoder.FinalLength(length);
+
+                    if (finalLength > buffer.Length)
+                    {
+                        Grow(ref buffer, length, finalLength);
+                    }
+
+                    length = decoder.Finish(buffer, length);
                 }
 
-                f.Flush();
-            }
+#if NET
+                // Every byte is overwritten by the copy below, so the runtime need not clear the array.
+                var decoded = GC.AllocateUninitializedArray<byte>(length);
+#else
+                var decoded = new byte[length];
+#endif
+                buffer.AsSpan(0, length).CopyTo(decoded);
 
-            return output.AsMemory();
+                return decoded;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
+        private static void Grow(ref byte[] buffer, int length, int required)
+        {
+            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(MaximumCapacity, Math.Max(required, buffer.Length * 2L)));
+
+            buffer.AsSpan(0, length).CopyTo(grown);
+            ArrayPool<byte>.Shared.Return(buffer);
+
+            buffer = grown;
         }
 
         /// <summary>

@@ -82,22 +82,8 @@ namespace UglyToad.PdfPig.Filters
 
             var decoded = Decompress(input);
 
-            // Below 2 PngPredictor.WrapPredictor hands the stream straight back, and most streams
-            // carry no predictor at all, so there is nothing to copy through a second stream.
-            if (predictor <= 1)
-            {
-                return decoded;
-            }
-
-            using var output = new MemoryStream(decoded.Length);
-
-            using (var predicted = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
-            {
-                predicted.Write(decoded, 0, decoded.Length);
-                predicted.Flush();
-            }
-
-            return output.AsMemory();
+            // Undone in place; below 2 the data comes straight back.
+            return PngPredictor.Decode(decoded, predictor, colors, bitsPerComponent, columns);
         }
 
         private static byte[] Decompress(Memory<byte> input)
