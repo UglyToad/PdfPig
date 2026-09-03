@@ -126,8 +126,8 @@
 
             // The inflater writes straight into this buffer, and the predictor is undone in the
             // same buffer as the rows arrive; the caller gets a copy of just the finished length.
-            var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * InitialCapacityFactor)));
+            // The buffer is sized from the dictionary where that states the decoded length.
+            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity));
 
             var length = 0;
 
@@ -148,7 +148,9 @@
                     // FlateFilterDecoderStream does, and it is worth a lot on a large stream.
                     while (true)
                     {
-                        if (buffer.Length - length < blockLength)
+                        // A block at a time, or the room that is left when a buffer sized from the
+                        // dictionary is about to fit exactly; grown only once it is full.
+                        if (buffer.Length == length)
                         {
                             Grow(ref buffer, length, length + blockLength);
                         }
@@ -157,7 +159,7 @@
 
                         try
                         {
-                            read = deflate.Read(buffer, length, blockLength);
+                            read = deflate.Read(buffer, length, Math.Min(blockLength, buffer.Length - length));
                         }
                         catch (InvalidDataException)
                         {
@@ -194,15 +196,11 @@
                     length = decoder.Finish(buffer, length);
                 }
 
-#if NET
-                // Every byte is overwritten by the copy below, so the runtime need not clear the array.
-                var decoded = GC.AllocateUninitializedArray<byte>(length);
-#else
-                var decoded = new byte[length];
-#endif
+                var decoded = AllocateResult(length);
 
                 if (hasPredictor)
                 {
+                    // The rows are gathered, without their filter type bytes, into the result.
                     decoder.CopyTo(buffer, decoded);
                 }
                 else

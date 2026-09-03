@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Filters
+﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
     using UglyToad.PdfPig.Tokens;
@@ -80,13 +80,13 @@ namespace UglyToad.PdfPig.Filters
             var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
             var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-            var decoded = Decompress(input);
+            var decoded = Decompress(input, streamDictionary);
 
             // Undone in place; below 2 the data comes straight back.
             return PngPredictor.Decode(decoded, predictor, colors, bitsPerComponent, columns);
         }
 
-        private static byte[] Decompress(Memory<byte> input)
+        private static byte[] Decompress(Memory<byte> input, DictionaryToken streamDictionary)
         {
             if (input.Length == 0)
             {
@@ -96,9 +96,9 @@ namespace UglyToad.PdfPig.Filters
             }
 
             // The decoder writes straight into this buffer, so there is no copy per block, and the
-            // buffer is rented because only the finished length is handed to the caller.
-            var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * InitialCapacityFactor)));
+            // buffer is rented because only the finished length is handed to the caller. It is sized
+            // from the dictionary where that states the decoded length, as embedded files do.
+            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity));
 
             var total = 0;
 
