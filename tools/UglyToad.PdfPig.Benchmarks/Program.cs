@@ -25,6 +25,7 @@ internal class Program
                 typeof(Type4FunctionBenchmarks),
                 typeof(LzwFilterBenchmarks),
                 typeof(PngPredictorBenchmarks),
+                typeof(FlateFilterBenchmarks),
                 typeof(IccColorManagementBenchmarks),
             }).Run(args);
         }
