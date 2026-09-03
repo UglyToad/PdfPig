@@ -9,9 +9,9 @@ namespace UglyToad.PdfPig.Benchmarks;
 /// <summary>
 /// Measures undoing the PNG predictors on their own, without the inflater in front of them. The
 /// images with a predictor in two real documents (all of them Sub filtered, 8 MB) are inflated
-/// once in setup; Up, Average and Paeth are measured on a synthetic image because the documents
-/// carry none. PngPredictor is internal and changed shape, so it is reached through reflection in
-/// whichever form the build under test has.
+/// once in setup; the other filters, and other pixel widths, are measured on synthetic images
+/// because the documents carry none. PngPredictor is internal and changed shape, so it is reached
+/// through reflection in whichever form the build under test has.
 /// </summary>
 [Config(typeof(NuGetPackageConfig))]
 [MemoryDiagnoser(displayGenColumns: false)]
@@ -19,16 +19,16 @@ public class PngPredictorBenchmarks
 {
     private const int SyntheticColumns = 1000;
     private const int SyntheticRows = 1000;
-    private const int SyntheticColors = 3;
 
     private readonly FlateFilter filter = new();
 
     private (byte[] Raw, byte[] Scratch, int Colors, int BitsPerComponent, int Columns)[] realSub = [];
     private (Memory<byte> Data, DictionaryToken Dictionary)[] realStreams = [];
 
-    private byte[] syntheticSub = [], syntheticUp = [], syntheticAverage = [], syntheticPaeth = [], syntheticScratch = [];
+    private byte[] sub1 = [], sub3 = [], sub4 = [], up3 = [], average3 = [], average4 = [], paeth3 = [], paeth4 = [], scratch = [];
 
-    private Func<byte[], int, int, int, int, int> undoPredictor = null!;
+    /// <summary>Decodes (buffer, length, predictor, colors, bitsPerComponent, columns) and yields the decoded length.</summary>
+    private Func<byte[], int, int, int, int, int, int> undoPredictor = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -86,12 +86,19 @@ public class PngPredictorBenchmarks
         realStreams = streams.ToArray();
         realSub = raw.ToArray();
 
-        var image = SyntheticImage();
-        syntheticSub = Filtered(image, 1);
-        syntheticUp = Filtered(image, 2);
-        syntheticAverage = Filtered(image, 3);
-        syntheticPaeth = Filtered(image, 4);
-        syntheticScratch = new byte[syntheticSub.Length];
+        var grey = SyntheticImage(1);
+        var rgb = SyntheticImage(3);
+        var cmyk = SyntheticImage(4);
+
+        sub1 = Filtered(grey, 1, 1);
+        sub3 = Filtered(rgb, 3, 1);
+        sub4 = Filtered(cmyk, 4, 1);
+        up3 = Filtered(rgb, 3, 2);
+        average3 = Filtered(rgb, 3, 3);
+        average4 = Filtered(cmyk, 4, 3);
+        paeth3 = Filtered(rgb, 3, 4);
+        paeth4 = Filtered(cmyk, 4, 4);
+        scratch = new byte[sub4.Length];
     }
 
     /// <summary>The 33 Sub filtered images of the two documents, 8 MB of rows, predictor only.</summary>
@@ -100,26 +107,38 @@ public class PngPredictorBenchmarks
     {
         long total = 0;
 
-        foreach (var (raw, scratch, colors, bitsPerComponent, columns) in realSub)
+        foreach (var (raw, buffer, colors, bitsPerComponent, columns) in realSub)
         {
-            Buffer.BlockCopy(raw, 0, scratch, 0, raw.Length);
-            total += undoPredictor(scratch, 15, colors, bitsPerComponent, columns);
+            Buffer.BlockCopy(raw, 0, buffer, 0, raw.Length);
+            total += undoPredictor(buffer, raw.Length, 15, colors, bitsPerComponent, columns);
         }
 
         return total;
     }
 
     [Benchmark]
-    public int SyntheticSub() => Run(syntheticSub);
+    public int SyntheticSub1() => Run(sub1, 1);
 
     [Benchmark]
-    public int SyntheticUp() => Run(syntheticUp);
+    public int SyntheticSub3() => Run(sub3, 3);
 
     [Benchmark]
-    public int SyntheticAverage() => Run(syntheticAverage);
+    public int SyntheticSub4() => Run(sub4, 4);
 
     [Benchmark]
-    public int SyntheticPaeth() => Run(syntheticPaeth);
+    public int SyntheticUp3() => Run(up3, 3);
+
+    [Benchmark]
+    public int SyntheticAverage3() => Run(average3, 3);
+
+    [Benchmark]
+    public int SyntheticAverage4() => Run(average4, 4);
+
+    [Benchmark]
+    public int SyntheticPaeth3() => Run(paeth3, 3);
+
+    [Benchmark]
+    public int SyntheticPaeth4() => Run(paeth4, 4);
 
     /// <summary>The same 33 images through the Flate filter, inflater and predictor together.</summary>
     [Benchmark]
@@ -135,29 +154,39 @@ public class PngPredictorBenchmarks
         return total;
     }
 
-    private int Run(byte[] filtered)
+    private int Run(byte[] filtered, int colors)
     {
-        Buffer.BlockCopy(filtered, 0, syntheticScratch, 0, filtered.Length);
-        return undoPredictor(syntheticScratch, 15, SyntheticColors, 8, SyntheticColumns);
+        Buffer.BlockCopy(filtered, 0, scratch, 0, filtered.Length);
+        return undoPredictor(scratch, filtered.Length, 15, colors, 8, SyntheticColumns);
     }
 
     private static int Get(DictionaryToken dictionary, NameToken key, int fallback)
         => dictionary.TryGet(key, out var token) && token is NumericToken number ? number.Int : fallback;
 
-    /// <summary>A 1000 by 1000 RGB image: smooth gradients with noise, so no filter is trivial.</summary>
-    private static byte[] SyntheticImage()
+    /// <summary>A 1000 by 1000 image with the given channels: smooth gradients with noise, so no filter is trivial.</summary>
+    private static byte[] SyntheticImage(int channels)
     {
         var random = new Random(7);
-        var image = new byte[SyntheticRows * SyntheticColumns * SyntheticColors];
+        var image = new byte[SyntheticRows * SyntheticColumns * channels];
 
         for (var y = 0; y < SyntheticRows; y++)
         {
             for (var x = 0; x < SyntheticColumns; x++)
             {
-                var i = ((y * SyntheticColumns) + x) * SyntheticColors;
-                image[i] = (byte)(x / 4 + random.Next(8));
-                image[i + 1] = (byte)(y / 4 + random.Next(8));
-                image[i + 2] = (byte)((x + y) / 8 + random.Next(8));
+                var i = ((y * SyntheticColumns) + x) * channels;
+
+                for (var channel = 0; channel < channels; channel++)
+                {
+                    var gradient = channel switch
+                    {
+                        0 => x / 4,
+                        1 => y / 4,
+                        2 => (x + y) / 8,
+                        _ => (x * 3 + y) / 16
+                    };
+
+                    image[i + channel] = (byte)(gradient + random.Next(8));
+                }
             }
         }
 
@@ -165,11 +194,9 @@ public class PngPredictorBenchmarks
     }
 
     /// <summary>Applies one PNG filter type to every row, the way an encoder would.</summary>
-    private static byte[] Filtered(byte[] image, byte filterType)
+    private static byte[] Filtered(byte[] image, int bytesPerPixel, byte filterType)
     {
-        const int bytesPerPixel = SyntheticColors;
-        const int rowLength = SyntheticColumns * SyntheticColors;
-
+        var rowLength = SyntheticColumns * bytesPerPixel;
         var output = new byte[SyntheticRows * (rowLength + 1)];
 
         for (var y = 0; y < SyntheticRows; y++)
@@ -213,7 +240,7 @@ public class PngPredictorBenchmarks
     /// stream wrapper of the versions before it, and returns a call that decodes a buffer in place
     /// (or through a stream) and yields the decoded length.
     /// </summary>
-    private static Func<byte[], int, int, int, int, int> BindPredictor()
+    private static Func<byte[], int, int, int, int, int, int> BindPredictor()
     {
         var type = typeof(FlateFilter).Assembly.GetType("UglyToad.PdfPig.Filters.PngPredictor")
             ?? throw new InvalidOperationException("PngPredictor not found.");
@@ -224,17 +251,17 @@ public class PngPredictorBenchmarks
         if (decode != null)
         {
             var call = (Func<Memory<byte>, int, int, int, int, Memory<byte>>)decode.CreateDelegate(typeof(Func<Memory<byte>, int, int, int, int, Memory<byte>>));
-            return (data, predictor, colors, bitsPerComponent, columns) => call(data, predictor, colors, bitsPerComponent, columns).Length;
+            return (data, length, predictor, colors, bitsPerComponent, columns) => call(new Memory<byte>(data, 0, length), predictor, colors, bitsPerComponent, columns).Length;
         }
 
         var wrap = type.GetMethod("WrapPredictor", BindingFlags.Public | BindingFlags.Static)
             ?? throw new InvalidOperationException("Neither PngPredictor.Decode nor WrapPredictor found.");
 
-        return (data, predictor, colors, bitsPerComponent, columns) =>
+        return (data, length, predictor, colors, bitsPerComponent, columns) =>
         {
-            using var output = new MemoryStream(data.Length);
+            using var output = new MemoryStream(length);
             using var predicted = (Stream)wrap.Invoke(null, [output, predictor, colors, bitsPerComponent, columns])!;
-            predicted.Write(data, 0, data.Length);
+            predicted.Write(data, 0, length);
             predicted.Flush();
             return (int)output.Length;
         };

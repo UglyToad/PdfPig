@@ -1,9 +1,16 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
+    using System.Buffers.Binary;
     using System.Numerics;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+#if NET7_0_OR_GREATER
+    using System.Collections.Generic;
+    using System.Runtime.Intrinsics;
+    using System.Runtime.Intrinsics.Arm;
+    using System.Runtime.Intrinsics.X86;
+#endif
 
     /// <summary>
     /// Undoes the predictor a producer applied before compressing a stream, for the Flate, LZW and
@@ -263,6 +270,14 @@
         /// <summary>Each byte was stored as the difference to the byte one pixel to its left.</summary>
         private static void Sub(Span<byte> row, int bytesPerPixel)
         {
+#if NET7_0_OR_GREATER
+            if (HasByteShuffle && bytesPerPixel <= SubMasks.MaxBytesPerPixel && row.Length >= 2 * Vector128<byte>.Count)
+            {
+                SubVectorized(row, bytesPerPixel);
+                return;
+            }
+#endif
+
             // Every byte depends on the byte one pixel back, which the plain loop has only just
             // stored: reading it back costs the store-to-load latency per byte, and that, not the
             // arithmetic, is what bounds the loop. For the usual pixel widths the left pixel is
@@ -325,6 +340,141 @@
             }
         }
 
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Whether the processor can permute the bytes of a vector by a runtime index vector. The
+        /// portable Vector128.Shuffle is only fast with constant indices; with computed ones it
+        /// falls back to a loop per byte, so the instruction is picked explicitly.
+        /// </summary>
+        private static bool HasByteShuffle => Ssse3.IsSupported || AdvSimd.Arm64.IsSupported;
+
+        /// <summary>
+        /// Permutes the bytes of <paramref name="vector"/>: lane i takes the byte at index i of the
+        /// input, or zero where the index is out of range (0x80 and above).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<byte> ShuffleBytes(Vector128<byte> vector, Vector128<byte> indices)
+        {
+            if (Ssse3.IsSupported)
+            {
+                return Ssse3.Shuffle(vector, indices);
+            }
+
+            if (AdvSimd.Arm64.IsSupported)
+            {
+                return AdvSimd.Arm64.VectorTableLookup(vector, indices);
+            }
+
+            return Vector128.Shuffle(vector, indices);
+        }
+
+        /// <summary>
+        /// Sub undone as a prefix sum: each output byte is the sum of every residual at the same
+        /// offset within a pixel up to and including its own. Within a vector that sum is formed in
+        /// log steps, shifting by one, two, four pixels and adding, and the last pixel of the vector
+        /// is carried into the next one. This is the approach of connorskees/simd-png; the scalar
+        /// loop is bound by the chain from each byte to the one a pixel back, this one is not.
+        /// </summary>
+        private static void SubVectorized(Span<byte> row, int bytesPerPixel)
+        {
+            var block = SubMasks.Block[bytesPerPixel];
+            var shifts = SubMasks.Shifts[bytesPerPixel];
+            var carryMask = SubMasks.Carry[bytesPerPixel];
+
+            var carry = Vector128<byte>.Zero;
+            var i = 0;
+            var current = Vector128.Create<byte>(row.Slice(0, Vector128<byte>.Count));
+
+            while (true)
+            {
+                // The block is shorter than a vector when the pixel width does not divide 16, and
+                // the store then spills into the next block. So the next block is loaded first,
+                // and the spilt bytes are put back when there is no next block to overwrite them.
+                var hasNext = i + block + Vector128<byte>.Count <= row.Length;
+                var next = hasNext ? Vector128.Create<byte>(row.Slice(i + block, Vector128<byte>.Count)) : default;
+
+                var sum = current;
+                foreach (var shift in shifts)
+                {
+                    sum += ShuffleBytes(sum, shift);
+                }
+
+                sum += carry;
+                sum.CopyTo(row.Slice(i, Vector128<byte>.Count));
+
+                carry = ShuffleBytes(sum, carryMask);
+                i += block;
+
+                if (!hasNext)
+                {
+                    for (var spilt = block; spilt < Vector128<byte>.Count; spilt++)
+                    {
+                        row[i + spilt - block] = current.GetElement(spilt);
+                    }
+
+                    break;
+                }
+
+                current = next;
+            }
+
+            for (; i < row.Length; i++)
+            {
+                row[i] += row[i - bytesPerPixel];
+            }
+        }
+
+        /// <summary>The shuffle masks <see cref="SubVectorized"/> needs, per pixel width.</summary>
+        private static class SubMasks
+        {
+            public const int MaxBytesPerPixel = 8;
+
+            /// <summary>How many bytes a vector handles: the whole pixels that fit into it.</summary>
+            public static readonly int[] Block = new int[MaxBytesPerPixel + 1];
+
+            /// <summary>The masks that shift the vector up by one, two, four pixels, as far as the block reaches.</summary>
+            public static readonly Vector128<byte>[][] Shifts = new Vector128<byte>[MaxBytesPerPixel + 1][];
+
+            /// <summary>The mask that repeats the block's last pixel across the vector.</summary>
+            public static readonly Vector128<byte>[] Carry = new Vector128<byte>[MaxBytesPerPixel + 1];
+
+            static SubMasks()
+            {
+                const byte zero = 0x80;
+
+                Span<byte> indices = stackalloc byte[Vector128<byte>.Count];
+
+                for (var bytesPerPixel = 1; bytesPerPixel <= MaxBytesPerPixel; bytesPerPixel++)
+                {
+                    var block = Vector128<byte>.Count / bytesPerPixel * bytesPerPixel;
+                    Block[bytesPerPixel] = block;
+
+                    var shifts = new List<Vector128<byte>>();
+
+                    for (var shift = bytesPerPixel; shift < block; shift *= 2)
+                    {
+                        for (var lane = 0; lane < indices.Length; lane++)
+                        {
+                            // An index outside the vector selects zero.
+                            indices[lane] = lane >= shift ? (byte)(lane - shift) : zero;
+                        }
+
+                        shifts.Add(Vector128.Create<byte>(indices));
+                    }
+
+                    Shifts[bytesPerPixel] = shifts.ToArray();
+
+                    for (var lane = 0; lane < indices.Length; lane++)
+                    {
+                        indices[lane] = (byte)(block - bytesPerPixel + (lane % bytesPerPixel));
+                    }
+
+                    Carry[bytesPerPixel] = Vector128.Create<byte>(indices);
+                }
+            }
+        }
+#endif
+
         /// <summary>Each byte was stored as the difference to the byte above it.</summary>
         private static void Up(Span<byte> row, ReadOnlySpan<byte> previous)
         {
@@ -361,7 +511,9 @@
                 row[h] += (byte)(previous[h] >> 1);
             }
 
-            // The left neighbour is carried in locals for the usual pixel widths, as in Sub.
+            // The left neighbour is carried in locals for the usual pixel widths, as in Sub. A
+            // vector per pixel, as for Paeth, was measured and is slower here: the arithmetic is
+            // too little to pay for moving each pixel into a vector and back.
             var i = head;
 
             switch (bytesPerPixel)
@@ -433,6 +585,14 @@
                 row[h] += previous[h];
             }
 
+#if NET7_0_OR_GREATER
+            if (Vector128.IsHardwareAccelerated && (bytesPerPixel == 3 || bytesPerPixel == 4) && row.Length >= bytesPerPixel + 2 * sizeof(uint))
+            {
+                PaethVectorized(row, previous, bytesPerPixel);
+                return;
+            }
+#endif
+
             // Carrying the left neighbour in locals, as Sub and Average do, was measured and gains
             // nothing here: the prediction itself is the long dependency, not the reload.
             for (var i = head; i < row.Length; i++)
@@ -440,6 +600,91 @@
                 row[i] += Predict(row[i - bytesPerPixel], previous[i], previous[i - bytesPerPixel]);
             }
         }
+
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Paeth a pixel at a time with the pixel's bytes in 16-bit lanes, the way libpng, wuffs and
+        /// ImageSharp do it: the differences, their absolute values and the choice between a, b and c
+        /// are each one vector instruction for the whole pixel, and the decoded pixel is carried
+        /// straight into the next step as its left neighbour. Only the pixels are serial.
+        /// </summary>
+        private static void PaethVectorized(Span<byte> row, ReadOnlySpan<byte> previous, int bytesPerPixel)
+        {
+            // Four bytes are loaded and stored per pixel. For three byte pixels the fourth byte is
+            // the next pixel's first residual, so that pixel's bytes are loaded before the store
+            // that spills into them, and the spilt byte is put back after the last pixel.
+            var i = bytesPerPixel;
+            var a = Widen(Load(row, 0));
+            var x = Load(row, i);
+
+            while (true)
+            {
+                var hasNext = i + bytesPerPixel + sizeof(uint) <= row.Length;
+                var next = hasNext ? Load(row, i + bytesPerPixel) : default;
+
+                var b = Widen(Load(previous, i));
+                var c = Widen(Load(previous, i - bytesPerPixel));
+
+                var pa = b - c;
+                var pb = a - c;
+                var pc = pa + pb;
+
+                pa = Vector128.Abs(pa);
+                pb = Vector128.Abs(pb);
+                pc = Vector128.Abs(pc);
+
+                var useA = Vector128.LessThanOrEqual(pa, pb) & Vector128.LessThanOrEqual(pa, pc);
+                var useB = Vector128.LessThanOrEqual(pb, pc);
+
+                var predicted = Vector128.ConditionalSelect(useA, a, Vector128.ConditionalSelect(useB, b, c));
+                var decoded = Widen(x) + predicted;
+
+                var pixel = Vector128.Narrow(decoded, decoded).AsByte();
+                Store(row, i, pixel);
+
+                a = Widen(pixel);
+                i += bytesPerPixel;
+
+                if (!hasNext)
+                {
+                    if (bytesPerPixel < sizeof(uint))
+                    {
+                        row[i] = x.GetElement(bytesPerPixel);
+                    }
+
+                    break;
+                }
+
+                x = next;
+            }
+
+            for (; i < row.Length; i++)
+            {
+                row[i] += Predict(row[i - bytesPerPixel], previous[i], previous[i - bytesPerPixel]);
+            }
+        }
+
+        /// <summary>Four bytes from <paramref name="offset"/>, in the low lanes of a vector.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<byte> Load(ReadOnlySpan<byte> data, int offset)
+        {
+            return Vector128.CreateScalar(BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset))).AsByte();
+        }
+
+        /// <summary>The low four bytes of <paramref name="pixel"/> to <paramref name="offset"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Store(Span<byte> data, int offset, Vector128<byte> pixel)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(data.Slice(offset), pixel.AsUInt32().ToScalar());
+        }
+
+        /// <summary>The low eight bytes as 16-bit lanes, wide enough for the differences Paeth needs.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<short> Widen(Vector128<byte> bytes)
+        {
+            return Vector128.WidenLower(bytes).AsInt16();
+        }
+#endif
 
         /// <summary>
         /// The Paeth predictor: whichever of a (left), b (above) and c (above-left) lies closest to
