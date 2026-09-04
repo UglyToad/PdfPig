@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
+    using System.Buffers;
+    using UglyToad.PdfPig.Fonts;
     using UglyToad.PdfPig.Tokens;
 
     /// <summary>
@@ -61,12 +63,44 @@
                 }
             }
 
-            if (stated > 0 && stated <= MaximumStatedLength && stated <= (long)compressedLength * maximumExpansion)
+            if (IsPlausible(stated, compressedLength, maximumExpansion))
             {
                 return (int)Math.Min(MaximumCapacity, stated + Slack);
             }
 
             return (int)Math.Min(MaximumCapacity, Math.Max(minimum, (long)compressedLength * factor));
+        }
+
+        /// <summary>
+        /// Whether a decoded length the file states may size an allocation before anything has been
+        /// decoded: positive, within <see cref="MaximumStatedLength"/>, and no more than the
+        /// compression could expand <paramref name="compressedLength"/> bytes to.
+        /// </summary>
+        public static bool IsPlausible(long stated, int compressedLength, int maximumExpansion)
+        {
+            return stated > 0 && stated <= MaximumStatedLength && stated <= (long)compressedLength * maximumExpansion;
+        }
+
+        /// <summary>
+        /// Replaces a rented buffer with a larger one, at least <paramref name="required"/> bytes and
+        /// otherwise twice the size, carrying over the <paramref name="written"/> bytes. A stream
+        /// that decodes to more than one array can hold is refused, in every filter alike, rather
+        /// than cut short in silence.
+        /// </summary>
+        public static void Grow(ref byte[] buffer, int written, long required)
+        {
+            if (required > MaximumCapacity || buffer.Length >= MaximumCapacity)
+            {
+                throw new CorruptCompressedDataException("The stream decodes to more than can be held in one array.");
+            }
+
+            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(MaximumCapacity, Math.Max(required, buffer.Length * 2L)));
+
+            // Only what was written: the rest of a rented buffer is whatever the pool left in it.
+            buffer.AsSpan(0, written).CopyTo(grown);
+            ArrayPool<byte>.Shared.Return(buffer);
+
+            buffer = grown;
         }
 
         private static bool TryGetLength(DictionaryToken streamDictionary, NameToken key, out long length)

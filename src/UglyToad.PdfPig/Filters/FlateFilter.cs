@@ -6,6 +6,7 @@
     using System.IO.Compression;
     using Tokens;
     using Core;
+    using Fonts;
     using Util;
 
     /// <summary>
@@ -67,7 +68,7 @@
 
             try
             {
-                var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), PngPredictor.MaxColors);
+                var colors = parameters.GetIntOrDefault(NameToken.Colors, DefaultColors);
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
@@ -119,7 +120,21 @@
 
             damaged = false;
 
-            if (predictor > 1 && TryGetImageHeight(streamDictionary, out var height))
+            var hasPredictor = predictor > 1;
+
+            // Rows are decoded where the inflater put them and only gathered, without their filter
+            // type bytes, by the copy into the result below, so no pass is spent moving them up.
+            // Built before anything is rented: bad parameters are refused here.
+            var decoder = hasPredictor
+                ? new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns, compact: false)
+                : default;
+
+            // An image whose /Height is believable is decoded straight into a result of that size.
+            // /Height is a number in the file like /DL, so it may size the result only within the
+            // same bounds; a height beyond them takes the ordinary path below.
+            if (hasPredictor
+                && TryGetImageHeight(streamDictionary, out var height)
+                && DecodeBuffer.IsPlausible((long)height * decoder.RowLength, input.Length, MaximumExpansion))
             {
                 return DecompressImage(memoryStream, predictor, colors, bitsPerComponent, columns, height, blockLength, out damaged);
             }
@@ -130,13 +145,6 @@
             var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, MaximumExpansion));
 
             var length = 0;
-
-            var hasPredictor = predictor > 1;
-            // Rows are decoded where the inflater put them and only gathered, without their filter
-            // type bytes, by the copy into the result below, so no pass is spent moving them up.
-            var decoder = hasPredictor
-                ? new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns, compact: false)
-                : default;
 
             try
             {
@@ -152,7 +160,7 @@
                         // dictionary is about to fit exactly; grown only once it is full.
                         if (buffer.Length == length)
                         {
-                            Grow(ref buffer, length, length + blockLength);
+                            DecodeBuffer.Grow(ref buffer, length, (long)length + blockLength);
                         }
 
                         int read;
@@ -184,13 +192,19 @@
                     }
                 }
 
+                if (damaged)
+                {
+                    // The caller inflates again, more carefully, and does not look at this result.
+                    return Memory<byte>.Empty;
+                }
+
                 if (hasPredictor)
                 {
                     var required = decoder.RequiredCapacity(length);
 
                     if (required > buffer.Length)
                     {
-                        Grow(ref buffer, length, required);
+                        DecodeBuffer.Grow(ref buffer, length, required);
                     }
 
                     length = decoder.Finish(buffer, length);
@@ -244,7 +258,7 @@
                     {
                         if (buffer.Length - length < blockLength)
                         {
-                            Grow(ref buffer, length, length + blockLength);
+                            DecodeBuffer.Grow(ref buffer, length, (long)length + blockLength);
                         }
 
                         int read;
@@ -280,6 +294,12 @@
                     }
                 }
 
+                if (damaged)
+                {
+                    // The caller inflates again, more carefully, and does not look at this result.
+                    return Memory<byte>.Empty;
+                }
+
                 EnsureOutput(ref output, decoder.DecodedLength, decoder.FinalLength(length));
 
                 var decodedLength = decoder.Finish(buffer, length, output);
@@ -303,15 +323,10 @@
 
         private static bool TryGetImageHeight(DictionaryToken streamDictionary, out int height)
         {
-            height = 0;
+            // Inline images abbreviate the key to H.
+            height = streamDictionary.GetIntOrDefault(NameToken.Height, NameToken.H, 0);
 
-            if (streamDictionary.TryGet(NameToken.Height, out var token) && token is NumericToken number && number.Int > 0)
-            {
-                height = number.Int;
-                return true;
-            }
-
-            return false;
+            return height > 0;
         }
 
         private static byte[] AllocateResult(int length)
@@ -329,20 +344,15 @@
         {
             if (required > output.Length)
             {
+                if (output.Length >= DecodeBuffer.MaximumCapacity)
+                {
+                    throw new CorruptCompressedDataException("The image decodes to more than can be held in one array.");
+                }
+
                 var grown = AllocateResult((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, output.Length * 2L)));
                 output.AsSpan(0, written).CopyTo(grown);
                 output = grown;
             }
-        }
-
-        private static void Grow(ref byte[] buffer, int length, int required)
-        {
-            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, buffer.Length * 2L)));
-
-            buffer.AsSpan(0, length).CopyTo(grown);
-            ArrayPool<byte>.Shared.Return(buffer);
-
-            buffer = grown;
         }
 
         /// <summary>

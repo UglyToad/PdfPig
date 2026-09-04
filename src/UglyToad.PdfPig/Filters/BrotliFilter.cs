@@ -73,7 +73,7 @@
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
-            var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), PngPredictor.MaxColors);
+            var colors = parameters.GetIntOrDefault(NameToken.Colors, DefaultColors);
             var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
             var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
@@ -144,20 +144,8 @@
                         throw new CorruptCompressedDataException(InvalidStreamMessage);
                     }
 
-                    var grownLength = (int)Math.Min(DecodeBuffer.MaximumCapacity, (long)buffer.Length * 2);
-
-                    if (grownLength == buffer.Length)
-                    {
-                        throw new CorruptCompressedDataException(
-                            "Brotli compressed stream decodes to more than can be held in one array.");
-                    }
-
-                    var grown = ArrayPool<byte>.Shared.Rent(grownLength);
-
-                    buffer.AsSpan(0, total).CopyTo(grown);
-                    ArrayPool<byte>.Shared.Return(buffer);
-
-                    buffer = grown;
+                    // The buffer doubles; a stream too large for one array is refused there.
+                    DecodeBuffer.Grow(ref buffer, total, buffer.Length + 1L);
                 }
             }
             catch (Exception ex) when (ex is InvalidOperationException || ex is InvalidDataException)

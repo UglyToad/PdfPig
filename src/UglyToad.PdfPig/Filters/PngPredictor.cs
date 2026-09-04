@@ -92,20 +92,17 @@
         /// </summary>
         public static int CalculateRowLength(int colors, int bitsPerComponent, int columns)
         {
-            ValidateParameters(colors, bitsPerComponent);
+            ValidateParameters(colors, bitsPerComponent, columns);
 
-            // With colours and bits bounded, the product of a 31-bit column count fits a long with
-            // room to spare, so an absurd width is refused rather than turned into a negative or a
-            // tiny row.
-            var rowLength = (((long)columns * colors * bitsPerComponent) + 7) / 8;
-
-            if (rowLength < 0 || rowLength > int.MaxValue)
-            {
-                throw new ArgumentOutOfRangeException(nameof(columns), $"The predictor parameters describe a row of {rowLength} bytes.");
-            }
-
-            return (int)rowLength;
+            return (int)((((long)columns * colors * bitsPerComponent) + 7) / 8);
         }
+
+        /// <summary>
+        /// The most bits a row may have. With the bits of a row in an int, no count of samples or
+        /// of bits along the row can wrap, and the row, a stride one byte longer and a row of
+        /// padding stay far inside what an array can hold: the widest row is 256 MB.
+        /// </summary>
+        public const long MaxRowBits = int.MaxValue - 7;
 
         /// <summary>
         /// The most colour components a sample may have here. The specification sets no upper
@@ -115,13 +112,14 @@
         public const int MaxColors = 32;
 
         /// <summary>
-        /// Refuses colour and bit counts the predictors cannot take: Colors below 1, which the
-        /// specification rules out, or above <see cref="MaxColors"/>, which this implementation
-        /// does; BitsPerComponent other than 1, 2, 4, 8 and 16, the values Table 8 of ISO 32000
-        /// allows. Everything computed from them, bytes per pixel and row length, is then free of
-        /// overflow.
+        /// Refuses parameters the predictors cannot take: Colors below 1, which the specification
+        /// rules out, or above <see cref="MaxColors"/>, which this implementation does;
+        /// BitsPerComponent other than 1, 2, 4, 8 and 16, the values Table 8 of ISO 32000 allows;
+        /// Columns below 1, a row of nothing; and a row of more than <see cref="MaxRowBits"/>.
+        /// Everything computed from them, bytes per pixel, row length, stride and every index along
+        /// a row, is then free of overflow.
         /// </summary>
-        public static void ValidateParameters(int colors, int bitsPerComponent)
+        public static void ValidateParameters(int colors, int bitsPerComponent, int columns)
         {
             if (colors < 1 || colors > MaxColors)
             {
@@ -131,6 +129,18 @@
             if (bitsPerComponent != 1 && bitsPerComponent != 2 && bitsPerComponent != 4 && bitsPerComponent != 8 && bitsPerComponent != 16)
             {
                 throw new ArgumentOutOfRangeException(nameof(bitsPerComponent), bitsPerComponent, $"The predictor parameters name {bitsPerComponent} bits per component; 1, 2, 4, 8 or 16 are allowed.");
+            }
+
+            if (columns < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(columns), columns, "The predictor parameters name a row of no samples.");
+            }
+
+            var rowBits = (long)columns * colors * bitsPerComponent;
+
+            if (rowBits > MaxRowBits)
+            {
+                throw new ArgumentOutOfRangeException(nameof(columns), columns, $"The predictor parameters describe a row of {rowBits} bits; at most {MaxRowBits} are allowed.");
             }
         }
 

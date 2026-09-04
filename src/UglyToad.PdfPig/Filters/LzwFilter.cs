@@ -71,7 +71,7 @@
 
             var earlyChange = parameters.GetIntOrDefault(NameToken.EarlyChange, 1);
 
-            var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), PngPredictor.MaxColors);
+            var colors = parameters.GetIntOrDefault(NameToken.Colors, DefaultColors);
             var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
             var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
@@ -173,7 +173,7 @@
                     {
                         sequenceLength = lengths[code];
 
-                        EnsureCapacity(ref output, position, position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack));
 
                         Copy(output, offsets[code], position, sequenceLength);
                     }
@@ -184,7 +184,7 @@
                         // repeats itself immediately.
                         sequenceLength = previousLength + 1;
 
-                        EnsureCapacity(ref output, position, position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack));
 
                         Copy(output, previousPosition, position, previousLength);
                         output[position + previousLength] = output[position];
@@ -258,20 +258,12 @@
         }
 
         /// <summary>Makes room for <paramref name="required"/> bytes, carrying over the <paramref name="written"/> that are there.</summary>
-        private static void EnsureCapacity(ref byte[] output, int written, int required)
+        private static void EnsureCapacity(ref byte[] output, int written, long required)
         {
-            if (required <= output.Length)
+            if (required > output.Length)
             {
-                return;
+                DecodeBuffer.Grow(ref output, written, required);
             }
-
-            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, output.Length * 2L)));
-
-            // Only what was written: the rest of a rented buffer is whatever the pool left in it.
-            output.AsSpan(0, written).CopyTo(grown);
-            ArrayPool<byte>.Shared.Return(output);
-
-            output = grown;
         }
     }
 }

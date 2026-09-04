@@ -61,6 +61,56 @@
             separate.RestartInput();
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void ARowOfNoSamplesIsRefused(int columns)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => PngPredictor.CalculateRowLength(1, 8, columns));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new PngPredictor.Decoder(2, 1, 8, columns));
+        }
+
+        [Fact]
+        public void TheWidestRowFitsAnIntOfBitsAndNoMore()
+        {
+            // 268,435,455 bytes of one 8-bit colour is the widest row: its bits fill an int.
+            Assert.Equal(268_435_455, PngPredictor.CalculateRowLength(1, 8, 268_435_455));
+
+            // One more sample takes the bits past an int; so does a row of exactly int.MaxValue
+            // bytes, whose stride used to wrap negative.
+            Assert.Throws<ArgumentOutOfRangeException>(() => PngPredictor.CalculateRowLength(1, 8, 268_435_456));
+            Assert.Throws<ArgumentOutOfRangeException>(() => PngPredictor.CalculateRowLength(1, 8, int.MaxValue));
+
+            // Two 1-bit colours over 2^30 columns made the sample count wrap in the TIFF decoder.
+            Assert.Throws<ArgumentOutOfRangeException>(() => PngPredictor.CalculateRowLength(2, 1, 1_073_741_824));
+        }
+
+        [Fact]
+        public void AnImplausibleHeightTakesTheOrdinaryPath()
+        {
+            // Two rows of one byte with PNG filter type 0, stored uncompressed in a zlib frame.
+            byte[] compressed = [0x78, 0x01, 0x01, 0x04, 0x00, 0xFB, 0xFF, 0x00, 0x05, 0x00, 0x07, 0x00, 0x1A, 0x00, 0x0D];
+            var expected = new byte[] { 5, 7 };
+
+            var filter = new FlateFilter();
+
+            // A believable height decodes straight into the result; two billion rows for fifteen
+            // bytes of input may not size anything and decode the ordinary way, to the same bytes.
+            Assert.Equal(expected, filter.Decode(compressed, ImageDictionary(2), DefaultFilterProvider.Instance, 0).ToArray());
+            Assert.Equal(expected, filter.Decode(compressed, ImageDictionary(2_000_000_000), DefaultFilterProvider.Instance, 0).ToArray());
+        }
+
+        private static PdfPig.Tokens.DictionaryToken ImageDictionary(int height) => new(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
+        {
+            [PdfPig.Tokens.NameToken.Filter] = PdfPig.Tokens.NameToken.FlateDecode,
+            [PdfPig.Tokens.NameToken.Height] = new PdfPig.Tokens.NumericToken(height),
+            [PdfPig.Tokens.NameToken.DecodeParms] = new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
+            {
+                [PdfPig.Tokens.NameToken.Predictor] = new PdfPig.Tokens.NumericToken(12),
+                [PdfPig.Tokens.NameToken.Columns] = new PdfPig.Tokens.NumericToken(1),
+            })
+        });
+
         [Fact]
         public void AnInvalidStreamThroughTheFlateFilterYieldsNothing()
         {
