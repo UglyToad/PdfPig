@@ -87,12 +87,16 @@
         }
 
         /// <summary>
-        /// The number of bytes in a row of the decoded data.
+        /// The number of bytes in a row of the decoded data. Refuses parameters outside what the
+        /// specification and this implementation allow, so that no arithmetic on them can wrap.
         /// </summary>
         public static int CalculateRowLength(int colors, int bitsPerComponent, int columns)
         {
-            // Wide enough not to wrap around on absurd parameters, which are then refused
-            // rather than turned into a negative or a tiny row.
+            ValidateParameters(colors, bitsPerComponent);
+
+            // With colours and bits bounded, the product of a 31-bit column count fits a long with
+            // room to spare, so an absurd width is refused rather than turned into a negative or a
+            // tiny row.
             var rowLength = (((long)columns * colors * bitsPerComponent) + 7) / 8;
 
             if (rowLength < 0 || rowLength > int.MaxValue)
@@ -101,6 +105,33 @@
             }
 
             return (int)rowLength;
+        }
+
+        /// <summary>
+        /// The most colour components a sample may have here. The specification sets no upper
+        /// bound, "1 or greater" since PDF 1.3 (ISO 32000-1:2008 and ISO 32000-2:2020, Table 8);
+        /// the row decoders are sized for 64 bytes per pixel, which 32 components of 16 bits fill.
+        /// </summary>
+        public const int MaxColors = 32;
+
+        /// <summary>
+        /// Refuses colour and bit counts the predictors cannot take: Colors below 1, which the
+        /// specification rules out, or above <see cref="MaxColors"/>, which this implementation
+        /// does; BitsPerComponent other than 1, 2, 4, 8 and 16, the values Table 8 of ISO 32000
+        /// allows. Everything computed from them, bytes per pixel and row length, is then free of
+        /// overflow.
+        /// </summary>
+        public static void ValidateParameters(int colors, int bitsPerComponent)
+        {
+            if (colors < 1 || colors > MaxColors)
+            {
+                throw new ArgumentOutOfRangeException(nameof(colors), colors, $"The predictor parameters name {colors} colour components; 1 to {MaxColors} are allowed.");
+            }
+
+            if (bitsPerComponent != 1 && bitsPerComponent != 2 && bitsPerComponent != 4 && bitsPerComponent != 8 && bitsPerComponent != 16)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitsPerComponent), bitsPerComponent, $"The predictor parameters name {bitsPerComponent} bits per component; 1, 2, 4, 8 or 16 are allowed.");
+            }
         }
 
         /// <summary>

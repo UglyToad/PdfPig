@@ -67,7 +67,7 @@
 
             try
             {
-                var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
+                var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), PngPredictor.MaxColors);
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
