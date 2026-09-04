@@ -43,6 +43,14 @@
         /// <summary>How much larger than the input the output is assumed to be when the buffer is first rented.</summary>
         private const int ExpectedExpansion = 3;
 
+        /// <summary>
+        /// The most LZW can expand by when the encoder clears the table as the specification
+        /// requires: strings grow by a byte per code, so a run yields about 7.4 MB from the 5.4 KB
+        /// of codes that fill a 12-bit table, roughly 1400 to one. A decoder that goes on with a
+        /// full table, as this one does, would allow about 2600; the stricter figure is the bound.
+        /// </summary>
+        private const int MaximumExpansion = 1400;
+
         /// <summary>The literal bytes 0 to 255 are written ahead of the output so that a literal code is a range of the buffer like any other.</summary>
         private const int LiteralPreamble = 256;
 
@@ -50,9 +58,6 @@
 
         /// <summary>How many bytes past the written output are kept spare, so that <see cref="Copy"/> may move whole words.</summary>
         private const int CopySlack = 2 * sizeof(ulong);
-
-        /// <summary>The largest array the runtime will hand out.</summary>
-        private const int MaximumCapacity = 0x7FFFFFC7;
 
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
@@ -80,7 +85,7 @@
             // from the dictionary where that states the decoded length, plus the literal preamble
             // the decoder keeps in front of the data.
             var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(MaximumCapacity, (long)DecodeBuffer.Capacity(input.Length, streamDictionary, ExpectedExpansion, MinimumCapacity) + LiteralPreamble));
+                (int)Math.Min(DecodeBuffer.MaximumCapacity, (long)DecodeBuffer.Capacity(input.Length, streamDictionary, ExpectedExpansion, MinimumCapacity, MaximumExpansion) + LiteralPreamble));
 
             try
             {
@@ -259,7 +264,7 @@
                 return;
             }
 
-            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(MaximumCapacity, Math.Max(required, output.Length * 2L)));
+            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, output.Length * 2L)));
 
             output.AsSpan().CopyTo(grown);
             ArrayPool<byte>.Shared.Return(output);

@@ -47,10 +47,10 @@
         /// </summary>
         private const int InitialCapacityFactor = 4;
 
-        private const int MinimumCapacity = 4096;
+        /// <summary>The most deflate can expand by: a match of 258 bytes for a two-bit code, RFC 1951.</summary>
+        private const int MaximumExpansion = 1032;
 
-        /// <summary>The largest array the runtime will hand out.</summary>
-        private const int MaximumCapacity = 0x7FFFFFC7;
+        private const int MinimumCapacity = 4096;
 
         private const byte Deflate32KbWindow = 120;
         private const byte ChecksumBits = 1;
@@ -127,7 +127,7 @@
             // The inflater writes straight into this buffer, and the predictor is undone in the
             // same buffer as the rows arrive; the caller gets a copy of just the finished length.
             // The buffer is sized from the dictionary where that states the decoded length.
-            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity));
+            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, MaximumExpansion));
 
             var length = 0;
 
@@ -228,7 +228,7 @@
             var rowLength = decoder.RowLength;
             var stride = decoder.Stride;
 
-            var output = AllocateResult((int)Math.Min(MaximumCapacity, (long)height * rowLength));
+            var output = AllocateResult((int)Math.Min(DecodeBuffer.MaximumCapacity, (long)height * rowLength));
 
             // One block of inflated data plus the row it may complete.
             var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(MinimumCapacity, stride + blockLength));
@@ -329,7 +329,7 @@
         {
             if (required > output.Length)
             {
-                var grown = AllocateResult((int)Math.Min(MaximumCapacity, Math.Max(required, output.Length * 2L)));
+                var grown = AllocateResult((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, output.Length * 2L)));
                 output.AsSpan().CopyTo(grown);
                 output = grown;
             }
@@ -337,7 +337,7 @@
 
         private static void Grow(ref byte[] buffer, int length, int required)
         {
-            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(MaximumCapacity, Math.Max(required, buffer.Length * 2L)));
+            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, buffer.Length * 2L)));
 
             buffer.AsSpan(0, length).CopyTo(grown);
             ArrayPool<byte>.Shared.Return(buffer);

@@ -60,9 +60,6 @@
 
         private const int MinimumCapacity = 1024;
 
-        /// <summary>The largest array the runtime will hand out.</summary>
-        private const int MaximumCapacity = 0x7FFFFFC7;
-
         private const string InvalidStreamMessage =
             "Invalid Brotli compressed stream encountered. A stream using large window Brotli "
             + "(IETF RFC 9841) fails in the same way, as the decoder does not support it.";
@@ -97,8 +94,10 @@
 
             // The decoder writes straight into this buffer, so there is no copy per block, and the
             // buffer is rented because only the finished length is handed to the caller. It is sized
-            // from the dictionary where that states the decoded length, as embedded files do.
-            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity));
+            // from the dictionary where that states the decoded length, as embedded files do. A
+            // single Brotli copy may run to 16 MB, so no expansion ratio bounds what a stated length
+            // may plausibly be; only the absolute ceiling does.
+            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, DecodeBuffer.UnboundedExpansion));
 
             var total = 0;
 
@@ -145,7 +144,7 @@
                         throw new CorruptCompressedDataException(InvalidStreamMessage);
                     }
 
-                    var grownLength = (int)Math.Min(MaximumCapacity, (long)buffer.Length * 2);
+                    var grownLength = (int)Math.Min(DecodeBuffer.MaximumCapacity, (long)buffer.Length * 2);
 
                     if (grownLength == buffer.Length)
                     {
