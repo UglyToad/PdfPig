@@ -135,7 +135,7 @@
         {
             var random = new Random((predictor * 1000) + (colors * 100) + bitsPerComponent + columns);
             var rowLength = PngPredictor.CalculateRowLength(colors, bitsPerComponent, columns);
-            var stride = predictor >= 10 ? rowLength + 1 : rowLength;
+            var stride = FilterTestHelpers.Stride(predictor, rowLength);
 
             foreach (var rows in new[] { 1, 2, 7, 50 })
             {
@@ -143,17 +143,8 @@
                 {
                     var length = (rows * stride) + (cut < stride ? cut : 0);
 
-                    var data = new byte[length];
-                    random.NextBytes(data);
-
-                    if (predictor >= 10)
-                    {
-                        // Filter types 0 to 4 in a mix, with an undefined one thrown in.
-                        for (var row = 0; row * stride < data.Length; row++)
-                        {
-                            data[row * stride] = (byte)(row % 6 == 5 ? 9 : row % 5);
-                        }
-                    }
+                    // Filter types 0 to 4 in a mix, with an undefined one thrown in.
+                    var data = FilterTestHelpers.RandomRows(random, length, predictor, stride, withUndefinedType: true);
 
                     var expected = LegacyPredictor.Decode((byte[])data.Clone(), predictor, colors, bitsPerComponent, columns);
                     var actual = PngPredictor.Decode(data, predictor, colors, bitsPerComponent, columns);
@@ -173,22 +164,12 @@
         {
             var random = new Random((predictor * 7919) + (colors * 131) + bitsPerComponent + columns);
             var rowLength = PngPredictor.CalculateRowLength(colors, bitsPerComponent, columns);
-            var stride = predictor >= 10 ? rowLength + 1 : rowLength;
+            var stride = FilterTestHelpers.Stride(predictor, rowLength);
 
             foreach (var length in new[] { 0, 1, stride, (stride * 13) + (stride / 2), stride * 40 })
             {
-                var data = new byte[length];
-                random.NextBytes(data);
-
-                if (predictor >= 10)
-                {
-                    for (var row = 0; row * stride < data.Length; row++)
-                    {
-                        data[row * stride] = (byte)(row % 5);
-                    }
-                }
-
-                var expected = PngPredictor.Decode((byte[])data.Clone(), predictor, colors, bitsPerComponent, columns).ToArray();
+                var data = FilterTestHelpers.RandomRows(random, length, predictor, stride);
+                var expected = FilterTestHelpers.DecodedAtOnce(data, predictor, colors, bitsPerComponent, columns);
 
                 // Room for the padded last row, as the filter guarantees before finishing.
                 var buffer = new byte[data.Length + rowLength];
@@ -222,22 +203,12 @@
         {
             var random = new Random((predictor * 104729) + (colors * 977) + bitsPerComponent + columns);
             var rowLength = PngPredictor.CalculateRowLength(colors, bitsPerComponent, columns);
-            var stride = predictor >= 10 ? rowLength + 1 : rowLength;
+            var stride = FilterTestHelpers.Stride(predictor, rowLength);
 
             foreach (var length in new[] { 0, 1, stride, (stride * 13) + (stride / 2), stride * 40 })
             {
-                var data = new byte[length];
-                random.NextBytes(data);
-
-                if (predictor >= 10)
-                {
-                    for (var row = 0; row * stride < data.Length; row++)
-                    {
-                        data[row * stride] = (byte)(row % 5);
-                    }
-                }
-
-                var expected = PngPredictor.Decode((byte[])data.Clone(), predictor, colors, bitsPerComponent, columns).ToArray();
+                var data = FilterTestHelpers.RandomRows(random, length, predictor, stride);
+                var expected = FilterTestHelpers.DecodedAtOnce(data, predictor, colors, bitsPerComponent, columns);
 
                 // Room for the padded last row where its input lies, as the filter guarantees before finishing.
                 var buffer = new byte[data.Length + stride];
@@ -273,22 +244,12 @@
         {
             var random = new Random((predictor * 7907) + (colors * 613) + bitsPerComponent + columns);
             var rowLength = PngPredictor.CalculateRowLength(colors, bitsPerComponent, columns);
-            var stride = predictor >= 10 ? rowLength + 1 : rowLength;
+            var stride = FilterTestHelpers.Stride(predictor, rowLength);
 
             foreach (var length in new[] { 0, 1, stride, (stride * 13) + (stride / 2), stride * 40 })
             {
-                var data = new byte[length];
-                random.NextBytes(data);
-
-                if (predictor >= 10)
-                {
-                    for (var row = 0; row * stride < data.Length; row++)
-                    {
-                        data[row * stride] = (byte)(row % 5);
-                    }
-                }
-
-                var expected = PngPredictor.Decode((byte[])data.Clone(), predictor, colors, bitsPerComponent, columns).ToArray();
+                var data = FilterTestHelpers.RandomRows(random, length, predictor, stride);
+                var expected = FilterTestHelpers.DecodedAtOnce(data, predictor, colors, bitsPerComponent, columns);
 
                 var decoder = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
                 var input = new byte[stride + 7];
@@ -379,18 +340,7 @@
         [MemberData(nameof(RealDocumentStreams))]
         public void DecodesRealDocumentStreamsToTheKnownContent(string documentName, int objectNumber, int expectedLength, string expectedSha256)
         {
-            using var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(documentName), new ParsingOptions { UseLenientParsing = true });
-
-            var stream = Assert.IsType<StreamToken>(document.Structure.GetObject(new IndirectReference(objectNumber, 0)).Data);
-
-            var decoded = stream.Decode(DefaultFilterProvider.Instance);
-
-            Assert.Equal(expectedLength, decoded.Length);
-
-            using var sha256 = SHA256.Create();
-            var hash = BitConverter.ToString(sha256.ComputeHash(decoded.ToArray())).Replace("-", string.Empty);
-
-            Assert.Equal(expectedSha256, hash);
+            FilterTestHelpers.AssertStreamDecodesTo(documentName, objectNumber, expectedLength, expectedSha256, lenient: true);
         }
 
         /// <summary>

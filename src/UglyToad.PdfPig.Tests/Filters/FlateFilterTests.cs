@@ -135,20 +135,8 @@
         {
             // A predictor row too wide for any buffer to hold. Nothing here decodes, and the
             // input must not come back dressed as content.
-            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>
-            {
-                // The resolver only hands the parameters over when a filter is named.
-                { NameToken.Filter, NameToken.FlateDecode },
-                {
-                    NameToken.DecodeParms, new DictionaryToken(new Dictionary<NameToken, IToken>
-                    {
-                        { NameToken.Predictor, new NumericToken(12) },
-                        { NameToken.Colors, new NumericToken(32) },
-                        { NameToken.BitsPerComponent, new NumericToken(16) },
-                        { NameToken.Columns, new NumericToken(int.MaxValue) },
-                    })
-                },
-            });
+            // The resolver only hands the parameters over when a filter is named.
+            var parameters = FilterTestHelpers.StreamDictionary(NameToken.FlateDecode, [(NameToken.Predictor, 12), (NameToken.Colors, 32), (NameToken.BitsPerComponent, 16), (NameToken.Columns, int.MaxValue)]);
 
             byte[] compressed;
             using (var inputStream = new MemoryStream(OtherEncodings.StringAsLatin1Bytes("content")))

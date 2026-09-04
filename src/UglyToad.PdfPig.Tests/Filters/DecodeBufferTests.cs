@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using System.Collections.Generic;
     using PdfPig.Filters;
     using PdfPig.Tokens;
+    using static FilterTestHelpers;
 
     public class DecodeBufferTests
     {
@@ -90,18 +90,6 @@
         {
             Assert.Equal(Minimum, DecodeBuffer.Capacity(500, Dictionary((NameToken.Dl, 0)), Factor, Minimum, Deflate));
             Assert.Equal(Minimum, DecodeBuffer.Capacity(500, Dictionary((NameToken.Length1, -7)), Factor, Minimum, Deflate));
-        }
-
-        private static DictionaryToken Dictionary(params (NameToken Key, int Value)[] entries)
-        {
-            var data = new Dictionary<NameToken, IToken>();
-
-            foreach (var (key, value) in entries)
-            {
-                data[key] = new NumericToken(value);
-            }
-
-            return new DictionaryToken(data);
         }
     }
 }

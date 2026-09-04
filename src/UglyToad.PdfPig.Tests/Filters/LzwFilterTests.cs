@@ -154,32 +154,12 @@
         [MemberData(nameof(RealDocumentStreams))]
         public void DecodesRealDocumentStreamsToTheKnownContent(string documentName, int objectNumber, int expectedLength, string expectedSha256)
         {
-            using var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(documentName));
-
-            var stream = Assert.IsType<StreamToken>(document.Structure.GetObject(new IndirectReference(objectNumber, 0)).Data);
-
-            var decoded = stream.Decode(DefaultFilterProvider.Instance);
-
-            Assert.Equal(expectedLength, decoded.Length);
-
-            using var sha256 = SHA256.Create();
-            var hash = BitConverter.ToString(sha256.ComputeHash(decoded.ToArray())).Replace("-", string.Empty);
-
-            Assert.Equal(expectedSha256, hash);
+            FilterTestHelpers.AssertStreamDecodesTo(documentName, objectNumber, expectedLength, expectedSha256);
         }
 
         private static DictionaryToken WithEarlyChange(bool earlyChange)
         {
-            return new DictionaryToken(new Dictionary<NameToken, IToken>
-            {
-                { NameToken.Filter, NameToken.LzwDecode },
-                {
-                    NameToken.DecodeParms, new DictionaryToken(new Dictionary<NameToken, IToken>
-                    {
-                        { NameToken.EarlyChange, new NumericToken(earlyChange ? 1 : 0) }
-                    })
-                }
-            });
+            return FilterTestHelpers.StreamDictionary(NameToken.LzwDecode, [(NameToken.EarlyChange, earlyChange ? 1 : 0)]);
         }
 
         private static byte[] PseudoRandom(int length, int alphabet, int seed)

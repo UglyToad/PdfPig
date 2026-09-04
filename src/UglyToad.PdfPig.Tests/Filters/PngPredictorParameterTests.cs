@@ -2,6 +2,8 @@
 {
     using System;
     using PdfPig.Filters;
+    using PdfPig.Tokens;
+    using static FilterTestHelpers;
 
     public class PngPredictorParameterTests
     {
@@ -100,32 +102,17 @@
             Assert.Equal(expected, filter.Decode(compressed, ImageDictionary(2_000_000_000), DefaultFilterProvider.Instance, 0).ToArray());
         }
 
-        private static PdfPig.Tokens.DictionaryToken ImageDictionary(int height) => new(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
-        {
-            [PdfPig.Tokens.NameToken.Filter] = PdfPig.Tokens.NameToken.FlateDecode,
-            [PdfPig.Tokens.NameToken.Height] = new PdfPig.Tokens.NumericToken(height),
-            [PdfPig.Tokens.NameToken.DecodeParms] = new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
-            {
-                [PdfPig.Tokens.NameToken.Predictor] = new PdfPig.Tokens.NumericToken(12),
-                [PdfPig.Tokens.NameToken.Columns] = new PdfPig.Tokens.NumericToken(1),
-            })
-        });
+        private static DictionaryToken ImageDictionary(int height) => StreamDictionary(NameToken.FlateDecode, [(NameToken.Predictor, 12), (NameToken.Columns, 1)], (NameToken.Height, height));
 
         [Fact]
         public void TheParametersDefaultAsTable8Says()
         {
             // ISO 32000, Table 8: Predictor 1, Colors 1, BitsPerComponent 8, Columns 1.
-            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>()));
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(Dictionary());
 
             Assert.Equal((1, 1, 8, 1), (predictor, colors, bitsPerComponent, columns));
 
-            var stated = PngPredictor.Parameters.Read(new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
-            {
-                [PdfPig.Tokens.NameToken.Predictor] = new PdfPig.Tokens.NumericToken(15),
-                [PdfPig.Tokens.NameToken.Colors] = new PdfPig.Tokens.NumericToken(3),
-                [PdfPig.Tokens.NameToken.BitsPerComponent] = new PdfPig.Tokens.NumericToken(16),
-                [PdfPig.Tokens.NameToken.Columns] = new PdfPig.Tokens.NumericToken(640),
-            }));
+            var stated = PngPredictor.Parameters.Read(Dictionary((NameToken.Predictor, 15), (NameToken.Colors, 3), (NameToken.BitsPerComponent, 16), (NameToken.Columns, 640)));
 
             Assert.Equal((15, 3, 16, 640), (stated.Predictor, stated.Colors, stated.BitsPerComponent, stated.Columns));
         }
@@ -135,17 +122,7 @@
         {
             // The filter turns the refusal into an empty result, as it does for damaged data.
             var filter = new FlateFilter();
-            var dictionary = new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
-            {
-                [PdfPig.Tokens.NameToken.Filter] = PdfPig.Tokens.NameToken.FlateDecode,
-                [PdfPig.Tokens.NameToken.DecodeParms] = new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
-                {
-                    [PdfPig.Tokens.NameToken.Predictor] = new PdfPig.Tokens.NumericToken(12),
-                    [PdfPig.Tokens.NameToken.Colors] = new PdfPig.Tokens.NumericToken(32),
-                    [PdfPig.Tokens.NameToken.BitsPerComponent] = new PdfPig.Tokens.NumericToken(1073741824),
-                    [PdfPig.Tokens.NameToken.Columns] = new PdfPig.Tokens.NumericToken(536870912),
-                })
-            });
+            var dictionary = StreamDictionary(NameToken.FlateDecode, [(NameToken.Predictor, 12), (NameToken.Colors, 32), (NameToken.BitsPerComponent, 1073741824), (NameToken.Columns, 536870912)]);
 
             // A valid zlib stream of a few bytes: header, one stored block "abc", checksum.
             byte[] compressed = [0x78, 0x9C, 0x01, 0x03, 0x00, 0xFC, 0xFF, 0x61, 0x62, 0x63, 0x02, 0x4D, 0x01, 0x27];
