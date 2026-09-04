@@ -89,6 +89,42 @@
         }
 
         /// <summary>
+        /// Decodes the rows of <paramref name="data"/> into a new array of exactly the decoded length,
+        /// reading the rows where they are and writing the decoded rows to the result. For data that
+        /// has to leave a buffer anyway this is <see cref="Decode"/> folded into the copy.
+        /// </summary>
+        public static byte[] DecodeToArray(ReadOnlySpan<byte> data, int predictor, int colors, int bitsPerComponent, int columns)
+        {
+            if (predictor <= 1 || data.Length == 0)
+            {
+                var copy = NewArray(data.Length);
+                data.CopyTo(copy);
+
+                return copy;
+            }
+
+            var decoder = new Decoder(predictor, colors, bitsPerComponent, columns);
+
+            // Every byte of every row is written, including the padding of a short last row.
+            var decoded = NewArray(decoder.FinalLength(data.Length));
+
+            decoder.Advance(data, data.Length, decoded);
+            decoder.Finish(data, data.Length, decoded);
+
+            return decoded;
+        }
+
+        /// <summary>An array whose every byte the caller is about to write.</summary>
+        private static byte[] NewArray(int length)
+        {
+#if NET
+            return GC.AllocateUninitializedArray<byte>(length);
+#else
+            return new byte[length];
+#endif
+        }
+
+        /// <summary>
         /// The number of bytes in a row of the decoded data. Refuses parameters outside what the
         /// specification and this implementation allow, so that no arithmetic on them can wrap.
         /// </summary>
@@ -221,8 +257,6 @@
             /// </summary>
             private readonly bool compact;
 
-            private byte[]? zeroRow;
-
             /// <summary>
             /// Creates a decoder for the given decode parameters. The predictor must be 2 or more.
             /// </summary>
@@ -249,7 +283,6 @@
                 bytesPerPixel = ((colors * bitsPerComponent) + 7) / 8;
                 stride = predictor >= FirstPngPredictor ? rowLength + 1 : rowLength;
 
-                zeroRow = null;
                 DecodedLength = 0;
                 ConsumedLength = 0;
             }
@@ -332,11 +365,14 @@
 
             /// <summary>
             /// The length the decoded data has once the input ends after <paramref name="available"/>
-            /// bytes: the complete rows, plus a padded row if input for part of one is left over.
+            /// bytes: the rows decoded so far, the complete rows not yet decoded, plus a padded row if
+            /// input for part of one is left over.
             /// </summary>
             public int FinalLength(int available)
             {
-                return DecodedLength + (PartialRowLength(available) > 0 ? rowLength : 0);
+                var rows = (available - ConsumedLength) / stride;
+
+                return DecodedLength + (rows * rowLength) + (PartialRowLength(available) > 0 ? rowLength : 0);
             }
 
             /// <summary>
@@ -391,96 +427,68 @@
             }
 
             /// <summary>
-            /// How many bytes of row data are left over after the complete rows. A trailing filter type
-            /// byte with nothing after it is not a row.
+            /// How many bytes of row data are left over after the complete rows, whether or not those
+            /// have been decoded yet. A trailing filter type byte with nothing after it is not a row.
             /// </summary>
             private int PartialRowLength(int available)
             {
-                var tail = available - ConsumedLength;
+                var tail = (available - ConsumedLength) % stride;
 
                 return Math.Max(0, stride == rowLength ? tail : tail - 1);
             }
 
             /// <summary>
-            /// Moves the next row up to <see cref="DecodedLength"/>, pads it to the row length if it is
-            /// short, and decodes it against the row before.
+            /// Decodes the next row in place, or moves it up to <see cref="DecodedLength"/> first when
+            /// the decoder compacts, padding it to the row length if it is short.
             /// </summary>
-            private void DecodeNextRow(Span<byte> buffer, int dataLength)
-            {
-                // The row is written to [DecodedLength, DecodedLength + rowLength), which ends at or
-                // before where its own input starts, so the input is intact until it is moved; the
-                // move overlaps with the destination ahead of the source, which CopyTo handles.
-                var isPng = stride != rowLength;
-                var filterType = isPng ? buffer[ConsumedLength] : (byte)0;
-                var sourceStart = ConsumedLength + (isPng ? 1 : 0);
-
-                if (!compact)
-                {
-                    // The row is decoded where its input lies; the row before it lies one stride
-                    // back. A short last row is padded in place, which the caller made room for.
-                    var here = buffer.Slice(sourceStart, rowLength);
-
-                    if (dataLength < rowLength)
-                    {
-                        here.Slice(dataLength).Clear();
-                    }
-
-                    ReadOnlySpan<byte> above;
-                    if (DecodedLength == 0)
-                    {
-                        zeroRow ??= new byte[rowLength];
-                        above = zeroRow;
-                    }
-                    else
-                    {
-                        above = buffer.Slice(sourceStart - stride, rowLength);
-                    }
-
-                    if (isPng)
-                    {
-                        DecodePngRow(filterType, here, above, bytesPerPixel);
-                    }
-                    else if (predictor == TiffPredictor)
-                    {
-                        DecodeTiffRow(here, colors, bitsPerComponent, columns);
-                    }
-
-                    ConsumedLength += (isPng ? 1 : 0) + dataLength;
-                    DecodedLength += rowLength;
-                    return;
-                }
-
-                DecodeNextRow(buffer, buffer, dataLength);
-            }
+            private void DecodeNextRow(Span<byte> buffer, int dataLength) => DecodeNextRow(buffer, buffer, dataLength);
 
             /// <summary>
-            /// Moves the next row from <paramref name="input"/> up to <see cref="DecodedLength"/> in
-            /// <paramref name="output"/>, pads it to the row length if it is short, and decodes it against
-            /// the row before. Input and output may be the same buffer.
+            /// Decodes the next row of <paramref name="input"/> against the row before it. A compacting
+            /// decoder moves the row up to <see cref="DecodedLength"/> in <paramref name="output"/>,
+            /// which may be the input buffer itself; one that decodes in place leaves the row where its
+            /// input lies, with the row before it one stride back. A short last row is padded with
+            /// zeros, which the caller made room for.
             /// </summary>
             private void DecodeNextRow(ReadOnlySpan<byte> input, Span<byte> output, int dataLength)
             {
                 var isPng = stride != rowLength;
                 var filterType = isPng ? input[ConsumedLength] : (byte)0;
-                var source = input.Slice(ConsumedLength + (isPng ? 1 : 0), dataLength);
-                var row = output.Slice(DecodedLength, rowLength);
+                var sourceStart = ConsumedLength + (isPng ? 1 : 0);
+                var source = input.Slice(sourceStart, dataLength);
+
+                var rowStart = compact ? DecodedLength : sourceStart;
+                var row = output.Slice(rowStart, rowLength);
 
                 ReadOnlySpan<byte> previous;
                 if (DecodedLength == 0)
                 {
-                    zeroRow ??= new byte[rowLength];
-                    previous = zeroRow;
+                    // The row above the first row is all zeros, and no filter needs it spelled out:
+                    // Up adds nothing, Paeth predicts the left pixel because the distances above are
+                    // no better, and Average adds half the left pixel. So the first row is decoded
+                    // as None, Sub or the half-left Average, and no zero row is ever allocated.
+                    previous = default;
+
+                    if (filterType == PngUp)
+                    {
+                        filterType = PngNone;
+                    }
+                    else if (filterType == PngPaeth)
+                    {
+                        filterType = PngSub;
+                    }
                 }
                 else
                 {
-                    previous = output.Slice(DecodedLength - rowLength, rowLength);
+                    previous = output.Slice(rowStart - (compact ? rowLength : stride), rowLength);
                 }
 
                 if (isPng && dataLength == rowLength && (filterType == PngSub || filterType == PngUp))
                 {
                     // The two common filters read the residuals where they lie and write the
                     // decoded row where it goes, so the move up over the filter type byte and the
-                    // decoding are one pass over the row instead of two.
+                    // decoding are one pass over the row instead of two. In place, source and row
+                    // are the same bytes, which both filters take.
                     if (filterType == PngSub)
                     {
                         Sub(source, row, bytesPerPixel);
@@ -492,9 +500,12 @@
                 }
                 else
                 {
-                    // Where input and output are one buffer and the row does not move, this copies
-                    // the row onto itself, which costs nothing worth a special case.
-                    source.CopyTo(row);
+                    // A compacting decoder may write to another buffer, so the row is copied even
+                    // where it does not move; in place, source and row are the same bytes.
+                    if (compact)
+                    {
+                        source.CopyTo(row);
+                    }
 
                     if (dataLength < rowLength)
                     {
@@ -503,7 +514,14 @@
 
                     if (isPng)
                     {
-                        DecodePngRow(filterType, row, previous, bytesPerPixel);
+                        if (filterType == PngAverage && DecodedLength == 0)
+                        {
+                            AverageFirstRow(row, bytesPerPixel);
+                        }
+                        else
+                        {
+                            DecodePngRow(filterType, row, previous, bytesPerPixel);
+                        }
                     }
                     else if (predictor == TiffPredictor)
                     {
@@ -515,6 +533,18 @@
 
                 ConsumedLength += (isPng ? 1 : 0) + dataLength;
                 DecodedLength += rowLength;
+            }
+        }
+
+        /// <summary>
+        /// The Average filter on the first row, whose row above is all zeros: every byte adds half of
+        /// the byte one pixel to its left, and the first pixel adds nothing.
+        /// </summary>
+        private static void AverageFirstRow(Span<byte> row, int bytesPerPixel)
+        {
+            for (var i = bytesPerPixel; i < row.Length; i++)
+            {
+                row[i] += (byte)(row[i - bytesPerPixel] >> 1);
             }
         }
 

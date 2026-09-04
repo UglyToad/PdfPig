@@ -68,19 +68,12 @@
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
-            var decoded = Decompress(input, streamDictionary);
 
-            // Undone in place; below 2 the data comes straight back.
-            return PngPredictor.Decode(decoded, predictor, colors, bitsPerComponent, columns);
-        }
-
-        private static byte[] Decompress(Memory<byte> input, DictionaryToken streamDictionary)
-        {
             if (input.Length == 0)
             {
                 // No bytes is not a Brotli stream at all, but PDFs do carry empty streams and the
                 // other filters hand back nothing rather than object to them.
-                return [];
+                return Memory<byte>.Empty;
             }
 
             // The decoder writes straight into this buffer, so there is no copy per block, and the
@@ -90,6 +83,30 @@
             // may plausibly be; only the absolute ceiling does.
             var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, DecodeBuffer.UnboundedExpansion));
 
+            try
+            {
+                var total = Decompress(input, ref buffer);
+
+                // The Flate filter decodes rows as they inflate, straight into the result, which
+                // spares it a buffer for the whole inflated stream. The Brotli decoder hands over
+                // whatever fits, not rows, so the stream is decompressed whole and the predictor
+                // is undone in the pass that moves the data out of the rented buffer. Measured on
+                // a predicted image that pass costs what the plain copy did, so a row-by-row path
+                // for Brotli would have little to gain.
+                return PngPredictor.DecodeToArray(buffer.AsSpan(0, total), predictor, colors, bitsPerComponent, columns);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
+        /// <summary>
+        /// Decompresses the whole stream into <paramref name="buffer"/>, growing it as needed, and returns
+        /// the number of bytes decompressed.
+        /// </summary>
+        private static int Decompress(Memory<byte> input, ref byte[] buffer)
+        {
             var total = 0;
 
             try
@@ -108,16 +125,7 @@
                     if (status == OperationStatus.Done)
                     {
                         // Anything left in the input after the stream ended is not ours to read.
-#if NET
-                        // Every byte is overwritten by the copy below, so the runtime does not
-                        // need to clear the array first.
-                        var decoded = GC.AllocateUninitializedArray<byte>(total);
-#else
-                        var decoded = new byte[total];
-#endif
-                        buffer.AsSpan(0, total).CopyTo(decoded);
-
-                        return decoded;
+                        return total;
                     }
 
                     if (status == OperationStatus.NeedMoreData)
@@ -142,10 +150,6 @@
             catch (Exception ex) when (ex is InvalidOperationException || ex is InvalidDataException)
             {
                 throw new CorruptCompressedDataException(InvalidStreamMessage, ex);
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 #else

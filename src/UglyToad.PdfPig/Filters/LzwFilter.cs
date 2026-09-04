@@ -82,17 +82,13 @@
             {
                 var length = Decode(input, isEarlyChange, ref buffer);
 
-#if NET
-                // Every byte is overwritten by the copy, so the runtime need not clear the array.
-                var decoded = GC.AllocateUninitializedArray<byte>(length);
-#else
-                var decoded = new byte[length];
-#endif
-                buffer.AsSpan(LiteralPreamble, length).CopyTo(decoded);
-
-                // Undone in place on the result; below 2 the data comes straight back, and most
-                // streams carry no predictor at all.
-                return PngPredictor.Decode(decoded, predictor, colors, bitsPerComponent, columns);
+                // The Flate filter decodes rows as they inflate, straight into the result, which
+                // spares it a buffer for the whole inflated stream. The LZW decoder needs that
+                // buffer anyway, since its table is the output it has written so far, so the
+                // stream is decoded whole and the predictor is undone in the pass that moves the
+                // data out of the rented buffer, as the Brotli filter does too. Most streams carry
+                // no predictor at all, and then the pass is the copy.
+                return PngPredictor.DecodeToArray(buffer.AsSpan(LiteralPreamble, length), predictor, colors, bitsPerComponent, columns);
             }
             finally
             {

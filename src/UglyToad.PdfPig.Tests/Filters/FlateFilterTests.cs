@@ -148,5 +148,97 @@
 
             Assert.Empty(decoded.ToArray());
         }
+
+        [Fact]
+        public void ADamagedImageStreamKeepsTheRowsBeforeTheDamage()
+        {
+            // A stream with a /Height is inflated row by row, straight into the result, while one
+            // without is inflated first and decoded afterwards. Both take the second way again once
+            // the data turns out damaged, so they have to agree, and both have to keep the rows that
+            // inflated before the damage. The stream is built of stored deflate blocks of twenty rows,
+            // so that the damage, a block length whose complement no longer matches, is found at the
+            // same place by every inflater.
+            const int columns = 200;
+            const int rows = 400;
+            const int stride = columns + 1;
+            const int rowsPerBlock = 20;
+            const int damagedBlock = 12;
+            const int blockLength = rowsPerBlock * stride;
+
+            var original = FilterTestHelpers.RandomRows(new Random(7), rows * stride, 12, stride);
+            var compressed = StoredZlibStream(original, blockLength);
+
+            var decodeParameters = new[] { (NameToken.Predictor, 12), (NameToken.Columns, columns) };
+            var image = FilterTestHelpers.StreamDictionary(NameToken.FlateDecode, decodeParameters, (NameToken.Height, rows));
+            var plain = FilterTestHelpers.StreamDictionary(NameToken.FlateDecode, decodeParameters);
+
+            var expected = FilterTestHelpers.DecodedAtOnce(original, 12, 1, 8, columns);
+
+            Assert.Equal(expected, filter.Decode(compressed, image, TestFilterProvider.Instance, 0).ToArray());
+
+            // The low byte of the length complement in the header of the damaged block.
+            compressed[2 + (damagedBlock * (5 + blockLength)) + 3] ^= 0xFF;
+
+            var decodedImage = filter.Decode(compressed, image, TestFilterProvider.Instance, 0).ToArray();
+            var decodedPlain = filter.Decode(compressed, plain, TestFilterProvider.Instance, 0).ToArray();
+
+            Assert.Equal(decodedPlain, decodedImage);
+
+            // The read that meets the damage takes its output down with it: a salvage read of 4096
+            // bytes, on top of the 8 KB of input the inflater may have taken in ahead of it. So a few
+            // dozen rows before the damage may be lost, but nothing before those.
+            var intact = damagedBlock * rowsPerBlock * columns;
+            var lost = (((8192 + 4096) / stride) + 1) * columns;
+
+            Assert.True(decodedImage.Length <= intact, $"{decodedImage.Length} bytes came out of a stream damaged after {intact}");
+            Assert.True(decodedImage.Length >= intact - lost, $"only {decodedImage.Length} of the {intact} bytes before the damage survived");
+            // The loss may cut the last row short, and its padding then decodes to other bytes.
+            var trusted = decodedImage.Length - columns;
+            Assert.Equal(expected.AsSpan(0, trusted).ToArray(), decodedImage.AsSpan(0, trusted).ToArray());
+        }
+
+        /// <summary>A zlib stream of stored deflate blocks of <paramref name="blockLength"/> bytes each.</summary>
+        private static byte[] StoredZlibStream(byte[] data, int blockLength)
+        {
+            var blocks = (data.Length + blockLength - 1) / blockLength;
+            var stream = new byte[2 + (blocks * 5) + data.Length + 4];
+
+            stream[0] = 0x78;
+            stream[1] = 0x01;
+
+            var position = 2;
+
+            for (var block = 0; block < blocks; block++)
+            {
+                var offset = block * blockLength;
+                var length = Math.Min(blockLength, data.Length - offset);
+
+                stream[position++] = (byte)(block == blocks - 1 ? 1 : 0);
+                stream[position++] = (byte)length;
+                stream[position++] = (byte)(length >> 8);
+                stream[position++] = (byte)~length;
+                stream[position++] = (byte)(~length >> 8);
+
+                Array.Copy(data, offset, stream, position, length);
+                position += length;
+            }
+
+            uint a = 1;
+            uint b = 0;
+
+            foreach (var value in data)
+            {
+                a = (a + value) % 65521;
+                b = (b + a) % 65521;
+            }
+
+            stream[position++] = (byte)(b >> 8);
+            stream[position++] = (byte)b;
+            stream[position++] = (byte)(a >> 8);
+            stream[position] = (byte)a;
+
+            return stream;
+        }
+
     }
 }

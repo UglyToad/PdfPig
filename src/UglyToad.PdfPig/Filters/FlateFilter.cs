@@ -85,11 +85,11 @@
             int columns,
             DictionaryToken streamDictionary)
         {
-            var decoded = Inflate(input, predictor, colors, bitsPerComponent, columns, streamDictionary, FastBlockLength, out var damaged);
+            var decoded = Inflate(input, predictor, colors, bitsPerComponent, columns, streamDictionary, FastBlockLength, salvaging: false, out var damaged);
 
             if (damaged)
             {
-                decoded = Inflate(input, predictor, colors, bitsPerComponent, columns, streamDictionary, SalvageBlockLength, out _);
+                decoded = Inflate(input, predictor, colors, bitsPerComponent, columns, streamDictionary, SalvageBlockLength, salvaging: true, out _);
             }
 
             return decoded;
@@ -102,6 +102,7 @@
             int columns,
             DictionaryToken streamDictionary,
             int blockLength,
+            bool salvaging,
             out bool damaged)
         {
             using var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input);
@@ -127,7 +128,7 @@
                 && TryGetImageHeight(streamDictionary, out var height)
                 && DecodeBuffer.IsPlausible((long)height * decoder.RowLength, input.Length, MaximumExpansion))
             {
-                return DecompressImage(memoryStream, predictor, colors, bitsPerComponent, columns, height, blockLength, out damaged);
+                return DecompressImage(memoryStream, predictor, colors, bitsPerComponent, columns, height, blockLength, salvaging, out damaged);
             }
 
             // The inflater writes straight into this buffer, and the predictor is undone in the
@@ -183,9 +184,10 @@
                     }
                 }
 
-                if (damaged)
+                if (damaged && !salvaging)
                 {
                     // The caller inflates again, more carefully, and does not look at this result.
+                    // The salvage pass itself meets the damage again and keeps what came before it.
                     return Memory<byte>.Empty;
                 }
 
@@ -227,7 +229,7 @@
         /// produces them, from a small input buffer that stays in the cache; nothing is moved or copied
         /// afterwards. A /Height that turns out wrong is grown around or trimmed at the end.
         /// </summary>
-        private static Memory<byte> DecompressImage(Stream compressed, int predictor, int colors, int bitsPerComponent, int columns, int height, int blockLength, out bool damaged)
+        private static Memory<byte> DecompressImage(Stream compressed, int predictor, int colors, int bitsPerComponent, int columns, int height, int blockLength, bool salvaging, out bool damaged)
         {
             var decoder = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
             var rowLength = decoder.RowLength;
@@ -285,9 +287,10 @@
                     }
                 }
 
-                if (damaged)
+                if (damaged && !salvaging)
                 {
                     // The caller inflates again, more carefully, and does not look at this result.
+                    // The salvage pass itself meets the damage again and keeps what came before it.
                     return Memory<byte>.Empty;
                 }
 
