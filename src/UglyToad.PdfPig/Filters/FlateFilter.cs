@@ -268,7 +268,7 @@
                         length += read;
 
                         var completeRows = (length - decoder.ConsumedLength) / stride;
-                        EnsureOutput(ref output, decoder.DecodedLength + (completeRows * rowLength));
+                        EnsureOutput(ref output, decoder.DecodedLength, decoder.DecodedLength + (completeRows * rowLength));
 
                         decoder.Advance(buffer, length, output);
 
@@ -280,7 +280,7 @@
                     }
                 }
 
-                EnsureOutput(ref output, decoder.FinalLength(length));
+                EnsureOutput(ref output, decoder.DecodedLength, decoder.FinalLength(length));
 
                 var decodedLength = decoder.Finish(buffer, length, output);
 
@@ -324,13 +324,13 @@
 #endif
         }
 
-        /// <summary>Grows the result when a stream has more rows than its /Height said.</summary>
-        private static void EnsureOutput(ref byte[] output, int required)
+        /// <summary>Grows the result when a stream has more rows than its /Height said, carrying over the <paramref name="written"/> bytes decoded so far.</summary>
+        private static void EnsureOutput(ref byte[] output, int written, int required)
         {
             if (required > output.Length)
             {
                 var grown = AllocateResult((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, output.Length * 2L)));
-                output.AsSpan().CopyTo(grown);
+                output.AsSpan(0, written).CopyTo(grown);
                 output = grown;
             }
         }

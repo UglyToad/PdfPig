@@ -173,7 +173,7 @@
                     {
                         sequenceLength = lengths[code];
 
-                        EnsureCapacity(ref output, position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, position + Math.Max(sequenceLength, CopySlack));
 
                         Copy(output, offsets[code], position, sequenceLength);
                     }
@@ -184,7 +184,7 @@
                         // repeats itself immediately.
                         sequenceLength = previousLength + 1;
 
-                        EnsureCapacity(ref output, position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, position + Math.Max(sequenceLength, CopySlack));
 
                         Copy(output, previousPosition, position, previousLength);
                         output[position + previousLength] = output[position];
@@ -257,7 +257,8 @@
             }
         }
 
-        private static void EnsureCapacity(ref byte[] output, int required)
+        /// <summary>Makes room for <paramref name="required"/> bytes, carrying over the <paramref name="written"/> that are there.</summary>
+        private static void EnsureCapacity(ref byte[] output, int written, int required)
         {
             if (required <= output.Length)
             {
@@ -266,7 +267,8 @@
 
             var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(DecodeBuffer.MaximumCapacity, Math.Max(required, output.Length * 2L)));
 
-            output.AsSpan().CopyTo(grown);
+            // Only what was written: the rest of a rented buffer is whatever the pool left in it.
+            output.AsSpan(0, written).CopyTo(grown);
             ArrayPool<byte>.Shared.Return(output);
 
             output = grown;
