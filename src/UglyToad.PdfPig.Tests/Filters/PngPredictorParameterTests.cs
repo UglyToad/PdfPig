@@ -51,6 +51,17 @@
         }
 
         [Fact]
+        public void MovingTheInputIsRefusedForADecoderThatDecodesInPlace()
+        {
+            // Rows decoded where they lie need the row above to stay in the buffer.
+            var inPlace = new PngPredictor.Decoder(12, 1, 8, 4, compact: false);
+            Assert.Throws<InvalidOperationException>(() => inPlace.RestartInput());
+
+            var separate = new PngPredictor.Decoder(12, 1, 8, 4);
+            separate.RestartInput();
+        }
+
+        [Fact]
         public void AnInvalidStreamThroughTheFlateFilterYieldsNothing()
         {
             // The filter turns the refusal into an empty result, as it does for damaged data.

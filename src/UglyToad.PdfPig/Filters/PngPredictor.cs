@@ -174,7 +174,9 @@
             /// <param name="compact">
             /// True to move each decoded row up so the output is contiguous from the start of the
             /// buffer; false to decode rows where they lie and gather them with <see cref="CopyTo"/>.
-            /// The latter saves a pass over the data when the output is copied out anyway.
+            /// The latter saves a pass over the data when the output is copied out anyway, but needs
+            /// the whole input to stay in one buffer, since each row is decoded against the row above
+            /// it in place: <see cref="RestartInput"/> is not available then.
             /// </param>
             public Decoder(int predictor, int colors, int bitsPerComponent, int columns, bool compact = true)
             {
@@ -239,10 +241,17 @@
 
             /// <summary>
             /// Tells the decoder that the input not yet consumed has been moved to the start of the input
-            /// buffer, so that the buffer can be small and stay in the cache.
+            /// buffer, so that the buffer can be small and stay in the cache. Only for a decoder that
+            /// writes to a separate output: one that decodes rows where they lie needs the row above
+            /// to stay where it was, and moving the input takes it away.
             /// </summary>
             public void RestartInput()
             {
+                if (!compact)
+                {
+                    throw new InvalidOperationException("The input cannot be moved under a decoder that decodes rows in place; the row above each row has to stay in the buffer.");
+                }
+
                 ConsumedLength = 0;
             }
 
@@ -358,7 +367,7 @@
                     }
 
                     ReadOnlySpan<byte> above;
-                    if (ConsumedLength == 0)
+                    if (DecodedLength == 0)
                     {
                         zeroRow ??= new byte[rowLength];
                         above = zeroRow;
