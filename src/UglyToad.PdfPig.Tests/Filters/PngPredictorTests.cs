@@ -108,6 +108,9 @@
             new object[] { 15, 4, 8, 23 },
             new object[] { 15, 1, 1, 100 },
             new object[] { 15, 3, 16, 9 },
+            // Two and eight bytes per pixel: the narrowest vectorised Sub, and the widest, where a block is a whole vector.
+            new object[] { 15, 1, 16, 40 },
+            new object[] { 15, 4, 16, 12 },
             new object[] { 12, 1, 8, 5 },
             new object[] { 11, 1, 8, 5 },
             new object[] { 2, 1, 8, 40 },
