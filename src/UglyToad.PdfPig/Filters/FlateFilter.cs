@@ -21,11 +21,6 @@
     /// </remarks>
     public sealed class FlateFilter : IFilter
     {
-        // Defaults are from table 3.7 in the spec (version 1.7)
-        private const int DefaultColors = 1;
-        private const int DefaultBitsPerComponent = 8;
-        private const int DefaultColumns = 1;
-
         /// <summary>
         /// How much is inflated per read. Every read is a call into native zlib that leaves and
         /// re-enters its fast path, which is a fixed cost per call; with zlib-ng on .NET 9 the
@@ -64,14 +59,10 @@
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
 
             try
             {
-                var colors = parameters.GetIntOrDefault(NameToken.Colors, DefaultColors);
-                var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
-                var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
-
                 return Decompress(input, predictor, colors, bitsPerComponent, columns, streamDictionary);
             }
             catch

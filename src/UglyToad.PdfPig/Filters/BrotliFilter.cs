@@ -46,11 +46,6 @@
     public sealed class BrotliFilter : IFilter
     {
 #if NET || NETSTANDARD2_1_OR_GREATER
-        // Defaults are from ISO 32000, Clause 7.4.4.3, Table 8, shared with the Flate/LZW predictors.
-        private const int DefaultColors = 1;
-        private const int DefaultBitsPerComponent = 8;
-        private const int DefaultColumns = 1;
-
         /// <summary>
         /// Where the decompressed data starts out, as a multiple of the compressed length. Brotli
         /// reaches far higher ratios than this, but a bigger rent costs more than the doubling it
@@ -72,11 +67,7 @@
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
-            var colors = parameters.GetIntOrDefault(NameToken.Colors, DefaultColors);
-            var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
-            var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
-
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
             var decoded = Decompress(input, streamDictionary);
 
             // Undone in place; below 2 the data comes straight back.

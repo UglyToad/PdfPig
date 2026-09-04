@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
+    using Tokens;
+    using Util;
     using System.Buffers.Binary;
     using System.Numerics;
     using System.Runtime.CompilerServices;
@@ -103,6 +105,53 @@
         /// padding stay far inside what an array can hold: the widest row is 256 MB.
         /// </summary>
         public const long MaxRowBits = int.MaxValue - 7;
+
+        /// <summary>
+        /// The predictor parameters of a stream, read from its DecodeParms with the defaults of
+        /// ISO 32000, Table 8: Predictor 1, Colors 1, BitsPerComponent 8, Columns 1. Below 2 the
+        /// predictor is none, and the other three then mean nothing; they are checked only when a
+        /// predictor is built from them. Read here once for Flate, LZW and Brotli alike.
+        /// </summary>
+        public readonly struct Parameters
+        {
+            private Parameters(int predictor, int colors, int bitsPerComponent, int columns)
+            {
+                Predictor = predictor;
+                Colors = colors;
+                BitsPerComponent = bitsPerComponent;
+                Columns = columns;
+            }
+
+            /// <summary>The Predictor parameter; 1, none, when absent.</summary>
+            public int Predictor { get; }
+
+            /// <summary>The Colors parameter; 1 when absent.</summary>
+            public int Colors { get; }
+
+            /// <summary>The BitsPerComponent parameter; 8 when absent.</summary>
+            public int BitsPerComponent { get; }
+
+            /// <summary>The Columns parameter; 1 when absent.</summary>
+            public int Columns { get; }
+
+            /// <summary>Reads the parameters from the decode parameters of one filter.</summary>
+            public static Parameters Read(DictionaryToken parameters)
+            {
+                return new Parameters(
+                    parameters.GetIntOrDefault(NameToken.Predictor, 1),
+                    parameters.GetIntOrDefault(NameToken.Colors, 1),
+                    parameters.GetIntOrDefault(NameToken.BitsPerComponent, 8),
+                    parameters.GetIntOrDefault(NameToken.Columns, 1));
+            }
+
+            public void Deconstruct(out int predictor, out int colors, out int bitsPerComponent, out int columns)
+            {
+                predictor = Predictor;
+                colors = Colors;
+                bitsPerComponent = BitsPerComponent;
+                columns = Columns;
+            }
+        }
 
         /// <summary>
         /// The most colour components a sample may have here. The specification sets no upper

@@ -112,6 +112,25 @@
         });
 
         [Fact]
+        public void TheParametersDefaultAsTable8Says()
+        {
+            // ISO 32000, Table 8: Predictor 1, Colors 1, BitsPerComponent 8, Columns 1.
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>()));
+
+            Assert.Equal((1, 1, 8, 1), (predictor, colors, bitsPerComponent, columns));
+
+            var stated = PngPredictor.Parameters.Read(new PdfPig.Tokens.DictionaryToken(new System.Collections.Generic.Dictionary<PdfPig.Tokens.NameToken, PdfPig.Tokens.IToken>
+            {
+                [PdfPig.Tokens.NameToken.Predictor] = new PdfPig.Tokens.NumericToken(15),
+                [PdfPig.Tokens.NameToken.Colors] = new PdfPig.Tokens.NumericToken(3),
+                [PdfPig.Tokens.NameToken.BitsPerComponent] = new PdfPig.Tokens.NumericToken(16),
+                [PdfPig.Tokens.NameToken.Columns] = new PdfPig.Tokens.NumericToken(640),
+            }));
+
+            Assert.Equal((15, 3, 16, 640), (stated.Predictor, stated.Colors, stated.BitsPerComponent, stated.Columns));
+        }
+
+        [Fact]
         public void AnInvalidStreamThroughTheFlateFilterYieldsNothing()
         {
             // The filter turns the refusal into an empty result, as it does for damaged data.

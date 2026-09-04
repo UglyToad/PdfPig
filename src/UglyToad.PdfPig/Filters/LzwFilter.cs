@@ -19,10 +19,6 @@
     /// </remarks>
     public sealed class LzwFilter : IFilter
     {
-        private const int DefaultColors = 1;
-        private const int DefaultBitsPerComponent = 8;
-        private const int DefaultColumns = 1;
-
         private const int ClearTable = 256;
         private const int EodMarker = 257;
 
@@ -67,14 +63,9 @@
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
 
             var earlyChange = parameters.GetIntOrDefault(NameToken.EarlyChange, 1);
-
-            var colors = parameters.GetIntOrDefault(NameToken.Colors, DefaultColors);
-            var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
-            var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
-
             return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns, streamDictionary);
         }
 
