@@ -308,7 +308,7 @@
                 return true;
             }
 
-            if (parsingOptions.UseLenientParsing && scanner.CurrentToken is OperatorToken opToken && opToken.Data.EndsWith(token.Data))
+            if (parsingOptions.UseLenientParsing && scanner.CurrentToken is OperatorToken opToken && opToken.Data.EndsWith(token.Data, StringComparison.Ordinal))
             {
                 actualTokenStart = scanner.CurrentTokenStart + opToken.Data.Length - token.Data.Length;
                 return true;
