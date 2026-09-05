@@ -19,23 +19,23 @@
             type = default(SystemFontRecord);
 
             SystemFontType fontType;
-            if (path.EndsWith(".ttf"))
+            if (path.EndsWith(".ttf", StringComparison.Ordinal))
             {
                 fontType = SystemFontType.TrueType;
             }
-            else if (path.EndsWith(".otf"))
+            else if (path.EndsWith(".otf", StringComparison.Ordinal))
             {
                 fontType = SystemFontType.OpenType;
             }
-            else if (path.EndsWith(".ttc"))
+            else if (path.EndsWith(".ttc", StringComparison.Ordinal))
             {
                 fontType = SystemFontType.TrueTypeCollection;
             }
-            else if (path.EndsWith(".otc"))
+            else if (path.EndsWith(".otc", StringComparison.Ordinal))
             {
                 fontType = SystemFontType.OpenTypeCollection;
             }
-            else if (path.EndsWith(".pfb"))
+            else if (path.EndsWith(".pfb", StringComparison.Ordinal))
             {
                 fontType = SystemFontType.Type1;
             }

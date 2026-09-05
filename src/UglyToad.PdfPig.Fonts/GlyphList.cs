@@ -123,7 +123,7 @@
             // of four, and if each group of four digits represents a value in the ranges 0000 through D7FF or E000 through FFFF, then
             // interpret each as a Unicode scalar value and map the component to the string made of those scalar values. Note that the range
             // and digit-length restrictions mean that the ‘uni’ glyph name prefix can be used only with UVs in the Basic Multilingual Plane (BMP).
-            else if (name.StartsWith("uni") && (name.Length - 3) % 4 == 0)
+            else if (name.StartsWith("uni", StringComparison.Ordinal) && (name.Length - 3) % 4 == 0)
             {
                 // test for Unicode name in the format uniXXXX where X is hex
                 int nameLength = name.Length;
