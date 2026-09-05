@@ -1,350 +1,1124 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using System.IO;
-
-    // https://github.com/apache/pdfbox/blob/a53a70db16ea3133994120bcf1e216b9e760c05b/pdfbox/src/main/java/org/apache/pdfbox/filter/Predictor.java#L30
+    using Tokens;
+    using Util;
+    using System.Buffers.Binary;
+    using System.Numerics;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
+#if NET7_0_OR_GREATER
+    using System.Collections.Generic;
+    using System.Runtime.Intrinsics;
+    using System.Runtime.Intrinsics.Arm;
+    using System.Runtime.Intrinsics.X86;
+#endif
 
     /// <summary>
-    /// Helper class to contain predictor decoding used by Flate and LZW filter. 
+    /// Undoes the predictor a producer applied before compressing a stream, for the Flate, LZW and
+    /// Brotli filters. See ISO 32000-1 section 7.4.4.4: the TIFF predictor stores each sample as the
+    /// difference to the sample on its left, the PNG predictors store each byte as the difference to
+    /// a neighbour chosen per row, with the row's filter type in a byte ahead of the row.
     /// </summary>
+    /// <remarks>
+    /// Rows are decoded where they lie, with the row before them - already decoded, directly ahead
+    /// in the same buffer - as the reference, so nothing is copied into and out of row buffers and no
+    /// second stream is written. The PNG filter type bytes are squeezed out as the rows move up. The
+    /// <see cref="Decoder"/> does this a piece at a time, so a filter can decode rows as soon as it
+    /// has inflated them, while they are still in the cache; <see cref="Decode"/> does it for data
+    /// that is already complete.
+    /// </remarks>
     internal static class PngPredictor
     {
+        private const int TiffPredictor = 2;
+
+        /// <summary>Predictors from this value on are the PNG filters, chosen per row.</summary>
+        private const int FirstPngPredictor = 10;
+
+        private const byte PngNone = 0;
+        private const byte PngSub = 1;
+        private const byte PngUp = 2;
+        private const byte PngAverage = 3;
+        private const byte PngPaeth = 4;
+
         /// <summary>
-        /// Decodes a single line of data in-place.
+        /// Undoes the predictor over complete decoded data. For predictor values below 2 the data is
+        /// returned as it is.
         /// </summary>
-        /// <param name="predictor">Predictor value for the current line.</param>
-        /// <param name="colors">Number of color components, from decode parameters.</param>
-        /// <param name="bitsPerComponent">Number of bits per components, from decode parameters.</param>
-        /// <param name="columns">Number samples in a row, from decode parameters.</param>
-        /// <param name="actline">Current (active) line to decode. Data will be decoded in-place, i.e. - the contents of this buffer will be modified.</param>
-        /// <param name="lastline">The previous decoded line. When decoding the first line, this parameter should be an empty byte array of the same length as <c>actline</c>.</param>
-        public static void DecodePredictorRow(int predictor, int colors, int bitsPerComponent, int columns, byte[] actline, byte[] lastline)
+        /// <param name="data">The decompressed data. It is decoded in place, so it must not be needed afterwards.</param>
+        /// <param name="predictor">The Predictor decode parameter.</param>
+        /// <param name="colors">The Colors decode parameter.</param>
+        /// <param name="bitsPerComponent">The BitsPerComponent decode parameter.</param>
+        /// <param name="columns">The Columns decode parameter.</param>
+        /// <returns>
+        /// The decoded rows: a slice of <paramref name="data"/>, or a new array where an incomplete last
+        /// row had to be padded to its full length and that did not fit.
+        /// </returns>
+        public static Memory<byte> Decode(Memory<byte> data, int predictor, int colors, int bitsPerComponent, int columns)
         {
-            if (predictor == 1)
+            if (predictor <= 1 || data.Length == 0)
             {
-                // no prediction
-                return;
+                return data;
             }
 
-            int bitsPerPixel = colors * bitsPerComponent;
-            int bytesPerPixel = (bitsPerPixel + 7) / 8;
-            int rowLength = actline.Length;
+            var decoder = new Decoder(predictor, colors, bitsPerComponent, columns);
+            var span = data.Span;
 
-            switch (predictor)
+            decoder.Advance(span, span.Length);
+
+            var finalLength = decoder.FinalLength(span.Length);
+
+            if (finalLength <= span.Length)
             {
-                case 2:
-                    // PRED TIFF SUB
-                    if (bitsPerComponent == 8)
+                decoder.Finish(span, span.Length);
+
+                return data.Slice(0, finalLength);
+            }
+
+            // Only a padded last row makes the output longer than the input, and then there are
+            // fewer rows than bytes in a row, so the undecoded tail sits below the final length and
+            // can stay at its index in the longer buffer.
+            var grown = new byte[finalLength];
+
+            span.Slice(0, decoder.DecodedLength).CopyTo(grown);
+            span.Slice(decoder.ConsumedLength).CopyTo(grown.AsSpan(decoder.ConsumedLength));
+
+            decoder.Finish(grown, span.Length);
+
+            return grown;
+        }
+
+        /// <summary>
+        /// Decodes the rows of <paramref name="data"/> into a new array of exactly the decoded length,
+        /// reading the rows where they are and writing the decoded rows to the result. For data that
+        /// has to leave a buffer anyway this is <see cref="Decode"/> folded into the copy.
+        /// </summary>
+        public static byte[] DecodeToArray(ReadOnlySpan<byte> data, int predictor, int colors, int bitsPerComponent, int columns)
+        {
+            if (predictor <= 1 || data.Length == 0)
+            {
+                var copy = NewArray(data.Length);
+                data.CopyTo(copy);
+
+                return copy;
+            }
+
+            var decoder = new Decoder(predictor, colors, bitsPerComponent, columns);
+
+            // Every byte of every row is written, including the padding of a short last row.
+            var decoded = NewArray(decoder.FinalLength(data.Length));
+
+            decoder.Advance(data, data.Length, decoded);
+            decoder.Finish(data, data.Length, decoded);
+
+            return decoded;
+        }
+
+        /// <summary>An array whose every byte the caller is about to write.</summary>
+        private static byte[] NewArray(int length)
+        {
+#if NET
+            return GC.AllocateUninitializedArray<byte>(length);
+#else
+            return new byte[length];
+#endif
+        }
+
+        /// <summary>
+        /// The number of bytes in a row of the decoded data. Refuses parameters outside what the
+        /// specification and this implementation allow, so that no arithmetic on them can wrap.
+        /// </summary>
+        public static int CalculateRowLength(int colors, int bitsPerComponent, int columns)
+        {
+            ValidateParameters(colors, bitsPerComponent, columns);
+
+            return (int)((((long)columns * colors * bitsPerComponent) + 7) / 8);
+        }
+
+        /// <summary>
+        /// The most bits a row may have. With the bits of a row in an int, no count of samples or
+        /// of bits along the row can wrap, and the row, a stride one byte longer and a row of
+        /// padding stay far inside what an array can hold: the widest row is 256 MB.
+        /// </summary>
+        public const long MaxRowBits = int.MaxValue - 7;
+
+        /// <summary>
+        /// The predictor parameters of a stream, read from its DecodeParms with the defaults of
+        /// ISO 32000, Table 8: Predictor 1, Colors 1, BitsPerComponent 8, Columns 1. Below 2 the
+        /// predictor is none, and the other three then mean nothing; they are checked only when a
+        /// predictor is built from them. Read here once for Flate, LZW and Brotli alike.
+        /// </summary>
+        public readonly struct Parameters
+        {
+            private Parameters(int predictor, int colors, int bitsPerComponent, int columns)
+            {
+                Predictor = predictor;
+                Colors = colors;
+                BitsPerComponent = bitsPerComponent;
+                Columns = columns;
+            }
+
+            /// <summary>The Predictor parameter; 1, none, when absent.</summary>
+            public int Predictor { get; }
+
+            /// <summary>The Colors parameter; 1 when absent.</summary>
+            public int Colors { get; }
+
+            /// <summary>The BitsPerComponent parameter; 8 when absent.</summary>
+            public int BitsPerComponent { get; }
+
+            /// <summary>The Columns parameter; 1 when absent.</summary>
+            public int Columns { get; }
+
+            /// <summary>Reads the parameters from the decode parameters of one filter.</summary>
+            public static Parameters Read(DictionaryToken parameters)
+            {
+                return new Parameters(
+                    parameters.GetIntOrDefault(NameToken.Predictor, 1),
+                    parameters.GetIntOrDefault(NameToken.Colors, 1),
+                    parameters.GetIntOrDefault(NameToken.BitsPerComponent, 8),
+                    parameters.GetIntOrDefault(NameToken.Columns, 1));
+            }
+
+            public void Deconstruct(out int predictor, out int colors, out int bitsPerComponent, out int columns)
+            {
+                predictor = Predictor;
+                colors = Colors;
+                bitsPerComponent = BitsPerComponent;
+                columns = Columns;
+            }
+        }
+
+        /// <summary>
+        /// The most colour components a sample may have here. The specification sets no upper
+        /// bound, "1 or greater" since PDF 1.3 (ISO 32000-1:2008 and ISO 32000-2:2020, Table 8);
+        /// the row decoders are sized for 64 bytes per pixel, which 32 components of 16 bits fill.
+        /// </summary>
+        public const int MaxColors = 32;
+
+        /// <summary>
+        /// Refuses parameters the predictors cannot take: Colors below 1, which the specification
+        /// rules out, or above <see cref="MaxColors"/>, which this implementation does;
+        /// BitsPerComponent other than 1, 2, 4, 8 and 16, the values Table 8 of ISO 32000 allows;
+        /// Columns below 1, a row of nothing; and a row of more than <see cref="MaxRowBits"/>.
+        /// Everything computed from them, bytes per pixel, row length, stride and every index along
+        /// a row, is then free of overflow.
+        /// </summary>
+        public static void ValidateParameters(int colors, int bitsPerComponent, int columns)
+        {
+            if (colors < 1 || colors > MaxColors)
+            {
+                throw new ArgumentOutOfRangeException(nameof(colors), colors, $"The predictor parameters name {colors} colour components; 1 to {MaxColors} are allowed.");
+            }
+
+            if (bitsPerComponent != 1 && bitsPerComponent != 2 && bitsPerComponent != 4 && bitsPerComponent != 8 && bitsPerComponent != 16)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitsPerComponent), bitsPerComponent, $"The predictor parameters name {bitsPerComponent} bits per component; 1, 2, 4, 8 or 16 are allowed.");
+            }
+
+            if (columns < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(columns), columns, "The predictor parameters name a row of no samples.");
+            }
+
+            var rowBits = (long)columns * colors * bitsPerComponent;
+
+            if (rowBits > MaxRowBits)
+            {
+                throw new ArgumentOutOfRangeException(nameof(columns), columns, $"The predictor parameters describe a row of {rowBits} bits; at most {MaxRowBits} are allowed.");
+            }
+        }
+
+        /// <summary>
+        /// Undoes a predictor over data that arrives in pieces, in the buffer the pieces arrive in.
+        /// </summary>
+        /// <remarks>
+        /// Call <see cref="Advance"/> whenever more data has been appended to the buffer: every row
+        /// that is complete by then is decoded and moved up to follow the rows before it. Input that
+        /// does not yet make up a row stays where it is, at <see cref="ConsumedLength"/> and beyond,
+        /// so further data is appended after it as usual. <see cref="Finish"/> deals with a last row
+        /// that was cut short, once the input has ended.
+        /// </remarks>
+        public struct Decoder
+        {
+            private readonly int predictor;
+            private readonly int colors;
+            private readonly int bitsPerComponent;
+            private readonly int columns;
+            private readonly int rowLength;
+            private readonly int bytesPerPixel;
+
+            /// <summary>The bytes a row occupies in the input: the row, plus its filter type for the PNG predictors.</summary>
+            private readonly int stride;
+
+            /// <summary>
+            /// Whether decoded rows are moved up to the start of the buffer as they are decoded. If not,
+            /// they stay where their input lies and <see cref="CopyTo"/> leaves the filter type bytes out.
+            /// </summary>
+            private readonly bool compact;
+
+            /// <summary>
+            /// Creates a decoder for the given decode parameters. The predictor must be 2 or more.
+            /// </summary>
+            /// <param name="predictor">The Predictor decode parameter.</param>
+            /// <param name="colors">The Colors decode parameter.</param>
+            /// <param name="bitsPerComponent">The BitsPerComponent decode parameter.</param>
+            /// <param name="columns">The Columns decode parameter.</param>
+            /// <param name="compact">
+            /// True to move each decoded row up so the output is contiguous from the start of the
+            /// buffer; false to decode rows where they lie and gather them with <see cref="CopyTo"/>.
+            /// The latter saves a pass over the data when the output is copied out anyway, but needs
+            /// the whole input to stay in one buffer, since each row is decoded against the row above
+            /// it in place: <see cref="RestartInput"/> is not available then.
+            /// </param>
+            public Decoder(int predictor, int colors, int bitsPerComponent, int columns, bool compact = true)
+            {
+                this.predictor = predictor;
+                this.colors = colors;
+                this.bitsPerComponent = bitsPerComponent;
+                this.columns = columns;
+                this.compact = compact;
+
+                rowLength = CalculateRowLength(colors, bitsPerComponent, columns);
+                bytesPerPixel = ((colors * bitsPerComponent) + 7) / 8;
+                stride = predictor >= FirstPngPredictor ? rowLength + 1 : rowLength;
+
+                DecodedLength = 0;
+                ConsumedLength = 0;
+            }
+
+            /// <summary>
+            /// How many bytes of decoded rows there are. When rows are moved up they occupy this many
+            /// bytes from the start of the buffer.
+            /// </summary>
+            public int DecodedLength { get; private set; }
+
+            /// <summary>How many bytes of input have been decoded; input from here on is still waiting for its row to complete.</summary>
+            public int ConsumedLength { get; private set; }
+
+            /// <summary>The number of bytes in a decoded row.</summary>
+            public int RowLength => rowLength;
+
+            /// <summary>The number of input bytes a complete row takes: the row plus, for the PNG predictors, its filter type byte.</summary>
+            public int Stride => stride;
+
+            /// <summary>
+            /// Decodes every row that is complete within the first <paramref name="available"/> bytes of
+            /// <paramref name="buffer"/> and has not been decoded yet.
+            /// </summary>
+            public void Advance(Span<byte> buffer, int available)
+            {
+                // A stride of zero, from a row of no bytes without filter type bytes, would never
+                // consume anything; such rows are left to Finish.
+                while (stride > 0 && available - ConsumedLength >= stride)
+                {
+                    DecodeNextRow(buffer, rowLength);
+                }
+            }
+
+            /// <summary>
+            /// Decodes every complete row among the first <paramref name="available"/> bytes of
+            /// <paramref name="input"/> into <paramref name="output"/>, where the decoded rows follow each
+            /// other from the start. The output must have room for them: <see cref="DecodedLength"/> plus a
+            /// row for every complete row in the input. Input and output are separate buffers, so the input
+            /// need only hold what is not yet decoded, see <see cref="RestartInput"/>.
+            /// </summary>
+            public void Advance(ReadOnlySpan<byte> input, int available, Span<byte> output)
+            {
+                while (stride > 0 && available - ConsumedLength >= stride)
+                {
+                    DecodeNextRow(input, output, rowLength);
+                }
+            }
+
+            /// <summary>
+            /// Tells the decoder that the input not yet consumed has been moved to the start of the input
+            /// buffer, so that the buffer can be small and stay in the cache. Only for a decoder that
+            /// writes to a separate output: one that decodes rows where they lie needs the row above
+            /// to stay where it was, and moving the input takes it away.
+            /// </summary>
+            public void RestartInput()
+            {
+                if (!compact)
+                {
+                    throw new InvalidOperationException("The input cannot be moved under a decoder that decodes rows in place; the row above each row has to stay in the buffer.");
+                }
+
+                ConsumedLength = 0;
+            }
+
+            /// <summary>
+            /// Decodes a last row that was cut short into <paramref name="output"/>, padding it with zeros, and
+            /// returns the length of the decoded data. The output must hold <see cref="FinalLength"/> bytes.
+            /// </summary>
+            public int Finish(ReadOnlySpan<byte> input, int available, Span<byte> output)
+            {
+                var partial = PartialRowLength(available);
+
+                if (partial > 0)
+                {
+                    DecodeNextRow(input, output, partial);
+                }
+
+                return DecodedLength;
+            }
+
+            /// <summary>
+            /// The length the decoded data has once the input ends after <paramref name="available"/>
+            /// bytes: the rows decoded so far, the complete rows not yet decoded, plus a padded row if
+            /// input for part of one is left over.
+            /// </summary>
+            public int FinalLength(int available)
+            {
+                var rows = (available - ConsumedLength) / stride;
+
+                return DecodedLength + (rows * rowLength) + (PartialRowLength(available) > 0 ? rowLength : 0);
+            }
+
+            /// <summary>
+            /// How large the buffer has to be for <see cref="Finish"/>: room for the padded last row,
+            /// either at the start of the output or, when rows stay in place, where its input lies.
+            /// </summary>
+            public int RequiredCapacity(int available)
+            {
+                if (PartialRowLength(available) == 0)
+                {
+                    return available;
+                }
+
+                return compact ? FinalLength(available) : ConsumedLength + stride;
+            }
+
+            /// <summary>
+            /// Decodes a last row that was cut short, padding it with zeros, and returns the length of the
+            /// decoded data. The buffer must hold at least <see cref="RequiredCapacity"/> bytes.
+            /// </summary>
+            public int Finish(Span<byte> buffer, int available)
+            {
+                var partial = PartialRowLength(available);
+
+                if (partial > 0)
+                {
+                    DecodeNextRow(buffer, partial);
+                }
+
+                return DecodedLength;
+            }
+
+            /// <summary>
+            /// Copies the decoded rows to <paramref name="destination"/>, which must hold
+            /// <see cref="DecodedLength"/> bytes. When the rows stayed in place this is where the filter
+            /// type bytes between them are left out.
+            /// </summary>
+            public void CopyTo(ReadOnlySpan<byte> buffer, Span<byte> destination)
+            {
+                if (compact || stride == rowLength)
+                {
+                    buffer.Slice(0, DecodedLength).CopyTo(destination);
+                    return;
+                }
+
+                var rows = DecodedLength / rowLength;
+
+                for (var row = 0; row < rows; row++)
+                {
+                    buffer.Slice((row * stride) + 1, rowLength).CopyTo(destination.Slice(row * rowLength, rowLength));
+                }
+            }
+
+            /// <summary>
+            /// How many bytes of row data are left over after the complete rows, whether or not those
+            /// have been decoded yet. A trailing filter type byte with nothing after it is not a row.
+            /// </summary>
+            private int PartialRowLength(int available)
+            {
+                var tail = (available - ConsumedLength) % stride;
+
+                return Math.Max(0, stride == rowLength ? tail : tail - 1);
+            }
+
+            /// <summary>
+            /// Decodes the next row in place, or moves it up to <see cref="DecodedLength"/> first when
+            /// the decoder compacts, padding it to the row length if it is short.
+            /// </summary>
+            private void DecodeNextRow(Span<byte> buffer, int dataLength) => DecodeNextRow(buffer, buffer, dataLength);
+
+            /// <summary>
+            /// Decodes the next row of <paramref name="input"/> against the row before it. A compacting
+            /// decoder moves the row up to <see cref="DecodedLength"/> in <paramref name="output"/>,
+            /// which may be the input buffer itself; one that decodes in place leaves the row where its
+            /// input lies, with the row before it one stride back. A short last row is padded with
+            /// zeros, which the caller made room for.
+            /// </summary>
+            private void DecodeNextRow(ReadOnlySpan<byte> input, Span<byte> output, int dataLength)
+            {
+                var isPng = stride != rowLength;
+                var filterType = isPng ? input[ConsumedLength] : (byte)0;
+                var sourceStart = ConsumedLength + (isPng ? 1 : 0);
+                var source = input.Slice(sourceStart, dataLength);
+
+                var rowStart = compact ? DecodedLength : sourceStart;
+                var row = output.Slice(rowStart, rowLength);
+
+                ReadOnlySpan<byte> previous;
+                if (DecodedLength == 0)
+                {
+                    // The row above the first row is all zeros, and no filter needs it spelled out:
+                    // Up adds nothing, Paeth predicts the left pixel because the distances above are
+                    // no better, and Average adds half the left pixel. So the first row is decoded
+                    // as None, Sub or the half-left Average, and no zero row is ever allocated.
+                    previous = default;
+
+                    if (filterType == PngUp)
                     {
-                        // for 8 bits per component it is the same algorithm as PRED SUB of PNG format
-                        for (int p = bytesPerPixel; p < rowLength; p++)
-                        {
-                            int sub = actline[p] & 0xff;
-                            int left = actline[p - bytesPerPixel] & 0xff;
-                            actline[p] = (byte)(sub + left);
-                        }
+                        filterType = PngNone;
                     }
-                    else if (bitsPerComponent == 16)
+                    else if (filterType == PngPaeth)
                     {
-                        for (int p = bytesPerPixel; p < rowLength - 1; p += 2)
-                        {
-                            int sub = ((actline[p] & 0xff) << 8) + (actline[p + 1] & 0xff);
-                            int left = ((actline[p - bytesPerPixel] & 0xff) << 8) + (actline[p - bytesPerPixel + 1] & 0xff);
-                            int sum = sub + left;
-                            actline[p] = (byte)((sum >> 8) & 0xff);
-                            actline[p + 1] = (byte)(sum & 0xff);
-                        }
+                        filterType = PngSub;
                     }
-                    else if (bitsPerComponent == 1 && colors == 1)
+                }
+                else
+                {
+                    previous = output.Slice(rowStart - (compact ? rowLength : stride), rowLength);
+                }
+
+                if (isPng && dataLength == rowLength && (filterType == PngSub || filterType == PngUp))
+                {
+                    // The two common filters read the residuals where they lie and write the
+                    // decoded row where it goes, so the move up over the filter type byte and the
+                    // decoding are one pass over the row instead of two. In place, source and row
+                    // are the same bytes, which both filters take.
+                    if (filterType == PngSub)
                     {
-                        // bytesPerPixel cannot be used:
-                        // "A row shall occupy a whole number of bytes, rounded up if necessary.
-                        // Samples and their components shall be packed into bytes
-                        // from high-order to low-order bits."
-
-                        for (int p = 0; p < rowLength; p++)
-                        {
-                            for (int bit = 7; bit >= 0; --bit)
-                            {
-                                int sub = (actline[p] >> bit) & 1;
-                                if (p == 0 && bit == 7)
-                                {
-                                    continue;
-                                }
-
-                                int left;
-                                if (bit == 7)
-                                {
-                                    // use bit #0 from previous byte
-                                    left = actline[p - 1] & 1;
-                                }
-                                else
-                                {
-                                    // use "previous" bit
-                                    left = (actline[p] >> (bit + 1)) & 1;
-                                }
-
-                                if (((sub + left) & 1) == 0)
-                                {
-                                    // reset bit
-                                    actline[p] &= (byte)~(1 << bit);
-                                }
-                                else
-                                {
-                                    // set bit
-                                    actline[p] |= (byte)(1 << bit);
-                                }
-                            }
-                        }
+                        Sub(source, row, bytesPerPixel);
                     }
                     else
                     {
-                        // everything else, i.e. bpc 2 and 4, but has been tested for bpc 1 and 8 too
-                        int elements = columns * colors;
-                        for (int p = colors; p < elements; ++p)
+                        Up(source, row, previous);
+                    }
+                }
+                else
+                {
+                    // A compacting decoder may write to another buffer, so the row is copied even
+                    // where it does not move; in place, source and row are the same bytes.
+                    if (compact)
+                    {
+                        source.CopyTo(row);
+                    }
+
+                    if (dataLength < rowLength)
+                    {
+                        row.Slice(dataLength).Clear();
+                    }
+
+                    if (isPng)
+                    {
+                        if (filterType == PngAverage && DecodedLength == 0)
                         {
-                            int bytePosSub = p * bitsPerComponent / 8;
-                            int bitPosSub = 8 - p * bitsPerComponent % 8 - bitsPerComponent;
-                            int bytePosLeft = (p - colors) * bitsPerComponent / 8;
-                            int bitPosLeft = 8 - (p - colors) * bitsPerComponent % 8 - bitsPerComponent;
-                            
-                            int sub = GetBitSeq(actline[bytePosSub], bitPosSub, bitsPerComponent);
-                            int left = GetBitSeq(actline[bytePosLeft], bitPosLeft, bitsPerComponent);
-                            actline[bytePosSub] = (byte)CalcSetBitSeq(actline[bytePosSub], bitPosSub, bitsPerComponent, sub + left);
-                        }
-                    }
-                    break;
-
-                case 10:
-                    // PRED NONE
-                    // do nothing
-                    break;
-
-                case 11:
-                    // PRED SUB
-                    for (int p = bytesPerPixel; p < rowLength; p++)
-                    {
-                        int sub = actline[p];
-                        int left = actline[p - bytesPerPixel];
-                        actline[p] = (byte)(sub + left);
-                    }
-                    break;
-
-                case 12:
-                    // PRED UP
-                    for (int p = 0; p < rowLength; p++)
-                    {
-                        int up = actline[p] & 0xff;
-                        int prior = lastline[p] & 0xff;
-                        actline[p] = (byte)((up + prior) & 0xff);
-                    }
-                    break;
-
-                case 13:
-                    // PRED AVG
-                    for (int p = 0; p < rowLength; p++)
-                    {
-                        int avg = actline[p] & 0xff;
-                        int left = p - bytesPerPixel >= 0 ? actline[p - bytesPerPixel] & 0xff : 0;
-                        int up = lastline[p] & 0xff;
-                        actline[p] = (byte)((avg + (left + up) / 2) & 0xff);
-                    }
-                    break;
-
-                case 14:
-                    // PRED PAETH
-                    for (int p = 0; p < rowLength; p++)
-                    {
-                        int paeth = actline[p] & 0xff;
-                        int a = p - bytesPerPixel >= 0 ? actline[p - bytesPerPixel] & 0xff : 0;
-                        int b = lastline[p] & 0xff;
-                        int c = p - bytesPerPixel >= 0 ? lastline[p - bytesPerPixel] & 0xff : 0;
-                        int value = a + b - c;
-                        int absa = Math.Abs(value - a);
-                        int absb = Math.Abs(value - b);
-                        int absc = Math.Abs(value - c);
-                        
-                        if (absa <= absb && absa <= absc)
-                        {
-                            actline[p] = (byte)((paeth + a) & 0xff);
-                        }
-                        else if (absb <= absc)
-                        {
-                            actline[p] = (byte)((paeth + b) & 0xff);
+                            AverageFirstRow(row, bytesPerPixel);
                         }
                         else
                         {
-                            actline[p] = (byte)((paeth + c) & 0xff);
+                            DecodePngRow(filterType, row, previous, bytesPerPixel);
                         }
                     }
-                    break;
+                    else if (predictor == TiffPredictor)
+                    {
+                        DecodeTiffRow(row, colors, bitsPerComponent, columns);
+                    }
+                }
 
+                // Values 3 to 9 are not defined and leave the rows as they are.
+
+                ConsumedLength += (isPng ? 1 : 0) + dataLength;
+                DecodedLength += rowLength;
+            }
+        }
+
+        /// <summary>
+        /// The Average filter on the first row, whose row above is all zeros: every byte adds half of
+        /// the byte one pixel to its left, and the first pixel adds nothing.
+        /// </summary>
+        private static void AverageFirstRow(Span<byte> row, int bytesPerPixel)
+        {
+            for (var i = bytesPerPixel; i < row.Length; i++)
+            {
+                row[i] += (byte)(row[i - bytesPerPixel] >> 1);
+            }
+        }
+
+        private static void DecodePngRow(byte filterType, Span<byte> row, ReadOnlySpan<byte> previous, int bytesPerPixel)
+        {
+            switch (filterType)
+            {
+                case PngNone:
+                    break;
+                case PngSub:
+                    Sub(row, bytesPerPixel);
+                    break;
+                case PngUp:
+                    Up(row, previous);
+                    break;
+                case PngAverage:
+                    Average(row, previous, bytesPerPixel);
+                    break;
+                case PngPaeth:
+                    Paeth(row, previous, bytesPerPixel);
+                    break;
                 default:
+                    // Not a filter type the PNG specification knows; the row is left as it is.
                     break;
             }
         }
 
-        public static int CalculateRowLength(int colors, int bitsPerComponent, int columns)
-        {
-            int bitsPerPixel = colors * bitsPerComponent;
-            return (columns * bitsPerPixel + 7) / 8;
-        }
+        /// <summary>Each byte was stored as the difference to the byte one pixel to its left.</summary>
+        private static void Sub(Span<byte> row, int bytesPerPixel) => Sub(row, row, bytesPerPixel);
 
         /// <summary>
-        /// Get value from bit interval from a byte.
+        /// Undoes Sub while reading the residuals from <paramref name="source"/> and writing the row to
+        /// <paramref name="row"/>. The two may be the same span, or overlap with the row starting
+        /// before its source in one buffer, which is how a row moves up over its filter type byte:
+        /// every byte is read before the byte at its index is written, and nothing is read from
+        /// behind the write position, so the move and the decoding happen in one pass.
         /// </summary>
-        private static int GetBitSeq(int by, int startBit, int bitSize)
+        private static void Sub(ReadOnlySpan<byte> source, Span<byte> row, int bytesPerPixel)
         {
-            int mask = ((1 << bitSize) - 1);
-            return (by >> startBit) & mask;
-        }
-
-        /// <summary>
-        /// Set value in a bit interval and return that value.
-        /// </summary>
-        /// <param name="by"></param>
-        /// <param name="startBit"></param>
-        /// <param name="bitSize"></param>
-        /// <param name="val"></param>
-        /// <returns></returns>
-        private static int CalcSetBitSeq(int by, int startBit, int bitSize, int val)
-        {
-            int mask = ((1 << bitSize) - 1);
-            int truncatedVal = val & mask;
-            mask = ~(mask << startBit);
-            return (by & mask) | (truncatedVal << startBit);
-        }
-
-        /// <summary>
-        /// Wraps a <see cref="Stream"/> in a predictor decoding stream as necessary.
-        /// <para>If no predictor is specified by the parameters, the original stream is returned as is.</para>
-        /// </summary>
-        /// <param name="outStream">The stream to which decoded data should be written.</param>
-        /// <param name="predictor"></param>
-        /// <param name="colors"></param>
-        /// <param name="bitsPerComponent"></param>
-        /// <param name="columns"></param>
-        /// <returns>A <see cref="Stream"/> is returned, which will write decoded data
-        /// into the given stream. If no predictor is specified, the original stream is returned.</returns>
-        public static Stream WrapPredictor(Stream outStream, int predictor, int colors, int bitsPerComponent, int columns)
-        {
-            if (predictor > 1)
+#if NET7_0_OR_GREATER
+            if (HasByteShuffle && bytesPerPixel <= SubMasks.MaxBytesPerPixel && row.Length >= 2 * Vector128<byte>.Count)
             {
-                return new PredictorOutputStream(outStream, predictor, colors, bitsPerComponent, columns);
+                SubVectorized(source, row, bytesPerPixel);
+                return;
             }
+#endif
 
-            return outStream;
-        }
+            // The first pixel has nothing to its left and is copied as it is.
+            var head = Math.Min(bytesPerPixel, row.Length);
+            source.Slice(0, head).CopyTo(row);
 
-        /**
-         * Output stream that implements predictor decoding. Data is buffered until a complete
-         * row is available, which is then decoded and written to the underlying stream.
-         * The previous row is retained for decoding the next row.
-         */
-        private sealed class PredictorOutputStream : Stream
-        {
-            private readonly Stream _baseStream;
-            private int _predictor;
-            private readonly int _colors;
-            private readonly int _bitsPerComponent;
-            private readonly int _columns;
-            private readonly int _rowLength;
-            private readonly bool _predictorPerRow;
-            private byte[] _currentRow;
-            private byte[] _lastRow;
-            private int _currentRowData = 0;
-            private bool _predictorRead = false;
+            // Every byte depends on the byte one pixel back, which the plain loop has only just
+            // stored: reading it back costs the store-to-load latency per byte, and that, not the
+            // arithmetic, is what bounds the loop. For the usual pixel widths the left pixel is
+            // carried in locals instead, so the chain is a register add.
+            var i = head;
 
-            public PredictorOutputStream(Stream baseStream, int predictor, int colors, int bitsPerComponent, int columns)
+            switch (bytesPerPixel)
             {
-                _baseStream = baseStream;
-                _predictor = predictor;
-                _colors = colors;
-                _bitsPerComponent = bitsPerComponent;
-                _columns = columns;
-                _rowLength = CalculateRowLength(colors, bitsPerComponent, columns);
-                _predictorPerRow = predictor >= 10;
-                _currentRow = new byte[_rowLength];
-                _lastRow = new byte[_rowLength];
-            }
-
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                int currentOffset = offset;
-                int maxOffset = currentOffset + count;
-                while (currentOffset < maxOffset)
+                case 1 when row.Length >= 1:
                 {
-                    if (_predictorPerRow && _currentRowData == 0 && !_predictorRead)
-                    {
-                        // PNG predictor; each row starts with predictor type (0, 1, 2, 3, 4)
-                        // read per line predictor, add 10 to tread value 0 as 10, 1 as 11, ...
-                        _predictor = buffer[currentOffset] + 10;
-                        currentOffset++;
-                        _predictorRead = true;
-                    }
-                    else
-                    {
-                        int toRead = Math.Min(_rowLength - _currentRowData, maxOffset - currentOffset);
-                        Array.Copy(buffer, currentOffset, _currentRow, _currentRowData, toRead);
-                        _currentRowData += toRead;
-                        currentOffset += toRead;
+                    var a = row[0];
 
-                        // current row is filled, decode it, write it to underlying stream,
-                        // and reset the state.
-                        if (_currentRowData == _currentRow.Length)
+                    for (; i < row.Length; i++)
+                    {
+                        a = row[i] = (byte)(source[i] + a);
+                    }
+
+                    break;
+                }
+
+                case 3 when row.Length >= 3:
+                {
+                    var a = row[0];
+                    var b = row[1];
+                    var c = row[2];
+
+                    for (; i + 2 < row.Length; i += 3)
+                    {
+                        a = row[i] = (byte)(source[i] + a);
+                        b = row[i + 1] = (byte)(source[i + 1] + b);
+                        c = row[i + 2] = (byte)(source[i + 2] + c);
+                    }
+
+                    break;
+                }
+
+                case 4 when row.Length >= 4:
+                {
+                    var a = row[0];
+                    var b = row[1];
+                    var c = row[2];
+                    var d = row[3];
+
+                    for (; i + 3 < row.Length; i += 4)
+                    {
+                        a = row[i] = (byte)(source[i] + a);
+                        b = row[i + 1] = (byte)(source[i + 1] + b);
+                        c = row[i + 2] = (byte)(source[i + 2] + c);
+                        d = row[i + 3] = (byte)(source[i + 3] + d);
+                    }
+
+                    break;
+                }
+            }
+
+            // Other widths, and whatever is left when the row is not a whole number of pixels.
+            for (; i < row.Length; i++)
+            {
+                row[i] = (byte)(source[i] + row[i - bytesPerPixel]);
+            }
+        }
+
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Whether the processor can permute the bytes of a vector by a runtime index vector. The
+        /// portable Vector128.Shuffle is only fast with constant indices; with computed ones it
+        /// falls back to a loop per byte, so the instruction is picked explicitly.
+        /// </summary>
+        private static bool HasByteShuffle => Ssse3.IsSupported || AdvSimd.Arm64.IsSupported;
+
+        /// <summary>
+        /// Permutes the bytes of <paramref name="vector"/>: lane i takes the byte at index i of the
+        /// input, or zero where the index is out of range (0x80 and above).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<byte> ShuffleBytes(Vector128<byte> vector, Vector128<byte> indices)
+        {
+            if (Ssse3.IsSupported)
+            {
+                return Ssse3.Shuffle(vector, indices);
+            }
+
+            if (AdvSimd.Arm64.IsSupported)
+            {
+                return AdvSimd.Arm64.VectorTableLookup(vector, indices);
+            }
+
+            return Vector128.Shuffle(vector, indices);
+        }
+
+        /// <summary>
+        /// Sub undone as a prefix sum: each output byte is the sum of every residual at the same
+        /// offset within a pixel up to and including its own. Within a vector that sum is formed in
+        /// log steps, shifting by one, two, four pixels and adding, and the last pixel of the vector
+        /// is carried into the next one. This is the approach of connorskees/simd-png; the scalar
+        /// loop is bound by the chain from each byte to the one a pixel back, this one is not.
+        /// </summary>
+        private static void SubVectorized(ReadOnlySpan<byte> source, Span<byte> row, int bytesPerPixel)
+        {
+            var block = SubMasks.Block[bytesPerPixel];
+            var shifts = SubMasks.Shifts[bytesPerPixel];
+            var carryMask = SubMasks.Carry[bytesPerPixel];
+
+            var carry = Vector128<byte>.Zero;
+            var i = 0;
+            var current = Vector128.Create<byte>(source.Slice(0, Vector128<byte>.Count));
+
+            // Every store is a whole vector, so the vector loop stops where one would reach past
+            // the row and the scalar loop finishes. The block is shorter than a vector when the
+            // pixel width does not divide 16, and the store then spills into the next block; the
+            // next block is therefore loaded before the store. After the last store the spilt
+            // residuals may be gone from the buffer, so they are decoded from the loaded vector.
+            while (i + Vector128<byte>.Count <= row.Length)
+            {
+                var hasNext = i + block + Vector128<byte>.Count <= row.Length;
+                var next = hasNext ? Vector128.Create<byte>(source.Slice(i + block, Vector128<byte>.Count)) : default;
+
+                var sum = current;
+                foreach (var shift in shifts)
+                {
+                    sum += ShuffleBytes(sum, shift);
+                }
+
+                sum += carry;
+                sum.CopyTo(row.Slice(i, Vector128<byte>.Count));
+
+                carry = ShuffleBytes(sum, carryMask);
+
+                if (!hasNext)
+                {
+                    var spillEnd = Math.Min(i + Vector128<byte>.Count, row.Length);
+
+                    for (var j = i + block; j < spillEnd; j++)
+                    {
+                        row[j] = (byte)(current.GetElement(j - i) + row[j - bytesPerPixel]);
+                    }
+
+                    i = spillEnd;
+                    break;
+                }
+
+                i += block;
+                current = next;
+            }
+
+            for (; i < row.Length; i++)
+            {
+                row[i] = (byte)(source[i] + row[i - bytesPerPixel]);
+            }
+        }
+
+        /// <summary>The shuffle masks <see cref="SubVectorized"/> needs, per pixel width.</summary>
+        private static class SubMasks
+        {
+            public const int MaxBytesPerPixel = 8;
+
+            /// <summary>How many bytes a vector handles: the whole pixels that fit into it.</summary>
+            public static readonly int[] Block = new int[MaxBytesPerPixel + 1];
+
+            /// <summary>The masks that shift the vector up by one, two, four pixels, as far as the block reaches.</summary>
+            public static readonly Vector128<byte>[][] Shifts = new Vector128<byte>[MaxBytesPerPixel + 1][];
+
+            /// <summary>The mask that repeats the block's last pixel across the vector.</summary>
+            public static readonly Vector128<byte>[] Carry = new Vector128<byte>[MaxBytesPerPixel + 1];
+
+            static SubMasks()
+            {
+                const byte zero = 0x80;
+
+                Span<byte> indices = stackalloc byte[Vector128<byte>.Count];
+
+                for (var bytesPerPixel = 1; bytesPerPixel <= MaxBytesPerPixel; bytesPerPixel++)
+                {
+                    var block = Vector128<byte>.Count / bytesPerPixel * bytesPerPixel;
+                    Block[bytesPerPixel] = block;
+
+                    var shifts = new List<Vector128<byte>>();
+
+                    for (var shift = bytesPerPixel; shift < block; shift *= 2)
+                    {
+                        for (var lane = 0; lane < indices.Length; lane++)
                         {
-                            DecodeAndWriteRow();
+                            // An index outside the vector selects zero.
+                            indices[lane] = lane >= shift ? (byte)(lane - shift) : zero;
+                        }
+
+                        shifts.Add(Vector128.Create<byte>(indices));
+                    }
+
+                    Shifts[bytesPerPixel] = shifts.ToArray();
+
+                    for (var lane = 0; lane < indices.Length; lane++)
+                    {
+                        indices[lane] = (byte)(block - bytesPerPixel + (lane % bytesPerPixel));
+                    }
+
+                    Carry[bytesPerPixel] = Vector128.Create<byte>(indices);
+                }
+            }
+        }
+#endif
+
+        /// <summary>Each byte was stored as the difference to the byte above it.</summary>
+        private static void Up(Span<byte> row, ReadOnlySpan<byte> previous) => Up(row, row, previous);
+
+        /// <summary>
+        /// Undoes Up while reading the residuals from <paramref name="source"/> and writing the row to
+        /// <paramref name="row"/>; the two may be the same, or overlap as described for Sub.
+        /// </summary>
+        private static void Up(ReadOnlySpan<byte> source, Span<byte> row, ReadOnlySpan<byte> previous)
+        {
+            // No byte depends on another in this row, so whole vectors of them are added at once.
+            // Each vector is read from the source and the row above before it is written, and the
+            // write never reaches the vectors still to be read.
+            var i = 0;
+
+            if (Vector.IsHardwareAccelerated && row.Length >= Vector<byte>.Count)
+            {
+                var rowVectors = MemoryMarshal.Cast<byte, Vector<byte>>(row);
+                var sourceVectors = MemoryMarshal.Cast<byte, Vector<byte>>(source.Slice(0, row.Length));
+                var previousVectors = MemoryMarshal.Cast<byte, Vector<byte>>(previous.Slice(0, row.Length));
+
+                for (var v = 0; v < rowVectors.Length; v++)
+                {
+                    rowVectors[v] = sourceVectors[v] + previousVectors[v];
+                }
+
+                i = rowVectors.Length * Vector<byte>.Count;
+            }
+
+            for (; i < row.Length; i++)
+            {
+                row[i] = (byte)(source[i] + previous[i]);
+            }
+        }
+
+        /// <summary>Each byte was stored as the difference to the mean of the bytes to its left and above it.</summary>
+        private static void Average(Span<byte> row, ReadOnlySpan<byte> previous, int bytesPerPixel)
+        {
+            // In the first pixel there is nothing to the left, so the mean is half the byte above.
+            var head = Math.Min(bytesPerPixel, row.Length);
+
+            for (var h = 0; h < head; h++)
+            {
+                row[h] += (byte)(previous[h] >> 1);
+            }
+
+            // The left neighbour is carried in locals for the usual pixel widths, as in Sub. A
+            // vector per pixel, as for Paeth, was measured and is slower here: the arithmetic is
+            // too little to pay for moving each pixel into a vector and back.
+            var i = head;
+
+            switch (bytesPerPixel)
+            {
+                case 1 when row.Length >= 1:
+                {
+                    var a = row[0];
+
+                    for (; i < row.Length; i++)
+                    {
+                        a = row[i] += (byte)((a + previous[i]) >> 1);
+                    }
+
+                    break;
+                }
+
+                case 3 when row.Length >= 3:
+                {
+                    var a = row[0];
+                    var b = row[1];
+                    var c = row[2];
+
+                    for (; i + 2 < row.Length; i += 3)
+                    {
+                        a = row[i] += (byte)((a + previous[i]) >> 1);
+                        b = row[i + 1] += (byte)((b + previous[i + 1]) >> 1);
+                        c = row[i + 2] += (byte)((c + previous[i + 2]) >> 1);
+                    }
+
+                    break;
+                }
+
+                case 4 when row.Length >= 4:
+                {
+                    var a = row[0];
+                    var b = row[1];
+                    var c = row[2];
+                    var d = row[3];
+
+                    for (; i + 3 < row.Length; i += 4)
+                    {
+                        a = row[i] += (byte)((a + previous[i]) >> 1);
+                        b = row[i + 1] += (byte)((b + previous[i + 1]) >> 1);
+                        c = row[i + 2] += (byte)((c + previous[i + 2]) >> 1);
+                        d = row[i + 3] += (byte)((d + previous[i + 3]) >> 1);
+                    }
+
+                    break;
+                }
+            }
+
+            for (; i < row.Length; i++)
+            {
+                row[i] += (byte)((row[i - bytesPerPixel] + previous[i]) >> 1);
+            }
+        }
+
+        /// <summary>
+        /// Each byte was stored as the difference to whichever of the bytes to its left (a), above it (b)
+        /// and above-left (c) lies closest to a + b - c.
+        /// </summary>
+        private static void Paeth(Span<byte> row, ReadOnlySpan<byte> previous, int bytesPerPixel)
+        {
+            // In the first pixel a and c are zero, and the estimate then always picks b.
+            var head = Math.Min(bytesPerPixel, row.Length);
+
+            for (var h = 0; h < head; h++)
+            {
+                row[h] += previous[h];
+            }
+
+#if NET7_0_OR_GREATER
+            if (Vector128.IsHardwareAccelerated && (bytesPerPixel == 3 || bytesPerPixel == 4) && row.Length >= bytesPerPixel + 2 * sizeof(uint))
+            {
+                PaethVectorized(row, previous, bytesPerPixel);
+                return;
+            }
+#endif
+
+            // Carrying the left neighbour in locals, as Sub and Average do, was measured and gains
+            // nothing here: the prediction itself is the long dependency, not the reload.
+            for (var i = head; i < row.Length; i++)
+            {
+                row[i] += Predict(row[i - bytesPerPixel], previous[i], previous[i - bytesPerPixel]);
+            }
+        }
+
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// Paeth a pixel at a time with the pixel's bytes in 16-bit lanes, the way libpng, wuffs and
+        /// ImageSharp do it: the differences, their absolute values and the choice between a, b and c
+        /// are each one vector instruction for the whole pixel, and the decoded pixel is carried
+        /// straight into the next step as its left neighbour. Only the pixels are serial.
+        /// </summary>
+        private static void PaethVectorized(Span<byte> row, ReadOnlySpan<byte> previous, int bytesPerPixel)
+        {
+            // Four bytes are loaded and stored per pixel. For three byte pixels the fourth byte is
+            // the next pixel's first residual, so that pixel's bytes are loaded before the store
+            // that spills into them, and the spilt byte is put back after the last pixel.
+            var i = bytesPerPixel;
+            var a = Widen(Load(row, 0));
+            var x = Load(row, i);
+
+            while (true)
+            {
+                var hasNext = i + bytesPerPixel + sizeof(uint) <= row.Length;
+                var next = hasNext ? Load(row, i + bytesPerPixel) : default;
+
+                var b = Widen(Load(previous, i));
+                var c = Widen(Load(previous, i - bytesPerPixel));
+
+                var pa = b - c;
+                var pb = a - c;
+                var pc = pa + pb;
+
+                pa = Vector128.Abs(pa);
+                pb = Vector128.Abs(pb);
+                pc = Vector128.Abs(pc);
+
+                var useA = Vector128.LessThanOrEqual(pa, pb) & Vector128.LessThanOrEqual(pa, pc);
+                var useB = Vector128.LessThanOrEqual(pb, pc);
+
+                var predicted = Vector128.ConditionalSelect(useA, a, Vector128.ConditionalSelect(useB, b, c));
+                var decoded = Widen(x) + predicted;
+
+                var pixel = Vector128.Narrow(decoded, decoded).AsByte();
+                Store(row, i, pixel);
+
+                a = Widen(pixel);
+                i += bytesPerPixel;
+
+                if (!hasNext)
+                {
+                    if (bytesPerPixel < sizeof(uint))
+                    {
+                        row[i] = x.GetElement(bytesPerPixel);
+                    }
+
+                    break;
+                }
+
+                x = next;
+            }
+
+            for (; i < row.Length; i++)
+            {
+                row[i] += Predict(row[i - bytesPerPixel], previous[i], previous[i - bytesPerPixel]);
+            }
+        }
+
+        /// <summary>Four bytes from <paramref name="offset"/>, in the low lanes of a vector.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<byte> Load(ReadOnlySpan<byte> data, int offset)
+        {
+            return Vector128.CreateScalar(BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset))).AsByte();
+        }
+
+        /// <summary>The low four bytes of <paramref name="pixel"/> to <paramref name="offset"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Store(Span<byte> data, int offset, Vector128<byte> pixel)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(data.Slice(offset), pixel.AsUInt32().ToScalar());
+        }
+
+        /// <summary>The low eight bytes as 16-bit lanes, wide enough for the differences Paeth needs.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<short> Widen(Vector128<byte> bytes)
+        {
+            return Vector128.WidenLower(bytes).AsInt16();
+        }
+#endif
+
+        /// <summary>
+        /// The Paeth predictor: whichever of a (left), b (above) and c (above-left) lies closest to
+        /// a + b - c, a first, then b, then c on ties, as the PNG specification orders it.
+        /// </summary>
+        /// <remarks>
+        /// Without branches. Image data makes the choice unpredictable, and a mispredicted branch
+        /// per byte costs more than the whole calculation. The distances are compared through sign
+        /// bits and the choice made with masks: notA is all ones when a loses to b or c, chooseC
+        /// when c beats b.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte Predict(int a, int b, int c)
+        {
+            var pa = b - c;
+            var pb = a - c;
+            var pc = pa + pb;
+
+            pa = (pa ^ (pa >> 31)) - (pa >> 31);
+            pb = (pb ^ (pb >> 31)) - (pb >> 31);
+            pc = (pc ^ (pc >> 31)) - (pc >> 31);
+
+            var notA = ((pb - pa) | (pc - pa)) >> 31;
+            var chooseC = (pc - pb) >> 31;
+            var bOrC = (b & ~chooseC) | (c & chooseC);
+
+            return (byte)((a & ~notA) | (bOrC & notA));
+        }
+
+        /// <summary>
+        /// Each sample was stored as the difference to the sample one pixel to its left, at whatever
+        /// width a sample has.
+        /// </summary>
+        private static void DecodeTiffRow(Span<byte> row, int colors, int bitsPerComponent, int columns)
+        {
+            var bytesPerPixel = ((colors * bitsPerComponent) + 7) / 8;
+
+            if (bitsPerComponent == 8)
+            {
+                // At a byte per sample this is the PNG Sub filter.
+                Sub(row, bytesPerPixel);
+            }
+            else if (bitsPerComponent == 16)
+            {
+                for (var i = bytesPerPixel; i < row.Length - 1; i += 2)
+                {
+                    var value = (row[i] << 8) + row[i + 1];
+                    var left = (row[i - bytesPerPixel] << 8) + row[i - bytesPerPixel + 1];
+                    var sum = value + left;
+
+                    row[i] = (byte)(sum >> 8);
+                    row[i + 1] = (byte)sum;
+                }
+            }
+            else if (bitsPerComponent == 1 && colors == 1)
+            {
+                // A row is a whole number of bytes with the samples packed from the high bit down,
+                // so a pixel is a bit and the pixel to its left is the bit above it, or the low bit
+                // of the byte before.
+                for (var i = 0; i < row.Length; i++)
+                {
+                    for (var bit = 7; bit >= 0; bit--)
+                    {
+                        if (i == 0 && bit == 7)
+                        {
+                            continue;
+                        }
+
+                        var value = (row[i] >> bit) & 1;
+                        var left = bit == 7 ? row[i - 1] & 1 : (row[i] >> (bit + 1)) & 1;
+
+                        if (((value + left) & 1) == 0)
+                        {
+                            row[i] &= (byte)~(1 << bit);
+                        }
+                        else
+                        {
+                            row[i] |= (byte)(1 << bit);
                         }
                     }
                 }
             }
-
-            private void DecodeAndWriteRow()
+            else
             {
-                DecodePredictorRow(_predictor, _colors, _bitsPerComponent, _columns, _currentRow, _lastRow);
-                _baseStream.Write(_currentRow, 0, _currentRow.Length);
-                FlipRows();
-            }
+                // Samples of 2 or 4 bits, and any other width, read and written bit field by bit field.
+                var samples = columns * colors;
+                var mask = (1 << bitsPerComponent) - 1;
 
-            /**
-             * Flips the row buffers (to avoid copying), and resets the current-row index
-             * and predictorRead flag
-             */
-            private void FlipRows()
-            {
-                (_lastRow, _currentRow) = (_currentRow, _lastRow);
-                _currentRowData = 0;
-                _predictorRead = false;
-            }
-
-            public override void Flush()
-            {
-                // The last row is allowed to be incomplete, and should be completed with zeros.
-                if (_currentRowData > 0)
+                for (var sample = colors; sample < samples; sample++)
                 {
-                    // public static void fill(int[] a, int fromIndex, int toIndex, int val)
-                    // Arrays.fill(currentRow, currentRowData, rowLength, (byte)0);
-                    _currentRow.AsSpan(_currentRowData, _rowLength - _currentRowData).Fill(byte.MinValue);
+                    var bytePosition = sample * bitsPerComponent / 8;
+                    var bitPosition = 8 - (sample * bitsPerComponent % 8) - bitsPerComponent;
+                    var leftBytePosition = (sample - colors) * bitsPerComponent / 8;
+                    var leftBitPosition = 8 - ((sample - colors) * bitsPerComponent % 8) - bitsPerComponent;
 
-                    DecodeAndWriteRow();
+                    var value = (row[bytePosition] >> bitPosition) & mask;
+                    var left = (row[leftBytePosition] >> leftBitPosition) & mask;
+                    var sum = (value + left) & mask;
+
+                    row[bytePosition] = (byte)((row[bytePosition] & ~(mask << bitPosition)) | (sum << bitPosition));
                 }
-                _baseStream.Flush();
             }
-
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                throw new NotSupportedException("Read not supported");
-            }
-
-            public override bool CanRead => false;
-            public override bool CanSeek => false;
-            public override bool CanWrite => true;
-            public override long Length => throw new NotSupportedException();
-            public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-            public override void SetLength(long value) => throw new NotSupportedException();
-            public override void WriteByte(byte value) => throw new NotSupportedException("Not supported");
         }
     }
 }

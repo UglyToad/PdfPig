@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Filters
+﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
     using UglyToad.PdfPig.Tokens;
@@ -46,11 +46,6 @@ namespace UglyToad.PdfPig.Filters
     public sealed class BrotliFilter : IFilter
     {
 #if NET || NETSTANDARD2_1_OR_GREATER
-        // Defaults are from ISO 32000, Clause 7.4.4.3, Table 8, shared with the Flate/LZW predictors.
-        private const int DefaultColors = 1;
-        private const int DefaultBitsPerComponent = 8;
-        private const int DefaultColumns = 1;
-
         /// <summary>
         /// Where the decompressed data starts out, as a multiple of the compressed length. Brotli
         /// reaches far higher ratios than this, but a bigger rent costs more than the doubling it
@@ -59,9 +54,6 @@ namespace UglyToad.PdfPig.Filters
         private const int InitialCapacityFactor = 2;
 
         private const int MinimumCapacity = 1024;
-
-        /// <summary>The largest array the runtime will hand out.</summary>
-        private const int MaximumCapacity = 0x7FFFFFC7;
 
         private const string InvalidStreamMessage =
             "Invalid Brotli compressed stream encountered. A stream using large window Brotli "
@@ -75,45 +67,46 @@ namespace UglyToad.PdfPig.Filters
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
-            var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
-            var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
-            var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
 
-            var decoded = Decompress(input);
-
-            // Below 2 PngPredictor.WrapPredictor hands the stream straight back, and most streams
-            // carry no predictor at all, so there is nothing to copy through a second stream.
-            if (predictor <= 1)
-            {
-                return decoded;
-            }
-
-            using var output = new MemoryStream(decoded.Length);
-
-            using (var predicted = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
-            {
-                predicted.Write(decoded, 0, decoded.Length);
-                predicted.Flush();
-            }
-
-            return output.AsMemory();
-        }
-
-        private static byte[] Decompress(Memory<byte> input)
-        {
             if (input.Length == 0)
             {
                 // No bytes is not a Brotli stream at all, but PDFs do carry empty streams and the
                 // other filters hand back nothing rather than object to them.
-                return [];
+                return Memory<byte>.Empty;
             }
 
             // The decoder writes straight into this buffer, so there is no copy per block, and the
-            // buffer is rented because only the finished length is handed to the caller.
-            var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * InitialCapacityFactor)));
+            // buffer is rented because only the finished length is handed to the caller. It is sized
+            // from the dictionary where that states the decoded length, as embedded files do. A
+            // single Brotli copy may run to 16 MB, so no expansion ratio bounds what a stated length
+            // may plausibly be; only the absolute ceiling does.
+            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, DecodeBuffer.UnboundedExpansion));
 
+            try
+            {
+                var total = Decompress(input, ref buffer);
+
+                // The Flate filter decodes rows as they inflate, straight into the result, which
+                // spares it a buffer for the whole inflated stream. The Brotli decoder hands over
+                // whatever fits, not rows, so the stream is decompressed whole and the predictor
+                // is undone in the pass that moves the data out of the rented buffer. Measured on
+                // a predicted image that pass costs what the plain copy did, so a row-by-row path
+                // for Brotli would have little to gain.
+                return PngPredictor.DecodeToArray(buffer.AsSpan(0, total), predictor, colors, bitsPerComponent, columns);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
+        /// <summary>
+        /// Decompresses the whole stream into <paramref name="buffer"/>, growing it as needed, and returns
+        /// the number of bytes decompressed.
+        /// </summary>
+        private static int Decompress(Memory<byte> input, ref byte[] buffer)
+        {
             var total = 0;
 
             try
@@ -132,16 +125,7 @@ namespace UglyToad.PdfPig.Filters
                     if (status == OperationStatus.Done)
                     {
                         // Anything left in the input after the stream ended is not ours to read.
-#if NET
-                        // Every byte is overwritten by the copy below, so the runtime does not
-                        // need to clear the array first.
-                        var decoded = GC.AllocateUninitializedArray<byte>(total);
-#else
-                        var decoded = new byte[total];
-#endif
-                        buffer.AsSpan(0, total).CopyTo(decoded);
-
-                        return decoded;
+                        return total;
                     }
 
                     if (status == OperationStatus.NeedMoreData)
@@ -159,29 +143,13 @@ namespace UglyToad.PdfPig.Filters
                         throw new CorruptCompressedDataException(InvalidStreamMessage);
                     }
 
-                    var grownLength = (int)Math.Min(MaximumCapacity, (long)buffer.Length * 2);
-
-                    if (grownLength == buffer.Length)
-                    {
-                        throw new CorruptCompressedDataException(
-                            "Brotli compressed stream decodes to more than can be held in one array.");
-                    }
-
-                    var grown = ArrayPool<byte>.Shared.Rent(grownLength);
-
-                    buffer.AsSpan(0, total).CopyTo(grown);
-                    ArrayPool<byte>.Shared.Return(buffer);
-
-                    buffer = grown;
+                    // The buffer doubles; a stream too large for one array is refused there.
+                    DecodeBuffer.Grow(ref buffer, total, buffer.Length + 1L);
                 }
             }
             catch (Exception ex) when (ex is InvalidOperationException || ex is InvalidDataException)
             {
                 throw new CorruptCompressedDataException(InvalidStreamMessage, ex);
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 #else

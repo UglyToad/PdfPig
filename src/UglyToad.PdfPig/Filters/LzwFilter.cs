@@ -3,7 +3,6 @@
     using System;
     using System.Buffers;
     using System.Buffers.Binary;
-    using System.IO;
     using Core;
     using Lzw;
     using Tokens;
@@ -20,10 +19,6 @@
     /// </remarks>
     public sealed class LzwFilter : IFilter
     {
-        private const int DefaultColors = 1;
-        private const int DefaultBitsPerComponent = 8;
-        private const int DefaultColumns = 1;
-
         private const int ClearTable = 256;
         private const int EodMarker = 257;
 
@@ -44,6 +39,14 @@
         /// <summary>How much larger than the input the output is assumed to be when the buffer is first rented.</summary>
         private const int ExpectedExpansion = 3;
 
+        /// <summary>
+        /// The most LZW can expand by when the encoder clears the table as the specification
+        /// requires: strings grow by a byte per code, so a run yields about 7.4 MB from the 5.4 KB
+        /// of codes that fill a 12-bit table, roughly 1400 to one. A decoder that goes on with a
+        /// full table, as this one does, would allow about 2600; the stricter figure is the bound.
+        /// </summary>
+        private const int MaximumExpansion = 1400;
+
         /// <summary>The literal bytes 0 to 255 are written ahead of the output so that a literal code is a range of the buffer like any other.</summary>
         private const int LiteralPreamble = 256;
 
@@ -51,9 +54,6 @@
 
         /// <summary>How many bytes past the written output are kept spare, so that <see cref="Copy"/> may move whole words.</summary>
         private const int CopySlack = 2 * sizeof(ulong);
-
-        /// <summary>The largest array the runtime will hand out.</summary>
-        private const int MaximumCapacity = 0x7FFFFFC7;
 
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
@@ -63,51 +63,32 @@
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
+            var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
 
             var earlyChange = parameters.GetIntOrDefault(NameToken.EarlyChange, 1);
-
-            var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
-            var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
-            var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
-
-            return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns);
+            return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns, streamDictionary);
         }
 
-        private static Memory<byte> Decode(ReadOnlySpan<byte> input, bool isEarlyChange, int predictor, int colors, int bitsPerComponent, int columns)
+        private static Memory<byte> Decode(ReadOnlySpan<byte> input, bool isEarlyChange, int predictor, int colors, int bitsPerComponent, int columns, DictionaryToken streamDictionary)
         {
             // The output is decoded into a rented buffer and only the finished length is handed to
-            // the caller, so nothing oversized stays alive behind the result.
+            // the caller, so nothing oversized stays alive behind the result. The buffer is sized
+            // from the dictionary where that states the decoded length, plus the literal preamble
+            // the decoder keeps in front of the data.
             var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(MaximumCapacity, Math.Max(MinimumCapacity, (long)input.Length * ExpectedExpansion)));
+                (int)Math.Min(DecodeBuffer.MaximumCapacity, (long)DecodeBuffer.Capacity(input.Length, streamDictionary, ExpectedExpansion, MinimumCapacity, MaximumExpansion) + LiteralPreamble));
 
             try
             {
                 var length = Decode(input, isEarlyChange, ref buffer);
 
-                // Below 2 PngPredictor.WrapPredictor hands the stream straight back, and most
-                // streams carry no predictor at all, so there is nothing to copy through a stream.
-                if (predictor <= 1)
-                {
-#if NET
-                    // Every byte is overwritten by the copy, so the runtime need not clear the array.
-                    var decoded = GC.AllocateUninitializedArray<byte>(length);
-#else
-                    var decoded = new byte[length];
-#endif
-                    buffer.AsSpan(LiteralPreamble, length).CopyTo(decoded);
-
-                    return decoded;
-                }
-
-                using (var output = new MemoryStream(length))
-                using (var predicted = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
-                {
-                    predicted.Write(buffer, LiteralPreamble, length);
-                    predicted.Flush();
-
-                    return output.AsMemory();
-                }
+                // The Flate filter decodes rows as they inflate, straight into the result, which
+                // spares it a buffer for the whole inflated stream. The LZW decoder needs that
+                // buffer anyway, since its table is the output it has written so far, so the
+                // stream is decoded whole and the predictor is undone in the pass that moves the
+                // data out of the rented buffer, as the Brotli filter does too. Most streams carry
+                // no predictor at all, and then the pass is the copy.
+                return PngPredictor.DecodeToArray(buffer.AsSpan(LiteralPreamble, length), predictor, colors, bitsPerComponent, columns);
             }
             finally
             {
@@ -179,7 +160,7 @@
                     {
                         sequenceLength = lengths[code];
 
-                        EnsureCapacity(ref output, position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack));
 
                         Copy(output, offsets[code], position, sequenceLength);
                     }
@@ -190,7 +171,7 @@
                         // repeats itself immediately.
                         sequenceLength = previousLength + 1;
 
-                        EnsureCapacity(ref output, position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack));
 
                         Copy(output, previousPosition, position, previousLength);
                         output[position + previousLength] = output[position];
@@ -263,19 +244,13 @@
             }
         }
 
-        private static void EnsureCapacity(ref byte[] output, int required)
+        /// <summary>Makes room for <paramref name="required"/> bytes, carrying over the <paramref name="written"/> that are there.</summary>
+        private static void EnsureCapacity(ref byte[] output, int written, long required)
         {
-            if (required <= output.Length)
+            if (required > output.Length)
             {
-                return;
+                DecodeBuffer.Grow(ref output, written, required);
             }
-
-            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(MaximumCapacity, Math.Max(required, output.Length * 2L)));
-
-            output.AsSpan().CopyTo(grown);
-            ArrayPool<byte>.Shared.Return(output);
-
-            output = grown;
         }
     }
 }
