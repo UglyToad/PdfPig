@@ -173,9 +173,13 @@
             /// <summary>Reads the parameters from the decode parameters of one filter.</summary>
             public static Parameters Read(DictionaryToken parameters)
             {
+                // NB: We currently always clamp the number of colors to 32, assuming lenient parsing.
+                // TODO - Use lenient flag instead
+                var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, 1), 32);
+
                 return new Parameters(
                     parameters.GetIntOrDefault(NameToken.Predictor, 1),
-                    parameters.GetIntOrDefault(NameToken.Colors, 1),
+                    colors,
                     parameters.GetIntOrDefault(NameToken.BitsPerComponent, 8),
                     parameters.GetIntOrDefault(NameToken.Columns, 1));
             }
