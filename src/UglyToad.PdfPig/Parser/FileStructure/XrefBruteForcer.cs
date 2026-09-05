@@ -89,34 +89,43 @@ internal static class XrefBruteForcer
             numberOverflowed = false;
         }
 
-        var block = ArrayPool<byte>.Shared.Rent(BlockSize);
+        // The block has one byte of room in front of the data read into it, for the byte that
+        // the previous read ended on: it is visited only once the next read has shown that it
+        // was not the last byte of the input. That way the scan needs no length from the input,
+        // which a buffering stream does not know until it has been read to the end, and it
+        // leaves the last byte unvisited like the byte-wise loop it replaces. No keyword that
+        // ends on the last byte could yield anything: an object with nothing after it, a table
+        // or a trailer with nothing left to read.
+        var block = ArrayPool<byte>.Shared.Rent(BlockSize + 1);
 
         try
         {
-            // The scan visits every byte but the last one, as the byte-wise loop it replaces did.
             // Positions are computed from the index: the input reports an offset one past the
             // byte it is on. Where a keyword hands the input to another parser, the scan resumes
-            // from wherever that left the input, again as before.
-            var last = bytes.Length - 1;
+            // from wherever that left the input, as the byte-wise loop did.
             var next = 0L;
+            var hasPending = false;
 
-            while (next < last)
+            while (true)
             {
                 bytes.Seek(next);
 
-                var read = bytes.Read(block);
+                var read = bytes.Read(block.AsSpan(1, BlockSize));
                 if (read <= 0)
                 {
                     break;
                 }
 
-                var limit = (int)Math.Min(read, last - next);
-                var blockStart = next;
-                next = blockStart + limit;
+                var start = hasPending ? 0 : 1;
+                var end = 1 + read;
+                var firstIndex = hasPending ? next - 1 : next;
+                next += read;
 
-                for (var k = 0; k < limit; k++)
+                var resumed = false;
+
+                for (var k = start; k < end - 1; k++)
                 {
-                    var currentOffset = blockStart + k + 1;
+                    var currentOffset = firstIndex + (k - start) + 1;
                     var current = block[k];
 
                     if (current == '%')
@@ -230,6 +239,7 @@ internal static class XrefBruteForcer
                             // keyword — otherwise a failed parse can skip past later keywords such
                             // as a recoverable 'trailer' dictionary.
                             next = currentOffset;
+                            resumed = true;
                             break;
                         }
 
@@ -266,6 +276,7 @@ internal static class XrefBruteForcer
 
                             // Same position-preservation as the table branch above.
                             next = currentOffset;
+                            resumed = true;
                             break;
                         }
                     }
@@ -285,8 +296,19 @@ internal static class XrefBruteForcer
 
                         // The scan goes on from wherever the dictionary ended, as it always has.
                         next = bytes.CurrentOffset;
+                        resumed = true;
                         break;
                     }
+                }
+
+                if (resumed)
+                {
+                    hasPending = false;
+                }
+                else
+                {
+                    block[0] = block[end - 1];
+                    hasPending = true;
                 }
             }
         }
