@@ -34,5 +34,14 @@
         /// Try to get the font matrix if available.
         /// </summary>
         bool TryGetFontMatrix(int characterCode, [NotNullWhen(true)] out TransformationMatrix? matrix);
+
+        /// <summary>
+        /// Resolve a CID to the glyph index in this program using the same mapping
+        /// <see cref="TryGetPath(int, Func{int, int?}, out IReadOnlyList{PdfSubpath})"/> uses to select the outline.
+        /// </summary>
+        /// <param name="characterIdentifier">The CID.</param>
+        /// <param name="characterCodeToGlyphId">The CIDToGIDMap (Identity when the PDF declares none).</param>
+        /// <param name="glyphIndex">The glyph index in the program; 0 is .notdef.</param>
+        bool TryGetGlyphIndex(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out int glyphIndex);
     }
 }

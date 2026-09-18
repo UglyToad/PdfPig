@@ -280,7 +280,26 @@
             return true;
         }
 
-        private bool TryGetGlyphIndex(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out int glyphId)
+        /// <summary>
+        /// Try to get the glyph index for the specified character code by looking it up in the font's cmap table.
+        /// </summary>
+        /// <param name="characterCode">The character code (or CID) to resolve.</param>
+        /// <param name="glyphId">The glyph index in this font's glyf/CFF table; 0 is .notdef.</param>
+        /// <returns><see langword="true"/> when the font has a cmap table containing the code.</returns>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphId) => TryGetGlyphIndex(characterCode, null, out glyphId);
+
+        /// <summary>
+        /// Try to get the glyph index for the specified character code. This is the same resolution
+        /// <see cref="TryGetPath(int, Func{int, int?}, out IReadOnlyList{PdfSubpath})"/> uses: when the
+        /// supplied mapping yields a glyph index it is used directly (e.g. a CIDToGIDMap or the PDF's
+        /// simple-font encoding rules), otherwise the raw code is looked up in the font's cmap table.
+        /// </summary>
+        /// <param name="characterIdentifier">The character code (or CID) to resolve.</param>
+        /// <param name="characterCodeToGlyphId">
+        /// Optional external mapping. Return <see langword="null"/> to fall back to the cmap lookup.
+        /// </param>
+        /// <param name="glyphId">The glyph index in this font's glyf/CFF table; 0 is .notdef.</param>
+        public bool TryGetGlyphIndex(int characterIdentifier, Func<int, int?>? characterCodeToGlyphId, out int glyphId)
         {
             glyphId = 0;
 

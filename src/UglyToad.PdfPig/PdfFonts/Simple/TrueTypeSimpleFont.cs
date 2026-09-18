@@ -399,5 +399,22 @@
             path = GetFontMatrix().Transform(path).ToArray();
             return true;
         }
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+            if (font is null)
+            {
+                return false;
+            }
+
+            // CharacterCodeToGlyphId reads the unicode cache populated by TryGetUnicode; warm it so the
+            // 9.6.6.4 (3,1)-by-unicode step behaves identically to the TryGetPath call sequence.
+            TryGetUnicode(characterCode, out _);
+
+            // Delegate first (encoding-name rules), then raw code in the cmap - the same order TryGetPath uses.
+            return font.TryGetGlyphIndex(characterCode, CharacterCodeToGlyphId, out glyphIndex);
+        }
     }
 }

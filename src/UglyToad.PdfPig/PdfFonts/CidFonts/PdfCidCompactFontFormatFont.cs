@@ -186,5 +186,24 @@
 
             return false;
         }
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphIndex(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out int glyphIndex)
+        {
+            // Same name resolution as TryGetPath(code, delegate) so the index addresses the outline we would draw.
+            int? mapped = characterCodeToGlyphId?.Invoke(characterIdentifier);
+
+            string characterName = mapped.HasValue
+                ? GetCharacterName(mapped.Value)
+                : GetCharacterName(characterIdentifier);
+
+            if (string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
+            {
+                glyphIndex = 0;
+                return true;
+            }
+
+            return GetFont().TryGetGlyphIndexByName(characterName, out glyphIndex);
+        }
     }
 }

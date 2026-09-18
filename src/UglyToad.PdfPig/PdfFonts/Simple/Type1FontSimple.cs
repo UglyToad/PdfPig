@@ -417,5 +417,39 @@
             }
             return false;
         }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Only CFF-backed (FontFile3 / Type1C) programs have glyph indices; the index is the glyph's position in the
+        /// CharStrings INDEX per the charset. A classic Type 1 program (FontFile) addresses glyphs by name and has no
+        /// canonical index, so this returns <see langword="false"/> for it - consumers converting Type 1 to another
+        /// container define their own order and should map by name.
+        /// </remarks>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+
+            if (fontProgram is null || characterCode < firstChar || characterCode > lastChar)
+            {
+                return false;
+            }
+
+            if (!fontProgram.TryGetSecond(out var cffFont))
+            {
+                return false;
+            }
+
+            // Same name resolution as TryGetPath for the CFF branch.
+            string characterName = encoding is not null
+                ? encoding.GetName(characterCode)
+                : cffFont.GetCharacterName(characterCode, false);
+
+            if (string.IsNullOrEmpty(characterName))
+            {
+                return false;
+            }
+
+            return cffFont.TryGetGlyphIndexByName(characterName, out glyphIndex);
+        }
     }
 }

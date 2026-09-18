@@ -168,5 +168,13 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         {
             return TryGetPath(characterCode, out path);
         }
+
+        /// <inheritdoc/>
+        /// <remarks>Standard 14 fonts have no embedded program - glyphs are drawn from a substitute face.</remarks>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+            return false;
+        }
     }
 }
