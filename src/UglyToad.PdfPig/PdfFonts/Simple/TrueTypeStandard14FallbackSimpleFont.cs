@@ -200,6 +200,17 @@
             return true;
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// The TrueType program here is a system fallback loaded from disk, not a program embedded in the PDF,
+        /// so a glyph index into it means nothing to a consumer holding the PDF's font bytes.
+        /// </remarks>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+            return false;
+        }
+
         public class MetricOverrides
         {
             public int? FirstCharacterCode { get; }

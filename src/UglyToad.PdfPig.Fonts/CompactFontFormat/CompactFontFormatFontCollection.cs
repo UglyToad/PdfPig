@@ -71,5 +71,14 @@
 
             return name ?? GlyphList.NotDefined;
         }
+
+        /// <summary>
+        /// Get the glyph index of the named glyph in the first font of the collection.
+        /// See <see cref="CompactFontFormatFont.TryGetGlyphIndexByName"/>.
+        /// </summary>
+        public bool TryGetGlyphIndexByName(string characterName, out int glyphIndex)
+        {
+            return FirstFont.TryGetGlyphIndexByName(characterName, out glyphIndex);
+        }
     }
 }

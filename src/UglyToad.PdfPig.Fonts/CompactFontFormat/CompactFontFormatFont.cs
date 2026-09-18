@@ -87,6 +87,29 @@
         }
 
         /// <summary>
+        /// Get the glyph index (position in the CharStrings INDEX) of the glyph with the given name,
+        /// using this font's charset. This is the index a renderer that loads the CFF program directly
+        /// (e.g. wrapped in an OpenType container) addresses the glyph by.
+        /// </summary>
+        /// <param name="characterName">The glyph name as returned by <see cref="GetCharacterName"/>.</param>
+        /// <param name="glyphIndex">The glyph index; 0 is .notdef.</param>
+        /// <returns>
+        /// <see langword="true"/> when the charset contains the name (including ".notdef" itself);
+        /// <see langword="false"/> when the name is unknown to this font.
+        /// </returns>
+        public bool TryGetGlyphIndexByName(string characterName, out int glyphIndex)
+        {
+            glyphIndex = 0;
+            if (string.IsNullOrEmpty(characterName) || Charset is null)
+            {
+                return false;
+            }
+
+            glyphIndex = Charset.GetGlyphIdByName(characterName);
+            return glyphIndex != 0 || string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Get the bounding box for the character with the given name.
         /// </summary>
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
