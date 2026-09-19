@@ -194,5 +194,17 @@
 
             return false;
         }
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphIndex(int characterIdentifier, out int glyphIndex)
+        {
+            glyphIndex = 0;
+            if (fontProgram is null)
+            {
+                return false;
+            }
+
+            return fontProgram.TryGetGlyphIndex(characterIdentifier, cidToGid.GetGlyphIndex, out glyphIndex);
+        }
     }
 }

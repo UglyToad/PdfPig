@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
+    using System.Threading;
     using System.Collections.Generic;
     using System.Text;
     using Core;
@@ -12,7 +13,8 @@
     /// </summary>
     public sealed class ArrayToken : IDataToken<IReadOnlyList<IToken>>
     {
-        private readonly int hashCode;
+        private int hashCode;
+        private bool hashCodeComputed;
 
         /// <summary>
         /// The tokens contained in this array.
@@ -60,7 +62,6 @@
 
             Data = result;
             Length = Data.Count;
-            hashCode = ComputeHashCode();
         }
 
         /// <inheritdoc />
@@ -101,6 +102,12 @@
         /// <inheritdoc />
         public override int GetHashCode()
         {
+            if (!Volatile.Read(ref hashCodeComputed))
+            {
+                hashCode = ComputeHashCode();
+                Volatile.Write(ref hashCodeComputed, true);
+            }
+
             return hashCode;
         }
 

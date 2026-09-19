@@ -47,7 +47,7 @@
 
             var scanner = new CoreTokenScanner(inputBytes, false, stackDepthGuard);
 
-            if (!scanner.TryReadToken(out CommentToken comment) || !comment.Data.StartsWith("!"))
+            if (!scanner.TryReadToken(out CommentToken comment) || !comment.Data.StartsWith("!", StringComparison.Ordinal))
             {
                 throw new InvalidFontFormatException("The Type1 program did not start with '%!'.");
             }

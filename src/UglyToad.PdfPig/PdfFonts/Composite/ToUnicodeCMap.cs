@@ -29,7 +29,7 @@
 
             if (cMap != null)
             {
-                IsUsingIdentityAsUnicodeMap = cMap.Name?.StartsWith("Identity-", StringComparison.InvariantCultureIgnoreCase) == true;
+                IsUsingIdentityAsUnicodeMap = cMap.Name?.StartsWith("Identity-", StringComparison.OrdinalIgnoreCase) == true;
             }
         }
 

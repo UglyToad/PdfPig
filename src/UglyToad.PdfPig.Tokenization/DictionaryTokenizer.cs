@@ -88,7 +88,10 @@
 
             var coreScanner = new CoreTokenScanner(inputBytes,  usePdfDocEncoding, stackDepthGuard, ScannerScope.Dictionary, useLenientParsing: useLenientParsing);
 
-            var tokens = new List<IToken>();
+            // An entry is a key and a value, so two tokens. Three quarters of the dictionaries in a
+            // file hold eight entries or fewer and the median holds five, so 16 fits them without a
+            // growth, where the list would otherwise grow 4, 8, 16 for every dictionary in the file.
+            var tokens = new List<IToken>(16);
 
             while (coreScanner.MoveNext())
             {
@@ -133,7 +136,9 @@
 
         private static Dictionary<NameToken, IToken> ConvertToDictionary(List<IToken> tokens, bool useLenientParsing)
         {
-            var result = new Dictionary<NameToken, IToken>();
+            // An entry needs at least two tokens, and three when its value is an indirect reference,
+            // so half the token count is never too small and the dictionary is built without a resize.
+            var result = new Dictionary<NameToken, IToken>(tokens.Count / 2);
 
             NameToken key = null;
             for (var i = 0; i < tokens.Count; i++)

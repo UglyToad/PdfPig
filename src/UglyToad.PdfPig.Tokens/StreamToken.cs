@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
+    using System.Threading;
 
     /// <summary>
     /// A stream consists of a dictionary followed by zero or more bytes bracketed between the keywords stream and endstream.
@@ -8,7 +9,8 @@
     /// </summary>
     public sealed class StreamToken : IDataToken<Memory<byte>>
     {
-        private readonly int hashCode;
+        private int hashCode;
+        private bool hashCodeComputed;
 
         /// <summary>
         /// The dictionary specifying the length of the stream, any applied compression filters and additional information.
@@ -29,7 +31,6 @@
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
             Data = data ?? throw new ArgumentNullException(nameof(data));
-            hashCode = ComputeHashCode();
         }
 
         /// <summary>
@@ -41,7 +42,6 @@
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
             Data = data;
-            hashCode = ComputeHashCode();
         }
         
         private int ComputeHashCode()
@@ -63,6 +63,12 @@
         /// <inheritdoc />
         public override int GetHashCode()
         {
+            if (!Volatile.Read(ref hashCodeComputed))
+            {
+                hashCode = ComputeHashCode();
+                Volatile.Write(ref hashCodeComputed, true);
+            }
+
             return hashCode;
         }
 

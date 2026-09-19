@@ -135,7 +135,7 @@
             var resources = typeof(CMapParser).Assembly.GetManifestResourceNames();
 
             var resource = resources.FirstOrDefault(x =>
-                x.EndsWith("CMap." + name, StringComparison.InvariantCultureIgnoreCase));
+                x.EndsWith("CMap." + name, StringComparison.OrdinalIgnoreCase));
 
             if (resource is null)
             {

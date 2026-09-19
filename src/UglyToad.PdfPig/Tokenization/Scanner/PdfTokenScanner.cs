@@ -308,7 +308,7 @@
                 return true;
             }
 
-            if (parsingOptions.UseLenientParsing && scanner.CurrentToken is OperatorToken opToken && opToken.Data.EndsWith(token.Data))
+            if (parsingOptions.UseLenientParsing && scanner.CurrentToken is OperatorToken opToken && opToken.Data.EndsWith(token.Data, StringComparison.Ordinal))
             {
                 actualTokenStart = scanner.CurrentTokenStart + opToken.Data.Length - token.Data.Length;
                 return true;
@@ -904,7 +904,12 @@
                 useLenientParsing: parsingOptions.UseLenientParsing,
                 isStream: true);
 
-            var objects = new List<(long, long)>();
+            // The stream dictionary says how many objects follow, so both lists can be sized for it.
+            // The count is bounded by the stream itself first: a pair of numbers takes at least four
+            // bytes, so a larger N is malformed and must not become an allocation of that size.
+            var expected = (int)Math.Max(0, Math.Min(numberOfObjects.Int, bytes.Length / 4));
+
+            var objects = new List<(long, long)>(expected);
 
             for (var i = 0; i < numberOfObjects.Int; i++)
             {
@@ -916,7 +921,7 @@
                 objects.Add((objectNumber.Long, firstTokenOffset + byteOffset.Long));
             }
 
-            var results = new List<ObjectToken>();
+            var results = new List<ObjectToken>(expected);
 
             for (var i = 0; i < objects.Count; i++)
             {

@@ -57,5 +57,9 @@
 
         public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
             => font.TryGetPath(characterCode, characterCodeToGlyphId, out path);
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphIndex(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out int glyphIndex)
+            => font.TryGetGlyphIndex(characterIdentifier, characterCodeToGlyphId, out glyphIndex);
     }
 }

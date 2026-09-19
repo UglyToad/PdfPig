@@ -59,6 +59,25 @@
             return memory.Span[currentOffset + 1];
         }
 
+        /// <summary>
+        /// The whole input.
+        /// </summary>
+        public ReadOnlySpan<byte> Span => memory.Span;
+
+        /// <summary>
+        /// The index of <see cref="CurrentByte"/> in <see cref="Span"/>, -1 before the first read.
+        /// </summary>
+        public int Position => currentOffset;
+
+        /// <summary>
+        /// Moves onto the byte at <paramref name="index"/>.
+        /// </summary>
+        public void MoveTo(int index)
+        {
+            currentOffset = index;
+            CurrentByte = memory.Span[index];
+        }
+
         /// <inheritdoc />
         public bool IsAtEnd()
         {

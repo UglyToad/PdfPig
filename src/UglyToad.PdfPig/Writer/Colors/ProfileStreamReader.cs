@@ -12,7 +12,7 @@
             var resources = typeof(ProfileStreamReader).Assembly.GetManifestResourceNames();
 
             var resource = resources.FirstOrDefault(x =>
-                x.EndsWith("sRGB2014.icc", StringComparison.InvariantCultureIgnoreCase));
+                x.EndsWith("sRGB2014.icc", StringComparison.OrdinalIgnoreCase));
 
             if (resource is null)
             {

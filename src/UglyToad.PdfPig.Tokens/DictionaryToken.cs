@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
+    using System.Threading;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -10,7 +11,8 @@
     /// </summary>
     public sealed class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>, IEquatable<DictionaryToken>
     {
-        private readonly int hashCode;
+        private int hashCode;
+        private bool hashCodeComputed;
 
         /// <summary>
         /// The key value pairs in this dictionary.
@@ -41,13 +43,11 @@
             }
 
             Data = result;
-            hashCode = ComputeHashCode();
         }
 
         private DictionaryToken(IReadOnlyDictionary<string, IToken> data)
         {
             Data = data;
-            hashCode = ComputeHashCode();
         }
 
         /// <summary>
@@ -190,6 +190,12 @@
         /// <inheritdoc />
         public override int GetHashCode()
         {
+            if (!Volatile.Read(ref hashCodeComputed))
+            {
+                hashCode = ComputeHashCode();
+                Volatile.Write(ref hashCodeComputed, true);
+            }
+
             return hashCode;
         }
 

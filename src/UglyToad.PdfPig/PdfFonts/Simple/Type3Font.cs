@@ -229,5 +229,15 @@
         {
             return TryGetPath(characterCode, out path);
         }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>Type 3 glyphs are content streams (CharProcs), not indexed outlines. Always returns <c>false</c>.</para>
+        /// </summary>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+            return false;
+        }
     }
 }

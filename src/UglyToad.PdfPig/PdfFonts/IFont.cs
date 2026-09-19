@@ -76,5 +76,22 @@
         /// <param name="characterCode">Character code in a PDF. Not to be confused with unicode.</param>
         /// <param name="path">The normalized glyph path for the given character code.</param>
         bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path);
+
+        /// <summary>
+        /// Resolve a character code to the index of the glyph in this font's <b>embedded font program</b>, using
+        /// the same rules <see cref="TryGetPath"/> uses to select the outline (PDF 32000-1 9.6.6.4 for simple
+        /// TrueType fonts, the CIDToGIDMap for CIDFontType2, the CFF charset for CFF-based fonts).
+        /// This lets a consumer that loads the embedded font program itself (a GPU glyph atlas, DirectWrite, ...)
+        /// draw exactly the glyph PdfPig would, without re-deriving the encoding.
+        /// </summary>
+        /// <param name="characterCode">Character code in a PDF. Not to be confused with unicode.</param>
+        /// <param name="glyphIndex">
+        /// The glyph index in the embedded program; 0 (.notdef) is a successful resolution and returns <see langword="true"/>.
+        /// </param>
+        /// <returns>
+        /// <see langword="false"/> when the font has no embedded program addressable by glyph index (Standard 14 without
+        /// a font file, Type 3, classic Type 1 whose glyphs are addressed by name) or the code cannot be resolved.
+        /// </returns>
+        bool TryGetGlyphIndex(int characterCode, out int glyphIndex);
     }
 }

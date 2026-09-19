@@ -17,6 +17,85 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1436()
+        {
+            // An outline item whose /First entry references itself.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("outline_self_first.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks, true));
+
+                var root = Assert.Single(bookmarks.Roots);
+                Assert.Equal("Loop", root.Title);
+                Assert.Empty(root.Children);
+            }
+
+            // Two outline items whose /First entries form an A -> B -> A cycle.
+            path = IntegrationHelpers.GetSpecificTestDocumentPath("outline_2cycle_first.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks, true));
+
+                var root = Assert.Single(bookmarks.Roots);
+                Assert.Equal("A", root.Title);
+
+                var child = Assert.Single(root.Children);
+                Assert.Equal("B", child.Title);
+                Assert.Empty(child.Children);
+            }
+        }
+
+        [Fact]
+        public void Issues1436_Deep()
+        {
+            const int depth = 20_000;
+
+            string path = IntegrationHelpers.GetSpecificTestDocumentPath("outline_20000cycle_first.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks, true));
+
+                var node = Assert.Single(bookmarks.Roots);
+
+                // Walk the tree iteratively, Bookmarks.GetNodes() is itself recursive.
+                var actual = 1;
+                while (node.Children.Count > 0)
+                {
+                    node = node.Children[0];
+                    actual++;
+                }
+
+                Assert.Equal(depth, actual);
+            }
+        }
+
+        [Fact]
+        public void Issues1436_FirstNoDest()
+        {
+            // The first child of 'Root' has neither a /Dest(ination) nor an /A(ction) entry, its siblings should
+            // still be read.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("outline_first_child_no_dest.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks));
+
+                var root = Assert.Single(bookmarks.Roots);
+                Assert.Equal("Root", root.Title);
+                Assert.Equal(new[] { "Second", "Third" }, root.Children.Select(c => c.Title));
+            }
+
+            // With container nodes allowed the child without a destination is kept as well.
+            using (var document = PdfDocument.Open(path))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks, true));
+
+                var root = Assert.Single(bookmarks.Roots);
+                Assert.Equal(new[] { "No destination", "Second", "Third" }, root.Children.Select(c => c.Title));
+            }
+        }
+
+        [Fact]
         public void Issues1421()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("t3000.pdf");

@@ -90,5 +90,13 @@
         /// <param name="characterCodeToGlyphId"></param>
         /// <param name="path">The normalized glyph path for the given character code.</param>
         bool TryGetNormalisedPath(int characterCode, Func<int, int?> characterCodeToGlyphId, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path);
+
+        /// <summary>
+        /// Resolve a CID to the glyph index in the embedded CIDFont program (CIDToGIDMap for CIDFontType2,
+        /// charset for CIDFontType0). See <see cref="IFont.TryGetGlyphIndex"/>.
+        /// </summary>
+        /// <param name="characterIdentifier">The CID (already mapped from the character code by the Type 0 CMap).</param>
+        /// <param name="glyphIndex">The glyph index in the embedded program; 0 is .notdef.</param>
+        bool TryGetGlyphIndex(int characterIdentifier, out int glyphIndex);
     }
 }

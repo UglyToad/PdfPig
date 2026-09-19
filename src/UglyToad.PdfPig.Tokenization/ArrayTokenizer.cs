@@ -11,6 +11,8 @@
         private readonly StackDepthGuard stackDepthGuard;
         private readonly bool useLenientParsing;
 
+        private List<IToken> gathered;
+
         public bool ReadsNextByte { get; } = false;
 
         public ArrayTokenizer(bool usePdfDocEncoding, StackDepthGuard stackDepthGuard, bool useLenientParsing)
@@ -31,7 +33,8 @@
 
             var scanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, stackDepthGuard, ScannerScope.Array, useLenientParsing: useLenientParsing);
 
-            var contents = new List<IToken>();
+            var contents = gathered ??= new List<IToken>();
+            contents.Clear();
 
             IToken previousToken = null;
             while (!CurrentByteEndsCurrentArray(inputBytes, previousToken) && scanner.MoveNext())
@@ -47,6 +50,7 @@
             }
 
             token = new ArrayToken(contents);
+            contents.Clear();
 
             return true;
         }

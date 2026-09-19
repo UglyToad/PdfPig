@@ -209,5 +209,13 @@
 
             return CidFont.TryGetNormalisedPath(characterIdentifier, out path);
         }
+
+        /// <inheritdoc/>
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            var characterIdentifier = CMap.ConvertToCid(characterCode);
+
+            return CidFont.TryGetGlyphIndex(characterIdentifier, out glyphIndex);
+        }
     }
 }
