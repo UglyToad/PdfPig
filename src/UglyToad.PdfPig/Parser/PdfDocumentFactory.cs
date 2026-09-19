@@ -91,7 +91,7 @@
 
             var stackDepthGuard = new StackDepthGuard(options.MaxStackDepth);
 
-            var tokenScanner = new CoreTokenScanner(inputBytes, true, stackDepthGuard, useLenientParsing: options.UseLenientParsing);
+            var tokenScanner = new CoreTokenScanner(inputBytes, stackDepthGuard, useLenientParsing: options.UseLenientParsing);
 
             var passwords = new List<string>();
 

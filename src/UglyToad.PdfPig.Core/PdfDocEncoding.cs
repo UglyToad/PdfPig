@@ -292,22 +292,26 @@
         }
 
         /// <summary>
-        /// Map from string back to bytes. This is not a reversible operation for all inputs.
+        /// Try to map a string back to bytes, which succeeds only when every character has a
+        /// PdfDocEncoding byte rather than standing in a zero byte for the characters that do not.
         /// </summary>
-        public static byte[] StringToBytes(string s)
+        public static bool TryConvertStringToBytes(string s, out byte[]? result)
         {
-            var result = new byte[s.Length];
+            var bytes = new byte[s.Length];
+
             for (int i = 0; i < s.Length; i++)
             {
-                var c = s[i];
-
-                if (UnicodeToCode.TryGetValue(c, out var b))
+                if (!UnicodeToCode.TryGetValue(s[i], out var b))
                 {
-                    result[i] = b;
+                    result = null;
+                    return false;
                 }
+
+                bytes[i] = b;
             }
 
-            return result;
+            result = bytes;
+            return true;
         }
     }
 }

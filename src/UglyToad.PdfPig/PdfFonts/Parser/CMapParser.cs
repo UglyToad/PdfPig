@@ -23,7 +23,6 @@
         public CMap Parse(IInputBytes inputBytes, StackDepthGuard stackDepthGuard)
         {
             var scanner = new CoreTokenScanner(inputBytes,
-                false,
                 stackDepthGuard,
                 namedDictionaryRequiredKeys: new Dictionary<NameToken, IReadOnlyList<NameToken>>
                 {

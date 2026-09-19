@@ -45,7 +45,7 @@
                 inputBytes = new MemoryInputBytes(ascii);
             }
 
-            var scanner = new CoreTokenScanner(inputBytes, false, stackDepthGuard);
+            var scanner = new CoreTokenScanner(inputBytes, stackDepthGuard);
 
             if (!scanner.TryReadToken(out CommentToken comment) || !comment.Data.StartsWith("!", StringComparison.Ordinal))
             {

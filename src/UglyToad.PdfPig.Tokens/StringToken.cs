@@ -4,104 +4,135 @@ namespace UglyToad.PdfPig.Tokens
     using Core;
 
     /// <summary>
-    /// Represents a string of text contained in a PDF document.
+    /// Represents a string contained in a PDF document.
+    /// <para>
+    /// A string is a sequence of bytes, and what those bytes mean is decided by whoever reads them.
+    /// The operand of a text showing operator is a sequence of character codes for the current font,
+    /// read through <see cref="Bytes"/>. An entry the specification types as a <i>text string</i> is
+    /// text, read through <see cref="Data"/>, which applies the rules in 7.9.2.2.
+    /// </para>
     /// </summary>
-    public class StringToken : IDataToken<string>
+    public sealed class StringToken : IDataToken<string>
     {
         private readonly byte[] rawBytes;
 
-        /// <summary>
-        /// The string in the token.
-        /// </summary>
-        public string Data { get; }
+        private string? data;
 
         /// <summary>
-        /// The encoding used to generate the <see langword="string"/> in <see cref="Data"/>
-        /// from the bytes in the file.
+        /// The string read as a text string (7.9.2.2): UTF-8 or UTF-16 where a byte order mark says
+        /// so, PdfDocEncoding otherwise. Decoded on first use.
         /// </summary>
-        public Encoding EncodedWith { get; }
+        public string Data => data ??= DecodeText();
 
         /// <summary>
-        /// Create a new <see cref="StringToken"/>.
+        /// The bytes of the string, which for a token read from a file are the bytes it was read
+        /// from.
         /// </summary>
-        /// <param name="data">The string data for the token to contain.</param>
-        /// <param name="encodedWith">The encoding used to generate the <see cref="Data"/>.</param>
-        public StringToken(string data, Encoding encodedWith = Encoding.Iso88591)
+        public ReadOnlySpan<byte> Bytes => rawBytes;
+
+        /// <summary>
+        /// The bytes of the string as memory. See <see cref="Bytes"/>.
+        /// </summary>
+        public ReadOnlyMemory<byte> Memory => rawBytes;
+
+        /// <summary>
+        /// Create a new <see cref="StringToken"/> from the bytes of a string in a PDF file.
+        /// </summary>
+        /// <param name="bytes">The bytes of the string.</param>
+        public StringToken(byte[] bytes)
         {
-            Data = data ?? throw new ArgumentNullException(nameof(data));
-            EncodedWith = encodedWith;
+            rawBytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
         }
 
         /// <summary>
-        /// Create a new <see cref="StringToken"/> with preserved raw bytes.
+        /// Create a new <see cref="StringToken"/> holding the given text, encoded as PdfDocEncoding
+        /// where every character has a byte in it, and as UTF-16 with a byte order mark where they
+        /// do not, or where the PdfDocEncoded bytes would themselves open with a byte order mark.
         /// </summary>
         /// <param name="data">The string data for the token to contain.</param>
-        /// <param name="encodedWith">The encoding used to generate the <see cref="Data"/>.</param>
-        /// <param name="rawBytes">The original raw bytes from the PDF file.</param>
-        public StringToken(string data, Encoding encodedWith, byte[] rawBytes)
+        public StringToken(string data)
         {
-            Data = data ?? throw new ArgumentNullException(nameof(data));
-            EncodedWith = encodedWith;
-            this.rawBytes = rawBytes;
+            this.data = data ?? throw new ArgumentNullException(nameof(data));
+
+            // Text whose PdfDocEncoded bytes would open with a byte order mark cannot be stored that
+            // way: reading them back takes the mark at face value and decodes the rest as UTF-8 or
+            // UTF-16. Such text goes out as UTF-16 instead, which round-trips.
+            if (PdfDocEncoding.TryConvertStringToBytes(data, out var pdfDocEncoded)
+                && !StartsWithByteOrderMark(pdfDocEncoded!))
+            {
+                rawBytes = pdfDocEncoded!;
+                return;
+            }
+
+            var utf16 = System.Text.Encoding.BigEndianUnicode.GetBytes(data);
+
+            rawBytes = new byte[utf16.Length + 2];
+            rawBytes[0] = 0xFE;
+            rawBytes[1] = 0xFF;
+
+            Array.Copy(utf16, 0, rawBytes, 2, utf16.Length);
         }
 
         /// <summary>
-        /// Convert the <see langword="string"/> in <see cref="Data"/> back to bytes.
+        /// The bytes of the string. See <see cref="Bytes"/>.
         /// </summary>
         public byte[] GetBytes()
         {
-            if (rawBytes is not null)
-            {
-                return rawBytes;
-            }
-
-            switch (EncodedWith)
-            {
-                case Encoding.Utf16BE:
-                {
-                    var data = System.Text.Encoding.BigEndianUnicode.GetBytes(Data);
-
-                    var result = new byte[data.Length + 2];
-                    result[0] = 0xFE;
-                    result[1] = 0xFF;
-
-                    Array.Copy(data, 0, result, 2, data.Length);
-
-                    return result;
-                }
-                case Encoding.Utf16:
-                {
-                    var data = System.Text.Encoding.Unicode.GetBytes(Data);
-                    var result = new byte[data.Length + 2];
-                    result[0] = 0xFF;
-                    result[1] = 0xFE;
-                    Array.Copy(data, 0, result, 2, data.Length);
-                    return result;
-                }
-                case Encoding.Utf8:
-                {
-                    var data = System.Text.Encoding.UTF8.GetBytes(Data);
-
-                    var result = new byte[data.Length + 3];
-                    result[0] = 0xEF;
-                    result[1] = 0xBB;
-                    result[2] = 0xBF;
-
-                    Array.Copy(data, 0, result, 3, data.Length);
-
-                    return result;
-                }
-                case Encoding.PdfDocEncoding:
-                    return PdfDocEncoding.StringToBytes(Data);
-                default:
-                    return OtherEncodings.StringAsLatin1Bytes(Data);
-            }
+            return rawBytes;
         }
+
+        private string DecodeText()
+        {
+            // PDF 2.0 added UTF-8, marked by a byte order mark, as a text string encoding.
+            if (HasUtf8ByteOrderMark(rawBytes))
+            {
+                return System.Text.Encoding.UTF8.GetString(rawBytes, 3, rawBytes.Length - 3);
+            }
+
+            if (HasUtf16BigEndianByteOrderMark(rawBytes))
+            {
+                return System.Text.Encoding.BigEndianUnicode.GetString(rawBytes, 2, rawBytes.Length - 2);
+            }
+
+            // Not a text string encoding the specification defines, but it is accepted on the way in.
+            if (HasUtf16LittleEndianByteOrderMark(rawBytes))
+            {
+                return System.Text.Encoding.Unicode.GetString(rawBytes, 2, rawBytes.Length - 2);
+            }
+
+            return PdfDocEncoding.TryConvertBytesToString(rawBytes, out var result)
+                ? result!
+                : OtherEncodings.BytesAsLatin1String(rawBytes);
+        }
+
+        private static bool HasUtf8ByteOrderMark(byte[] bytes)
+            => bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+
+        private static bool HasUtf16BigEndianByteOrderMark(byte[] bytes)
+            => bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF;
+
+        private static bool HasUtf16LittleEndianByteOrderMark(byte[] bytes)
+            => bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE;
+
+        private static bool StartsWithByteOrderMark(byte[] bytes)
+            => HasUtf8ByteOrderMark(bytes)
+               || HasUtf16BigEndianByteOrderMark(bytes)
+               || HasUtf16LittleEndianByteOrderMark(bytes);
 
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return HashCode.Combine(EncodedWith, Data);
+            var hash = new HashCode();
+#if NET6_0_OR_GREATER
+            hash.AddBytes(rawBytes.AsSpan());
+#else
+            var span = rawBytes.AsSpan();
+            for (var i = 0; i < span.Length; i++)
+            {
+                hash.Add(span[i]);
+            }
+#endif
+            return hash.ToHashCode();
         }
 
         /// <inheritdoc />
@@ -123,7 +154,7 @@ namespace UglyToad.PdfPig.Tokens
                 return false;
             }
 
-            return EncodedWith.Equals(other.EncodedWith) && Data.Equals(other.Data);
+            return Bytes.SequenceEqual(other.Bytes);
         }
 
         /// <inheritdoc />
@@ -132,31 +163,5 @@ namespace UglyToad.PdfPig.Tokens
             return $"({Data})";
         }
 
-        /// <summary>
-        /// The encoding used to convert the underlying file bytes to the string.
-        /// </summary>
-        public enum Encoding : byte
-        {
-            /// <summary>
-            /// <see cref="OtherEncodings.Iso88591"/>.
-            /// </summary>
-            Iso88591 = 0,
-            /// <summary>
-            /// UTF-16.
-            /// </summary>
-            Utf16 = 1,
-            /// <summary>
-            /// UTF-16 Big Endian.
-            /// </summary>
-            Utf16BE = 2,
-            /// <summary>
-            /// The PdfDocEncoding for strings in the body of a PDF file.
-            /// </summary>
-            PdfDocEncoding = 3,
-            /// <summary>
-            /// UTF-8, which a text string may use from PDF 2.0 onwards.
-            /// </summary>
-            Utf8 = 4,
-        }
     }
 }

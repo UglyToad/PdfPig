@@ -12,14 +12,17 @@
     /// <summary>
     /// Handles building <see cref="MarkedContentElement"/>s.
     /// </summary>
-    internal class MarkedContentStack
+    internal sealed class MarkedContentStack
     {
         private readonly Stack<MarkedContentElementActiveBuilder> builderStack = new Stack<MarkedContentElementActiveBuilder>();
 
         private int number = -1;
         private MarkedContentElementActiveBuilder? top;
 
-        public bool CanPop => top != null;
+        /// <summary>
+        /// The number of marked-content sequences currently open.
+        /// </summary>
+        public int Depth => builderStack.Count;
 
         public void Push(NameToken name, DictionaryToken properties)
         {

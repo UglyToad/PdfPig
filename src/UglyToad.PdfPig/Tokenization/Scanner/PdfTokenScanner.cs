@@ -70,7 +70,7 @@
             this.fileHeaderOffset = fileHeaderOffset;
             this.parsingOptions = parsingOptions;
             this.StackDepthGuard = stackDepthGuard;
-            coreTokenScanner = new CoreTokenScanner(inputBytes,  true, stackDepthGuard, useLenientParsing: parsingOptions.UseLenientParsing);
+            coreTokenScanner = new CoreTokenScanner(inputBytes, stackDepthGuard, useLenientParsing: parsingOptions.UseLenientParsing);
         }
 
         public void UpdateEncryptionHandler(IEncryptionHandler newHandler)
@@ -899,7 +899,6 @@
 
             var scanner = new CoreTokenScanner(
                 bytes,
-                true,
                 StackDepthGuard,
                 useLenientParsing: parsingOptions.UseLenientParsing,
                 isStream: true);

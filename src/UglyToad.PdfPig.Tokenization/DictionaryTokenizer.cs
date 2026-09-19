@@ -5,9 +5,8 @@
     using Scanner;
     using Tokens;
 
-    internal class DictionaryTokenizer : ITokenizer
+    internal sealed class DictionaryTokenizer : ITokenizer
     {
-        private readonly bool usePdfDocEncoding;
         private readonly IReadOnlyList<NameToken> requiredKeys;
         private readonly bool useLenientParsing;
         private readonly StackDepthGuard stackDepthGuard;
@@ -17,18 +16,14 @@
         /// <summary>
         /// Create a new <see cref="DictionaryTokenizer"/>.
         /// </summary>
-        /// <param name="usePdfDocEncoding">
-        /// Whether to read strings using the PdfDocEncoding.
-        /// </param>
         /// <param name="stackDepthGuard"></param>
         /// <param name="requiredKeys">
         /// Can be provided to recover from errors with missing dictionary end symbols if the
         /// set of keys expected in the dictionary are known.
         /// </param>
         /// <param name="useLenientParsing">Whether to use lenient parsing.</param>
-        public DictionaryTokenizer(bool usePdfDocEncoding, StackDepthGuard stackDepthGuard, IReadOnlyList<NameToken> requiredKeys = null, bool useLenientParsing = false)
+        public DictionaryTokenizer(StackDepthGuard stackDepthGuard, IReadOnlyList<NameToken> requiredKeys = null, bool useLenientParsing = false)
         {
-            this.usePdfDocEncoding = usePdfDocEncoding;
             this.stackDepthGuard = stackDepthGuard;
             this.requiredKeys = requiredKeys;
             this.useLenientParsing = useLenientParsing;
@@ -86,7 +81,7 @@
                 return false;
             }
 
-            var coreScanner = new CoreTokenScanner(inputBytes,  usePdfDocEncoding, stackDepthGuard, ScannerScope.Dictionary, useLenientParsing: useLenientParsing);
+            var coreScanner = new CoreTokenScanner(inputBytes, stackDepthGuard, ScannerScope.Dictionary, useLenientParsing: useLenientParsing);
 
             // An entry is a key and a value, so two tokens. Three quarters of the dictionaries in a
             // file hold eight entries or fewer and the median holds five, so 16 fits them without a

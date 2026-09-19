@@ -25,7 +25,6 @@
         private readonly ScannerScope scope;
         private readonly IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys;
         private readonly IInputBytes inputBytes;
-        private readonly bool usePdfDocEncoding;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         private readonly bool useLenientParsing;
 
@@ -62,7 +61,6 @@
         /// </summary>
         public CoreTokenScanner(
             IInputBytes inputBytes,
-            bool usePdfDocEncoding,
             StackDepthGuard stackDepthGuard,
             ScannerScope scope = ScannerScope.None,
             IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null,
@@ -71,12 +69,11 @@
             bool isCMapParser = false)
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
-            this.usePdfDocEncoding = usePdfDocEncoding;
             this.StackDepthGuard = stackDepthGuard;
             this.plainTokenizer = isCMapParser ? PlainTokenizerSplitOnDigit : PlainTokenizer;
-            this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
-            this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing);
-            this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing: useLenientParsing);
+            this.stringTokenizer = new StringTokenizer();
+            this.arrayTokenizer = new ArrayTokenizer(this.StackDepthGuard, useLenientParsing);
+            this.dictionaryTokenizer = new DictionaryTokenizer(this.StackDepthGuard, useLenientParsing: useLenientParsing);
             this.scope = scope;
             this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
             this.useLenientParsing = useLenientParsing;
@@ -202,7 +199,7 @@
                                     && CurrentToken is NameToken name
                                     && namedDictionaryRequiredKeys.TryGetValue(name, out var requiredKeys))
                                 {
-                                    tokenizer = new DictionaryTokenizer(usePdfDocEncoding, StackDepthGuard, requiredKeys, useLenientParsing);
+                                    tokenizer = new DictionaryTokenizer(StackDepthGuard, requiredKeys, useLenientParsing);
                                 }
                             }
                             else

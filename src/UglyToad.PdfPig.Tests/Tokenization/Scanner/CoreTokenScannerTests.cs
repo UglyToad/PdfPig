@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
 
         public CoreTokenScannerTests()
         {
-            scannerFactory = x => new CoreTokenScanner(x, true, new StackDepthGuard(256));
+            scannerFactory = x => new CoreTokenScanner(x, new StackDepthGuard(256));
         }
 
         [Fact]
@@ -230,8 +230,7 @@ endobj";
             var tokens = new List<IToken>();
 
             var scanner = new CoreTokenScanner(
-                StringBytesTestConverter.Convert(content, false).Bytes,
-                true, new StackDepthGuard(256),
+                StringBytesTestConverter.Convert(content, false).Bytes, new StackDepthGuard(256),
                 isStream: true);
 
             while (scanner.MoveNext())
@@ -246,8 +245,7 @@ endobj";
             tokens.Clear();
 
             var nonStreamScanner = new CoreTokenScanner(
-                StringBytesTestConverter.Convert(content, false).Bytes,
-                true, new StackDepthGuard(256),
+                StringBytesTestConverter.Convert(content, false).Bytes, new StackDepthGuard(256),
                 isStream: false);
 
             while (nonStreamScanner.MoveNext())
@@ -292,8 +290,7 @@ endobj";
             var tokens = new List<IToken>();
 
             var scanner = new CoreTokenScanner(
-                StringBytesTestConverter.Convert(content, false).Bytes,
-                true, new StackDepthGuard(256),
+                StringBytesTestConverter.Convert(content, false).Bytes, new StackDepthGuard(256),
                 isStream: true);
 
             while (scanner.MoveNext())

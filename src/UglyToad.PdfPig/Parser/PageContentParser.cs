@@ -58,7 +58,7 @@
             IInputBytes inputBytes,
             ILog log)
         {
-            var scanner = new CoreTokenScanner(inputBytes, false, stackDepthGuard, useLenientParsing: useLenientParsing);
+            var scanner = new CoreTokenScanner(inputBytes, stackDepthGuard, useLenientParsing: useLenientParsing);
 
             var precedingTokens = new List<IToken>();
             // A page holds one operation per 24 bytes of content on average, one per 11 on the median page

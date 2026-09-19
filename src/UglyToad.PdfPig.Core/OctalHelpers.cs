@@ -26,37 +26,5 @@
                 _ => throw new InvalidOperationException($"Could not convert the character {c} to a short.")
             };
         }
-
-        /// <summary>
-        /// Read an integer from octal digits.
-        /// </summary>
-        public static int FromOctalDigits(ReadOnlySpan<short> octal)
-        {
-            int sum = 0;
-            for (int i = octal.Length - 1; i >= 0; i--)
-            {
-                var power = i;
-                sum += octal[i] * QuickPower(8, power);
-            }
-
-            return sum;
-        }
-
-        private static int QuickPower(int x, int pow)
-        {
-            int ret = 1;
-            while (pow != 0)
-            {
-                if ((pow & 1) == 1)
-                {
-                    ret *= x;
-                }
-
-                x *= x;
-                pow >>= 1;
-            }
-
-            return ret;
-        }
     }
 }

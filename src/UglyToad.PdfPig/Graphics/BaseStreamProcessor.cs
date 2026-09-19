@@ -472,15 +472,7 @@
                 }
                 else
                 {
-                    byte[] bytes;
-                    if (token is HexToken hex)
-                    {
-                        bytes = [.. hex.Bytes];
-                    }
-                    else
-                    {
-                        bytes = ((StringToken)token).GetBytes();
-                    }
+                    var bytes = token is HexToken hex ? hex.Memory : ((StringToken)token).Memory;
 
                     ShowTextInternal(new MemoryInputBytes(bytes));
                 }

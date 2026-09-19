@@ -1,21 +1,19 @@
 namespace UglyToad.PdfPig.Tokenization
 {
-    using System.Text;
+    using System;
     using Core;
     using Tokens;
 
-    internal class StringTokenizer : ITokenizer
+    internal sealed class StringTokenizer : ITokenizer
     {
-        private readonly bool usePdfDocEncoding;
-
-        private readonly StringBuilder stringBuilder = new StringBuilder();
+        /// <summary>
+        /// The bytes of the string being read, reused between tokens. A string in a file is a
+        /// sequence of bytes, so they are gathered as bytes rather than as text that would have to
+        /// be encoded straight back.
+        /// </summary>
+        private readonly ByteBuffer buffer = new ByteBuffer();
 
         public bool ReadsNextByte { get; } = false;
-
-        public StringTokenizer(bool usePdfDocEncoding)
-        {
-            this.usePdfDocEncoding = usePdfDocEncoding;
-        }
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -31,14 +29,16 @@ namespace UglyToad.PdfPig.Tokenization
                 return false;
             }
 
-            var builder = stringBuilder;
+            var builder = buffer;
             var numberOfBrackets = 1;
             var isEscapeActive = false;
             var isLineBreaking = false;
 
             var octalModeActive = false;
 
-            short[] octal = { 0, 0, 0 };
+            // The digits of an octal escape are read most significant first, so the value builds up
+            // a digit at a time and needs nothing to hold them in.
+            var octalValue = 0;
             var octalsRead = 0;
 
             while (inputBytes.MoveNext())
@@ -52,22 +52,18 @@ namespace UglyToad.PdfPig.Tokenization
 
                     if (nextCharacterOctal)
                     {
-                        // left shift the octals.
-                        LeftShiftOctal(c, octalsRead, octal);
+                        octalValue = octalValue * 8 + c.CharacterToShort();
                         octalsRead++;
                     }
 
                     if (octalsRead == 3 || !nextCharacterOctal)
                     {
-                        var characterCode = OctalHelpers.FromOctalDigits(octal);
+                        // An escape holds at most three octal digits, which reach \777. The
+                        // specification (7.3.4.2) says high-order overflow is ignored, which is what
+                        // truncating to a byte does.
+                        builder.Append((byte)octalValue);
 
-                        // For now :(
-                        // TODO: I have a sneaking suspicion this is wrong, not sure what behaviour is for large octal numbers
-                        builder.Append((char)characterCode);
-
-                        octal[0] = 0;
-                        octal[1] = 0;
-                        octal[2] = 0;
+                        octalValue = 0;
                         octalsRead = 0;
                         octalModeActive = false;
                     }
@@ -90,7 +86,7 @@ namespace UglyToad.PdfPig.Tokenization
                         isEscapeActive = false;
                         if (numberOfBrackets > 0)
                         {
-                            builder.Append(c);
+                            builder.Append(b);
                         }
 
                         // TODO: Check for other ends of string where the string is improperly formatted. See commented method
@@ -106,7 +102,7 @@ namespace UglyToad.PdfPig.Tokenization
                         }
 
                         isEscapeActive = false;
-                        builder.Append(c);
+                        builder.Append(b);
                         break;
                     // Escape
                     case '\\':
@@ -114,7 +110,7 @@ namespace UglyToad.PdfPig.Tokenization
                         // Escaped backslash
                         if (isEscapeActive)
                         {
-                            builder.Append(c);
+                            builder.Append(b);
                             isEscapeActive = false;
                         }
                         else
@@ -131,16 +127,16 @@ namespace UglyToad.PdfPig.Tokenization
                             }
 
                             isLineBreaking = false;
-                            builder.Append(c);
+                            builder.Append(b);
                         }
                         else if (isEscapeActive)
                         {
-                            ProcessEscapedCharacter(c, builder, octal, ref octalModeActive, ref octalsRead, ref isLineBreaking);
+                            ProcessEscapedCharacter(c, builder, ref octalValue, ref octalModeActive, ref octalsRead, ref isLineBreaking);
                             isEscapeActive = false;
                         }
                         else
                         {
-                            builder.Append(c);
+                            builder.Append(b);
                         }
 
                         break;
@@ -152,102 +148,33 @@ namespace UglyToad.PdfPig.Tokenization
                 }
             }
 
-            StringToken.Encoding encodedWith;
-            string tokenStr;
-            byte[] originalRawBytes = null;
-            // A byte order mark identifies the encoding of a text string. The operand of a text showing
-            // operator is a sequence of character codes rather than a text string, so it is left as it
-            // stands however it happens to start, which is the distinction usePdfDocEncoding draws.
-            if (!usePdfDocEncoding)
-            {
-                tokenStr = builder.ToString();
-
-                encodedWith = StringToken.Encoding.Iso88591;
-            }
-            // PDF 2.0 added UTF-8, marked by a byte order mark, as a text string encoding, see ISO 32000-2, 7.9.2.2.
-            else if (builder.Length >= 3 && builder[0] == 0xEF && builder[1] == 0xBB && builder[2] == 0xBF)
-            {
-                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                originalRawBytes = rawBytes;
-
-                tokenStr = Encoding.UTF8.GetString(rawBytes, 3, rawBytes.Length - 3);
-
-                encodedWith = StringToken.Encoding.Utf8;
-            }
-            else if (builder.Length >= 2 && builder[0] == 0xFE && builder[1] == 0xFF)
-            {
-                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                originalRawBytes = rawBytes;
-
-                tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
-
-                encodedWith = StringToken.Encoding.Utf16BE;
-            }
-            else if (builder.Length >= 2 && builder[0] == 0xFF && builder[1] == 0xFE)
-            {
-                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                originalRawBytes = rawBytes;
-
-                tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
-
-                encodedWith = StringToken.Encoding.Utf16;
-            }
-            else
-            {
-                var builtStr = builder.ToString();
-                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builtStr);
-                if (PdfDocEncoding.TryConvertBytesToString(rawBytes, out var str))
-                {
-                    tokenStr = str;
-                    encodedWith = StringToken.Encoding.PdfDocEncoding;
-                }
-                else
-                {
-                    tokenStr = builtStr;
-                    encodedWith = StringToken.Encoding.Iso88591;
-                }
-            }
-
-            builder.Clear();
-
-            token = originalRawBytes != null
-                ? new StringToken(tokenStr, encodedWith, originalRawBytes)
-                : new StringToken(tokenStr, encodedWith);
+            // The buffer holds the bytes of the string as it stands in the file. The token keeps
+            // them and decodes its text only if something asks for it, since a text showing operand
+            // is never text.
+            token = new StringToken(builder.ToArrayAndClear());
 
             return true;
         }
 
-        private static void LeftShiftOctal(char nextOctalChar, int octalsRead, short[] octals)
-        {
-            for (var i = octalsRead; i > 0; i--)
-            {
-                octals[i] = octals[i - 1];
-            }
-
-            var value = nextOctalChar.CharacterToShort();
-
-            octals[0] = value;
-        }
-
-        private static void ProcessEscapedCharacter(char c, StringBuilder builder, short[] octal, ref bool isOctalActive,
+        private static void ProcessEscapedCharacter(char c, ByteBuffer builder, ref int octalValue, ref bool isOctalActive,
             ref int octalsRead, ref bool isLineBreaking)
         {
             switch (c)
             {
                 case 'n':
-                    builder.Append('\n');
+                    builder.Append((byte)'\n');
                     break;
                 case 'r':
-                    builder.Append('\r');
+                    builder.Append((byte)'\r');
                     break;
                 case 't':
-                    builder.Append('\t');
+                    builder.Append((byte)'\t');
                     break;
                 case 'b':
-                    builder.Append('\b');
+                    builder.Append((byte)'\b');
                     break;
                 case 'f':
-                    builder.Append('\f');
+                    builder.Append((byte)'\f');
                     break;
                 case '0':
                 case '1':
@@ -257,7 +184,7 @@ namespace UglyToad.PdfPig.Tokenization
                 case '5':
                 case '6':
                 case '7':
-                    octal[0] = c.CharacterToShort();
+                    octalValue = c.CharacterToShort();
                     isOctalActive = true;
                     octalsRead = 1;
                     break;
@@ -269,9 +196,39 @@ namespace UglyToad.PdfPig.Tokenization
                     else
                     {
                         // Drop the backslash
-                        builder.Append(c);
+                        builder.Append((byte)c);
                     }
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Gathers the bytes of one string, keeping its array between tokens so that reading a file
+        /// full of them does not allocate one buffer each.
+        /// </summary>
+        private sealed class ByteBuffer
+        {
+            private byte[] bytes = new byte[64];
+
+            private int length;
+
+            public void Append(byte b)
+            {
+                if (length == bytes.Length)
+                {
+                    Array.Resize(ref bytes, bytes.Length * 2);
+                }
+
+                bytes[length++] = b;
+            }
+
+            public byte[] ToArrayAndClear()
+            {
+                var result = bytes.AsSpan(0, length).ToArray();
+
+                length = 0;
+
+                return result;
             }
         }
 

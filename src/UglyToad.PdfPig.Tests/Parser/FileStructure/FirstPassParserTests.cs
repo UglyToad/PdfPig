@@ -43,7 +43,7 @@ public class FirstPassParserTests
         var results = FirstPassParser.Parse(
             new FileHeaderOffset(0),
             ib.Bytes,
-            new CoreTokenScanner(ib.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(ib.Bytes, new StackDepthGuard(256)),
             DefaultFilterProvider.Instance);
 
         Assert.Equal(2, results.Parts.Count);
@@ -118,7 +118,7 @@ public class FirstPassParserTests
 
         var results = FirstPassParser.Parse(new FileHeaderOffset(0),
             ib.Bytes,
-            new CoreTokenScanner(ib.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(ib.Bytes, new StackDepthGuard(256)),
             DefaultFilterProvider.Instance);
 
         var offsets = results.Parts.Select(x => x.Offset).OrderBy(x => x).ToList();
@@ -128,7 +128,7 @@ public class FirstPassParserTests
         Assert.NotNull(results.Trailer);
 
         ib.Bytes.Seek(98);
-        var scanner = new CoreTokenScanner(ib.Bytes, false, new StackDepthGuard(256));
+        var scanner = new CoreTokenScanner(ib.Bytes, new StackDepthGuard(256));
         scanner.MoveNext();
         Assert.Equal(scanner.CurrentToken, OperatorToken.Xref);
     }

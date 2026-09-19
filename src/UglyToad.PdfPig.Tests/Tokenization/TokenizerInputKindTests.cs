@@ -64,7 +64,7 @@
 
         private static List<IToken> ReadAll(IInputBytes input)
         {
-            var scanner = new CoreTokenScanner(input, false, new StackDepthGuard(256));
+            var scanner = new CoreTokenScanner(input, new StackDepthGuard(256));
             var result = new List<IToken>();
             while (scanner.MoveNext())
             {
