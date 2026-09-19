@@ -270,7 +270,20 @@
             foreach (var namePatternPair in patternDictionary.Data)
             {
                 var name = NameToken.Create(namePatternPair.Key);
-                patternsProperties[name] = PatternParser.Create(namePatternPair.Value, scanner, this, filterProvider);
+                try
+                {
+                    patternsProperties[name] = PatternParser.Create(namePatternPair.Value, scanner, this, filterProvider);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to load pattern '{name}' from resource dictionary: {ex.Message}");
+                    patternsProperties[name] = null!;
+
+                    if (!parsingOptions.UseLenientParsing)
+                    {
+                        throw;
+                    }
+                }
             }
         }
 

@@ -17,6 +17,18 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1445()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("EE24LC01_EE24LC02#MIC.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(5);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+            }
+        }
+
+        [Fact]
         public void Issues1436()
         {
             // An outline item whose /First entry references itself.

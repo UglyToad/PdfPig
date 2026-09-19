@@ -33,7 +33,7 @@
 
             if (!patternDictionary.Data.ContainsKey(NameToken.PatternType))
             {
-                throw new Exception("TODO");
+                throw new Exception("Pattern type not specified.");
             }
 
             int patternType = ((NumericToken)patternDictionary.Data[NameToken.PatternType]).Int;
@@ -128,7 +128,7 @@
             }
             else
             {
-                throw new ArgumentException("TODO");
+                throw new PdfDocumentFormatException($"Invalid Shading Pattern token encountered in page resource dictionary: {shadingToken}.");
             }
             return new ShadingPatternColor(matrix, patternExtGState!, patternDictionary, patternShading);
         }
