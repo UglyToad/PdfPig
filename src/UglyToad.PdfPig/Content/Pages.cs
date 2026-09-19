@@ -118,9 +118,9 @@
         }
 
 #if NET
-        internal void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>() where TPageFactory : IPageFactory<TPage>
+        internal void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>(Action<TPageFactory>? configureFactory = null) where TPageFactory : IPageFactory<TPage>
 #else
-        internal void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
+        internal void AddPageFactory<TPage, TPageFactory>(Action<TPageFactory>? configureFactory = null) where TPageFactory : IPageFactory<TPage>
 #endif
         {
             var constructor = typeof(TPageFactory).GetConstructor(new[]
@@ -152,6 +152,11 @@
             {
                 throw new InvalidOperationException(
                     $"Something wrong happened while creating page factory of type '{typeof(TPageFactory)}' for page type '{typeof(TPage)}'.");
+            }
+
+            if (configureFactory is not null)
+            {
+                configureFactory((TPageFactory)pageFactory);
             }
 
             AddPageFactory(pageFactory);

@@ -155,12 +155,12 @@
         /// Add a page factory.
         /// </summary>
 #if NET
-        public void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>() where TPageFactory : IPageFactory<TPage>
+        public void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>(Action<TPageFactory>? configureFactory = null) where TPageFactory : IPageFactory<TPage>
 #else
-        public void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
+        public void AddPageFactory<TPage, TPageFactory>(Action<TPageFactory>? configureFactory = null) where TPageFactory : IPageFactory<TPage>
 #endif
         {
-            pages.AddPageFactory<TPage, TPageFactory>();
+            pages.AddPageFactory<TPage, TPageFactory>(configureFactory);
         }
 
         /// <summary>
