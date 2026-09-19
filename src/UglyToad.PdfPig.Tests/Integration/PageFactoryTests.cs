@@ -41,7 +41,11 @@
 
             using (var document = PdfDocument.Open(file))
             {
-                document.AddPageFactory(new SimplePageFactory());
+                const int configuredValue = 38;
+                var factory = new SimplePageFactory();
+
+                document.AddPageFactory(factory);
+                factory.SetConfiguredValue(configuredValue);
 
                 var page = document.GetPage(1);
                 var pageInfo = document.GetPage<SimplePage>(1);
@@ -49,12 +53,14 @@
                 Assert.Equal(page.Number, pageInfo.Number);
                 Assert.Equal(page.Rotation.Value, pageInfo.Rotation);
                 Assert.Equal(page.MediaBox.Bounds, pageInfo.MediaBox.Bounds);
+                Assert.Equal(configuredValue, pageInfo.ConfiguredValue);
 
                 // Run again
                 pageInfo = document.GetPage<SimplePage>(1);
                 Assert.Equal(page.Number, pageInfo.Number);
                 Assert.Equal(page.Rotation.Value, pageInfo.Rotation);
                 Assert.Equal(page.MediaBox.Bounds, pageInfo.MediaBox.Bounds);
+                Assert.Equal(configuredValue, pageInfo.ConfiguredValue);
             }
         }
 
