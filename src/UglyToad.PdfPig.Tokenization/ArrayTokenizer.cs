@@ -7,7 +7,6 @@
 
     internal sealed class ArrayTokenizer : ITokenizer
     {
-        private readonly bool usePdfDocEncoding;
         private readonly StackDepthGuard stackDepthGuard;
         private readonly bool useLenientParsing;
 
@@ -15,9 +14,8 @@
 
         public bool ReadsNextByte { get; } = false;
 
-        public ArrayTokenizer(bool usePdfDocEncoding, StackDepthGuard stackDepthGuard, bool useLenientParsing)
+        public ArrayTokenizer(StackDepthGuard stackDepthGuard, bool useLenientParsing)
         {
-            this.usePdfDocEncoding = usePdfDocEncoding;
             this.stackDepthGuard = stackDepthGuard;
             this.useLenientParsing = useLenientParsing;
         }
@@ -31,7 +29,7 @@
                 return false;
             }
 
-            var scanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, stackDepthGuard, ScannerScope.Array, useLenientParsing: useLenientParsing);
+            var scanner = new CoreTokenScanner(inputBytes, stackDepthGuard, ScannerScope.Array, useLenientParsing: useLenientParsing);
 
             var contents = gathered ??= new List<IToken>();
             contents.Clear();

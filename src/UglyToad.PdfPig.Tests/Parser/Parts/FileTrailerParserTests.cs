@@ -27,7 +27,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Equal(456, result.StartXRefDeclaredOffset);
@@ -60,7 +60,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Equal(17, result.StartXRefDeclaredOffset);
@@ -94,7 +94,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Equal(1384733, result.StartXRefDeclaredOffset);
@@ -107,7 +107,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Null(result.StartXRefDeclaredOffset);
@@ -131,7 +131,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Null(result.StartXRefDeclaredOffset);
@@ -152,7 +152,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Null(result.StartXRefDeclaredOffset);
@@ -186,7 +186,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Equal(1274665676543, result.StartXRefDeclaredOffset);
@@ -208,7 +208,7 @@ public class FirstPassParserStartXrefTests
 
         var result = FirstPassParser.GetFirstCrossReferenceOffset(
             input.Bytes,
-            new CoreTokenScanner(input.Bytes, true, new StackDepthGuard(256)),
+            new CoreTokenScanner(input.Bytes, new StackDepthGuard(256)),
             new TestingLog());
 
         Assert.Equal(57695, result.StartXRefDeclaredOffset);

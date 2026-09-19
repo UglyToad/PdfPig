@@ -155,13 +155,16 @@
         }
 
         [Fact]
-        public void StringTokenNotEqualWhenEncodingDiffers()
+        public void StringTokenNotEqualWhenBytesDifferEvenIfTheTextMatches()
         {
-            var iso = new StringToken("test", StringToken.Encoding.Iso88591);
-            var utf16 = new StringToken("test", StringToken.Encoding.Utf16BE);
+            // The same text, held as PdfDocEncoding and as UTF-16 with a byte order mark.
+            var pdfDocEncoded = new StringToken([0x74, 0x65, 0x73, 0x74]);
+            var utf16 = new StringToken([0xFE, 0xFF, 0x00, 0x74, 0x00, 0x65, 0x00, 0x73, 0x00, 0x74]);
 
-            Assert.NotEqual(iso, utf16);
-            Assert.NotEqual(utf16, iso);
+            Assert.Equal(pdfDocEncoded.Data, utf16.Data);
+
+            Assert.NotEqual(pdfDocEncoded, utf16);
+            Assert.NotEqual(utf16, pdfDocEncoded);
         }
 
         [Fact]

@@ -257,8 +257,8 @@
             {
                 { NameToken.ProfileCS, new StringToken("CMYK") },
                 { NameToken.ProfileName, new StringToken("Coated FOGRA39") },
-                { NameToken.IccVersion, new StringToken("ignored", StringToken.Encoding.Iso88591, iccVersion) },
-                { NameToken.CheckSum, new StringToken("ignored", StringToken.Encoding.Iso88591, checkSum) },
+                { NameToken.IccVersion, new StringToken(iccVersion) },
+                { NameToken.CheckSum, new StringToken(checkSum) },
                 { NameToken.ColorantTable, colorantTable },
                 { NameToken.Urls, urls }
             });

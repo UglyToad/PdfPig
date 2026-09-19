@@ -6,7 +6,7 @@
 
     public class StringTokenizerTests
     {
-        private readonly StringTokenizer tokenizer = new StringTokenizer(true);
+        private readonly StringTokenizer tokenizer = new StringTokenizer();
 
         [Fact]
         public void NullInput_ReturnsFalse()
@@ -184,6 +184,26 @@ are the same.)";
             Assert.True(result);
             
             Assert.Equal("This string has two +Öctals", AssertStringToken(token).Data);
+        }
+
+        /// <summary>
+        /// Three octal digits reach \777, past what a byte holds. The specification (7.3.4.2) says
+        /// high-order overflow is ignored, so only the low eight bits of the escape survive.
+        /// </summary>
+        [Theory]
+        [InlineData(@"(\400)", 0x00)]
+        [InlineData(@"(\401)", 0x01)]
+        [InlineData(@"(\777)", 0xFF)]
+        [InlineData(@"(\377)", 0xFF)]
+        public void OctalEscapeAboveAByteIgnoresHighOrderOverflow(string s, int expected)
+        {
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(new[] { (byte)expected }, AssertStringToken(token).GetBytes());
         }
 
         [Fact]

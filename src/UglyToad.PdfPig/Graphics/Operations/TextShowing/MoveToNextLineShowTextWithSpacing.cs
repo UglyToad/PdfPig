@@ -1,14 +1,14 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
     using System.IO;
+    using PdfPig.Core;
     using TextPositioning;
-    using TextState;
 
     /// <inheritdoc />
     /// <summary>
     /// Move to the next line and show a text string, using the first number as the word spacing and the second as the character spacing.
     /// </summary>
-    public class MoveToNextLineShowTextWithSpacing : IGraphicsStateOperation
+    public sealed class MoveToNextLineShowTextWithSpacing : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -34,9 +34,19 @@
         public ReadOnlyMemory<byte> Bytes { get; }
 
         /// <summary>
-        /// The text to show.
+        /// The text to show, or <see langword="null"/> when the operand was a hexadecimal string.
+        /// Decoded from the character codes on first use.
         /// </summary>
-        public string? Text { get; }
+        public string? Text => isHex ? null : text ??= OtherEncodings.BytesAsLatin1String(characterCodes.Span);
+
+        /// <summary>
+        /// The character codes to show, whichever form the operand was given in.
+        /// </summary>
+        private readonly ReadOnlyMemory<byte> characterCodes;
+
+        private readonly bool isHex;
+
+        private string? text;
 
         /// <summary>
         /// Create a new <see cref="MoveToNextLineShowTextWithSpacing"/>.
@@ -48,7 +58,8 @@
         {
             WordSpacing = wordSpacing;
             CharacterSpacing = characterSpacing;
-            Text = text;
+            this.text = text;
+            characterCodes = OtherEncodings.StringAsLatin1Bytes(text);
         }
 
         /// <summary>
@@ -58,24 +69,49 @@
         /// <param name="characterSpacing">The character spacing.</param>
         /// <param name="hexBytes">The bytes of the text to show.</param>
         public MoveToNextLineShowTextWithSpacing(double wordSpacing, double characterSpacing, ReadOnlyMemory<byte> hexBytes)
+            : this(wordSpacing, characterSpacing, hexBytes, isHex: true)
+        {
+        }
+
+        private MoveToNextLineShowTextWithSpacing(double wordSpacing, double characterSpacing,
+            ReadOnlyMemory<byte> characterCodes, bool isHex)
         {
             WordSpacing = wordSpacing;
             CharacterSpacing = characterSpacing;
-            Bytes = hexBytes;
+            this.characterCodes = characterCodes;
+            this.isHex = isHex;
+
+            if (isHex)
+            {
+                Bytes = characterCodes;
+            }
+        }
+
+        /// <summary>
+        /// Create a <see cref="MoveToNextLineShowTextWithSpacing"/> for a literal string operand from
+        /// the character codes it was read as. See <see cref="ShowText.FromLiteralBytes"/>.
+        /// </summary>
+        /// <param name="wordSpacing">The word spacing.</param>
+        /// <param name="characterSpacing">The character spacing.</param>
+        /// <param name="characterCodes">The character codes the operand was read as.</param>
+        /// <returns>An operation showing those character codes, written back as a literal string.</returns>
+        public static MoveToNextLineShowTextWithSpacing FromLiteralBytes(double wordSpacing,
+            double characterSpacing, ReadOnlyMemory<byte> characterCodes)
+        {
+            return new MoveToNextLineShowTextWithSpacing(wordSpacing, characterSpacing, characterCodes, isHex: false);
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var setWordSpacing = new SetWordSpacing(WordSpacing);
-            var setCharacterSpacing = new SetCharacterSpacing(CharacterSpacing);
-            var moveToNextLine = MoveToNextLine.Value;
-            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes!);
+            // This is what running a SetWordSpacing and a SetCharacterSpacing amounts to, without
+            // allocating one of each to do it.
+            operationContext.SetWordSpacing(WordSpacing);
+            operationContext.SetCharacterSpacing(CharacterSpacing);
 
-            setWordSpacing.Run(operationContext);
-            setCharacterSpacing.Run(operationContext);
-            moveToNextLine.Run(operationContext);
-            showText.Run(operationContext);
+            MoveToNextLine.Value.Run(operationContext);
+
+            operationContext.ShowText(new MemoryInputBytes(characterCodes));
         }
 
         /// <inheritdoc />
@@ -86,15 +122,17 @@
             stream.WriteDouble(CharacterSpacing);
             stream.WriteWhiteSpace();
 
-            if (!Bytes.IsEmpty)
+            if (isHex)
             {
                 stream.WriteHex(Bytes.Span);
             }
             else
             {
-                stream.WriteText($"({Text})");
+                ShowText.WriteLiteral(characterCodes.Span, stream);
             }
 
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
             stream.WriteNewLine();
         }
 

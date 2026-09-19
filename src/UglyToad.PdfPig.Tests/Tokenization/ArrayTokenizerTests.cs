@@ -6,7 +6,7 @@
 
     public class ArrayTokenizerTests
     {
-        private readonly ArrayTokenizer tokenizer = new ArrayTokenizer(true, new StackDepthGuard(256), false);
+        private readonly ArrayTokenizer tokenizer = new ArrayTokenizer(new StackDepthGuard(256), false);
 
         [Theory]
         [InlineData("]")]
