@@ -29,6 +29,7 @@
                     Assert.Equal(page.Number, pageInfo.Number);
                     Assert.Equal(page.Rotation.Value, pageInfo.Rotation);
                     Assert.Equal(page.MediaBox.Bounds, pageInfo.MediaBox.Bounds);
+                    Assert.Equal(0, pageInfo.ConfiguredValue);
                 }
             }
         }
@@ -54,6 +55,32 @@
                 Assert.Equal(page.Number, pageInfo.Number);
                 Assert.Equal(page.Rotation.Value, pageInfo.Rotation);
                 Assert.Equal(page.MediaBox.Bounds, pageInfo.MediaBox.Bounds);
+            }
+        }
+
+        [Fact]
+        public void SimpleFactory3()
+        {
+            var file = IntegrationHelpers.GetDocumentPath("ICML03-081");
+
+            using (var document = PdfDocument.Open(file))
+            {
+                const int configuredValue = 38;
+                document.AddPageFactory<SimplePage, SimplePageFactory>((factory) =>
+                {
+                    factory.SetConfiguredValue(configuredValue);
+                });
+
+                for (int p = 1; p < document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    var pageInfo = document.GetPage<SimplePage>(p);
+
+                    Assert.Equal(page.Number, pageInfo.Number);
+                    Assert.Equal(page.Rotation.Value, pageInfo.Rotation);
+                    Assert.Equal(page.MediaBox.Bounds, pageInfo.MediaBox.Bounds);
+                    Assert.Equal(configuredValue, pageInfo.ConfiguredValue);
+                }
             }
         }
 
@@ -178,16 +205,21 @@
 
             public MediaBox MediaBox { get; }
 
-            public SimplePage(int number, int rotation, MediaBox mediaBox)
+            public int ConfiguredValue { get; }
+
+            public SimplePage(int number, int rotation, MediaBox mediaBox, int configuredValue)
             {
                 Number = number;
                 Rotation = rotation;
                 MediaBox = mediaBox;
+                ConfiguredValue = configuredValue;
             }
         }
 
         public sealed class SimplePageFactory : IPageFactory<SimplePage>
         {
+            private int configuredValue = 0;
+
             public SimplePageFactory()
             {
                 // do nothing
@@ -203,12 +235,17 @@
                 // do nothing
             }
 
+            public void SetConfiguredValue(int value)
+            {
+                configuredValue = value;
+            }
+
             public SimplePage Create(int number,
                 DictionaryToken dictionary,
                 PageTreeMembers pageTreeMembers,
                 NamedDestinations namedDestinations)
             {
-                return new SimplePage(number, pageTreeMembers.Rotation, pageTreeMembers.MediaBox);
+                return new SimplePage(number, pageTreeMembers.Rotation, pageTreeMembers.MediaBox, configuredValue);
             }
         }
 
