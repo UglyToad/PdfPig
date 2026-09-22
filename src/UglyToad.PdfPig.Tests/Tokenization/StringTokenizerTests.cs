@@ -8,6 +8,26 @@
     {
         private readonly StringTokenizer tokenizer = new StringTokenizer();
 
+        [Theory]
+        [InlineData("(a\rb)", "a\nb")]
+        [InlineData("(a\nb)", "a\nb")]
+        [InlineData("(a\r\nb)", "a\nb")]
+        [InlineData("(a\r\r\nb)", "a\n\nb")]
+        [InlineData("(a\r\n\nb)", "a\n\nb")]
+        [InlineData("(a\\\rb)", "ab")]
+        [InlineData("(a\\\nb)", "ab")]
+        [InlineData("(a\\\r\nb)", "ab")]
+        [InlineData("(a\\\r\n\nb)", "a\nb")]
+        [InlineData("(a\\\n\nb)", "a\nb")]
+        [InlineData("(a\\\r\rb)", "a\nb")]
+        [InlineData("(a\\r\\nb)", "a\r\nb")]
+        public void NormalizesPhysicalLineEndingsAndSkipsOnlyOneEscapedLineEnding(string source, string expected)
+        {
+            var input = StringBytesTestConverter.Convert(source);
+            Assert.True(tokenizer.TryTokenize(input.First, input.Bytes, out var token));
+            Assert.Equal(System.Text.Encoding.ASCII.GetBytes(expected), AssertStringToken(token).GetBytes());
+        }
+
         [Fact]
         public void NullInput_ReturnsFalse()
         {
@@ -53,7 +73,7 @@
 
         [Theory]
         [InlineData("(This is a string)", "This is a string")]
-        [InlineData("(Strings may contain newlines\r\nand such.)", "Strings may contain newlines\r\nand such.")]
+        [InlineData("(Strings may contain newlines\r\nand such.)", "Strings may contain newlines\nand such.")]
         [InlineData("(Strings may contain balanced parentheses () and special characters (*!*&}^% and so on).)",
             "Strings may contain balanced parentheses () and special characters (*!*&}^% and so on).")]
         [InlineData("()", "")]
