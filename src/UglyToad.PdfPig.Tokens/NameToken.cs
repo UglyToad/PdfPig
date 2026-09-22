@@ -12,7 +12,8 @@
     {
         /// <inheritdoc />
         /// <summary>
-        /// The string representation of the name.
+        /// The byte-preserving representation of the name. Parsed names map each PDF byte
+        /// to the character with the same value (Latin-1); they are not decoded as text.
         /// </summary>
         public string Data { get; }
         

@@ -8,6 +8,50 @@
         private readonly NameTokenizer tokenizer = new NameTokenizer();
         
         [Fact]
+        public void DifferentByteSequencesDoNotCollapseToTheSameName()
+        {
+            var utf8 = ReadName("/#C3#A9");
+            var singleByte = ReadName("/#E9");
+            Assert.NotEqual(utf8, singleByte);
+            Assert.Equal("\u00c3\u00a9", utf8.Data);
+            Assert.Equal("\u00e9", singleByte.Data);
+            Assert.Equal(ReadName("/é"), utf8);
+        }
+
+        [Fact]
+        public void DictionaryKeysPreserveByteIdentity()
+        {
+            var input = StringBytesTestConverter.Convert("<< /#C3#A9 1 /#E9 2 /#80 3 >>");
+            var dictionaryTokenizer = new DictionaryTokenizer(new PdfPig.Core.StackDepthGuard(256));
+            Assert.True(dictionaryTokenizer.TryTokenize(input.First, input.Bytes, out var token));
+            var dictionary = Assert.IsType<DictionaryToken>(token);
+            Assert.Equal(3, dictionary.Data.Count);
+            Assert.Equal(1, Assert.IsType<NumericToken>(dictionary.Data["\u00c3\u00a9"]).Int);
+            Assert.Equal(2, Assert.IsType<NumericToken>(dictionary.Data["\u00e9"]).Int);
+            Assert.Equal(3, Assert.IsType<NumericToken>(dictionary.Data["\u0080"]).Int);
+        }
+
+        [Fact]
+        public void EveryNonNullByteSurvivesNameWriteAndRead()
+        {
+            for (var value = 1; value <= 255; value++)
+            {
+                var name = ReadName("/#" + value.ToString("X2"));
+                Assert.Equal(((char)value).ToString(), name.Data);
+                using var output = new MemoryStream();
+                new PdfPig.Writer.TokenWriter().WriteToken(name, output);
+                Assert.Equal(name, ReadName(System.Text.Encoding.ASCII.GetString(output.ToArray())));
+            }
+        }
+
+        private NameToken ReadName(string source)
+        {
+            var input = StringBytesTestConverter.Convert(source);
+            Assert.True(tokenizer.TryTokenize(input.First, input.Bytes, out var token));
+            return Assert.IsType<NameToken>(token);
+        }
+
+        [Fact]
         public void ReadsName()
         {
             const string s = "/Type /XRef";
@@ -78,7 +122,7 @@
         [Theory]
         [InlineData("/Name1", "Name1")]
         [InlineData("/ASomewhatLongerName", "ASomewhatLongerName")]
-        [InlineData("/A−Name_With;Various***Characters?", "A−Name_With;Various***Characters?")]
+        [InlineData("/A−Name_With;Various***Characters?", "A\u00e2\u0088\u0092Name_With;Various***Characters?")]
         [InlineData("/1.2", "1.2")]
         [InlineData("/$$", "$$")]
         [InlineData("/@pattern", "@pattern")]

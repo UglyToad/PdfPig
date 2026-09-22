@@ -1,23 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
     using System;
-    using System.Text;
     using Core;
     using Tokens;
 
-#if NET
-    using System.Text.Unicode;
-#endif
-
     internal sealed class NameTokenizer : ITokenizer
     {
-        static NameTokenizer()
-        {
-#if NET
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
-        }
-
         public bool ReadsNextByte { get; } = true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -102,18 +90,10 @@
                 }
             }
 
-#if NET8_0_OR_GREATER
-            var byteArray = bytes.WrittenSpan;
-            bool isValidUtf8 = Utf8.IsValid(byteArray);
-#else
-            var byteArray = bytes.WrittenSpan.ToArray();
-            bool isValidUtf8 = ReadHelper.IsValidUtf8(byteArray);
-#endif
+            // ISO 32000-1, 7.3.5: name identity is defined by bytes, not text
+            // encoding. A reversible mapping also keeps dictionary keys distinct.
+            var str = OtherEncodings.BytesAsLatin1String(bytes.WrittenSpan);
 
-            var str = isValidUtf8
-                ? Encoding.UTF8.GetString(byteArray)
-                : Encoding.GetEncoding("windows-1252").GetString(byteArray);
-            
             token = NameToken.Create(str);
 
             return true;
