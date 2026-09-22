@@ -32,7 +32,7 @@ namespace UglyToad.PdfPig.Tokenization
             var builder = buffer;
             var numberOfBrackets = 1;
             var isEscapeActive = false;
-            var isLineBreaking = false;
+            var skipLineFeed = false;
 
             var octalModeActive = false;
 
@@ -45,6 +45,13 @@ namespace UglyToad.PdfPig.Tokenization
             {
                 var b = inputBytes.CurrentByte;
                 var c = (char)b;
+                // CRLF is one physical end-of-line marker. Consume only its LF;
+                // any following line break is a separate character in the string.
+                if (skipLineFeed)
+                {
+                    skipLineFeed = false;
+                    if (c == '\n') continue;
+                }
 
                 if (octalModeActive)
                 {
@@ -77,7 +84,6 @@ namespace UglyToad.PdfPig.Tokenization
                 switch (c)
                 {
                     case ')':
-                        isLineBreaking = false;
                         if (!isEscapeActive)
                         {
                             numberOfBrackets--;
@@ -94,7 +100,6 @@ namespace UglyToad.PdfPig.Tokenization
 
                         break;
                     case '(':
-                        isLineBreaking = false;
 
                         if (!isEscapeActive)
                         {
@@ -106,7 +111,6 @@ namespace UglyToad.PdfPig.Tokenization
                         break;
                     // Escape
                     case '\\':
-                        isLineBreaking = false;
                         // Escaped backslash
                         if (isEscapeActive)
                         {
@@ -119,20 +123,15 @@ namespace UglyToad.PdfPig.Tokenization
                         }
                         break;
                     default:
-                        if (isLineBreaking)
+                        if (isEscapeActive)
                         {
-                            if (ReadHelper.IsEndOfLine(c))
-                            {
-                                continue;
-                            }
-
-                            isLineBreaking = false;
-                            builder.Append(b);
-                        }
-                        else if (isEscapeActive)
-                        {
-                            ProcessEscapedCharacter(c, builder, ref octalValue, ref octalModeActive, ref octalsRead, ref isLineBreaking);
+                            ProcessEscapedCharacter(c, builder, ref octalValue, ref octalModeActive, ref octalsRead, ref skipLineFeed);
                             isEscapeActive = false;
+                        }
+                        else if (c == '\r')
+                        {
+                            builder.Append((byte)'\n');
+                            skipLineFeed = true;
                         }
                         else
                         {
@@ -157,7 +156,7 @@ namespace UglyToad.PdfPig.Tokenization
         }
 
         private static void ProcessEscapedCharacter(char c, ByteBuffer builder, ref int octalValue, ref bool isOctalActive,
-            ref int octalsRead, ref bool isLineBreaking)
+            ref int octalsRead, ref bool skipLineFeed)
         {
             switch (c)
             {
@@ -191,7 +190,7 @@ namespace UglyToad.PdfPig.Tokenization
                 default:
                     if (c == ReadHelper.AsciiCarriageReturn || c == ReadHelper.AsciiLineFeed)
                     {
-                        isLineBreaking = true;
+                        skipLineFeed = c == '\r';
                     }
                     else
                     {
