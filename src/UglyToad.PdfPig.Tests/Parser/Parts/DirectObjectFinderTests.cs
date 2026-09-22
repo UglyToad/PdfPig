@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
+namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using PdfPig.Core;
     using PdfPig.Parser.Parts;
@@ -8,6 +8,41 @@
     public class DirectObjectFinderTests
     {
         private readonly TestPdfTokenScanner scanner = new TestPdfTokenScanner();
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ReferenceDepthIsBoundedAndRestored(bool cycle)
+        {
+            scanner.StackDepthGuard = new StackDepthGuard(4);
+            for (var i = 1; i <= 8; i++)
+            {
+                var reference = new IndirectReference(i, 0);
+                IToken value = i == 8
+                    ? (cycle ? new IndirectReferenceToken(new IndirectReference(1, 0)) : new NumericToken(42))
+                    : new IndirectReferenceToken(new IndirectReference(cycle ? i : i + 1, 0));
+                scanner.Objects[reference] = new ObjectToken(XrefLocation.File(i), reference, value);
+            }
+
+            var first = new IndirectReference(1, 0);
+            Assert.False(DirectObjectFinder.TryGet(new IndirectReferenceToken(first), scanner, out NumericToken missing));
+            Assert.Null(missing);
+            Assert.Equal(4, scanner.GetCallCount);
+            Assert.Throws<PdfDocumentStackDepthException>(() => DirectObjectFinder.Get<NumericToken>(first, scanner));
+            Assert.Equal(8, scanner.GetCallCount);
+
+            // Failure must not consume the budget for a subsequent valid lookup.
+            scanner.Objects[first] = new ObjectToken(XrefLocation.File(1), first, new NumericToken(42));
+            Assert.True(DirectObjectFinder.TryGet(new IndirectReferenceToken(first), scanner, out NumericToken result));
+            Assert.Equal(42, result.Int);
+            Assert.Equal(42, DirectObjectFinder.Get<NumericToken>(first, scanner).Int);
+            scanner.StackDepthGuard.Enter();
+            scanner.StackDepthGuard.Enter();
+            scanner.StackDepthGuard.Enter();
+            scanner.StackDepthGuard.Enter();
+            Assert.Throws<PdfDocumentStackDepthException>(() => scanner.StackDepthGuard.Enter());
+            for (var i = 0; i < 4; i++) scanner.StackDepthGuard.Exit();
+        }
 
         [Fact]
         public void TryGetCanFollowMultipleReferenceLinks()
