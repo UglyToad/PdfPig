@@ -219,20 +219,29 @@
             }
             else
             {
-                var currentNearestNode = node;
-                var currentDistance = distance(node.Value, pivotPoint);
+                // The node's own element is only a candidate if it is not the pivot. Otherwise the
+                // pivot could be returned as its own neighbour, and its distance would be used to prune.
+                KdTreeNode<T> currentNearestNode = null;
+                double currentDistance = double.PositiveInfinity;
+
+                if (!node.Element.Equals(pivot))
+                {
+                    currentNearestNode = node;
+                    currentDistance = distance(node.Value, pivotPoint);
+                }
 
                 KdTreeNode<T> newNode = null;
                 double? newDist = null;
 
                 var pointValue = node.IsAxisCutX ? pivotPoint.X : pivotPoint.Y;
 
+                // Children never return the pivot, no need to check it again below.
                 if (pointValue < node.L)
                 {
                     // start left
                     (newNode, newDist) = FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance);
 
-                    if (newDist.HasValue && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                    if (newDist.HasValue && newDist <= currentDistance)
                     {
                         currentDistance = newDist.Value;
                         currentNearestNode = newNode;
@@ -248,7 +257,7 @@
                     // start right
                     (newNode, newDist) = FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance);
 
-                    if (newDist.HasValue && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                    if (newDist.HasValue && newDist <= currentDistance)
                     {
                         currentDistance = newDist.Value;
                         currentNearestNode = newNode;
@@ -260,10 +269,15 @@
                     }
                 }
 
-                if (newDist.HasValue && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                if (newDist.HasValue && newDist <= currentDistance)
                 {
                     currentDistance = newDist.Value;
                     currentNearestNode = newNode;
+                }
+
+                if (currentNearestNode == null)
+                {
+                    return (null, null);
                 }
 
                 return (currentNearestNode, currentDistance);
