@@ -110,6 +110,9 @@ Today the path is:
 
 Build `Word`s directly from the exact-size `Letter[]` groups into `new List<Word>(groupCount)`. Keep the public `IEnumerable` API of `Clustering.NearestNeighbours` as a thin wrapper over an internal method that returns arrays.
 
+  > The same pattern is still left in DocstrumBoundingBoxes, which is outside P4's scope (P4 covered only word extraction). GetLines (line 337) and GetBlocks (line 411) call the lazy public NearestNeighbours overloads and then .ToList() the result. That's one iterator plus one list
+  copy of the groups per call, not of the elements, so it's small. Eager internal versions of those two overloads, like NearestNeighbourGroups, would remove it.
+
 ### P5. Make `Parallel.For` adaptive
 
 Each nearest-neighbour query takes a few hundred nanoseconds. For small pages, or when callers already parallelise across pages, the `Parallel.For` overhead and oversubscription cost more than the work itself.
