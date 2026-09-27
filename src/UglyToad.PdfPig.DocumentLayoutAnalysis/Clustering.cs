@@ -4,7 +4,6 @@
     using System;
     using System.Buffers;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -174,9 +173,9 @@
             });
 
             // 2. Group indexes
-            foreach (var group in GroupIndexes(indexes))
+            foreach (var group in GroupIndexes(indexes, elements))
             {
-                yield return group.Select(i => elements[i]).ToList();
+                yield return group;
             }
         }
 
@@ -251,82 +250,109 @@
             });
 
             // 2. Group indexes
-            foreach (var group in GroupIndexes(indexes))
+            foreach (var group in GroupIndexes(indexes, elements))
             {
-                yield return group.Select(i => elements[i]).ToList();
+                yield return group;
             }
         }
         
-        internal static List<List<int>> GroupIndexes(int[] edges)
+        /// <summary>
+        /// Group the elements connected by <paramref name="edges"/>, ignoring the edges' direction, where
+        /// <c>edges[i]</c> is the index of the element connected to <c>i</c> (or -1 if none).
+        /// <para>Groups are returned by ascending lowest index, and the elements within a group in depth-first search order.</para>
+        /// </summary>
+        internal static List<T[]> GroupIndexes<T>(int[] edges, IReadOnlyList<T> elements)
         {
             // Improved thanks to https://github.com/UglyToad/PdfPig/issues/1178
-            var adjacency = new List<int>[edges.Length];
-            for (int i = 0; i < edges.Length; i++)
+            int n = edges.Length;
+            var intPool = ArrayPool<int>.Shared;
+
+            // Undirected adjacency in compressed sparse row (CSR) form: the neighbours of u are
+            // adjacency[adjacencyStart[u]..adjacencyStart[u + 1]], in the order the edges are
+            // found. Counts are stored 2 slots ahead so that, once filled, the offsets are already in place.
+            int[] adjacencyStart = intPool.Rent(n + 2);
+            Array.Clear(adjacencyStart, 0, n + 2);
+            int adjacencyCount = 0;
+            for (int i = 0; i < n; i++)
             {
-                adjacency[i] = new List<int>();
+                int j = edges[i];
+                if (j != -1)
+                {
+                    adjacencyStart[i + 2]++;
+                    adjacencyStart[j + 2]++;
+                    adjacencyCount += 2;
+                }
             }
 
-            // one pass O(n) 
-            for (int i = 0; i < edges.Length; i++)
+            for (int u = 2; u < n + 2; u++)
+            {
+                adjacencyStart[u] += adjacencyStart[u - 1];
+            }
+
+            // adjacencyStart[u + 1] is the start of u's range, and becomes its end once filled.
+            int[] adjacency = intPool.Rent(adjacencyCount);
+            for (int i = 0; i < n; i++)
             {
                 int j = edges[i];
                 if (j != -1)
                 {
                     // i <-> j
-                    adjacency[i].Add(j);
-                    adjacency[j].Add(i);
+                    adjacency[adjacencyStart[i + 1]++] = j;
+                    adjacency[adjacencyStart[j + 1]++] = i;
                 }
             }
 
-            List<List<int>> groupedIndexes = new List<List<int>>();
-            bool[] isDone = new bool[edges.Length];
+            bool[] isDone = ArrayPool<bool>.Shared.Rent(n);
+            Array.Clear(isDone, 0, n);
 
-            for (int p = 0; p < edges.Length; p++)
+            // The group's indexes are written from the start of the buffer, and the stack grows down from
+            // its end. They never overlap as each index is written at most once to either of them.
+            int[] buffer = intPool.Rent(n);
+
+            var groups = new List<T[]>();
+            for (int p = 0; p < n; p++)
             {
                 if (isDone[p])
                 {
                     continue;
                 }
-                groupedIndexes.Add(DfsIterative(p, adjacency, ref isDone));
-            }
-            return groupedIndexes;
-        }
 
-        /// <summary>
-        /// Depth-first search
-        /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
-        /// </summary>
-        private static List<int> DfsIterative(int s, List<int>[] adj, ref bool[] isDone)
-        {
-            List<int> group = new List<int>();
-            Stack<int> S = new Stack<int>(4);
-            S.Push(s);
-
-            isDone[s] = true;
-            while (S.Count > 0)
-            {
-                var u = S.Pop();
-                group.Add(u);
-
-#if NET
-                var currentAdj = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(adj[u]);
-                int count = currentAdj.Length;
-#else
-                var currentAdj = adj[u];
-                int count = currentAdj.Count;
-#endif
-                for (int i = 0; i < count; ++i)
+                // Depth-first search, see https://en.wikipedia.org/wiki/Depth-first_search
+                int count = 0;
+                int top = n;
+                buffer[--top] = p;
+                isDone[p] = true;
+                while (top < n)
                 {
-                    var v = currentAdj[i];
-                    ref bool done = ref isDone[v];
-                    if (!done)
+                    int u = buffer[top++];
+                    buffer[count++] = u;
+
+                    for (int k = adjacencyStart[u]; k < adjacencyStart[u + 1]; k++)
                     {
-                        S.Push(v);
-                        done = true;
+                        int v = adjacency[k];
+                        if (!isDone[v])
+                        {
+                            isDone[v] = true;
+                            buffer[--top] = v;
+                        }
                     }
                 }
+
+                var group = new T[count];
+                for (int k = 0; k < count; k++)
+                {
+                    group[k] = elements[buffer[k]];
+                }
+
+                groups.Add(group);
             }
-            return group;
+
+            intPool.Return(adjacencyStart);
+            intPool.Return(adjacency);
+            intPool.Return(buffer);
+            ArrayPool<bool>.Shared.Return(isDone);
+
+            return groups;
         }
 
         /// <summary>
@@ -342,7 +368,7 @@
             int n = edges.Length;
             var intPool = ArrayPool<int>.Shared;
 
-            // Reverse edges (i.e. predecessors) in CSR form: the predecessors of j are
+            // Reverse edges (i.e. predecessors) in compressed sparse row (CSR) form: the predecessors of j are
             // predecessors[predecessorsStart[j]..predecessorsStart[j + 1]], by ascending index.
             // Counts are stored 2 slots ahead so that, once filled, the offsets are already in place.
             int[] predecessorsStart = intPool.Rent(n + 2);
