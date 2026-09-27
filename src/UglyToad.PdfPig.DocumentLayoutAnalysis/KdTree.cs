@@ -246,90 +246,70 @@
         public T FindNearestNeighbour(T pivot, Func<T, PdfPoint> pivotPointFunc, Func<PdfPoint, PdfPoint, double> distanceMeasure, out int index, out double distance)
         {
             var pivotPoint = pivotPointFunc(pivot);
-            var result = FindNearestNeighbour(Root, pivot, pivotPoint, distanceMeasure);
-            index = result.Item1 != null ? result.Item1.Index : -1;
-            distance = result.Item2 ?? double.NaN;
-            return result.Item1 != null ? result.Item1.Element : default;
+
+            KdTreeNode<T> nearest = null;
+            double nearestDistance = double.PositiveInfinity;
+            FindNearestNeighbour(Root, pivot, pivotPoint, distanceMeasure, ref nearest, ref nearestDistance);
+
+            if (nearest is null)
+            {
+                index = -1;
+                distance = double.NaN;
+                return default;
+            }
+
+            index = nearest.Index;
+            distance = nearestDistance;
+            return nearest.Element;
         }
 
-        private static (KdTreeNode<T>, double?) FindNearestNeighbour(KdTreeNode<T> node, T pivot, PdfPoint pivotPoint, Func<PdfPoint, PdfPoint, double> distance)
+        /// <summary>
+        /// Depth-first search visiting the node, then the child on the pivot's side, then the other child if it can
+        /// contain a point as near as the nearest found so far. A point at the same distance replaces the nearest
+        /// found so far, i.e. the last visited wins.
+        /// </summary>
+        private static void FindNearestNeighbour(KdTreeNode<T> node, T pivot, PdfPoint pivotPoint, Func<PdfPoint, PdfPoint, double> distance,
+            ref KdTreeNode<T> nearest, ref double nearestDistance)
         {
-            if (node == null)
+            // The pivot is not a candidate, otherwise it could be returned as its own neighbour
+            if (!EqualityComparer<T>.Default.Equals(node.Element, pivot))
             {
-                return (null, null);
-            }
-            else if (node.IsLeaf)
-            {
-                if (node.Element.Equals(pivot))
+                double nodeDistance = distance(node.Value, pivotPoint);
+                if (nodeDistance <= nearestDistance)
                 {
-                    return (null, null);
+                    nearest = node;
+                    nearestDistance = nodeDistance;
                 }
-                return (node, distance(node.Value, pivotPoint));
+            }
+
+            var pointValue = node.IsAxisCutX ? pivotPoint.X : pivotPoint.Y;
+            var split = node.L;
+
+            if (pointValue < split)
+            {
+                // start left
+                if (node.LeftChild != null)
+                {
+                    FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
+                }
+
+                if (node.RightChild != null && pointValue + nearestDistance >= split)
+                {
+                    FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
+                }
             }
             else
             {
-                // The node's own element is only a candidate if it is not the pivot. Otherwise the
-                // pivot could be returned as its own neighbour, and its distance would be used to prune.
-                KdTreeNode<T> currentNearestNode = null;
-                double currentDistance = double.PositiveInfinity;
-
-                if (!node.Element.Equals(pivot))
+                // start right
+                if (node.RightChild != null)
                 {
-                    currentNearestNode = node;
-                    currentDistance = distance(node.Value, pivotPoint);
+                    FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
                 }
 
-                KdTreeNode<T> newNode = null;
-                double? newDist = null;
-
-                var pointValue = node.IsAxisCutX ? pivotPoint.X : pivotPoint.Y;
-
-                // Children never return the pivot, no need to check it again below.
-                if (pointValue < node.L)
+                if (node.LeftChild != null && pointValue - nearestDistance <= split)
                 {
-                    // start left
-                    (newNode, newDist) = FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance);
-
-                    if (newDist.HasValue && newDist <= currentDistance)
-                    {
-                        currentDistance = newDist.Value;
-                        currentNearestNode = newNode;
-                    }
-
-                    if (node.RightChild != null && pointValue + currentDistance >= node.L)
-                    {
-                        (newNode, newDist) = FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance);
-                    }
+                    FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
                 }
-                else
-                {
-                    // start right
-                    (newNode, newDist) = FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance);
-
-                    if (newDist.HasValue && newDist <= currentDistance)
-                    {
-                        currentDistance = newDist.Value;
-                        currentNearestNode = newNode;
-                    }
-
-                    if (node.LeftChild != null && pointValue - currentDistance <= node.L)
-                    {
-                        (newNode, newDist) = FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance);
-                    }
-                }
-
-                if (newDist.HasValue && newDist <= currentDistance)
-                {
-                    currentDistance = newDist.Value;
-                    currentNearestNode = newNode;
-                }
-
-                if (currentNearestNode == null)
-                {
-                    return (null, null);
-                }
-
-                return (currentNearestNode, currentDistance);
             }
         }
         #endregion
