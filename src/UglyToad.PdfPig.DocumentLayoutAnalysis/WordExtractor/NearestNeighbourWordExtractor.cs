@@ -65,34 +65,25 @@
                     }
                 }
 
-                // Use a thread-safe collection to avoid lock contention.
-                var results = new List<Word>(letters.Count); // Pre-allocate for performance
-
-                // Limit parallelism to avoid oversubscription.
-                var parallelOptions = new System.Threading.Tasks.ParallelOptions
+                // Buckets are processed in order, so that the words order is deterministic.
+                // Each bucket is already processed in parallel.
+                List<Word> results = null;
+                for (int i = 0; i < buckets.Length; i++)
                 {
-                    MaxDegreeOfParallelism = options.MaxDegreeOfParallelism > 0 ? options.MaxDegreeOfParallelism : Environment.ProcessorCount
-                };
-
-                // Use partitioner for better load balancing and avoid ConcurrentBag overhead
-                System.Threading.Tasks.Parallel.ForEach(
-                    System.Collections.Concurrent.Partitioner.Create(0, buckets.Length),
-                    parallelOptions,
-                    range =>
+                    if (buckets[i].Count == 0) continue;
+                    var measure = (i == 4) ? options.DistanceMeasure : options.DistanceMeasureAA;
+                    var words = GetWords(buckets[i], options.MaximumDistance, measure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
+                    if (results is null)
                     {
-                        for (int i = range.Item1; i < range.Item2; i++)
-                        {
-                            if (buckets[i].Count == 0) continue;
-                            var measure = (i == 4) ? options.DistanceMeasure : options.DistanceMeasureAA;
-                            var words = GetWords(buckets[i], options.MaximumDistance, measure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
-                            lock (results)
-                            {
-                                results.AddRange(words);
-                            }
-                        }
-                    });
-                results.TrimExcess();
-                return results;
+                        results = words;
+                    }
+                    else
+                    {
+                        results.AddRange(words);
+                    }
+                }
+
+                return results ?? [];
             }
             else
             {
