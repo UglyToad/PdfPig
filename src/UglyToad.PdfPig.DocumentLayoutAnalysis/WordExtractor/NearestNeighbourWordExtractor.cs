@@ -50,19 +50,36 @@
 
             if (options.GroupByOrientation)
             {
-                var buckets = new List<Letter>[5];
-                for (int i = 0; i < buckets.Length; i++) buckets[i] = new List<Letter>();
-
-                foreach (var l in letters)
+                Span<int> counts = stackalloc int[OrientationBucketsCount];
+                for (int i = 0; i < letters.Count; i++)
                 {
-                    switch (l.TextOrientation)
+                    counts[GetOrientationBucket(letters[i].TextOrientation)]++;
+                }
+
+                // Most pages have a single orientation: no need to copy the letters.
+                for (int i = 0; i < OrientationBucketsCount; i++)
+                {
+                    if (counts[i] == letters.Count)
                     {
-                        case TextOrientation.Horizontal: buckets[0].Add(l); break;
-                        case TextOrientation.Rotate270: buckets[1].Add(l); break;
-                        case TextOrientation.Rotate180: buckets[2].Add(l); break;
-                        case TextOrientation.Rotate90: buckets[3].Add(l); break;
-                        default: buckets[4].Add(l); break;
+                        return GetWords(letters, options.MaximumDistance, GetDistanceMeasure(i), options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
                     }
+                }
+
+                var buckets = new Letter[OrientationBucketsCount][];
+                for (int i = 0; i < OrientationBucketsCount; i++)
+                {
+                    if (counts[i] > 0)
+                    {
+                        buckets[i] = new Letter[counts[i]];
+                    }
+                }
+
+                // Filled from the end, so that the letters keep their order within each bucket.
+                for (int i = letters.Count - 1; i >= 0; i--)
+                {
+                    var letter = letters[i];
+                    int bucket = GetOrientationBucket(letter.TextOrientation);
+                    buckets[bucket][--counts[bucket]] = letter;
                 }
 
                 // Buckets are processed in order, so that the words order is deterministic.
@@ -70,9 +87,8 @@
                 List<Word> results = null;
                 for (int i = 0; i < buckets.Length; i++)
                 {
-                    if (buckets[i].Count == 0) continue;
-                    var measure = (i == 4) ? options.DistanceMeasure : options.DistanceMeasureAA;
-                    var words = GetWords(buckets[i], options.MaximumDistance, measure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
+                    if (buckets[i] is null) continue;
+                    var words = GetWords(buckets[i], options.MaximumDistance, GetDistanceMeasure(i), options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
                     if (results is null)
                     {
                         results = words;
@@ -91,6 +107,26 @@
                     options.MaximumDistance, options.DistanceMeasure, options.FilterPivot,
                     options.Filter, options.MaxDegreeOfParallelism);
             }
+        }
+
+        private const int OrientationBucketsCount = 5;
+        private const int OtherOrientationBucket = 4;
+
+        private static int GetOrientationBucket(TextOrientation orientation)
+        {
+            switch (orientation)
+            {
+                case TextOrientation.Horizontal: return 0;
+                case TextOrientation.Rotate270: return 1;
+                case TextOrientation.Rotate180: return 2;
+                case TextOrientation.Rotate90: return 3;
+                default: return OtherOrientationBucket;
+            }
+        }
+
+        private Func<PdfPoint, PdfPoint, double> GetDistanceMeasure(int bucket)
+        {
+            return bucket == OtherOrientationBucket ? options.DistanceMeasure : options.DistanceMeasureAA;
         }
 
         /// <summary>
