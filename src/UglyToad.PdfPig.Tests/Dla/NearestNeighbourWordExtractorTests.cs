@@ -1,6 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
+    using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
+    using UglyToad.PdfPig.Graphics.Core;
+    using UglyToad.PdfPig.PdfFonts;
 
     public class NearestNeighbourWordExtractorTests
     {
@@ -15,8 +19,8 @@
             new object[]
             {
                 "fseprd1102849.pdf",
-                12903,
-                11177
+                12855,
+                11129
             },
             new object[]
             {
@@ -83,6 +87,40 @@
 
                 Assert.Equal(noSpacesWordCount, noSpacesWords.Length);
             }
+        }
+
+        private static Letter CreateLetter(string value, double x, double width)
+        {
+            var bbox = new PdfRectangle(x, 0, x + width, 7);
+            return new Letter(value, bbox, bbox, new PdfPoint(x, 0), new PdfPoint(x + width, 0), width, 1,
+                (FontDetails)null, TextRenderingMode.Fill, null, null, 10, 0);
+        }
+
+        [Fact]
+        public void NarrowLetterIsNotItsOwnNeighbour()
+        {
+            // The narrow 'i' (width 1) is followed by a 1.5 gap, which is below the
+            // maximum distance (20% of point size 10 = 2) but above its own width.
+            var letters = new List<Letter>();
+            double x = 0;
+            foreach (var c in "abc")
+            {
+                letters.Add(CreateLetter(c.ToString(), x, 5));
+                x += 5;
+            }
+
+            letters.Add(CreateLetter("i", x, 1));
+            x += 1 + 1.5;
+
+            foreach (var c in "def")
+            {
+                letters.Add(CreateLetter(c.ToString(), x, 5));
+                x += 5;
+            }
+
+            var words = NearestNeighbourWordExtractor.Instance.GetWords(letters).ToArray();
+
+            Assert.Equal("abcidef", Assert.Single(words).Text);
         }
     }
 }
