@@ -12,6 +12,12 @@
     public static class Clustering
     {
         /// <summary>
+        /// Minimum number of elements for the nearest neighbours search to run in parallel. Measured
+        /// on real pages, running in parallel is slower below ~200 elements and allocates more.
+        /// </summary>
+        private const int ParallelThreshold = 200;
+
+        /// <summary>
         /// Algorithm to group elements using nearest neighbours.
         /// <para>Uses the nearest neighbour as candidate.</para>
         /// <para>Within a group, each element is placed before its nearest neighbour.</para>
@@ -53,7 +59,7 @@
         {
             /*************************************************************************************
              * Algorithm steps
-             * 1. Find nearest neighbours indexes (done in parallel)
+             * 1. Find nearest neighbours indexes (done in parallel for large inputs)
              *  Iterate every point (pivot) and put its nearest neighbour's index in an array
              *  e.g. if nearest neighbour of point i is point j, then indexes[i] = j.
              *  Only conciders a neighbour if it is within the maximum distance. 
@@ -79,10 +85,7 @@
 #endif
             KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
 
-            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
-
-            // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Count, parallelOptions, e =>
+            void FindNearestNeighbourIndex(int e)
             {
                 var pivot = elements[e];
 
@@ -95,7 +98,22 @@
                         indexes[e] = index;
                     }
                 }
-            });
+            }
+
+            // 1. Find nearest neighbours indexes
+            if (elements.Count < ParallelThreshold || maxDegreeOfParallelism == 1)
+            {
+                // The cost of running in parallel outweighs the gain for small inputs
+                for (int e = 0; e < elements.Count; e++)
+                {
+                    FindNearestNeighbourIndex(e);
+                }
+            }
+            else
+            {
+                ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+                Parallel.For(0, elements.Count, parallelOptions, FindNearestNeighbourIndex);
+            }
 
             // 2. Group indexes
             return GroupByLinks(indexes, elements);
