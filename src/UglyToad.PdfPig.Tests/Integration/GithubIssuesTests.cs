@@ -12,10 +12,69 @@
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState;
+    using UglyToad.PdfPig.Tests.Dla;
     using UglyToad.PdfPig.Writer;
 
     public class GithubIssuesTests
     {
+        [Theory]
+        [InlineData("issues-1219", "Fouilles de Conimbriga I, L’architecture .Paris.")]
+        [InlineData("issues-1219-2", "chap. 6 of L’Ambiguïté du Livre:")]
+        public void Issues1219(string document, string expected)
+        {
+            // Options from https://github.com/UglyToad/PdfPig/issues/1219
+            var extractor = new NearestNeighbourWordExtractor(new NearestNeighbourWordExtractor.NearestNeighbourWordExtractorOptions()
+            {
+                Filter = (pivot, candidate) =>
+                {
+                    if (string.IsNullOrWhiteSpace(candidate.Value))
+                    {
+                        return false;
+                    }
+
+                    double maxHeight = Math.Max(pivot.PointSize, candidate.PointSize);
+                    double minHeight = Math.Min(pivot.PointSize, candidate.PointSize);
+                    if (minHeight != 0 && maxHeight / minHeight > 2.0)
+                    {
+                        return false;
+                    }
+
+                    return pivot.Color.Equals(candidate.Color);
+                },
+                MaximumDistance = (l1, l2) =>
+                {
+                    var exceptions = new List<string> { "V", "T", "/", "'" };
+                    double maxDist = Math.Max(Math.Max(Math.Max(Math.Max(Math.Max(
+                        Math.Abs(l1.BoundingBox.Width),
+                        Math.Abs(l2.BoundingBox.Width)),
+                        Math.Abs(l1.Width)),
+                        Math.Abs(l2.Width)),
+                        l1.PointSize), l2.PointSize) * 0.16;
+
+                    if (exceptions.Contains(l1.Value))
+                    {
+                        maxDist *= 1.2;
+                    }
+
+                    if (l1.TextOrientation == TextOrientation.Other || l2.TextOrientation == TextOrientation.Other)
+                    {
+                        return 2.0 * maxDist;
+                    }
+
+                    return maxDist;
+                }
+            });
+
+            using (var pdf = PdfDocument.Open(DlaHelper.GetDocumentPath(document)))
+            {
+                var words = extractor.GetWords(pdf.GetPage(1).Letters)
+                    .Where(w => !string.IsNullOrWhiteSpace(w.Text))
+                    .ToArray();
+
+                NearestNeighbourWordExtractorQualitativeTests.AssertContainsWords(words, expected);
+            }
+        }
+
         [Fact]
         public void Issues1445()
         {

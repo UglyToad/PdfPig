@@ -113,6 +113,12 @@
         <None Update="Dla\Documents\fseprd1102849.pdf">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Dla\Documents\issues-1219.pdf">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\issues-1219-2.pdf">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="Dla\Documents\no horizontal distance.pdf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
