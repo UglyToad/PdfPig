@@ -4,7 +4,6 @@
     using Core;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Util;
 
     /// <summary>
@@ -128,14 +127,14 @@
                 return new List<Word>();
             }
 
-            var groupedLetters = Clustering.NearestNeighbours(letters,
+            var groupedLetters = Clustering.NearestNeighbourGroups(letters,
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 filterPivotFunction,
                 filterFunction,
-                maxDegreeOfParallelism).ToList();
+                maxDegreeOfParallelism);
 
-            List<Word> words = new List<Word>();
+            var words = new List<Word>(groupedLetters.Count);
             foreach (var g in groupedLetters)
             {
                 words.Add(new Word(g));

@@ -122,5 +122,94 @@
 
             Assert.Equal("abcidef", Assert.Single(words).Text);
         }
+
+        private static Letter CreateLetter(string value, PdfPoint start, double width, double angleDeg)
+        {
+            double rad = angleDeg * Math.PI / 180.0;
+            var direction = new PdfPoint(Math.Cos(rad), Math.Sin(rad));
+            var normal = new PdfPoint(-direction.Y, direction.X);
+            var end = new PdfPoint(start.X + width * direction.X, start.Y + width * direction.Y);
+            var bbox = new PdfRectangle(
+                new PdfPoint(start.X + 7 * normal.X, start.Y + 7 * normal.Y),
+                new PdfPoint(end.X + 7 * normal.X, end.Y + 7 * normal.Y),
+                start,
+                end);
+            return new Letter(value, bbox, bbox, start, end, width, 1,
+                (FontDetails)null, TextRenderingMode.Fill, null, null, 10, 0);
+        }
+
+        private static List<Letter> CreateWord(string text, double angleDeg)
+        {
+            var letters = new List<Letter>();
+            double rad = angleDeg * Math.PI / 180.0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                var start = new PdfPoint(100 + i * 5 * Math.Cos(rad), 100 + i * 5 * Math.Sin(rad));
+                letters.Add(CreateLetter(text[i].ToString(), start, 5, angleDeg));
+            }
+            return letters;
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(30)]
+        [InlineData(90)]
+        [InlineData(135)]
+        [InlineData(180)]
+        [InlineData(270)]
+        public void LettersDrawnInReverseOrder(double angleDeg)
+        {
+            var letters = CreateWord("hello", angleDeg);
+            letters.Reverse();
+
+            var words = NearestNeighbourWordExtractor.Instance.GetWords(letters).ToArray();
+
+            Assert.Equal("hello", Assert.Single(words).Text);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(30)]
+        [InlineData(210)]
+        public void LettersDrawnOutOfOrder(double angleDeg)
+        {
+            var letters = CreateWord("abcdef", angleDeg);
+            var shuffled = new[] { letters[2], letters[0], letters[5], letters[1], letters[4], letters[3] };
+
+            var words = NearestNeighbourWordExtractor.Instance.GetWords(shuffled).ToArray();
+
+            Assert.Equal("abcdef", Assert.Single(words).Text);
+        }
+
+        [Fact]
+        public void MutualNeighboursDoNotLoop()
+        {
+            // 'a' ends where 'z' starts and 'z' ends where 'a' starts: a 2-cycle.
+            var a = CreateLetter("a", new PdfPoint(0, 0), 5, 0);
+            var z = CreateLetter("z", new PdfPoint(5, 0), 5, 180);
+            var c = CreateLetter("c", new PdfPoint(-5, 0), 5, 0); // c -> a
+
+            var extractor = new NearestNeighbourWordExtractor(new NearestNeighbourWordExtractor.NearestNeighbourWordExtractorOptions()
+            {
+                GroupByOrientation = false
+            });
+
+            var words = extractor.GetWords(new[] { a, z, c }).ToArray();
+
+            // The cycle is cut after its highest-index letter ('z').
+            Assert.Equal("caz", Assert.Single(words).Text);
+        }
+
+        [Fact]
+        public void WordsKeepContentStreamOrder()
+        {
+            var first = CreateWord("first", 0);
+            var second = CreateWord("second", 0).Select(l => CreateLetter(l.Value, new PdfPoint(l.StartBaseLine.X, 200), 5, 0)).ToList();
+            second.Reverse();
+
+            var words = NearestNeighbourWordExtractor.Instance.GetWords(first.Concat(second).ToArray()).ToArray();
+
+            Assert.Equal(new[] { "first", "second" }, words.Select(w => w.Text));
+        }
     }
 }
