@@ -213,6 +213,20 @@
         }
 
         [Fact]
+        public void WordsGroupedByOrientationKeepContentStreamOrder()
+        {
+            var rotated = CreateWord("rotated", 90).Select(l => CreateLetter(l.Value, new PdfPoint(500, l.StartBaseLine.Y), 5, 90)).ToList();
+            var first = CreateWord("first", 0);
+            var second = CreateWord("second", 0).Select(l => CreateLetter(l.Value, new PdfPoint(l.StartBaseLine.X, 200), 5, 0)).ToList();
+
+            var letters = rotated.Take(3).Concat(first).Concat(rotated.Skip(3)).Concat(second).ToArray();
+
+            var words = NearestNeighbourWordExtractor.Instance.GetWords(letters).ToArray();
+
+            Assert.Equal(new[] { "first", "second", "rotated" }, words.Select(w => w.Text));
+        }
+
+        [Fact]
         public void WordsGroupedByOrientationAreInDeterministicOrder()
         {
             // Horizontal and Rotate270 words, interleaved in the content stream.
