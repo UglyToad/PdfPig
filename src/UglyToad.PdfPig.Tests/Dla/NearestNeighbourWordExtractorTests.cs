@@ -211,5 +211,35 @@
 
             Assert.Equal(new[] { "first", "second" }, words.Select(w => w.Text));
         }
+
+        [Fact]
+        public void WordsGroupedByOrientationAreInDeterministicOrder()
+        {
+            // Horizontal and Rotate270 words, interleaved in the content stream.
+            var letters = new List<Letter>();
+            for (int line = 0; line < 50; line++)
+            {
+                for (int i = 0; i < 20; i++)
+                {
+                    letters.Add(CreateLetter("h", new PdfPoint(i * 5, line * 20), 5, 0));
+                }
+
+                for (int i = 0; i < 20; i++)
+                {
+                    letters.Add(CreateLetter("v", new PdfPoint(500 + line * 20, i * 5), 5, 90));
+                }
+            }
+
+            // Words are returned by orientation (horizontal first), whichever bucket finishes first.
+            var expected = Enumerable.Repeat(TextOrientation.Horizontal, 50)
+                .Concat(Enumerable.Repeat(TextOrientation.Rotate270, 50))
+                .ToArray();
+
+            for (int run = 0; run < 20; run++)
+            {
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(letters);
+                Assert.Equal(expected, words.Select(w => w.TextOrientation));
+            }
+        }
     }
 }
