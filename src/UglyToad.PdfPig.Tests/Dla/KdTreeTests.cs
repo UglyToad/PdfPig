@@ -6856,5 +6856,42 @@
                 Assert.Equal(expectedDistance, distance, PreciseDoubleComparer);
             }
         }
+
+        [Fact]
+        public void FindNearestNeighboursMatchesBruteForce()
+        {
+            var random = new Random(3);
+            for (int run = 0; run < 100; run++)
+            {
+                int count = random.Next(3, 300);
+                var segments = new List<Segment>();
+                for (int i = 0; i < count; i++)
+                {
+                    var start = new PdfPoint(random.NextDouble() * 100, random.NextDouble() * 100);
+                    var end = new PdfPoint(start.X + random.NextDouble() * 5, start.Y);
+                    segments.Add(new Segment(start, end));
+                }
+
+                var kdTree = new KdTree<Segment>(segments, s => s.Start);
+
+                for (int k = 1; k <= 3; k++)
+                {
+                    for (int i = 0; i < segments.Count; i++)
+                    {
+                        var pivot = segments[i];
+                        var neighbours = kdTree.FindNearestNeighbours(pivot, k, s => s.End, Distances.Euclidean);
+
+                        // The k smallest distances (excluding the pivot), with all the elements at these distances
+                        var distances = segments.Select((s, j) => (Index: j, Distance: Distances.Euclidean(s.Start, pivot.End)))
+                            .Where(x => x.Index != i)
+                            .ToList();
+                        var kSmallest = distances.Select(x => x.Distance).Distinct().OrderBy(d => d).Take(k).ToList();
+                        var expected = distances.Where(x => kSmallest.Contains(x.Distance)).Select(x => x.Index).OrderBy(x => x);
+
+                        Assert.Equal(expected, neighbours.Select(n => n.Item2).OrderBy(x => x));
+                    }
+                }
+            }
+        }
     }
 }
