@@ -155,7 +155,7 @@
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
             // 1. Estimate within line and between line spacing
-            KdTree<Word> kdTreeBottomLeft = new KdTree<Word>(words, w => w.BoundingBox.BottomLeft);
+            KdTree<Word> kdTreeBottomLeft = new KdTree<Word>(words, w => w.BoundingBox.BottomLeft, maxDegreeOfParallelism);
 
             void AddDistances(int i, List<double> wl, List<double> bl,
                 KdTree<Word>.KNearestNeighboursQueue queue, List<(Word, int, double)> neighbours)

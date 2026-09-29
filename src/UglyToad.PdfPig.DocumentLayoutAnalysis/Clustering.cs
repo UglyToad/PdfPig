@@ -90,7 +90,7 @@
                 indexes[k] = -1;
             }
 #endif
-            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
+            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint, maxDegreeOfParallelism);
 
             void FindNearestNeighbourIndex(int e)
             {
@@ -192,7 +192,7 @@
                 indexes[l] = -1;
             }
 #endif
-            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
+            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint, maxDegreeOfParallelism);
 
             void FindNearestNeighbourIndexes(int start, int end)
             {

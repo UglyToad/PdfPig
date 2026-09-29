@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using UglyToad.PdfPig.Core;
 
     // for kd-tree with line segments, see https://stackoverflow.com/questions/14376679/how-to-represent-line-segments-in-kd-tree 
@@ -69,6 +70,19 @@
         /// <param name="elements">The elements used to build the tree.</param>
         /// <param name="elementsPointFunc">The function that converts the candidate elements into a <see cref="PdfPoint"/>.</param>
         public KdTree(IReadOnlyList<T> elements, Func<T, PdfPoint> elementsPointFunc)
+            : this(elements, elementsPointFunc, 1)
+        { }
+
+        /// <summary>
+        /// K-D tree data structure, with the large subtrees built in parallel. The tree is the same as when built sequentially.
+        /// </summary>
+        /// <param name="elements">The elements used to build the tree.</param>
+        /// <param name="elementsPointFunc">The function that converts the candidate elements into a <see cref="PdfPoint"/>.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
+        /// If it is -1, there is no limit on the number of concurrently running operations.
+        /// If it is 1, the tree is built sequentially.</para></param>
+        public KdTree(IReadOnlyList<T> elements, Func<T, PdfPoint> elementsPointFunc, int maxDegreeOfParallelism)
         {
             if (elements == null || elements.Count == 0)
             {
@@ -85,15 +99,27 @@
                 array[i] = new KdTreeElement<T>(i, elementsPointFunc(el), el);
             }
 
-            Root = BuildTree(array, 0, Count, 0);
+            ParallelOptions parallelOptions = maxDegreeOfParallelism == 1
+                ? null
+                : new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+
+            Root = BuildTree(array, 0, Count, 0, parallelOptions);
         }
+
+        /// <summary>
+        /// Minimum number of elements in a subtree for its two children to be built in parallel.
+        /// </summary>
+        private const int ParallelBuildThreshold = 8192;
 
         /// <summary>
         /// Build the tree from <c>elements[start..end)</c>, split on the median along X (even depth) or Y (odd depth).
         /// <para>Only the median needs to be in place, not the whole range sorted, so the elements are partitioned
         /// with a quickselect. Ties are broken by index, so the tree is the same as if the range was sorted.</para>
+        /// <para>Once the median is in place, the two children only use their own side of the range, so large
+        /// ones are built in parallel when <paramref name="parallelOptions"/> is not null.</para>
         /// </summary>
-        private static KdTreeNode<T> BuildTree(KdTreeElement<T>[] elements, int start, int end, int depth)
+        private static KdTreeNode<T> BuildTree(KdTreeElement<T>[] elements, int start, int end, int depth,
+            ParallelOptions parallelOptions)
         {
             int count = end - start;
             if (count == 0)
@@ -121,8 +147,29 @@
             int median = start + count / 2;
             Select(elements, start, end - 1, median, byX);
 
-            KdTreeNode<T> vLeft = BuildTree(elements, start, median, depth + 1);
-            KdTreeNode<T> vRight = BuildTree(elements, median + 1, end, depth + 1);
+            if (parallelOptions != null && count >= ParallelBuildThreshold)
+            {
+                return BuildChildrenInParallel(elements, start, end, median, depth, parallelOptions);
+            }
+
+            KdTreeNode<T> vLeft = BuildTree(elements, start, median, depth + 1, parallelOptions);
+            KdTreeNode<T> vRight = BuildTree(elements, median + 1, end, depth + 1, parallelOptions);
+
+            return new KdTreeNode<T>(vLeft, vRight, elements[median], depth);
+        }
+
+        /// <summary>
+        /// In its own method so that only the parallel builds allocate the lambdas' closure, not every node.
+        /// </summary>
+        private static KdTreeNode<T> BuildChildrenInParallel(KdTreeElement<T>[] elements, int start, int end, int median,
+            int depth, ParallelOptions parallelOptions)
+        {
+            KdTreeNode<T> vLeft = null;
+            KdTreeNode<T> vRight = null;
+
+            Parallel.Invoke(parallelOptions,
+                () => vLeft = BuildTree(elements, start, median, depth + 1, parallelOptions),
+                () => vRight = BuildTree(elements, median + 1, end, depth + 1, parallelOptions));
 
             return new KdTreeNode<T>(vLeft, vRight, elements[median], depth);
         }
