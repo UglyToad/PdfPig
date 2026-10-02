@@ -100,7 +100,7 @@
                 stackDepth++;
             }
 
-            UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
+            UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary, ParsingOptions.UseLenientParsing);
 
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
@@ -235,11 +235,16 @@
         /// <summary>
         /// Get the user space units.
         /// </summary>
-        protected static UserSpaceUnit GetUserSpaceUnits(DictionaryToken dictionary)
+        protected static UserSpaceUnit GetUserSpaceUnits(DictionaryToken dictionary, bool useLenientParsing)
         {
             if (dictionary.TryGet(NameToken.UserUnit, out var userUnitBase) && userUnitBase is NumericToken userUnitNumber)
             {
-                return new UserSpaceUnit(userUnitNumber.Int);
+                int units = userUnitNumber.Int;
+                if (useLenientParsing && units <= 0)
+                {
+                    return UserSpaceUnit.Default;
+                }
+                return new UserSpaceUnit(units);
             }
 
             return UserSpaceUnit.Default;
