@@ -407,6 +407,51 @@ endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
             Assert.Equal(7, token.Number.ObjectNumber);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void ReadsEmptyStreamWithWrongLengthAndNoBreakBeforeEndstream(bool lengthWithinInput)
+        {
+            // An empty metadata stream as written by a scanner driver: CR line endings, the declared
+            // length points into (or beyond) the following objects and 'endstream' follows directly.
+            var input = "17 0 obj\r<</Length 2200 /Type /Metadata /Subtype /XML>>\rstream\rendstream\rendobj\r" +
+                        "18 0 obj\r<< /Producer (Scan) >>\rendobj\r" +
+                        (lengthWithinInput ? new string(' ', 4000) : string.Empty);
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var stream = Assert.IsType<StreamToken>(tokens[0].Data);
+            Assert.Equal(0, stream.Data.Length);
+
+            Assert.Equal(18, tokens[1].Number.ObjectNumber);
+            Assert.IsType<DictionaryToken>(tokens[1].Data);
+        }
+
+        [Theory]
+        [InlineData("ABC\nendstream", "ABC")]
+        [InlineData("ABC\r\nendstream", "ABC")]
+        [InlineData("ABC\rendstream", "ABC")]
+        [InlineData("ABCendstream", "ABC")]
+        [InlineData("\nendstream", "")]
+        [InlineData("\r\nendstream", "")]
+        public void ReadsStreamWithWrongLengthUpToTheEolBeforeEndstream(string body, string expected)
+        {
+            var input = $"1 0 obj\n<< /Length 99 >>\nstream\n{body}\nendobj\n2 0 obj\n<< /A 1 >>\nendobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var stream = Assert.IsType<StreamToken>(tokens[0].Data);
+            Assert.Equal(expected, Encoding.ASCII.GetString(stream.Data.ToArray()));
+        }
+
         [Fact]
         public void ReadsStringsWithMissingEndBracket()
         {
