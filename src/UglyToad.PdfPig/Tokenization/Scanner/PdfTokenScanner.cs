@@ -479,21 +479,36 @@
             if (possibleEndLocation == null)
                 return false;
 
-            var lastEnd = possibleEndLocation;
+            var keywordStart = GetEndKeywordStart(inputBytes, possibleEndLocation.Value);
 
-            var dataLength = lastEnd.Value.Offset - startDataOffset;
+            var dataLength = keywordStart - startDataOffset;
 
-            // 3 characters, 'e', '\n' and possibly '\r'
-            inputBytes.Seek(lastEnd.Value.Offset - 3);
-            inputBytes.MoveNext();
-
-            if (inputBytes.CurrentByte == '\r')
+            // The EOL marker before the end keyword (CR LF, LF or a lone CR) is not part of the data.
+            // Without one, as in an empty "stream\rendstream", the data ends directly at the keyword.
+            if (dataLength > 0)
             {
-                dataLength -= 3;
-            }
-            else
-            {
-                dataLength -= 2;
+                inputBytes.Seek(keywordStart - 1);
+                inputBytes.MoveNext();
+
+                if (inputBytes.CurrentByte == '\n')
+                {
+                    dataLength--;
+
+                    if (dataLength > 0)
+                    {
+                        inputBytes.Seek(keywordStart - 2);
+                        inputBytes.MoveNext();
+
+                        if (inputBytes.CurrentByte == '\r')
+                        {
+                            dataLength--;
+                        }
+                    }
+                }
+                else if (inputBytes.CurrentByte == '\r')
+                {
+                    dataLength--;
+                }
             }
 
             Memory<byte> data = new byte[dataLength];
@@ -506,6 +521,43 @@
             stream = new StreamToken(streamDictionaryToken, data);
 
             return true;
+        }
+
+        /// <summary>
+        /// The offset of the first byte of the end keyword. An 'endstream' location is recorded one byte
+        /// after it, because the scanner has already read the following whitespace, while an 'endobj'
+        /// location is recorded at it; the keyword bytes decide which one applies.
+        /// </summary>
+        private static long GetEndKeywordStart(IInputBytes inputBytes, PossibleStreamEndLocation location)
+        {
+            var keyword = location.Type.Data;
+
+            for (var candidate = location.Offset - 1; candidate <= location.Offset; candidate++)
+            {
+                if (candidate < 0)
+                {
+                    continue;
+                }
+
+                inputBytes.Seek(candidate);
+
+                var matches = true;
+                for (var i = 0; i < keyword.Length; i++)
+                {
+                    if (!inputBytes.MoveNext() || inputBytes.CurrentByte != keyword[i])
+                    {
+                        matches = false;
+                        break;
+                    }
+                }
+
+                if (matches)
+                {
+                    return candidate;
+                }
+            }
+
+            return location.Offset;
         }
 
         private static bool TryReadUsingLength(IInputBytes inputBytes, long? length, long startDataOffset, [NotNullWhen(true)] out byte[]? data)
