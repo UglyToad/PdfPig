@@ -57,6 +57,29 @@
             Assert.Equal("a.txt", Assert.Single(files).Name);
         }
 
+        [Fact]
+        public void PagesRingLongerThanTheFormerWindowOpensWithItsSinglePage()
+        {
+            // Root (2) -> [ring start (4), page (3)]; ring 4 -> 5 -> ... -> 1004 -> 4. The former guard
+            // remembered only the last 1000 references and walked a ring of 1001 nodes until out of memory.
+            const int ringLength = 1001;
+            var objects = new List<string>
+            {
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [4 0 R 3 0 R] /Count 1 >>",
+                Page
+            };
+            for (var i = 0; i < ringLength; i++)
+            {
+                var next = 4 + (i + 1) % ringLength;
+                objects.Add($"<< /Type /Pages /Kids [{next} 0 R] /Count 0 >>");
+            }
+
+            using var document = PdfDocument.Open(Build(objects.ToArray()));
+
+            Assert.Equal(1, document.NumberOfPages);
+        }
+
         private static byte[] Build(params string[] objects)
         {
             var builder = new StringBuilder("%PDF-1.7\n");
