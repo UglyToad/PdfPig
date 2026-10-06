@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
+    using Core;
+    using System.Collections.ObjectModel;
+    using System.Collections;
     using System.Threading;
     using System.Collections.Generic;
     using System.Linq;
@@ -14,10 +17,20 @@
         private int hashCode;
         private bool hashCodeComputed;
 
+        private IReadOnlyDictionary<string, IToken>? data;
+
         /// <summary>
-        /// The key value pairs in this dictionary.
+        /// The entries keyed by a reversible Latin-1 mapping of each name's bytes.
+        /// These keys are identities, not decoded text. Prefer name-token lookups.
+        /// Reconstruct a key using NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key)).
         /// </summary>
-        public IReadOnlyDictionary<string, IToken> Data { get; }
+        public IReadOnlyDictionary<string, IToken> Data => data ??= new ReadOnlyDictionary<string, IToken>(
+            Entries.ToDictionary(x => OtherEncodings.BytesAsLatin1String(x.Key.Bytes), x => x.Value, StringComparer.Ordinal));
+
+        /// <summary>
+        /// The entries keyed by their exact PDF name identities. Prefer this view to Data.
+        /// </summary>
+        public IReadOnlyDictionary<NameToken, IToken> Entries { get; }
         
         /// <summary>
         /// Empty DictionaryToken instance
@@ -35,19 +48,34 @@
                 throw new ArgumentNullException(nameof(data));
             }
 
-            var result = new Dictionary<string, IToken>(data.Count);
-
-            foreach (var keyValuePair in data)
-            {
-                result[keyValuePair.Key.Data] = keyValuePair.Value;
-            }
-
-            Data = result;
+            Entries = new ReadOnlyDictionary<NameToken, IToken>(data.ToDictionary(x => x.Key, x => x.Value));
         }
 
         private DictionaryToken(IReadOnlyDictionary<string, IToken> data)
         {
-            Data = data;
+            // Preserve the live string-dictionary view used by existing writer callers.
+            this.data = data;
+            Entries = new ByteKeyDictionary(data);
+        }
+
+        private sealed class ByteKeyDictionary : IReadOnlyDictionary<NameToken, IToken>
+        {
+            private readonly IReadOnlyDictionary<string, IToken> source;
+
+            public ByteKeyDictionary(IReadOnlyDictionary<string, IToken> source) => this.source = source;
+            public int Count => source.Count;
+            public IEnumerable<NameToken> Keys => source.Keys.Select(ToName);
+            public IEnumerable<IToken> Values => source.Values;
+            public IToken this[NameToken key] => source[OtherEncodings.BytesAsLatin1String(key.Bytes)];
+            public bool ContainsKey(NameToken key) => source.ContainsKey(OtherEncodings.BytesAsLatin1String(key.Bytes));
+            public bool TryGetValue(NameToken key, out IToken value) => source.TryGetValue(OtherEncodings.BytesAsLatin1String(key.Bytes), out value);
+
+            private static NameToken ToName(string key) => NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key).AsSpan());
+
+            public IEnumerator<KeyValuePair<NameToken, IToken>> GetEnumerator()
+                => source.Select(x => new KeyValuePair<NameToken, IToken>(ToName(x.Key), x.Value)).GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         /// <summary>
@@ -63,7 +91,7 @@
                 throw new ArgumentNullException(nameof(name));
             }
 
-            return Data.TryGetValue(name.Data, out token);
+            return Entries.TryGetValue(name, out token);
         }
 
         /// <summary>
@@ -92,7 +120,7 @@
         /// <returns><see langword="true"/> if the token is found, <see langword="false"/> otherwise.</returns>
         public bool ContainsKey(NameToken name)
         {
-            return Data.ContainsKey(name.Data);
+            return Entries.ContainsKey(name);
         }
 
         /// <summary>
@@ -101,36 +129,22 @@
         /// <param name="key">The key of the entry to create or override.</param>
         /// <param name="value">The value of the entry to create or override.</param>
         /// <returns>A new <see cref="DictionaryToken"/> with the entry created or modified.</returns>
-        public DictionaryToken With(NameToken key, IToken value) => With(key.Data, value);
+        public DictionaryToken With(NameToken key, IToken value)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            var result = Entries.ToDictionary(x => x.Key, x => x.Value);
+            result[key] = value;
+            return new DictionaryToken(result);
+        }
 
         /// <summary>
-        /// Create a copy of this dictionary with the additional entry (or override the value of the existing entry).
+        /// Create or replace an entry using its reversible Latin-1 byte key from Data.
         /// </summary>
-        /// <param name="key">The key of the entry to create or override.</param>
-        /// <param name="value">The value of the entry to create or override.</param>
-        /// <returns>A new <see cref="DictionaryToken"/> with the entry created or modified.</returns>
         public DictionaryToken With(string key, IToken value)
         {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
-
-            var result = new Dictionary<string, IToken>(Data.Count + 1);
-
-            foreach (var keyValuePair in Data)
-            {
-                result[keyValuePair.Key] = keyValuePair.Value;
-            }
-
-            result[key] = value;
-
-            return new DictionaryToken(result);
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            return With(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key).AsSpan()), value);
         }
 
         /// <summary>
@@ -138,34 +152,25 @@
         /// </summary>
         /// <param name="key">The key of the entry to remove.</param>
         /// <returns>A new <see cref="DictionaryToken"/> with the entry removed.</returns>
-        public DictionaryToken Without(NameToken key) => Without(key.Data);
+        public DictionaryToken Without(NameToken key)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            return new DictionaryToken(Entries.Where(x => x.Key != key).ToDictionary(x => x.Key, x => x.Value));
+        }
 
         /// <summary>
-        /// Creates a copy of this dictionary with the entry with the specified key removed (if it exists).
+        /// Remove an entry using its reversible Latin-1 byte key from Data.
         /// </summary>
-        /// <param name="key">The key of the entry to remove.</param>
-        /// <returns>A new <see cref="DictionaryToken"/> with the entry removed.</returns>
         public DictionaryToken Without(string key)
         {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            var result = new Dictionary<string, IToken>(Data.ContainsKey(key) ? Data.Count - 1 : Data.Count);
-
-            foreach (var keyValuePair in Data.Where(x => !x.Key.Equals(key)))
-            {
-                result[keyValuePair.Key] = keyValuePair.Value;
-            }
-
-            return new DictionaryToken(result);
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            return Without(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key).AsSpan()));
         }
 
         /// <summary>
         /// Create a new <see cref="DictionaryToken"/>.
         /// </summary>
-        /// <param name="data">The data this dictionary will contain.</param>
+        /// <param name="data">The reversible Latin-1 byte keys and values. The existing live view is retained.</param>
         public static DictionaryToken With(IReadOnlyDictionary<string, IToken> data)
         {
             return new DictionaryToken(data ?? throw new ArgumentNullException(nameof(data)));
@@ -176,7 +181,7 @@
             // Equals is insensitive to entry order so the hash must be too
             int hash = 0;
 
-            foreach (var kvp in Data)
+            foreach (var kvp in Entries)
             {
                 unchecked
                 {
@@ -224,14 +229,14 @@
                 return true;
             }
 
-            if (Data.Count != other.Data.Count)
+            if (Entries.Count != other.Entries.Count)
             {
                 return false;
             }
 
-            foreach (var kvp in other.Data)
+            foreach (var kvp in other.Entries)
             {
-                if (!Data.TryGetValue(kvp.Key, out var val) || !val.Equals(kvp.Value))
+                if (!Entries.TryGetValue(kvp.Key, out var val) || !val.Equals(kvp.Value))
                 {
                     return false;
                 }
@@ -243,7 +248,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return string.Join(", ", Data.Select(x => $"<{x.Key}, {x.Value}>"));
+            return string.Join(", ", Entries.Select(x => $"<{x.Key.Data}, {x.Value}>"));
         }
     }
 }

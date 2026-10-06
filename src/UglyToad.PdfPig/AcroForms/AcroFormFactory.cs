@@ -518,9 +518,9 @@
             var inheritedDictionary = new Dictionary<NameToken, IToken>();
             foreach (var parent in parents)
             {
-                foreach (var kvp in parent.Data)
+                foreach (var kvp in parent.Entries)
                 {
-                    var key = NameToken.Create(kvp.Key);
+                    var key = kvp.Key;
                     if (InheritableFields.Contains(key))
                     {
                         inheritedDictionary[key] = kvp.Value;
@@ -533,9 +533,9 @@
                 }
             }
 
-            foreach (var kvp in fieldDictionary.Data)
+            foreach (var kvp in fieldDictionary.Entries)
             {
-                var key = NameToken.Create(kvp.Key);
+                var key = kvp.Key;
                 inheritedDictionary[key] = kvp.Value;
                 if (NameToken.V.Equals(key))
                 {

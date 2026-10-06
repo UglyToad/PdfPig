@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.Parser
 {
+    using System;
     using System.Text;
     using Core;
     using Tokens;
@@ -37,7 +38,7 @@
                 builder.Append((char)inputBytes.CurrentByte);
             }
 
-            token = NameToken.Create(builder.ToString());
+            token = NameToken.Create(OtherEncodings.StringAsLatin1Bytes(builder.ToString()).AsSpan());
 
             return true;
         }
