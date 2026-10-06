@@ -80,6 +80,25 @@
             Assert.Equal(1, document.NumberOfPages);
         }
 
+        [Fact]
+        public void DeepPagesChainOpensWithoutRecursion()
+        {
+            // 100,000 nested pages nodes, one page at the bottom. Populating the page-number lookup recursed
+            // once per level; around 40,000 levels overflowed a thread pool thread.
+            const int depth = 100_000;
+            var objects = new List<string> { "<< /Type /Catalog /Pages 2 0 R >>" };
+            for (var level = 0; level < depth; level++)
+            {
+                objects.Add($"<< /Type /Pages /Kids [{level + 3} 0 R] /Count 1 >>");
+            }
+
+            objects.Add($"<< /Type /Page /Parent {depth + 1} 0 R /MediaBox [0 0 200 200] >>");
+
+            using var document = PdfDocument.Open(Build(objects.ToArray()));
+
+            Assert.Equal(1, document.NumberOfPages);
+        }
+
         private static byte[] Build(params string[] objects)
         {
             var builder = new StringBuilder("%PDF-1.7\n");

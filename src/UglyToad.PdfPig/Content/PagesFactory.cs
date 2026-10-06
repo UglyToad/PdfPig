@@ -187,22 +187,32 @@
             return isPage;
         }
 
-        private static void PopulatePageByNumberDictionary(PageTreeNode node, Dictionary<int, PageTreeNode> result)
+        private static void PopulatePageByNumberDictionary(PageTreeNode root, Dictionary<int, PageTreeNode> result)
         {
-            if (node.IsPage)
+            // Iterative: a deep (non-cyclic) chain of pages nodes used to recurse until the process died
+            // with a non-catchable stack overflow (about 40,000 levels on a thread pool thread).
+            var pending = new Stack<PageTreeNode>();
+            pending.Push(root);
+
+            while (pending.Count > 0)
             {
-                if (!node.PageNumber.HasValue)
+                var node = pending.Pop();
+
+                if (node.IsPage)
                 {
-                    throw new InvalidOperationException($"Node was page but did not have page number: {node}.");
+                    if (!node.PageNumber.HasValue)
+                    {
+                        throw new InvalidOperationException($"Node was page but did not have page number: {node}.");
+                    }
+
+                    result[node.PageNumber.Value] = node;
+                    continue;
                 }
 
-                result[node.PageNumber.Value] = node;
-                return;
-            }
-
-            foreach (var child in node.Children!)
-            {
-                PopulatePageByNumberDictionary(child, result);
+                foreach (var child in node.Children!)
+                {
+                    pending.Push(child);
+                }
             }
         }
     }
