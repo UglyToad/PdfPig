@@ -45,7 +45,7 @@ namespace UglyToad.PdfPig.Tokenization
             {
                 var b = inputBytes.CurrentByte;
                 var c = (char)b;
-                // CRLF is one physical end-of-line marker. Consume only its LF;
+                // After an escaped CR, consume only the LF of its CRLF marker;
                 // any following line break is a separate character in the string.
                 if (skipLineFeed)
                 {
@@ -127,11 +127,6 @@ namespace UglyToad.PdfPig.Tokenization
                         {
                             ProcessEscapedCharacter(c, builder, ref octalValue, ref octalModeActive, ref octalsRead, ref skipLineFeed);
                             isEscapeActive = false;
-                        }
-                        else if (c == '\r')
-                        {
-                            builder.Append((byte)'\n');
-                            skipLineFeed = true;
                         }
                         else
                         {
