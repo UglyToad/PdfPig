@@ -895,7 +895,8 @@
             long firstTokenOffset = firstTokenNum.Long;
 
             // Read the N integers
-            var bytes = new MemoryInputBytes(stream.Decode(filterProvider, this));
+            var decoded = stream.Decode(filterProvider, this);
+            var bytes = new MemoryInputBytes(decoded);
 
             var scanner = new CoreTokenScanner(
                 bytes,
@@ -945,6 +946,39 @@
                     scanner.MoveNext();
 
                     token = scanner.CurrentToken;
+                }
+
+                // Indirect references are three core tokens. Limit lookahead to this
+                // member's extent so separate numeric objects cannot become a reference.
+                if (token is NumericToken)
+                {
+                    var start = scanner.CurrentTokenStart;
+                    var end = i + 1 < objects.Count ? objects[i + 1].Item2 : decoded.Length;
+                    if (start >= obj.Item2 && end > start && end <= decoded.Length)
+                    {
+                        using var memberBytes = new MemoryInputBytes(decoded.Slice((int)start, (int)(end - start)));
+                        var member = new CoreTokenScanner(memberBytes, StackDepthGuard,
+                            useLenientParsing: parsingOptions.UseLenientParsing, isStream: true);
+
+                        bool MoveNextValue()
+                        {
+                            while (member.MoveNext())
+                            {
+                                if (!(member.CurrentToken is CommentToken)) return true;
+                            }
+                            return false;
+                        }
+
+                        if (MoveNextValue() && member.CurrentToken is NumericToken objectNumber &&
+                            objectNumber.Data > 0 && objectNumber.Data == objectNumber.Long &&
+                            MoveNextValue() && member.CurrentToken is NumericToken generation &&
+                            generation.Data >= 0 && generation.Data <= 65535 && generation.Data == generation.Int &&
+                            MoveNextValue() && ReferenceEquals(member.CurrentToken, OperatorToken.R) &&
+                            !MoveNextValue())
+                        {
+                            token = new IndirectReferenceToken(new IndirectReference(objectNumber.Long, generation.Int));
+                        }
+                    }
                 }
 
                 results.Add(new ObjectToken(offset, new IndirectReference(obj.Item1, 0), token));

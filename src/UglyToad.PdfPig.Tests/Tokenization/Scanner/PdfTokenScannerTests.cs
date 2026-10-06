@@ -9,6 +9,60 @@
 
     public class PdfTokenScannerTests
     {
+        [Theory]
+        [InlineData("12 7 R", false)]
+        [InlineData("12 7 R", true)]
+        [InlineData("12 % object\n7 % generation\nR % trailing\n", false)]
+        public void ReadsIndirectReferenceInObjectStream(string value, bool last)
+        {
+            using var scanner = GetObjectStreamScanner(last ? new[] { "42", value } : new[] { value, "42" });
+            var token = scanner.Get(new IndirectReference(last ? 21 : 20, 0));
+            Assert.Equal(new IndirectReference(12, 7), Assert.IsType<IndirectReferenceToken>(token.Data).Data);
+            Assert.Equal(42, Assert.IsType<NumericToken>(scanner.Get(new IndirectReference(last ? 20 : 21, 0)).Data).Int);
+        }
+
+        [Fact]
+        public void DoesNotJoinAdjacentObjectStreamMembersIntoReference()
+        {
+            using var scanner = GetObjectStreamScanner("12", "0", "R");
+            Assert.Equal(12, Assert.IsType<NumericToken>(scanner.Get(new IndirectReference(20, 0)).Data).Int);
+            Assert.Equal(0, Assert.IsType<NumericToken>(scanner.Get(new IndirectReference(21, 0)).Data).Int);
+        }
+
+        [Theory]
+        [InlineData("12 0")]
+        [InlineData("12 0 R 42")]
+        [InlineData("12.5 0 R")]
+        [InlineData("12 -1 R")]
+        [InlineData("12 65536 R")]
+        public void DoesNotInventReferenceFromMalformedObjectStreamMember(string value)
+        {
+            using var scanner = GetObjectStreamScanner(value);
+            Assert.IsType<NumericToken>(scanner.Get(new IndirectReference(20, 0)).Data);
+        }
+
+        private static PdfTokenScanner GetObjectStreamScanner(params string[] values)
+        {
+            var header = new StringBuilder();
+            var body = new StringBuilder();
+            for (var i = 0; i < values.Length; i++)
+            {
+                header.Append($"{20 + i} {body.Length} ");
+                body.Append(values[i]).Append(' ');
+            }
+            var data = header.ToString() + body;
+            var file = $"10 0 obj\n<< /Type /ObjStm /N {values.Length} /First {header.Length} /Length {data.Length} >>\nstream\n{data}\nendstream\nendobj\n";
+            var input = StringBytesTestConverter.Convert(file, false);
+            var offsets = new Dictionary<IndirectReference, XrefLocation>
+            {
+                [new IndirectReference(10, 0)] = XrefLocation.File(0)
+            };
+            for (var i = 0; i < values.Length; i++) offsets[new IndirectReference(20 + i, 0)] = XrefLocation.Stream(10, i);
+            return new PdfTokenScanner(input.Bytes, new ObjectLocationProvider(offsets, null, input.Bytes),
+                new TestFilterProvider(), NoOpEncryptionHandler.Instance, new FileHeaderOffset(0),
+                ParsingOptions.LenientParsingOff, new StackDepthGuard(256));
+        }
+
         [Fact]
         public void ReadsSimpleObject()
         {
