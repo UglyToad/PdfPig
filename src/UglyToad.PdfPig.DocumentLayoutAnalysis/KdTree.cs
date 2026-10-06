@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.Core;
 
     // for kd-tree with line segments, see https://stackoverflow.com/questions/14376679/how-to-represent-line-segments-in-kd-tree 
@@ -86,102 +85,152 @@
                 array[i] = new KdTreeElement<T>(i, elementsPointFunc(el), el);
             }
 
-#if NET6_0_OR_GREATER
-            Root = BuildTree(new Span<KdTreeElement<T>>(array));
-#else
-            Root = BuildTree(new ArraySegment<KdTreeElement<T>>(array));
-#endif
+            Root = BuildTree(array, 0, Count, 0);
         }
 
-#if NET6_0_OR_GREATER
-        private KdTreeNode<T> BuildTree(Span<KdTreeElement<T>> P, int depth = 0)
+        /// <summary>
+        /// Build the tree from <c>elements[start..end)</c>, split on the median along X (even depth) or Y (odd depth).
+        /// <para>Only the median needs to be in place, not the whole range sorted, so the elements are partitioned
+        /// with a quickselect. Ties are broken by index, so the tree is the same as if the range was sorted.</para>
+        /// </summary>
+        private static KdTreeNode<T> BuildTree(KdTreeElement<T>[] elements, int start, int end, int depth)
         {
-            if (P.Length == 0)
+            int count = end - start;
+            if (count == 0)
             {
                 return null;
             }
 
-            if (P.Length == 1)
+            if (count == 1)
             {
-                return new KdTreeLeaf<T>(P[0], depth);
+                return new KdTreeLeaf<T>(elements[start], depth);
             }
 
-            if (depth % 2 == 0)
-            {
-                P.Sort((p0, p1) => p0.Value.X.CompareTo(p1.Value.X));
-            }
-            else
-            {
-                P.Sort((p0, p1) => p0.Value.Y.CompareTo(p1.Value.Y));
-            }
+            bool byX = depth % 2 == 0;
 
-            if (P.Length == 2)
+            if (count == 2)
             {
-                return new KdTreeNode<T>(new KdTreeLeaf<T>(P[0], depth + 1), null, P[1], depth);
+                if (Compare(elements[start + 1], elements[start], byX) < 0)
+                {
+                    Swap(elements, start, start + 1);
+                }
+
+                return new KdTreeNode<T>(new KdTreeLeaf<T>(elements[start], depth + 1), null, elements[start + 1], depth);
             }
 
-            int median = P.Length / 2;
+            int median = start + count / 2;
+            Select(elements, start, end - 1, median, byX);
 
-            KdTreeNode<T> vLeft = BuildTree(P.Slice(0, median), depth + 1);
-            KdTreeNode<T> vRight = BuildTree(P.Slice(median + 1), depth + 1);
+            KdTreeNode<T> vLeft = BuildTree(elements, start, median, depth + 1);
+            KdTreeNode<T> vRight = BuildTree(elements, median + 1, end, depth + 1);
 
-            return new KdTreeNode<T>(vLeft, vRight, P[median], depth);
+            return new KdTreeNode<T>(vLeft, vRight, elements[median], depth);
         }
-#else
-        private sealed class KdTreeComparerY : IComparer<KdTreeElement<T>>
+
+        /// <summary>
+        /// Partition <c>elements[left..right]</c> (inclusive) so that the element at <paramref name="k"/> is the one
+        /// that would be there if the range was sorted, with smaller elements before it and larger ones after it.
+        /// <para>Quickselect with a median of three pivot, falling back to sorting the range if it does not converge.</para>
+        /// </summary>
+        private static void Select(KdTreeElement<T>[] elements, int left, int right, int k, bool byX)
         {
-            public static readonly KdTreeComparerY Shared = new KdTreeComparerY();
+            // Each partition should roughly halve the range, allow for twice as many before giving up
+            int maxIterations = 2 * (int)Math.Ceiling(Math.Log(right - left + 1, 2)) + 2;
+
+            while (right > left)
+            {
+                if (maxIterations-- == 0)
+                {
+                    Array.Sort(elements, left, right - left + 1, byX ? KdTreeElementComparer.X : KdTreeElementComparer.Y);
+                    return;
+                }
+
+                // Median of three, also ordering the first, middle and last elements
+                int middle = left + (right - left) / 2;
+                if (Compare(elements[middle], elements[left], byX) < 0)
+                {
+                    Swap(elements, left, middle);
+                }
+
+                if (Compare(elements[right], elements[left], byX) < 0)
+                {
+                    Swap(elements, left, right);
+                }
+
+                if (Compare(elements[right], elements[middle], byX) < 0)
+                {
+                    Swap(elements, middle, right);
+                }
+
+                var pivot = elements[middle];
+
+                // Hoare partition: elements[left..j] <= pivot <= elements[i..right]
+                int i = left;
+                int j = right;
+                while (i <= j)
+                {
+                    while (Compare(elements[i], pivot, byX) < 0)
+                    {
+                        i++;
+                    }
+
+                    while (Compare(elements[j], pivot, byX) > 0)
+                    {
+                        j--;
+                    }
+
+                    if (i <= j)
+                    {
+                        Swap(elements, i, j);
+                        i++;
+                        j--;
+                    }
+                }
+
+                if (k <= j)
+                {
+                    right = j;
+                }
+                else if (k >= i)
+                {
+                    left = i;
+                }
+                else
+                {
+                    // j < k < i: elements[k] is the pivot
+                    return;
+                }
+            }
+        }
+
+        private static int Compare(in KdTreeElement<T> p0, in KdTreeElement<T> p1, bool byX)
+        {
+            int comparison = byX ? p0.Value.X.CompareTo(p1.Value.X) : p0.Value.Y.CompareTo(p1.Value.Y);
+            return comparison != 0 ? comparison : p0.Index.CompareTo(p1.Index);
+        }
+
+        private static void Swap(KdTreeElement<T>[] elements, int i, int j)
+        {
+            (elements[i], elements[j]) = (elements[j], elements[i]);
+        }
+
+        private sealed class KdTreeElementComparer : IComparer<KdTreeElement<T>>
+        {
+            public static readonly KdTreeElementComparer X = new KdTreeElementComparer(true);
+            public static readonly KdTreeElementComparer Y = new KdTreeElementComparer(false);
+
+            private readonly bool byX;
+
+            private KdTreeElementComparer(bool byX)
+            {
+                this.byX = byX;
+            }
 
             public int Compare(KdTreeElement<T> p0, KdTreeElement<T> p1)
             {
-                return p0.Value.Y.CompareTo(p1.Value.Y);
+                return KdTree<T>.Compare(p0, p1, byX);
             }
         }
-
-        private sealed class KdTreeComparerX : IComparer<KdTreeElement<T>>
-        {
-            public static readonly KdTreeComparerX Shared = new KdTreeComparerX();
-
-            public int Compare(KdTreeElement<T> p0, KdTreeElement<T> p1)
-            {
-                return p0.Value.X.CompareTo(p1.Value.X);
-            }
-        }
-
-        private KdTreeNode<T> BuildTree(ArraySegment<KdTreeElement<T>> P, int depth = 0)
-        {
-            if (P.Count == 0)
-            {
-                return null;
-            }
-
-            if (P.Count == 1)
-            {
-                return new KdTreeLeaf<T>(P.GetAt(0), depth);
-            }
-
-            if (depth % 2 == 0)
-            {
-                P.Sort(KdTreeComparerX.Shared);
-            }
-            else
-            {
-                P.Sort(KdTreeComparerY.Shared);
-            }
-            
-            if (P.Count == 2)
-            {
-                return new KdTreeNode<T>(new KdTreeLeaf<T>(P.GetAt(0), depth + 1), null, P.GetAt(1), depth);
-            }
-
-            int median = P.Count / 2;
-
-            KdTreeNode<T> vLeft = BuildTree(P.Take(median), depth + 1);
-            KdTreeNode<T> vRight = BuildTree(P.Skip(median + 1), depth + 1);
-
-            return new KdTreeNode<T>(vLeft, vRight, P.GetAt(median), depth);
-        }
-#endif
 
         #region NN
         /// <summary>
@@ -197,76 +246,70 @@
         public T FindNearestNeighbour(T pivot, Func<T, PdfPoint> pivotPointFunc, Func<PdfPoint, PdfPoint, double> distanceMeasure, out int index, out double distance)
         {
             var pivotPoint = pivotPointFunc(pivot);
-            var result = FindNearestNeighbour(Root, pivot, pivotPoint, distanceMeasure);
-            index = result.Item1 != null ? result.Item1.Index : -1;
-            distance = result.Item2 ?? double.NaN;
-            return result.Item1 != null ? result.Item1.Element : default;
+
+            KdTreeNode<T> nearest = null;
+            double nearestDistance = double.PositiveInfinity;
+            FindNearestNeighbour(Root, pivot, pivotPoint, distanceMeasure, ref nearest, ref nearestDistance);
+
+            if (nearest is null)
+            {
+                index = -1;
+                distance = double.NaN;
+                return default;
+            }
+
+            index = nearest.Index;
+            distance = nearestDistance;
+            return nearest.Element;
         }
 
-        private static (KdTreeNode<T>, double?) FindNearestNeighbour(KdTreeNode<T> node, T pivot, PdfPoint pivotPoint, Func<PdfPoint, PdfPoint, double> distance)
+        /// <summary>
+        /// Depth-first search visiting the node, then the child on the pivot's side, then the other child if it can
+        /// contain a point as near as the nearest found so far. A point at the same distance replaces the nearest
+        /// found so far, i.e. the last visited wins.
+        /// </summary>
+        private static void FindNearestNeighbour(KdTreeNode<T> node, T pivot, PdfPoint pivotPoint, Func<PdfPoint, PdfPoint, double> distance,
+            ref KdTreeNode<T> nearest, ref double nearestDistance)
         {
-            if (node == null)
+            // The pivot is not a candidate, otherwise it could be returned as its own neighbour
+            if (!EqualityComparer<T>.Default.Equals(node.Element, pivot))
             {
-                return (null, null);
-            }
-            else if (node.IsLeaf)
-            {
-                if (node.Element.Equals(pivot))
+                double nodeDistance = distance(node.Value, pivotPoint);
+                if (nodeDistance <= nearestDistance)
                 {
-                    return (null, null);
+                    nearest = node;
+                    nearestDistance = nodeDistance;
                 }
-                return (node, distance(node.Value, pivotPoint));
+            }
+
+            var pointValue = node.IsAxisCutX ? pivotPoint.X : pivotPoint.Y;
+            var split = node.L;
+
+            if (pointValue < split)
+            {
+                // start left
+                if (node.LeftChild != null)
+                {
+                    FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
+                }
+
+                if (node.RightChild != null && pointValue + nearestDistance >= split)
+                {
+                    FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
+                }
             }
             else
             {
-                var currentNearestNode = node;
-                var currentDistance = distance(node.Value, pivotPoint);
-
-                KdTreeNode<T> newNode = null;
-                double? newDist = null;
-
-                var pointValue = node.IsAxisCutX ? pivotPoint.X : pivotPoint.Y;
-
-                if (pointValue < node.L)
+                // start right
+                if (node.RightChild != null)
                 {
-                    // start left
-                    (newNode, newDist) = FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance);
-
-                    if (newDist.HasValue && newDist <= currentDistance && !newNode.Element.Equals(pivot))
-                    {
-                        currentDistance = newDist.Value;
-                        currentNearestNode = newNode;
-                    }
-
-                    if (node.RightChild != null && pointValue + currentDistance >= node.L)
-                    {
-                        (newNode, newDist) = FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance);
-                    }
-                }
-                else
-                {
-                    // start right
-                    (newNode, newDist) = FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance);
-
-                    if (newDist.HasValue && newDist <= currentDistance && !newNode.Element.Equals(pivot))
-                    {
-                        currentDistance = newDist.Value;
-                        currentNearestNode = newNode;
-                    }
-
-                    if (node.LeftChild != null && pointValue - currentDistance <= node.L)
-                    {
-                        (newNode, newDist) = FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance);
-                    }
+                    FindNearestNeighbour(node.RightChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
                 }
 
-                if (newDist.HasValue && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                if (node.LeftChild != null && pointValue - nearestDistance <= split)
                 {
-                    currentDistance = newDist.Value;
-                    currentNearestNode = newNode;
+                    FindNearestNeighbour(node.LeftChild, pivot, pivotPoint, distance, ref nearest, ref nearestDistance);
                 }
-
-                return (currentNearestNode, currentDistance);
             }
         }
         #endregion

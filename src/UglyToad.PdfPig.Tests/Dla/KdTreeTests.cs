@@ -6808,5 +6808,53 @@
                 Assert.Equal(expectedPoint, result.Item1, PointComparer);
             }
         }
+
+        private sealed class Segment
+        {
+            public Segment(PdfPoint start, PdfPoint end)
+            {
+                Start = start;
+                End = end;
+            }
+
+            public PdfPoint Start { get; }
+
+            public PdfPoint End { get; }
+        }
+
+        [Fact]
+        public void FindNearestNeighbourNeverReturnsPivot()
+        {
+            // Pivot point (End) differs from the tree point (Start), so the pivot's own
+            // tree node is at a non-zero distance and must still be excluded.
+            var random = new Random(42);
+            var segments = new List<Segment>();
+            for (int i = 0; i < 500; i++)
+            {
+                var start = new PdfPoint(random.NextDouble() * 100, random.NextDouble() * 100);
+                var end = new PdfPoint(start.X + random.NextDouble() * 5, start.Y);
+                segments.Add(new Segment(start, end));
+            }
+
+            var kdTree = new KdTree<Segment>(segments, s => s.Start);
+
+            for (int i = 0; i < segments.Count; i++)
+            {
+                var pivot = segments[i];
+                kdTree.FindNearestNeighbour(pivot, s => s.End, Distances.Euclidean, out int index, out double distance);
+
+                double expectedDistance = double.PositiveInfinity;
+                for (int j = 0; j < segments.Count; j++)
+                {
+                    if (j != i)
+                    {
+                        expectedDistance = Math.Min(expectedDistance, Distances.Euclidean(segments[j].Start, pivot.End));
+                    }
+                }
+
+                Assert.NotEqual(i, index);
+                Assert.Equal(expectedDistance, distance, PreciseDoubleComparer);
+            }
+        }
     }
 }

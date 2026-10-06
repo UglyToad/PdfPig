@@ -4,7 +4,6 @@
     using Core;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Util;
 
     /// <summary>
@@ -51,49 +50,56 @@
 
             if (options.GroupByOrientation)
             {
-                var buckets = new List<Letter>[5];
-                for (int i = 0; i < buckets.Length; i++) buckets[i] = new List<Letter>();
-
-                foreach (var l in letters)
+                Span<int> counts = stackalloc int[OrientationBucketsCount];
+                for (int i = 0; i < letters.Count; i++)
                 {
-                    switch (l.TextOrientation)
+                    counts[GetOrientationBucket(letters[i].TextOrientation)]++;
+                }
+
+                // Most pages have a single orientation: no need to copy the letters.
+                for (int i = 0; i < OrientationBucketsCount; i++)
+                {
+                    if (counts[i] == letters.Count)
                     {
-                        case TextOrientation.Horizontal: buckets[0].Add(l); break;
-                        case TextOrientation.Rotate270: buckets[1].Add(l); break;
-                        case TextOrientation.Rotate180: buckets[2].Add(l); break;
-                        case TextOrientation.Rotate90: buckets[3].Add(l); break;
-                        default: buckets[4].Add(l); break;
+                        return GetWords(letters, options.MaximumDistance, GetDistanceMeasure(i), options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
                     }
                 }
 
-                // Use a thread-safe collection to avoid lock contention.
-                var results = new List<Word>(letters.Count); // Pre-allocate for performance
-
-                // Limit parallelism to avoid oversubscription.
-                var parallelOptions = new System.Threading.Tasks.ParallelOptions
+                var buckets = new Letter[OrientationBucketsCount][];
+                for (int i = 0; i < OrientationBucketsCount; i++)
                 {
-                    MaxDegreeOfParallelism = options.MaxDegreeOfParallelism > 0 ? options.MaxDegreeOfParallelism : Environment.ProcessorCount
-                };
-
-                // Use partitioner for better load balancing and avoid ConcurrentBag overhead
-                System.Threading.Tasks.Parallel.ForEach(
-                    System.Collections.Concurrent.Partitioner.Create(0, buckets.Length),
-                    parallelOptions,
-                    range =>
+                    if (counts[i] > 0)
                     {
-                        for (int i = range.Item1; i < range.Item2; i++)
-                        {
-                            if (buckets[i].Count == 0) continue;
-                            var measure = (i == 4) ? options.DistanceMeasure : options.DistanceMeasureAA;
-                            var words = GetWords(buckets[i], options.MaximumDistance, measure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
-                            lock (results)
-                            {
-                                results.AddRange(words);
-                            }
-                        }
-                    });
-                results.TrimExcess();
-                return results;
+                        buckets[i] = new Letter[counts[i]];
+                    }
+                }
+
+                // Filled from the end, so that the letters keep their order within each bucket.
+                for (int i = letters.Count - 1; i >= 0; i--)
+                {
+                    var letter = letters[i];
+                    int bucket = GetOrientationBucket(letter.TextOrientation);
+                    buckets[bucket][--counts[bucket]] = letter;
+                }
+
+                // Buckets are processed in order, so that the words order is deterministic.
+                // Each bucket is already processed in parallel.
+                List<Word> results = null;
+                for (int i = 0; i < buckets.Length; i++)
+                {
+                    if (buckets[i] is null) continue;
+                    var words = GetWords(buckets[i], options.MaximumDistance, GetDistanceMeasure(i), options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
+                    if (results is null)
+                    {
+                        results = words;
+                    }
+                    else
+                    {
+                        results.AddRange(words);
+                    }
+                }
+
+                return results ?? [];
             }
             else
             {
@@ -101,6 +107,26 @@
                     options.MaximumDistance, options.DistanceMeasure, options.FilterPivot,
                     options.Filter, options.MaxDegreeOfParallelism);
             }
+        }
+
+        private const int OrientationBucketsCount = 5;
+        private const int OtherOrientationBucket = 4;
+
+        private static int GetOrientationBucket(TextOrientation orientation)
+        {
+            switch (orientation)
+            {
+                case TextOrientation.Horizontal: return 0;
+                case TextOrientation.Rotate270: return 1;
+                case TextOrientation.Rotate180: return 2;
+                case TextOrientation.Rotate90: return 3;
+                default: return OtherOrientationBucket;
+            }
+        }
+
+        private Func<PdfPoint, PdfPoint, double> GetDistanceMeasure(int bucket)
+        {
+            return bucket == OtherOrientationBucket ? options.DistanceMeasure : options.DistanceMeasureAA;
         }
 
         /// <summary>
@@ -128,14 +154,14 @@
                 return new List<Word>();
             }
 
-            var groupedLetters = Clustering.NearestNeighbours(letters,
+            var groupedLetters = Clustering.NearestNeighbourGroups(letters,
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 filterPivotFunction,
                 filterFunction,
-                maxDegreeOfParallelism).ToList();
+                maxDegreeOfParallelism);
 
-            List<Word> words = new List<Word>();
+            var words = new List<Word>(groupedLetters.Count);
             foreach (var g in groupedLetters)
             {
                 words.Add(new Word(g));
