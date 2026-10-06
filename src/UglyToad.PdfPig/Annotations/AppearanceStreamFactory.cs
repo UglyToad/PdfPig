@@ -18,14 +18,13 @@
 
             if (appearanceDictionary.TryGet(name, out DictionaryToken stateDictionary))
             {
-                var dict = new Dictionary<string, StreamToken>();
-                foreach (var state in stateDictionary.Data.Keys)
+                var dict = new Dictionary<NameToken, StreamToken>();
+                foreach (var entry in stateDictionary.Entries)
                 {
-                    if (stateDictionary.Data.TryGetValue(state, out var stateRef) &&
-                        stateRef is IndirectReferenceToken appearanceRef)
+                    if (entry.Value is IndirectReferenceToken appearanceRef)
                     {
                         var streamToken = tokenScanner.Get(appearanceRef.Data)?.Data as StreamToken;
-                        dict[state] = streamToken!;
+                        dict[entry.Key] = streamToken!;
                     }
                 }
 

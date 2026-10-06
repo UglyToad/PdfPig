@@ -435,7 +435,7 @@ namespace UglyToad.PdfPig.Writer
                 }
             }
 
-            foreach (var kvp in pageInfo.Page.Data)
+            foreach (var kvp in pageInfo.Page.Entries)
             {
                 if (kvp.Key == NameToken.Contents || kvp.Key == NameToken.Parent || kvp.Key == NameToken.Type)
                 {
@@ -469,7 +469,7 @@ namespace UglyToad.PdfPig.Writer
                     continue;
                 }
 
-                copiedPageDict[NameToken.Create(kvp.Key)] =
+                copiedPageDict[kvp.Key] =
                     WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
             }
 
@@ -487,9 +487,9 @@ namespace UglyToad.PdfPig.Writer
                     return;
                 }
 
-                foreach (var item in dict.Data)
+                foreach (var item in dict.Entries)
                 {
-                    var key = NameToken.Create(item.Key);
+                    var key = item.Key;
 
                     if (!destinationDict.ContainsKey(key))
                     {
@@ -533,15 +533,15 @@ namespace UglyToad.PdfPig.Writer
                     }
 
                     var mutableSubDict = new Dictionary<NameToken, IToken>();
-                    foreach (var kvp in destSubDict.Data)
+                    foreach (var kvp in destSubDict.Entries)
                     {
-                        mutableSubDict[NameToken.Create(kvp.Key)] = kvp.Value;
+                        mutableSubDict[kvp.Key] = kvp.Value;
                     }
 
-                    foreach (var subItem in subDict.Data)
+                    foreach (var subItem in subDict.Entries)
                     {
                         // last copied most important
-                        mutableSubDict[NameToken.Create(subItem.Key)] = WriterUtil.CopyToken(
+                        mutableSubDict[subItem.Key] = WriterUtil.CopyToken(
                             context,
                             subItem.Value,
                             document.Structure.TokenScanner,
@@ -696,9 +696,9 @@ namespace UglyToad.PdfPig.Writer
         {
             var dict = new Dictionary<NameToken, IToken>();
 
-            foreach (var kvp in source.Data)
+            foreach (var kvp in source.Entries)
             {
-                var name = NameToken.Create(kvp.Key);
+                var name = kvp.Key;
 
                 var ignore = false;
 
@@ -1130,9 +1130,9 @@ namespace UglyToad.PdfPig.Writer
         {
             var data = new Dictionary<NameToken, IToken>();
 
-            foreach (var item in token.Data)
+            foreach (var item in token.Entries)
             {
-                var nameToken = NameToken.Create(item.Key);
+                var nameToken = item.Key;
                 if (nameToken == NameToken.A || nameToken == NameToken.Dest)
                 {
                     // ignore /A and /Dest

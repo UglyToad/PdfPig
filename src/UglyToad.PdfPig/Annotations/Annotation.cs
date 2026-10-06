@@ -99,9 +99,15 @@
         public AppearanceStream? DownAppearance => downAppearanceStream;
 
         /// <summary>
-        /// The current appearance state name, if any.
+        /// The decoded current appearance state name, if any.
+        /// Use AppearanceStateName to select a stream by its exact name identity.
         /// </summary>
         public string? AppearanceState => appearanceState;
+
+        /// <summary>
+        /// The exact name identity selecting the current appearance stream, if any.
+        /// </summary>
+        public NameToken? AppearanceStateName => AnnotationDictionary.TryGet(NameToken.As, out NameToken name) ? name : null;
 
         /// <summary>
         /// The <see cref="Annotation"/> this annotation was in reply to. Can be <see langword="null" />

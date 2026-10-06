@@ -988,18 +988,18 @@
 
             foreach (var set in srcResourceDictionary.Data)
             {
-                var nameToken = NameToken.Create(set.Key);
+                var nameToken = NameToken.Create(OtherEncodings.StringAsLatin1Bytes(set.Key).AsSpan());
                 if (nameToken == NameToken.Font || nameToken == NameToken.Xobject)
                 {
                     // We have to skip this two because we have a separate dictionary for them
                     continue;
                 }
 
-                if (!resources.ContainsKey(nameToken))
+                if (!resources.ContainsKey(set.Key))
                 {
                     // It means that this type of resources doesn't currently exist in the page, so we can copy it
                     // with no problem
-                    resources[nameToken] = documentBuilder.CopyToken(srcPage.pdfScanner, set.Value);
+                    resources[set.Key] = documentBuilder.CopyToken(srcPage.pdfScanner, set.Value);
                     continue;
                 }
 
@@ -1015,8 +1015,8 @@
 
                 foreach (var fontSet in fontsDictionary.Data)
                 {
-                    var fontName = NameToken.Create(fontSet.Key);
-                    if (pageFontsDictionary.ContainsKey(fontName))
+                    var fontName = NameToken.Create(OtherEncodings.StringAsLatin1Bytes(fontSet.Key).AsSpan());
+                    if (pageFontsDictionary.ContainsKey(OtherEncodings.BytesAsLatin1String(fontName.Bytes)))
                     {
                         // This would mean that the imported font collide with one of the added font. so we have to rename it
                         var newName = NameToken.Create($"F{nextFontId++}");
@@ -1033,7 +1033,7 @@
                                 return op;
                             }
 
-                            if (fontAndSizeOperation.Font.Data == fontName)
+                            if (fontAndSizeOperation.Font == fontName)
                             {
                                 return new SetFontAndSize(newName, fontAndSizeOperation.Size);
                             }
@@ -1049,7 +1049,7 @@
                         throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the font, got a {fontSet.Value.GetType().Name}");
                     }
 
-                    pageFontsDictionary.Add(fontName, documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
+                    pageFontsDictionary.Add(OtherEncodings.BytesAsLatin1String(fontName.Bytes), documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
                 }
             }
 
@@ -1075,9 +1075,9 @@
                                 return op;
                             }
 
-                            if (invokeNamedOperation.Name.Data == xobjectName)
+                            if (invokeNamedOperation.Name == NameToken.Create(OtherEncodings.StringAsLatin1Bytes(xobjectName).AsSpan()))
                             {
-                                return new InvokeNamedXObject(NameToken.Create(newName));
+                                return new InvokeNamedXObject(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(newName).AsSpan()));
                             }
 
                             return op;
@@ -1117,9 +1117,9 @@
                                 return op;
                             }
 
-                            if (invokeNamedOperation.Name.Data == gstateName)
+                            if (invokeNamedOperation.Name == NameToken.Create(OtherEncodings.StringAsLatin1Bytes(gstateName).AsSpan()))
                             {
-                                return new SetGraphicsStateParametersFromDictionary(NameToken.Create(newName));
+                                return new SetGraphicsStateParametersFromDictionary(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(newName).AsSpan()));
                             }
 
                             return op;

@@ -377,7 +377,7 @@
         {
             outputStream.Write(DictionaryStart);
 
-            foreach (var pair in dictionary.Data)
+            foreach (var pair in dictionary.Entries)
             {
                 WriteName(pair.Key, outputStream);
 
@@ -419,7 +419,7 @@
         /// <param name="outputStream"></param>
         protected virtual void WriteName(NameToken name, Stream outputStream)
         {
-            WriteName(name.Data, outputStream);
+            WriteName(OtherEncodings.BytesAsLatin1String(name.Bytes), outputStream);
         }
 
         private void WriteName(string name, Stream outputStream)

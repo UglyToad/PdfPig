@@ -174,7 +174,7 @@
             {
                 var xobjectDictionary = DirectObjectFinder.Get<DictionaryToken>(xobjectBase, scanner);
 
-                foreach (var pair in xobjectDictionary.Data)
+                foreach (var pair in xobjectDictionary.Entries)
                 {
                     if (pair.Value is NullToken)
                     {
@@ -186,15 +186,15 @@
                         throw new InvalidOperationException($"Expected the XObject dictionary value for key /{pair.Key} to be an indirect reference, instead got: {pair.Value}.");
                     }
 
-                    xObjects[NameToken.Create(pair.Key)] = reference.Data;
+                    xObjects[pair.Key] = reference.Data;
                 }
             }
 
             if (resourceDictionary.TryGet(NameToken.ExtGState, scanner, out DictionaryToken? extGStateDictionaryToken))
             {
-                foreach (var pair in extGStateDictionaryToken.Data)
+                foreach (var pair in extGStateDictionaryToken.Entries)
                 {
-                    var name = NameToken.Create(pair.Key);
+                    var name = pair.Key;
                     var state = DirectObjectFinder.Get<DictionaryToken>(pair.Value, scanner);
 
                     extendedGraphicsStateDictionaries[name] = state;
@@ -203,9 +203,9 @@
 
             if (resourceDictionary.TryGet(NameToken.ColorSpace, scanner, out DictionaryToken? colorSpaceDictionary))
             {
-                foreach (var nameColorSpacePair in colorSpaceDictionary.Data)
+                foreach (var nameColorSpacePair in colorSpaceDictionary.Entries)
                 {
-                    var name = NameToken.Create(nameColorSpacePair.Key);
+                    var name = nameColorSpacePair.Key;
 
                     if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out NameToken? colorSpaceName))
                     {
@@ -243,9 +243,9 @@
 
             if (resourceDictionary.TryGet(NameToken.Properties, scanner, out DictionaryToken? markedContentPropertiesList))
             {
-                foreach (var pair in markedContentPropertiesList.Data)
+                foreach (var pair in markedContentPropertiesList.Entries)
                 {
-                    var key = NameToken.Create(pair.Key);
+                    var key = pair.Key;
 
                     if (!DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken? namedProperties))
                     {
@@ -267,9 +267,9 @@
             }
 
             // NB: in PDF, all patterns shall be local to the context in which they are defined.
-            foreach (var namePatternPair in patternDictionary.Data)
+            foreach (var namePatternPair in patternDictionary.Entries)
             {
-                var name = NameToken.Create(namePatternPair.Key);
+                var name = namePatternPair.Key;
                 try
                 {
                     patternsProperties[name] = PatternParser.Create(namePatternPair.Value, scanner, this, filterProvider);
@@ -294,9 +294,9 @@
                 return;
             }
 
-            foreach (var pair in shadingList.Data)
+            foreach (var pair in shadingList.Entries)
             {
-                var key = NameToken.Create(pair.Key);
+                var key = pair.Key;
                 if (DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken? namedPropertiesDictionary))
                 {
                     shadingsProperties[key] = ShadingParser.Create(namedPropertiesDictionary, scanner, this, filterProvider);
@@ -334,13 +334,13 @@
         {
             lastLoadedFont = (null, null);
 
-            foreach (var pair in fontDictionary.Data)
+            foreach (var pair in fontDictionary.Entries)
             {
                 if (pair.Value is IndirectReferenceToken objectKey)
                 {
                     var reference = objectKey.Data;
 
-                    fonts[NameToken.Create(pair.Key)] = reference;
+                    fonts[pair.Key] = reference;
 
                     if (loadedFonts.ContainsKey(reference))
                     {
@@ -374,7 +374,7 @@
                 }
                 else if (pair.Value is DictionaryToken fd)
                 {
-                    var name = NameToken.Create(pair.Key);
+                    var name = pair.Key;
                     var font = fontFactory.Get(fd);
 
                     directFonts.Add((name, font));
