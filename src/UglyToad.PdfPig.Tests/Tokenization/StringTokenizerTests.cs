@@ -8,6 +8,47 @@
     {
         private readonly StringTokenizer tokenizer = new StringTokenizer();
 
+        [Theory]
+        [InlineData("(a\rb)", "a\rb")]
+        [InlineData("(a\nb)", "a\nb")]
+        [InlineData("(a\r\nb)", "a\r\nb")]
+        [InlineData("(a\r\r\nb)", "a\r\r\nb")]
+        [InlineData("(a\r\n\nb)", "a\r\n\nb")]
+        [InlineData("(a\\\rb)", "ab")]
+        [InlineData("(a\\\nb)", "ab")]
+        [InlineData("(a\\\r\nb)", "ab")]
+        [InlineData("(a\\\r\n\nb)", "a\nb")]
+        [InlineData("(a\\\n\nb)", "a\nb")]
+        [InlineData("(a\\\r\rb)", "a\rb")]
+        [InlineData("(a\\r\\nb)", "a\r\nb")]
+        public void PreservesPhysicalLineEndingsAndSkipsOnlyOneEscapedLineEnding(string source, string expected)
+        {
+            var input = StringBytesTestConverter.Convert(source);
+            Assert.True(tokenizer.TryTokenize(input.First, input.Bytes, out var token));
+            Assert.Equal(System.Text.Encoding.ASCII.GetBytes(expected), AssertStringToken(token).GetBytes());
+        }
+
+        [Theory]
+        [InlineData(32)]
+        [InlineData(48)]
+        public void PreservesBinaryStringBytesIncludingCarriageReturns(int length)
+        {
+            // Model binary encryption values with raw CR, CRLF and high bytes.
+            var expected = Enumerable.Repeat((byte)0xA5, length).ToArray();
+            expected[0] = 0x00;
+            expected[1] = 0x0D;
+            expected[2] = 0x81;
+            expected[length - 3] = 0x0D;
+            expected[length - 2] = 0x0A;
+            expected[length - 1] = 0x0D;
+            var source = expected.Concat(new byte[] { 0x29 }).ToArray();
+            using var input = new MemoryInputBytes(source);
+
+            Assert.True(tokenizer.TryTokenize(0x28, input, out var token));
+
+            Assert.Equal(expected, AssertStringToken(token).GetBytes());
+        }
+
         [Fact]
         public void NullInput_ReturnsFalse()
         {

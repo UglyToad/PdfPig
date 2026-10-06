@@ -1,4 +1,4 @@
-﻿// ReSharper disable ObjectCreationAsStatement
+// ReSharper disable ObjectCreationAsStatement
 namespace UglyToad.PdfPig.Tests.Tokens
 {
     using PdfPig.Core;
@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
 
     internal class TestPdfTokenScanner : IPdfTokenScanner
     {
-        public StackDepthGuard StackDepthGuard => StackDepthGuard.Infinite;
+        public StackDepthGuard StackDepthGuard { get; set; } = new StackDepthGuard(256);
 
         public Dictionary<IndirectReference, ObjectToken> Objects { get; } = new Dictionary<IndirectReference, ObjectToken>();
 

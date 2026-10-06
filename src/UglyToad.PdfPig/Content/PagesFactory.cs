@@ -64,10 +64,10 @@
 
             //If we got here, we have to iterate till we manage to exit
 
-            // Attempt to detect (and break) any infinite loop (IL) by recording the ids of the last 1000 (by default) tokens processed.
-            const int InfiniteLoopWorkingWindow = 1000;
-            var visitedTokens = new Dictionary<long, HashSet<int>>(); // Quick lookup containing ids (object number, generation) of tokens already processed (trimmed as we go to last 1000 (by default))
-            var visitedTokensWorkingWindow = new Queue<(long ObjectNumber, int Generation)>(InfiniteLoopWorkingWindow);
+            // Every pages node is processed at most once. The former guard only remembered the last 1000
+            // references, so a ring of 1001 nodes was walked forever, allocating a new node per step until
+            // the process ran out of memory.
+            var visited = new HashSet<IndirectReference>();
 
             var toProcess =
                 new Queue<(PageTreeNode thisPage, IndirectReference reference, DictionaryToken nodeDictionary, IndirectReference parentReference,
@@ -86,51 +86,11 @@
             {
                 var current = toProcess.Dequeue();
 
-                #region Break any potential infinite loop
-                // Remember the last 1000 (by default) tokens and if we attempt to process again break out of loop
-                var currentReferenceObjectNumber = current.reference.ObjectNumber;
-                var currentReferenceGeneration = current.reference.Generation;
-                if (visitedTokens.ContainsKey(currentReferenceObjectNumber))
+                if (!visited.Add(current.reference))
                 {
-                    var generations = visitedTokens[currentReferenceObjectNumber];
-
-                    if (generations.Contains(currentReferenceGeneration))
-                    {
-                        var listOfLastVisitedToken = visitedTokensWorkingWindow.ToList();
-                        var indexOfCurrentTokenInListOfLastVisitedToken = listOfLastVisitedToken.IndexOf((currentReferenceObjectNumber, currentReferenceGeneration));
-                        var howManyTokensBack = Math.Abs(indexOfCurrentTokenInListOfLastVisitedToken - listOfLastVisitedToken.Count); //eg initate loop is taking us back to last token or five token back
-                        System.Diagnostics.Debug.WriteLine($"Break infinite loop while processing page {pageNumber.PageCount + 1} tokens. Token with object number {currentReferenceObjectNumber} and generation {currentReferenceGeneration} processed {howManyTokensBack} token(s) back.");
-                        continue; // don't reprocess token already processed. break infinite loop. Issue #519
-                    }
-                    else
-                    {
-                        generations.Add(currentReferenceGeneration);
-                        visitedTokens[currentReferenceObjectNumber] = generations;
-                    }
+                    continue; // don't reprocess a node already processed, breaks cycles. Issue #519
                 }
-                else
-                {
-                    visitedTokens.Add(currentReferenceObjectNumber, new HashSet<int>() { currentReferenceGeneration });
 
-                    visitedTokensWorkingWindow.Enqueue((currentReferenceObjectNumber, currentReferenceGeneration));
-                    if (visitedTokensWorkingWindow.Count >= InfiniteLoopWorkingWindow)
-                    {
-                        var toBeRemovedFromWorkingHashset = visitedTokensWorkingWindow.Dequeue();
-                        var toBeRemovedObjectNumber = toBeRemovedFromWorkingHashset.ObjectNumber;
-                        var toBeRemovedGeneration = toBeRemovedFromWorkingHashset.Generation;
-                        var generations = visitedTokens[toBeRemovedObjectNumber];
-                        generations.Remove(toBeRemovedGeneration);
-                        if (generations.Count == 0)
-                        {
-                            visitedTokens.Remove(toBeRemovedObjectNumber);
-                        }
-                        else
-                        {
-                            visitedTokens[toBeRemovedObjectNumber] = generations;
-                        }
-                    }
-                }
-                #endregion
                 if (!current.nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken? kids))
                 {
                     if (!isLenientParsing)
@@ -227,22 +187,32 @@
             return isPage;
         }
 
-        private static void PopulatePageByNumberDictionary(PageTreeNode node, Dictionary<int, PageTreeNode> result)
+        private static void PopulatePageByNumberDictionary(PageTreeNode root, Dictionary<int, PageTreeNode> result)
         {
-            if (node.IsPage)
+            // Iterative: a deep (non-cyclic) chain of pages nodes used to recurse until the process died
+            // with a non-catchable stack overflow (about 40,000 levels on a thread pool thread).
+            var pending = new Stack<PageTreeNode>();
+            pending.Push(root);
+
+            while (pending.Count > 0)
             {
-                if (!node.PageNumber.HasValue)
+                var node = pending.Pop();
+
+                if (node.IsPage)
                 {
-                    throw new InvalidOperationException($"Node was page but did not have page number: {node}.");
+                    if (!node.PageNumber.HasValue)
+                    {
+                        throw new InvalidOperationException($"Node was page but did not have page number: {node}.");
+                    }
+
+                    result[node.PageNumber.Value] = node;
+                    continue;
                 }
 
-                result[node.PageNumber.Value] = node;
-                return;
-            }
-
-            foreach (var child in node.Children!)
-            {
-                PopulatePageByNumberDictionary(child, result);
+                foreach (var child in node.Children!)
+                {
+                    pending.Push(child);
+                }
             }
         }
     }
