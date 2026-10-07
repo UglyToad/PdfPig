@@ -25,7 +25,7 @@
         /// Reconstruct a key using NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key)).
         /// </summary>
         public IReadOnlyDictionary<string, IToken> Data => data ??= new ReadOnlyDictionary<string, IToken>(
-            Entries.ToDictionary(x => OtherEncodings.BytesAsLatin1String(x.Key.Bytes), x => x.Value, StringComparer.Ordinal));
+            Entries.ToDictionary(x => x.Key.ByteKey, x => x.Value, StringComparer.Ordinal));
 
         /// <summary>
         /// The entries keyed by their exact PDF name identities. Prefer this view to Data.
@@ -42,15 +42,16 @@
         /// </summary>
         /// <param name="data">The data this dictionary will contain.</param>
         public DictionaryToken(IReadOnlyDictionary<NameToken, IToken> data)
+            : this(data?.ToDictionary(x => x.Key, x => x.Value) ?? throw new ArgumentNullException(nameof(data)))
         {
-            if (data == null)
-            {
-                throw new ArgumentNullException(nameof(data));
-            }
-
-            Entries = new ReadOnlyDictionary<NameToken, IToken>(data.ToDictionary(x => x.Key, x => x.Value));
         }
 
+        // Internal edits already create a fresh dictionary. Take ownership here
+        // instead of copying that private dictionary a second time.
+        private DictionaryToken(Dictionary<NameToken, IToken> ownedEntries)
+        {
+            Entries = new ReadOnlyDictionary<NameToken, IToken>(ownedEntries);
+        }
         private DictionaryToken(IReadOnlyDictionary<string, IToken> data)
         {
             // Preserve the live string-dictionary view used by existing writer callers.
@@ -66,11 +67,11 @@
             public int Count => source.Count;
             public IEnumerable<NameToken> Keys => source.Keys.Select(ToName);
             public IEnumerable<IToken> Values => source.Values;
-            public IToken this[NameToken key] => source[OtherEncodings.BytesAsLatin1String(key.Bytes)];
-            public bool ContainsKey(NameToken key) => source.ContainsKey(OtherEncodings.BytesAsLatin1String(key.Bytes));
-            public bool TryGetValue(NameToken key, out IToken value) => source.TryGetValue(OtherEncodings.BytesAsLatin1String(key.Bytes), out value);
+            public IToken this[NameToken key] => source[key.ByteKey];
+            public bool ContainsKey(NameToken key) => source.ContainsKey(key.ByteKey);
+            public bool TryGetValue(NameToken key, out IToken value) => source.TryGetValue(key.ByteKey, out value);
 
-            private static NameToken ToName(string key) => NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key).AsSpan());
+            private static NameToken ToName(string key) => NameToken.CreateFromByteKey(key);
 
             public IEnumerator<KeyValuePair<NameToken, IToken>> GetEnumerator()
                 => source.Select(x => new KeyValuePair<NameToken, IToken>(ToName(x.Key), x.Value)).GetEnumerator();
@@ -144,7 +145,7 @@
         public DictionaryToken With(string key, IToken value)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            return With(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key).AsSpan()), value);
+            return With(NameToken.CreateFromByteKey(key), value);
         }
 
         /// <summary>
@@ -164,7 +165,7 @@
         public DictionaryToken Without(string key)
         {
             if (key == null) throw new ArgumentNullException(nameof(key));
-            return Without(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(key).AsSpan()));
+            return Without(NameToken.CreateFromByteKey(key));
         }
 
         /// <summary>

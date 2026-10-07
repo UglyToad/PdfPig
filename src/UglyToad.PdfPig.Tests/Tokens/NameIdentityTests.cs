@@ -8,6 +8,154 @@ namespace UglyToad.PdfPig.Tests.Tokens
 
     public class NameIdentityTests
     {
+        [Fact]
+        public void Utf8ValidationMatchesStrictDecoderIncludingMalformedSequences()
+        {
+            var decoder = new UTF8Encoding(false, true);
+            var random = new Random(7305);
+            var samples = new List<byte[]>
+            {
+                new byte[] { 0xC0, 0x80 }, new byte[] { 0xC1, 0xBF },
+                new byte[] { 0xE0, 0x9F, 0xBF }, new byte[] { 0xED, 0xA0, 0x80 },
+                new byte[] { 0xF0, 0x8F, 0xBF, 0xBF }, new byte[] { 0xF4, 0x90, 0x80, 0x80 },
+                new byte[] { 0xF4, 0x8F, 0xBF, 0xBF }, new byte[] { 0xEF, 0xBF, 0xBD },
+                new byte[] { 0xE2, 0x82 }, new byte[] { 0xF0, 0x9F, 0x92 }
+            };
+            for (var i = 0; i < 4096; i++)
+            {
+                var bytes = new byte[random.Next(17)];
+                random.NextBytes(bytes);
+                samples.Add(bytes);
+            }
+            foreach (var bytes in samples)
+            {
+                string expected;
+                try { expected = decoder.GetString(bytes); }
+                catch (DecoderFallbackException) { expected = OtherEncodings.BytesAsLatin1String(bytes); }
+                Assert.Equal(expected, NameToken.Create(bytes.AsSpan()).Data);
+            }
+        }
+
+        private delegate int ByteHash(ReadOnlySpan<byte> bytes);
+
+        [Fact]
+        public void HashCollisionsPreserveDistinctNamesAndConcurrentInterning()
+        {
+            // Find a real collision without retaining every search candidate in
+            // the process-wide intern cache. Hashes are deliberately randomized.
+            var computeHash = (ByteHash)typeof(NameToken).GetMethod("ComputeHash",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+                .CreateDelegate(typeof(ByteHash));
+            var seen = new Dictionary<int, byte[]>();
+            var random = new Random(7306);
+            byte[] first = null, second = null;
+            for (var i = 0; i < 1000000; i++)
+            {
+                var bytes = new byte[8];
+                random.NextBytes(bytes);
+                var hash = computeHash(bytes);
+                if (seen.TryGetValue(hash, out var previous))
+                {
+                    first = previous;
+                    second = bytes;
+                    break;
+                }
+                seen.Add(hash, bytes);
+            }
+            Assert.NotNull(first);
+            Assert.NotNull(second);
+            var names = new NameToken[256];
+            Parallel.For(0, names.Length, i => names[i] = NameToken.Create((i % 2 == 0 ? first : second).AsSpan()));
+            Assert.Equal(names[0].GetHashCode(), names[1].GetHashCode());
+            Assert.NotEqual(names[0], names[1]);
+            for (var i = 0; i < names.Length; i++) Assert.Same(names[i % 2], names[i]);
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                [names[0]] = new NumericToken(1), [names[1]] = new NumericToken(2)
+            });
+            Assert.Equal(1, Assert.IsType<NumericToken>(dictionary.Entries[names[0]]).Int);
+            Assert.Equal(2, Assert.IsType<NumericToken>(dictionary.Entries[names[1]]).Int);
+        }
+
+        [Theory]
+        [InlineData("literal#41", "/literal#2341 ")]
+        [InlineData("()<>[]{}/%#", "/#28#29#3C#3E#5B#5D#7B#7D#2F#25#23 ")]
+        public void WriterEscapesDelimitersAndLiteralHexEscapePrefixes(string text, string expected)
+        {
+            var name = NameToken.Create(text);
+            using var output = new MemoryStream();
+            new TokenWriter().WriteToken(name, output);
+            var written = Encoding.ASCII.GetString(output.ToArray());
+            Assert.Equal(expected, written);
+            Assert.Same(name, Parse(written));
+        }
+
+        [Fact]
+        public void LongNamesSurvivePooledWriterAndStringFactoryPaths()
+        {
+            var text = new string('x', 1024) + "\u5b8b\u4f53#41";
+            var name = NameToken.Create(text);
+            Assert.Equal(text, name.Data);
+            using var output = new MemoryStream();
+            new TokenWriter().WriteToken(name, output);
+            Assert.Same(name, Parse(Encoding.ASCII.GetString(output.ToArray())));
+        }
+        [Fact]
+        public void PaddedByteSequencesKeepDistinctIdentities()
+        {
+            var names = Enumerable.Range(1, 4).Select(length =>
+            {
+                var bytes = new byte[length];
+                bytes[0] = 0x41;
+                return NameToken.Create(bytes.AsSpan());
+            }).ToArray();
+            Assert.Equal(4, new HashSet<NameToken>(names).Count);
+            foreach (var name in names) Assert.Same(name, NameToken.Create(name.Bytes));
+        }
+
+        [Fact]
+        public void LegacyDictionaryEnumerationPreservesAllLatin1ByteKeys()
+        {
+            var source = Enumerable.Range(0, 256).ToDictionary(
+                value => "Byte-" + (char)value, value => (IToken)new NumericToken(value));
+            var dictionary = DictionaryToken.With(source);
+            foreach (var entry in dictionary.Entries)
+            {
+                var expected = Assert.IsType<NumericToken>(entry.Value).Int;
+                Assert.Equal((byte)expected, entry.Key.Bytes[entry.Key.Bytes.Length - 1]);
+                Assert.Same(entry.Key, NameToken.Create(entry.Key.Bytes));
+            }
+            var longKey = new string('x', 300) + "\u00e9";
+            source[longKey] = NumericToken.One;
+            foreach (var entry in dictionary.Entries)
+                Assert.True(dictionary.TryGet(entry.Key, out _));
+            const string outsideByteRange = "not-a-byte-\u5b8b";
+            source[outsideByteRange] = NumericToken.One;
+            var fallback = NameToken.Create(OtherEncodings.StringAsLatin1Bytes(outsideByteRange).AsSpan());
+            Assert.Contains(dictionary.Entries.Keys, key => key.Equals(fallback));
+        }
+#if NET9_0_OR_GREATER
+        [Fact]
+        public void ModernCacheHitsFromBytesAndShortTextAllocateNothing()
+        {
+            const string text = "Allocation-Test-\u5b8b\u4f53";
+            var bytes = Encoding.UTF8.GetBytes(text);
+            var name = NameToken.Create(bytes.AsSpan());
+            for (var i = 0; i < 10000; i++)
+            {
+                NameToken.Create(bytes.AsSpan());
+                NameToken.Create(text);
+            }
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 10000; i++)
+            {
+                NameToken.Create(bytes.AsSpan());
+                NameToken.Create(text);
+            }
+            Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+            Assert.Same(name, NameToken.Create(text));
+        }
+#endif
         private static NameToken Parse(string source)
         {
             var input = StringBytesTestConverter.Convert(source);
