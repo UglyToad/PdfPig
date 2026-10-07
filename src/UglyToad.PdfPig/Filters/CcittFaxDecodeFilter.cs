@@ -3,6 +3,7 @@
     using System;
     using CcittFax;
     using Core;
+    using Fonts;
     using Tokens;
     using Util;
 
@@ -16,6 +17,22 @@
     /// </summary>
     public sealed class CcittFaxDecodeFilter : IFilter
     {
+        // Like PDFBox's CCITT cap, but includes the decoder's row and change arrays as well
+        // as the bitmap. PDF dimensions must not control an unbounded allocation.
+        internal const long MaximumDecodeBufferBytes = 256L * 1024 * 1024;
+
+        internal bool UseLenientParsing { get; }
+
+        /// <summary>Creates a CCITT filter with the default lenient dimension handling.</summary>
+        public CcittFaxDecodeFilter() : this(useLenientParsing: true)
+        {
+        }
+
+        internal CcittFaxDecodeFilter(bool useLenientParsing)
+        {
+            UseLenientParsing = useLenientParsing;
+        }
+
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
 
@@ -41,13 +58,23 @@
                 rows = Math.Max(rows, height);
             }
 
+            // Validate before inspecting the input or constructing the decoder: its constructor
+            // allocates arrays from Columns even when the compressed data is empty.
+            var arraySize = GetDecodedBufferSize(cols, rows, UseLenientParsing);
+
+            if (cols <= 0 || rows <= 0)
+            {
+                // Lenient parsing accepts unusable dimensions as empty image data. The
+                // resource check above still bounds work buffers described by positive Columns.
+                return Memory<byte>.Empty;
+            }
+
             var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
             var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
             var compressionType = DetermineCompressionType(input.Span, k);
 
             using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign))
             {
-                var arraySize = (cols + 7) / 8 * rows;
                 var decompressed = new byte[arraySize];
                 ReadFromDecoderStream(stream, decompressed);
 
@@ -60,6 +87,35 @@
 
                 return decompressed;
             }
+        }
+
+        /// <summary>Validates all dimension-dependent decode buffers before any are allocated.</summary>
+        internal static int GetDecodedBufferSize(int columns, int rows, bool useLenientParsing = false)
+        {
+            if (!useLenientParsing && (columns <= 0 || rows <= 0))
+            {
+                throw new CorruptCompressedDataException($"Invalid CCITT image dimensions: columns={columns}, rows={rows}.");
+            }
+
+            // Nonpositive dimensions cannot contribute bytes, and must not cancel positive
+            // sizes in lenient mode. Widen before adding or multiplying; Int32 dimensions
+            // keep all of these computations within Int64.
+            var safeColumns = Math.Max(0L, columns);
+            var safeRows = Math.Max(0L, rows);
+            var rowBytes = (safeColumns + 7) / 8;
+            var bitmapBytes = rowBytes * safeRows;
+            var workingBytes = rowBytes + 2 * (safeColumns + 2) * sizeof(int);
+            var totalBytes = bitmapBytes + workingBytes;
+
+            if (totalBytes > MaximumDecodeBufferBytes)
+            {
+                throw new CorruptCompressedDataException(
+                    $"CCITT decode buffers require {totalBytes} bytes for columns={columns}, rows={rows}; "
+                    + $"at most {MaximumDecodeBufferBytes} bytes are allowed.");
+            }
+
+            // The total cap also guarantees that the decoder's Int32 array lengths cannot overflow.
+            return (int)bitmapBytes;
         }
 
         private static CcittFaxCompressionType DetermineCompressionType(ReadOnlySpan<byte> input, int k)

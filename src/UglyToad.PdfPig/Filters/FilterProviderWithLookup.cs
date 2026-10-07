@@ -12,20 +12,41 @@
     internal class FilterProviderWithLookup : ILookupFilterProvider
     {
         private readonly IFilterProvider inner;
+        private readonly CcittFaxDecodeFilter ccitt;
 
-        public FilterProviderWithLookup(IFilterProvider inner)
+        public FilterProviderWithLookup(IFilterProvider inner, bool useLenientParsing = true)
         {
             this.inner = inner;
+            ccitt = new CcittFaxDecodeFilter(useLenientParsing);
         }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
-            => inner.GetFilters(dictionary);
+            => ConfigureFilters(inner.GetFilters(dictionary));
 
         public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
-            => inner.GetNamedFilters(names);
+            => ConfigureFilters(inner.GetNamedFilters(names));
 
         public IReadOnlyList<IFilter> GetAllFilters()
-            => inner.GetAllFilters();
+            => ConfigureFilters(inner.GetAllFilters());
+
+        private IReadOnlyList<IFilter> ConfigureFilters(IReadOnlyList<IFilter> filters)
+        {
+            IFilter[]? configured = null;
+            for (var i = 0; i < filters.Count; i++)
+            {
+                if (filters[i] is CcittFaxDecodeFilter filter && filter.UseLenientParsing != ccitt.UseLenientParsing)
+                {
+                    // Never mutate the shared default provider or a caller-owned filter.
+                    // Other custom filters keep their own behavior and identity.
+                    if (configured is null)
+                    {
+                        configured = filters.ToArray();
+                    }
+                    configured[i] = ccitt;
+                }
+            }
+            return configured is null ? filters : configured;
+        }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner)
         {
