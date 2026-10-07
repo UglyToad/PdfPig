@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tests.Filters
+namespace UglyToad.PdfPig.Tests.Filters
 {
     using System.IO;
     using UglyToad.PdfPig.Filters;
@@ -9,6 +9,137 @@
 
     public class CcittFaxDecoderStreamTests
     {
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void ShortRunMasksMatchExpectedPixelsAtEveryByteOffset(bool lenient, bool blackIsOne)
+        {
+            var whiteCodes = new[] { "00110101", "000111", "0111", "1000", "1011", "1100", "1110", "1111", "10011" };
+            var blackCodes = new[] { "0000110111", "010", "11", "10", "011", "0011", "0010", "00011", "000101" };
+            for (var white = 0; white <= 8; white++)
+            for (var black = 0; black <= 8; black++)
+            {
+                var columns = white + black;
+                if (columns == 0) continue;
+                var rowBits = (whiteCodes[white] + (black == 0 ? "" : blackCodes[black]));
+                rowBits = rowBits.PadRight((rowBits.Length + 7) / 8 * 8, '0');
+                using var decoder = new CcittFaxDecoderStream(new MemoryStream(PackCcittBits(rowBits + rowBits)), columns, CcittFaxCompressionType.ModifiedHuffman, true, lenient);
+                var rowBytes = (columns + 7) / 8;
+                var expected = new byte[rowBytes * 2];
+                for (var row = 0; row < 2; row++)
+                for (var x = white; x < columns; x++)
+                    expected[row * rowBytes + x / 8] |= (byte)(1 << (7 - x % 8));
+                if (!blackIsOne)
+                    for (var i = 0; i < expected.Length; i++) expected[i] = (byte)~expected[i];
+                var actual = Enumerable.Repeat((byte)0xAA, expected.Length).ToArray();
+                decoder.DecodeInto(actual, blackIsOne);
+                Assert.Equal(expected, actual);
+            }
+        }
+
+        [Theory]
+        [InlineData("00000010000011010011", 64, 29)]
+        [InlineData("000000010011001101010000000100110000110111", 4096, 2048)]
+        [InlineData("0011010100000011011000000110111", 512, 0)]
+        public void LongCodesMatchExpectedPixelsIncludingMakeupAndThirteenBitCodes(string bits, int columns, int whitePixels)
+        {
+            foreach (var lenient in new[] { false, true })
+            foreach (var blackIsOne in new[] { false, true })
+            {
+                using var decoder = new CcittFaxDecoderStream(new MemoryStream(PackCcittBits(bits)), columns, CcittFaxCompressionType.ModifiedHuffman, false, lenient);
+                var expected = new byte[(columns + 7) / 8];
+                for (var x = whitePixels; x < columns; x++) expected[x / 8] |= (byte)(1 << (7 - x % 8));
+                if (!blackIsOne)
+                    for (var i = 0; i < expected.Length; i++) expected[i] = (byte)~expected[i];
+                var actual = new byte[expected.Length];
+                decoder.DecodeInto(actual, blackIsOne);
+                Assert.Equal(expected, actual);
+            }
+        }
+
+        private static byte[] PackCcittBits(string bits)
+        {
+            var bytes = new byte[(bits.Length + 7) / 8];
+            for (var i = 0; i < bits.Length; i++)
+                if (bits[i] == '1') bytes[i / 8] |= (byte)(1 << (7 - i % 8));
+            return bytes;
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void DirectOutputMatchesFixtureInBothPolarities(bool blackIsOne)
+        {
+            var input = ImageHelpers.LoadFileBytes("ccittfax-encoded.bin");
+            var expected = ImageHelpers.LoadFileBytes("ccittfax-decoded.bin");
+            if (!blackIsOne)
+                for (var i = 0; i < expected.Length; i++) expected[i] = (byte)~expected[i];
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(input), 1800, CcittFaxCompressionType.Group4_2D, false, false);
+            var output = Enumerable.Repeat((byte)0xAA, expected.Length).ToArray();
+            decoder.DecodeInto(output, blackIsOne);
+            Assert.Equal(expected, output);
+        }
+
+        [Theory]
+        [InlineData("ModifiedHuffman")]
+        [InlineData("Group3_1D")]
+        [InlineData("Group3_2D")]
+        [InlineData("Group4_2D")]
+        public void DirectOutputMatchesStreamForShortAndMalformedInput(string compression)
+        {
+            var type = (CcittFaxCompressionType)Enum.Parse(typeof(CcittFaxCompressionType), compression);
+            var random = new Random(1435);
+            foreach (var columns in new[] { 1, 7, 8, 9, 16, 31, 64 })
+            foreach (var lenient in new[] { false, true })
+            foreach (var aligned in new[] { false, true })
+            for (var sample = 0; sample < 32; sample++)
+            {
+                var input = new byte[random.Next(0, 49)];
+                random.NextBytes(input);
+                foreach (var blackIsOne in new[] { false, true })
+                {
+                    using var streamDecoder = new CcittFaxDecoderStream(new MemoryStream(input), columns, type, aligned, lenient);
+                    using var directDecoder = new CcittFaxDecoderStream(new MemoryStream(input), columns, type, aligned, lenient);
+                    var expected = new byte[(columns + 7) / 8 * 4];
+                    var actual = new byte[expected.Length];
+                    var streamException = Record.Exception(() =>
+                    {
+                        var offset = 0;
+                        while (offset < expected.Length)
+                            offset += streamDecoder.Read(expected, offset, expected.Length - offset);
+                    });
+                    var directException = Record.Exception(() => directDecoder.DecodeInto(actual, blackIsOne));
+                    if (streamException != null)
+                    {
+                        Assert.NotNull(directException);
+                        Assert.Equal(streamException.GetType(), directException.GetType());
+                        Assert.Equal(streamException.Message, directException.Message);
+                        Assert.Equal(streamException.InnerException?.GetType(), directException.InnerException?.GetType());
+                    }
+                    else
+                    {
+                        Assert.Null(directException);
+                        if (!blackIsOne)
+                            for (var i = 0; i < expected.Length; i++) expected[i] = (byte)~expected[i];
+                        Assert.Equal(expected, actual);
+                    }
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(false, 0x7F)]
+        [InlineData(true, 0x80)]
+        public void DirectOutputPreservesPaddingBitsAndFillsTruncatedRows(bool blackIsOne, int firstByte)
+        {
+            // White zero followed by black one, then EOF: seven unused bits must also invert.
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x35, 0x40 }), 1, CcittFaxCompressionType.ModifiedHuffman, true, false);
+            var output = new byte[] { 0xAA, 0xAA, 0xAA };
+            decoder.DecodeInto(output, blackIsOne);
+            Assert.Equal(new byte[] { (byte)firstByte, blackIsOne ? (byte)0 : (byte)255, blackIsOne ? (byte)0 : (byte)255 }, output);
+        }
         [Theory]
         [InlineData(false)]
         [InlineData(true)]

@@ -93,14 +93,8 @@
             using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign, UseLenientParsing))
             {
                 var decompressed = new byte[arraySize];
-                ReadFromDecoderStream(stream, decompressed);
-
-                // we expect black to be 1, if not invert the bitmap 
                 var blackIsOne = decodeParms.GetBooleanOrDefault(NameToken.BlackIs1, false);
-                if (!blackIsOne)
-                {
-                    InvertBitmap(decompressed);
-                }
+                stream.DecodeInto(decompressed, blackIsOne);
 
                 return decompressed;
             }
@@ -177,20 +171,6 @@
             }
 
             return CcittFaxCompressionType.Group4_2D;
-        }
-
-        private static void ReadFromDecoderStream(CcittFaxDecoderStream decoderStream, byte[] result)
-        {
-            var pos = 0;
-            int read;
-            while ((read = decoderStream.Read(result, pos, result.Length - pos)) > -1)
-            {
-                pos += read;
-                if (pos >= result.Length)
-                {
-                    break;
-                }
-            }
         }
 
         internal static void InvertBitmap(Span<byte> bufferData)

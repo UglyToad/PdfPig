@@ -16,7 +16,9 @@
         // See TIFF 6.0 Specification, Section 10: "Modified Huffman Compression", page 43.
 
         private readonly int columns;
-        private readonly byte[] decodedRow;
+        private byte[]? decodedRowBuffer;
+        // Only stream reads require an intermediate row; the filter writes directly to its bitmap.
+        private byte[] DecodedRow => decodedRowBuffer ??= new byte[(columns + 7) / 8];
 
         private readonly bool optionByteAligned;
         private readonly bool useLenientParsing;
@@ -50,7 +52,6 @@
             this.useLenientParsing = useLenientParsing;
 
             // We know this is only used for b/w (1 bit)
-            decodedRow = new byte[(columns + 7) / 8];
             changesReferenceRow = new int[columns + 2];
             changesCurrentRow = new int[columns + 2];
 
@@ -94,7 +95,9 @@
             return value;
         }
 
-        private void Fetch()
+        private void Fetch() => Fetch(DecodedRow, true);
+
+        private void Fetch(Span<byte> destination, bool blackIsOne)
         {
             if (decodedPos >= decodedLength)
             {
@@ -102,7 +105,7 @@
 
                 try
                 {
-                    DecodeRow();
+                    DecodeRow(destination, blackIsOne);
                 }
                 catch (IndexOutOfRangeException exception)
                 {
@@ -165,17 +168,19 @@
 
                 while (true)
                 {
-                    var fastNode = ReferenceEquals(node, CodeTree.Root) ? TryReadFastCode(CodeTree) : null;
-                    if (fastNode != null)
-                    {
-                        node = fastNode;
-                    }
-                    else
+                    var value = 0;
+                    var isLeaf = ReferenceEquals(node, CodeTree.Root) && TryReadFastCode(CodeTree, out value);
+                    if (!isLeaf)
                     {
                         var bit = ReadBit();
                         code = (code << 1) | (bit ? 1 : 0);
                         codeLength++;
                         node = node.Walk(bit);
+                        if (node != null && node.IsLeaf)
+                        {
+                            value = node.Value;
+                            isLeaf = true;
+                        }
                     }
 
                     if (node is null)
@@ -193,9 +198,9 @@
                         }
                         goto mode;
                     }
-                    else if (node.IsLeaf)
+                    else if (isLeaf)
                     {
-                        switch (node.Value)
+                        switch (value)
                         {
                             case VALUE_HMODE:
                                 var runLength = DecodeRun(white ? WhiteRunTree : BlackRunTree);
@@ -230,11 +235,11 @@
 
                                 if (vChangingElement >= changesReferenceRowCount || vChangingElement == -1)
                                 {
-                                    index = checked(columns + node.Value);
+                                    index = checked(columns + value);
                                 }
                                 else
                                 {
-                                    index = checked(changesReferenceRow[vChangingElement] + node.Value);
+                                    index = checked(changesReferenceRow[vChangingElement] + value);
                                 }
 
                                 ValidatePosition(previousIndex, index);
@@ -335,7 +340,7 @@
             Decode2D();
         }
 
-        private void DecodeRow()
+        private void DecodeRow(Span<byte> destination, bool blackIsOne)
         {
             switch (type)
             {
@@ -372,37 +377,73 @@
                     nextChange = columns;
                 }
 
-                var byteIndex = index / 8;
-
-                while (index % 8 != 0 && nextChange - index > 0)
+                if (index >= 0 && nextChange >= index)
                 {
-                    decodedRow[byteIndex] |= (byte)(white ? 0 : 1 << 7 - index % 8);
-                    index++;
-                }
-
-                if (index % 8 == 0)
-                {
-                    byteIndex = index / 8;
-                    var value = (byte)(white ? 0x00 : 0xff);
-
-                    if (nextChange - index > 7)
+                    var byteIndex = index / 8;
+                    var bitOffset = index & 7;
+                    if (bitOffset != 0)
                     {
-                        var byteCount = (nextChange - index) / 8;
-                        decodedRow.AsSpan(byteIndex, byteCount).Fill(value);
+                        var count = Math.Min(8 - bitOffset, nextChange - index);
+                        var mask = (byte)((255 >> bitOffset) & (255 << (8 - bitOffset - count)));
+                        if (blackIsOne) destination[byteIndex] |= (byte)(white ? 0 : mask);
+                        else destination[byteIndex] &= (byte)~(white ? 0 : mask);
+                        index += count;
+                        if ((index & 7) == 0) byteIndex++;
+                    }
+
+                    var byteCount = (nextChange - index) / 8;
+                    if (byteCount != 0)
+                    {
+                        destination.Slice(byteIndex, byteCount).Fill((byte)(white == blackIsOne ? 0 : 255));
                         index += byteCount * 8;
                         byteIndex += byteCount;
                     }
-                }
-
-                while (nextChange - index > 0)
-                {
-                    if (index % 8 == 0)
+                    if (nextChange > index)
                     {
-                        decodedRow[byteIndex] = 0;
+                        var mask = (byte)(255 << (8 - (nextChange - index)));
+                        destination[byteIndex] = blackIsOne ? (byte)(white ? 0 : mask) : (byte)~(white ? 0 : mask);
+                        index = nextChange;
+                    }
+                }
+                else
+                {
+                    // Preserve legacy rendering for malformed positions accepted in lenient mode.
+                    var byteIndex = index / 8;
+
+                    while (index % 8 != 0 && nextChange - index > 0)
+                    {
+                        var mask = (byte)(white ? 0 : 1 << 7 - index % 8);
+                        if (blackIsOne) destination[byteIndex] |= mask;
+                        else destination[byteIndex] &= (byte)~mask;
+                        index++;
                     }
 
-                    decodedRow[byteIndex] |= (byte)(white ? 0 : 1 << 7 - index % 8);
-                    index++;
+                    if (index % 8 == 0)
+                    {
+                        byteIndex = index / 8;
+                        var value = (byte)(white == blackIsOne ? 0x00 : 0xff);
+
+                        if (nextChange - index > 7)
+                        {
+                            var byteCount = (nextChange - index) / 8;
+                            destination.Slice(byteIndex, byteCount).Fill(value);
+                            index += byteCount * 8;
+                            byteIndex += byteCount;
+                        }
+                    }
+
+                    while (nextChange - index > 0)
+                    {
+                        if (index % 8 == 0)
+                        {
+                            destination[byteIndex] = blackIsOne ? (byte)0 : (byte)255;
+                        }
+
+                        var mask = (byte)(white ? 0 : 1 << 7 - index % 8);
+                        if (blackIsOne) destination[byteIndex] |= mask;
+                        else destination[byteIndex] &= (byte)~mask;
+                        index++;
+                    }
                 }
 
                 white = !white;
@@ -421,35 +462,53 @@
             var total = 0;
             while (true)
             {
-                var node = ReadRunCode(tree);
-                total = checked(total + node.Value);
-                if (node.Value >= 0) ValidatePosition(0, total);
-                if (node.Value >= 64) continue;
-                return node.Value >= 0 ? total : columns;
+                var value = ReadRunCode(tree);
+                total = checked(total + value);
+                if (value >= 0) ValidatePosition(0, total);
+                if (value >= 64) continue;
+                return value >= 0 ? total : columns;
             }
         }
 
-        private Node ReadRunCode(Tree tree)
+        private int ReadRunCode(Tree tree)
         {
-            var node = TryReadFastCode(tree);
-            if (node != null) return node;
+            if (TryReadFastCode(tree, out var value)) return value;
 
-            node = tree.Root;
+            var node = tree.Root;
             while (true)
             {
                 node = node.Walk(ReadBit());
                 if (node is null) throw new CorruptCompressedDataException("Unknown code in Huffman RLE stream");
-                if (node.IsLeaf) return node;
+                if (node.IsLeaf) return node.Value;
             }
         }
 
-        private Node? TryReadFastCode(Tree tree)
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private bool TryReadFastCode(Tree tree, out int value)
         {
-            if (!EnsureBits(8)) return null;
+            value = 0;
+            if (!EnsureBits(8)) return false;
             var prefix = (int)((bitBuffer >> (availableBits - 8)) & 0xFF);
-            var node = tree.FastNodes[prefix];
-            if (node != null) availableBits -= tree.FastLengths[prefix];
-            return node;
+            var entry = tree.FastCodes[prefix];
+            var length = entry & 15;
+            if (length == 0) return TryReadLongCode(tree, prefix, out value);
+            availableBits -= length;
+            value = entry >> 4;
+            return true;
+        }
+
+        private bool TryReadLongCode(Tree tree, int prefix, out int value)
+        {
+            value = 0;
+            var secondary = tree.LongCodes[prefix];
+            if (secondary == null || !EnsureBits(13)) return false;
+            var suffix = (int)((bitBuffer >> (availableBits - 13)) & 31);
+            var entry = secondary[suffix];
+            var length = entry & 15;
+            if (length == 0) return false;
+            availableBits -= length;
+            value = entry >> 4;
+            return true;
         }
 
         private bool EnsureBits(int count)
@@ -480,6 +539,27 @@
             return ((bitBuffer >> availableBits) & 1) != 0;
         }
 
+        /// <summary>Decodes complete rows directly into the final bitmap without allocating a row buffer.</summary>
+        internal void DecodeInto(byte[] destination, bool blackIsOne)
+        {
+            var rowBytes = (columns + 7) / 8;
+            if (destination.Length % rowBytes != 0)
+                throw new ArgumentException("The bitmap must contain complete CCITT rows.", nameof(destination));
+
+            for (var offset = 0; offset < destination.Length; offset += rowBytes)
+            {
+                var row = destination.AsSpan(offset, rowBytes);
+                Fetch(row, blackIsOne);
+                if (decodedLength < 0)
+                {
+                    // Match the stream's zero padding followed by bitmap inversion.
+                    destination.AsSpan(offset).Fill(blackIsOne ? (byte)0 : (byte)255);
+                    return;
+                }
+                decodedPos = decodedLength;
+            }
+        }
+
         public override int ReadByte()
         {
             if (decodedLength < 0)
@@ -497,7 +577,7 @@
                 }
             }
 
-            return decodedRow[decodedPos++] & 0xff;
+            return DecodedRow[decodedPos++] & 0xff;
         }
 
         public override int Read(byte[] b, int off, int len)
@@ -538,7 +618,7 @@
             }
 
             var read = Math.Min(decodedLength - decodedPos, destination.Length);
-            decodedRow.AsSpan(decodedPos, read).CopyTo(destination);
+            DecodedRow.AsSpan(decodedPos, read).CopyTo(destination);
             decodedPos += read;
 
             return read;
@@ -582,12 +662,13 @@
             public Node Root { get; } = new Node();
 
             // These tables are generated from the existing trees, not copied from another codec.
-            // Short codes decode in one lookup; long codes, fill and malformed prefixes retain
-            // the original tree traversal and its error handling.
-            public Node?[] FastNodes { get; } = new Node?[256];
-            public byte[] FastLengths { get; } = new byte[256];
+            // Short codes use one lookup; long run codes use a small second-level table.
+            // Fill, invalid prefixes and insufficient lookahead retain tree traversal.
+            // Signed value in the high bits, code length in the low four bits; zero means fallback.
+            public int[] FastCodes { get; } = new int[256];
+            public int[]?[] LongCodes { get; } = new int[]?[256];
 
-            public void BuildLookup()
+            public void BuildLookup(bool includeLongCodes = false)
             {
                 for (var prefix = 0; prefix < 256; prefix++)
                 {
@@ -597,10 +678,29 @@
                         node = node.Walk((prefix & (1 << (8 - length))) != 0);
                         if (node is null) break;
                         if (!node.IsLeaf) continue;
-                        FastNodes[prefix] = node;
-                        FastLengths[prefix] = (byte)length;
+                        FastCodes[prefix] = (node.Value << 4) | length;
                         break;
                     }
+                    if (!includeLongCodes || node == null || node.IsLeaf) continue;
+
+                    // Only long-code prefixes receive a second-level table. Fill loops and
+                    // invalid suffixes retain tree traversal without consuming lookup bits.
+                    var suffixes = new int[32];
+                    var hasCodes = false;
+                    for (var suffix = 0; suffix < suffixes.Length; suffix++)
+                    {
+                        var current = node;
+                        for (var extra = 1; extra <= 5; extra++)
+                        {
+                            current = current.Walk((suffix & (1 << (5 - extra))) != 0);
+                            if (current == null || ReferenceEquals(current, FILL)) break;
+                            if (!current.IsLeaf) continue;
+                            suffixes[suffix] = (current.Value << 4) | (8 + extra);
+                            hasCodes = true;
+                            break;
+                        }
+                    }
+                    if (hasCodes) LongCodes[prefix] = suffixes;
                 }
             }
 
@@ -890,8 +990,8 @@
             CodeTree.Fill(6, 2, -2); // V_L(2)
             CodeTree.Fill(7, 2, -3); // V_L(3)
 
-            WhiteRunTree.BuildLookup();
-            BlackRunTree.BuildLookup();
+            WhiteRunTree.BuildLookup(includeLongCodes: true);
+            BlackRunTree.BuildLookup(includeLongCodes: true);
             CodeTree.BuildLookup();
         }
     }
