@@ -68,19 +68,6 @@
 
         private static ReadOnlySpan<byte> Xref => "xref"u8;
 
-        private static readonly HashSet<char> DelimiterChars = [
-            '(',
-            ')',
-            '<',
-            '>',
-            '[',
-            ']',
-            '{',
-            '}',
-            '/',
-            '%'
-        ];
-
         /// <summary>
         /// Single global instance
         /// </summary>
@@ -419,42 +406,51 @@
         /// <param name="outputStream"></param>
         protected virtual void WriteName(NameToken name, Stream outputStream)
         {
-            WriteName(OtherEncodings.BytesAsLatin1String(name.Bytes), outputStream);
-        }
-
-        private void WriteName(string name, Stream outputStream)
-        {
-            /*
-             * Beginning with PDF 1.2, any character except null (character code 0) may be
-             * included in a name by writing its 2-digit hexadecimal code, preceded by the number sign character (#).
-             * This is required for delimiter and whitespace characters.
-             * This is recommended for characters whose codes are outside the range 33 (!) to 126 (~).
-             */
-
-            using var sb = new ArrayPoolBufferWriter<byte>((name.Length * 2) + 1);
-
-            Span<byte> hexBuffer = stackalloc byte[2];
-
-            foreach (var c in name)
+            var bytes = name.Bytes;
+            outputStream.WriteByte(NameStart);
+            var needsEscaping = false;
+            foreach (var value in bytes)
             {
-                if (c < 33 || c > 126 || DelimiterChars.Contains(c))
-                {
-                    Hex.GetUtf8Chars([(byte)c], hexBuffer);
-
-                    sb.Write((byte)'#');
-                    sb.Write(hexBuffer);
-                }
-                else
-                {
-                    sb.Write((byte)c); // between 33 and 126 (ASCII is 0 - 128)
-                }
+                if (NeedsNameEscape(value)) { needsEscaping = true; break; }
+            }
+            if (!needsEscaping)
+            {
+                outputStream.Write(bytes);
+                outputStream.WriteWhiteSpace();
+                return;
             }
 
-            outputStream.WriteByte(NameStart);
-            outputStream.Write(sb.WrittenSpan);
-            outputStream.WriteWhiteSpace();
+            byte[] rented = null;
+            Span<byte> buffer = bytes.Length <= 85
+                ? stackalloc byte[bytes.Length * 3]
+                : (rented = ArrayPool<byte>.Shared.Rent(checked(bytes.Length * 3)));
+            try
+            {
+                var position = 0;
+                ReadOnlySpan<byte> hex = "0123456789ABCDEF"u8;
+                foreach (var value in bytes)
+                {
+                    if (NeedsNameEscape(value))
+                    {
+                        buffer[position++] = (byte)'#';
+                        buffer[position++] = hex[value >> 4];
+                        buffer[position++] = hex[value & 15];
+                    }
+                    else buffer[position++] = value;
+                }
+                outputStream.Write(buffer.Slice(0, position));
+                outputStream.WriteWhiteSpace();
+            }
+            finally
+            {
+                if (rented != null) ArrayPool<byte>.Shared.Return(rented);
+            }
         }
 
+        private static bool NeedsNameEscape(byte value) => value < 33 || value > 126
+            || value is (byte)'(' or (byte)')' or (byte)'<' or (byte)'>'
+                or (byte)'[' or (byte)']' or (byte)'{' or (byte)'}'
+                or (byte)'/' or (byte)'%' or (byte)'#';
         /// <summary>
         /// Write a number to the stream, with whitespace at the end. 
         /// </summary>

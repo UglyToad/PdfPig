@@ -4,7 +4,12 @@
 
     public partial class NameToken
     {
-        private static readonly ConcurrentDictionary<string, NameToken> NameMap = new ConcurrentDictionary<string, NameToken>();
+        private static readonly ConcurrentDictionary<byte[], NameToken> NameMap = new(new ByteComparer());
+
+#if NET9_0_OR_GREATER
+        private static readonly ConcurrentDictionary<byte[], NameToken>.AlternateLookup<System.ReadOnlySpan<byte>> NameLookup
+            = NameMap.GetAlternateLookup<System.ReadOnlySpan<byte>>();
+#endif
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         #region A
