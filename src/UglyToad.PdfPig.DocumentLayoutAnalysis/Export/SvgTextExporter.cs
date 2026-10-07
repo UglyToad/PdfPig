@@ -136,25 +136,29 @@
 
                 for (int i = 1; i < infos.Length; i++)
                 {
-                    string infoLower = infos[i].ToLowerInvariant();
-                    if (infoLower.Contains("light"))
+#if NET || NETSTANDARD2_1
+                    string info = infos[i];
+#else
+                    string info = infos[i].ToLowerInvariant();
+#endif
+                    if (ContainsFontStyle(info, "light"))
                     {
                         weight = "lighter";
                     }
-                    else if (infoLower.Contains("bolder"))
+                    else if (ContainsFontStyle(info, "bolder"))
                     {
                         weight = "bolder";
                     }
-                    else if (infoLower.Contains("bold"))
+                    else if (ContainsFontStyle(info, "bold"))
                     {
                         weight = "bold";
                     }
 
-                    if (infoLower.Contains("italic"))
+                    if (ContainsFontStyle(info, "italic"))
                     {
                         style = "italic";
                     }
-                    else if (infoLower.Contains("oblique"))
+                    else if (ContainsFontStyle(info, "oblique"))
                     {
                         style = "oblique";
                     }
@@ -167,6 +171,15 @@
             }
 
             return fontName;
+        }
+
+        private static bool ContainsFontStyle(string info, string style)
+        {
+#if NET || NETSTANDARD2_1
+            return info.Contains(style, StringComparison.OrdinalIgnoreCase);
+#else
+            return info.Contains(style);
+#endif
         }
 
         private string XmlEscape(Letter letter, XmlDocument doc)
