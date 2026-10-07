@@ -14,6 +14,11 @@
     /// <para>
     /// Ported from https://github.com/apache/pdfbox/blob/714156a15ea6fcfe44ac09345b01e192cbd74450/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
     /// </para>
+    /// <para>
+    /// Dimension validation, bounded header detection and EndOfLine handling were updated
+    /// against PDFBox 3.0.8 CCITTFaxFilter. PdfPig additionally bounds decoder work arrays
+    /// and respects parsing leniency for invalid dimensions and empty input.
+    /// </para>
     /// </summary>
     public sealed class CcittFaxDecodeFilter : IFilter
     {
@@ -71,7 +76,17 @@
 
             var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
             var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
-            var compressionType = DetermineCompressionType(input.Span, k);
+            if (input.IsEmpty)
+            {
+                if (UseLenientParsing)
+                {
+                    return Memory<byte>.Empty;
+                }
+
+                throw new CorruptCompressedDataException("Empty CCITT compressed data.");
+            }
+
+            var compressionType = DetermineCompressionType(input.Span, k, decodeParms);
 
             using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign))
             {
@@ -118,19 +133,29 @@
             return (int)bitmapBytes;
         }
 
-        private static CcittFaxCompressionType DetermineCompressionType(ReadOnlySpan<byte> input, int k)
+        private static CcittFaxCompressionType DetermineCompressionType(ReadOnlySpan<byte> input, int k, DictionaryToken decodeParms)
         {
             if (k == 0)
             {
+                if (decodeParms.ContainsKey(NameToken.EndOfLine))
+                {
+                    // PDFBOX-6080: an explicit EndOfLine parameter takes precedence over sniffing.
+                    return decodeParms.GetBooleanOrDefault(NameToken.EndOfLine, false)
+                        ? CcittFaxCompressionType.Group3_1D
+                        : CcittFaxCompressionType.ModifiedHuffman;
+                }
+
                 var compressionType = CcittFaxCompressionType.Group3_1D; // Group 3 1D
 
-                if (input[0] != 0 || (input[1] >> 4 != 1 && input[1] != 1))
+                if (input.Length < 2 || input[0] != 0 || (input[1] >> 4 != 1 && input[1] != 1))
                 {
                     // leading EOL (0b000000000001) not found, search further and
                     // try RLE if not found
                     compressionType = CcittFaxCompressionType.ModifiedHuffman;
-                    var b = (short)(((input[0] << 8) + (input[1] & 0xff)) >> 4);
-                    for (var i = 12; i < 160; i++)
+                    var secondByte = input.Length > 1 ? input[1] : 0;
+                    var b = (short)(((input[0] << 8) + secondByte) >> 4);
+                    var headerBits = Math.Min(input.Length, 20) * 8;
+                    for (var i = 12; i < headerBits; i++)
                     {
                         b = (short)((b << 1) + ((input[(i / 8)] >> (7 - (i % 8))) & 0x01));
                         if ((b & 0xFFF) == 1)
@@ -164,7 +189,6 @@
                     break;
                 }
             }
-            decoderStream.Close();
         }
 
         private static void InvertBitmap(Span<byte> bufferData)

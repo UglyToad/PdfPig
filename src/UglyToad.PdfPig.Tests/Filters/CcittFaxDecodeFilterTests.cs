@@ -170,6 +170,88 @@
             Assert.StartsWith("CCITT decode buffers require ", exception.Message);
         }
 
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(0, true)]
+        [InlineData(1, false)]
+        [InlineData(1, true)]
+        [InlineData(-1, false)]
+        [InlineData(-1, true)]
+        public void EmptyInputRespectsParsingMode(int k, bool lenient)
+        {
+            var dictionary = CreateSmallImageDictionary(k);
+            var filter = new CcittFaxDecodeFilter(lenient);
+            if (lenient)
+            {
+                Assert.True(filter.Decode(Memory<byte>.Empty, dictionary, TestFilterProvider.Instance, 0).IsEmpty);
+            }
+            else
+            {
+                var exception = Assert.Throws<CorruptCompressedDataException>(() =>
+                    filter.Decode(Memory<byte>.Empty, dictionary, TestFilterProvider.Instance, 0));
+                Assert.Equal("Empty CCITT compressed data.", exception.Message);
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        [InlineData(null)]
+        public void DecodesShortWhiteRun(bool? endOfLine)
+        {
+            // White run of eight pixels: Modified Huffman 10011, optionally preceded by EOL.
+            var input = endOfLine == true ? new byte[] { 0x00, 0x19, 0x80 } : new byte[] { 0x98 };
+            var output = new CcittFaxDecodeFilter().Decode(input, CreateSmallImageDictionary(0, endOfLine), TestFilterProvider.Instance, 0);
+            Assert.Equal(new byte[] { 0x00 }, output.ToArray());
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(3)]
+        [InlineData(19)]
+        [InlineData(20)]
+        public void HeaderSearchStaysWithinAvailableInput(int length)
+        {
+            var input = new byte[length];
+            input[0] = 0x98; // One complete white run followed by padding with no EOL.
+            var output = new CcittFaxDecodeFilter().Decode(input, CreateSmallImageDictionary(0), TestFilterProvider.Instance, 0);
+            Assert.Equal(new byte[] { 0x00 }, output.ToArray());
+        }
+
+        [Theory]
+        [InlineData(false, 0x00)]
+        [InlineData(true, 0xFF)]
+        [InlineData(null, 0xFF)]
+        public void ExplicitEndOfLineOverridesHeaderDetection(bool? endOfLine, byte expected)
+        {
+            // A white RLE row precedes an EOL and a black Group 3 row. Explicit false must
+            // decode the first row rather than follow the EOL found by header detection.
+            var input = new byte[] { 0x98, 0x00, 0x13, 0x51, 0x40 };
+            var output = new CcittFaxDecodeFilter().Decode(input, CreateSmallImageDictionary(0, endOfLine), TestFilterProvider.Instance, 0);
+            Assert.Equal(new[] { expected }, output.ToArray());
+        }
+
+        private static DictionaryToken CreateSmallImageDictionary(int k, bool? endOfLine = null)
+        {
+            var parameters = new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Columns, new NumericToken(8) },
+                { NameToken.Rows, new NumericToken(1) },
+                { NameToken.K, new NumericToken(k) },
+                { NameToken.BlackIs1, BooleanToken.True }
+            };
+            if (endOfLine.HasValue)
+            {
+                parameters.Add(NameToken.EndOfLine, endOfLine.Value ? BooleanToken.True : BooleanToken.False);
+            }
+            return new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Filter, NameToken.CcittfaxDecode },
+                { NameToken.DecodeParms, new DictionaryToken(parameters) }
+            });
+        }
+
         private static byte[] CreateAllocationBombPdf(int columns, int rows, bool filterChain)
         {
             const string content = "q 1 0 0 1 0 0 cm /Bomb Do Q\n";

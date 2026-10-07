@@ -27,8 +27,6 @@
 
         /// <summary>
         /// Should the parser ignore issues where the document does not conform to the PDF specification?
-        /// Nonpositive CCITT dimensions yield empty image data in lenient mode and throw in strict mode.
-        /// CCITT allocation limits apply in both modes.
         /// </summary>
         public bool UseLenientParsing { get; set; } = true;
 
