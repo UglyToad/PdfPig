@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
+    using System.Numerics;
+    using System.Runtime.InteropServices;
     using CcittFax;
     using Core;
     using Fonts;
@@ -191,12 +193,25 @@
             }
         }
 
-        private static void InvertBitmap(Span<byte> bufferData)
+        internal static void InvertBitmap(Span<byte> bufferData)
         {
-            for (int i = 0; i < bufferData.Length; i++)
+            var i = 0;
+            if (Vector.IsHardwareAccelerated && bufferData.Length >= Vector<byte>.Count)
             {
-                ref byte b = ref bufferData[i];
-                b = (byte)(~b & 0xFF);
+                // Invert complete vectors in place; preserve the scalar path for the tail
+                // and runtimes without hardware acceleration.
+                var vectors = MemoryMarshal.Cast<byte, Vector<byte>>(bufferData);
+                var mask = new Vector<byte>(byte.MaxValue);
+                for (var v = 0; v < vectors.Length; v++)
+                {
+                    vectors[v] ^= mask;
+                }
+                i = vectors.Length * Vector<byte>.Count;
+            }
+
+            for (; i < bufferData.Length; i++)
+            {
+                bufferData[i] = (byte)~bufferData[i];
             }
         }
     }

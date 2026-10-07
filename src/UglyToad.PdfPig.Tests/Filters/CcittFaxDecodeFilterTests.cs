@@ -252,6 +252,37 @@
             });
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(7)]
+        [InlineData(15)]
+        [InlineData(16)]
+        [InlineData(17)]
+        [InlineData(31)]
+        [InlineData(32)]
+        [InlineData(33)]
+        [InlineData(63)]
+        [InlineData(64)]
+        [InlineData(65)]
+        [InlineData(255)]
+        [InlineData(256)]
+        [InlineData(257)]
+        [InlineData(700425)]
+        public void InvertsAllBitsWithoutChangingBytesOutsideTheSlice(int length)
+        {
+            var buffer = new byte[length + 6];
+            for (var i = 0; i < buffer.Length; i++) buffer[i] = (byte)i;
+            var original = (byte[])buffer.Clone();
+            var expected = (byte[])buffer.Clone();
+            for (var i = 3; i < length + 3; i++) expected[i] = (byte)~expected[i];
+
+            CcittFaxDecodeFilter.InvertBitmap(buffer.AsSpan(3, length));
+            Assert.Equal(expected, buffer);
+            CcittFaxDecodeFilter.InvertBitmap(buffer.AsSpan(3, length));
+            Assert.Equal(original, buffer);
+        }
+
         private static byte[] CreateAllocationBombPdf(int columns, int rows, bool filterChain)
         {
             const string content = "q 1 0 0 1 0 0 cm /Bomb Do Q\n";
