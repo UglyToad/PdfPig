@@ -28,12 +28,12 @@
 
             FontDetails WithWeightValues(bool isBold, int weight) => new FontDetails(null, isBold, weight, font.ItalicAngle != 0);
 
-            return (font.Weight?.ToLowerInvariant()) switch
+            return font.Weight switch
             {
-                "light"    => WithWeightValues(false, 300),
-                "semibold" => WithWeightValues(true, 600),
-                "bold"     => WithWeightValues(true, FontDetails.BoldWeight),
-                "black"    => WithWeightValues(true, 900),
+                var weight when string.Equals(weight, "light", StringComparison.OrdinalIgnoreCase) => WithWeightValues(false, 300),
+                var weight when string.Equals(weight, "semibold", StringComparison.OrdinalIgnoreCase) => WithWeightValues(true, 600),
+                var weight when string.Equals(weight, "bold", StringComparison.OrdinalIgnoreCase) => WithWeightValues(true, FontDetails.BoldWeight),
+                var weight when string.Equals(weight, "black", StringComparison.OrdinalIgnoreCase) => WithWeightValues(true, 900),
                 _          => WithWeightValues(false, FontDetails.DefaultWeight)
             };
         }
