@@ -1,11 +1,97 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
     using System.IO;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Fonts;
+    using UglyToad.PdfPig.Tokens;
     using UglyToad.PdfPig.Filters.CcittFax;
     using UglyToad.PdfPig.Tests.Images;
 
     public class CcittFaxDecoderStreamTests
     {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ActualEndOfInputStillPadsWithZeros(bool lenient)
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x00 }), 8, CcittFaxCompressionType.ModifiedHuffman, false, lenient);
+            var output = new byte[] { 0xAA, 0xAA };
+            Assert.Equal(2, decoder.Read(output, 0, output.Length));
+            Assert.Equal(new byte[] { 0, 0 }, output);
+            Assert.Equal(0, decoder.ReadByte());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void InvalidHuffmanCodeRespectsParsingMode(bool lenient)
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x00, 0x80 }), 8, CcittFaxCompressionType.ModifiedHuffman, false, lenient);
+            if (lenient)
+            {
+                Assert.Equal(0, decoder.ReadByte());
+                Assert.Equal(0, decoder.ReadByte());
+            }
+            else
+            {
+                var exception = Assert.Throws<CorruptCompressedDataException>(() => decoder.ReadByte());
+                Assert.Equal("Unknown code in Huffman RLE stream", exception.Message);
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void FilterPassesParsingModeToDecoder(bool lenient)
+        {
+            var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                [NameToken.Columns] = new NumericToken(8),
+                [NameToken.Rows] = new NumericToken(1),
+                [NameToken.EndOfLine] = BooleanToken.False,
+                [NameToken.BlackIs1] = BooleanToken.True
+            });
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+            {
+                [NameToken.Filter] = NameToken.CcittfaxDecode,
+                [NameToken.DecodeParms] = parameters
+            });
+            var filter = new CcittFaxDecodeFilter(lenient);
+            var input = new byte[] { 0x00, 0x80 };
+            if (lenient)
+            {
+                Assert.Equal(new byte[] { 0 }, filter.Decode(input, dictionary, TestFilterProvider.Instance, 0).ToArray());
+            }
+            else
+            {
+                Assert.Throws<CorruptCompressedDataException>(() => filter.Decode(input, dictionary, TestFilterProvider.Instance, 0));
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ExcessZeroLengthRunsProduceACompressedDataException(bool lenient)
+        {
+            // Alternating white-zero and black-zero runs exceed the three change entries
+            // available for a one-pixel row without advancing the output position.
+            var bits = string.Concat(Enumerable.Repeat("001101010000110111", 4));
+            var input = Enumerable.Range(0, (bits.Length + 7) / 8)
+                .Select(i => Convert.ToByte(bits.Substring(i * 8, Math.Min(8, bits.Length - i * 8)).PadRight(8, '0'), 2)).ToArray();
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(input), 1, CcittFaxCompressionType.ModifiedHuffman, false, lenient);
+            var exception = Assert.Throws<CorruptCompressedDataException>(() => decoder.Read(new byte[1], 0, 1));
+            Assert.IsType<IndexOutOfRangeException>(exception.InnerException);
+        }
+
+#if NET
+        [Fact]
+        public void StrictSpanReadRejectsInvalidHuffmanCode()
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x00, 0x80 }), 8, CcittFaxCompressionType.ModifiedHuffman, false, false);
+            Assert.Throws<CorruptCompressedDataException>(() => decoder.Read(new byte[1].AsSpan()));
+        }
+#endif
+
 #if NET
         [Theory]
         [InlineData(1)]

@@ -90,7 +90,7 @@
 
             var compressionType = DetermineCompressionType(input.Span, k, decodeParms);
 
-            using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign))
+            using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign, UseLenientParsing))
             {
                 var decompressed = new byte[arraySize];
                 ReadFromDecoderStream(stream, decompressed);

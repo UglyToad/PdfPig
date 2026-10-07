@@ -315,12 +315,14 @@
             return Encoding.ASCII.GetBytes(builder.ToString());
         }
 
-        [Fact]
-        public void CanDecodeCCittFaxCompressedImageData()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CanDecodeCCittFaxCompressedImageData(bool lenient)
         {
             var encodedBytes = ImageHelpers.LoadFileBytes("ccittfax-encoded.bin");
 
-            var filter = new CcittFaxDecodeFilter();
+            var filter = new CcittFaxDecodeFilter(lenient);
             var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.D, new ArrayToken(new []{ new NumericToken(1), new NumericToken(0) })},

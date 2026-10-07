@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using IO;
+    using Fonts;
 
     /// <summary>
     /// CCITT Modified Huffman RLE, Group 3 (T4) and Group 4 (T6) fax compression.
@@ -18,6 +19,7 @@
         private readonly byte[] decodedRow;
 
         private readonly bool optionByteAligned;
+        private readonly bool useLenientParsing;
 
         private readonly CcittFaxCompressionType type;
 
@@ -39,11 +41,12 @@
         /// This constructor may be used for CCITT streams embedded in PDF files,
         /// which use EncodedByteAlign.
         /// </summary>
-        public CcittFaxDecoderStream(Stream stream, int columns, CcittFaxCompressionType type, bool byteAligned)
+        public CcittFaxDecoderStream(Stream stream, int columns, CcittFaxCompressionType type, bool byteAligned, bool useLenientParsing = true)
             : base(stream)
         {
             this.columns = columns;
             this.type = type;
+            this.useLenientParsing = useLenientParsing;
 
             // We know this is only used for b/w (1 bit)
             decodedRow = new byte[(columns + 7) / 8];
@@ -63,15 +66,20 @@
                 {
                     DecodeRow();
                 }
-                catch (InvalidOperationException)
+                catch (IndexOutOfRangeException exception)
                 {
-                    if (decodedLength != 0)
-                    {
-                        throw;
-                    }
-
-                    // ..otherwise, just let client code try to read past the
-                    // end of stream
+                    // Malformed runs must never expose an implementation array exception,
+                    // even when parsing is lenient.
+                    throw new CorruptCompressedDataException("Malformed CCITT stream: decoder buffer bounds exceeded.", exception);
+                }
+                catch (EndOfStreamException)
+                {
+                    // Preserve zero padding at the actual end of compressed input in both modes.
+                    decodedLength = -1;
+                }
+                catch (CorruptCompressedDataException) when (useLenientParsing)
+                {
+                    // Preserve the legacy fallback for invalid codes only in lenient mode.
                     decodedLength = -1;
                 }
 
@@ -330,7 +338,7 @@
 
             if (index != columns)
             {
-                throw new InvalidOperationException($"Sum of run-lengths does not equal scan line width: {index} > {columns}");
+                throw new CorruptCompressedDataException($"Sum of run-lengths does not equal scan line width: {index} > {columns}");
             }
 
             decodedLength = (index + 7) / 8;
@@ -349,7 +357,7 @@
 
                 if (node is null)
                 {
-                    throw new InvalidOperationException("Unknown code in Huffman RLE stream");
+                    throw new CorruptCompressedDataException("Unknown code in Huffman RLE stream");
                 }
 
                 if (node.IsLeaf)
@@ -384,7 +392,7 @@
 
                 if (buffer == -1)
                 {
-                    throw new InvalidOperationException("Unexpected end of Huffman RLE stream");
+                    throw new EndOfStreamException("Unexpected end of Huffman RLE stream");
                 }
 
                 bufferPos = 0;
