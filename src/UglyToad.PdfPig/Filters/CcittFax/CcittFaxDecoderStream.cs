@@ -33,8 +33,9 @@
 
         private int lastChangingElement;
 
-        private int buffer = -1;
-        private int bufferPos = -1;
+        private uint bitBuffer;
+        private int availableBits;
+        private bool inputEnded;
 
         /// <summary>
         /// Creates a CCITTFaxDecoderStream.
@@ -164,10 +165,18 @@
 
                 while (true)
                 {
-                    var bit = ReadBit();
-                    code = (code << 1) | (bit ? 1 : 0);
-                    codeLength++;
-                    node = node.Walk(bit);
+                    var fastNode = ReferenceEquals(node, CodeTree.Root) ? TryReadFastCode(CodeTree) : null;
+                    if (fastNode != null)
+                    {
+                        node = fastNode;
+                    }
+                    else
+                    {
+                        var bit = ReadBit();
+                        code = (code << 1) | (bit ? 1 : 0);
+                        codeLength++;
+                        node = node.Walk(bit);
+                    }
 
                     if (node is null)
                     {
@@ -376,11 +385,12 @@
                     byteIndex = index / 8;
                     var value = (byte)(white ? 0x00 : 0xff);
 
-                    while (nextChange - index > 7)
+                    if (nextChange - index > 7)
                     {
-                        decodedRow[byteIndex] = value;
-                        index += 8;
-                        ++byteIndex;
+                        var byteCount = (nextChange - index) / 8;
+                        decodedRow.AsSpan(byteIndex, byteCount).Fill(value);
+                        index += byteCount * 8;
+                        byteIndex += byteCount;
                     }
                 }
 
@@ -409,68 +419,65 @@
         private int DecodeRun(Tree tree)
         {
             var total = 0;
-
-            var node = tree.Root;
-
             while (true)
             {
-                var bit = ReadBit();
-                node = node.Walk(bit);
+                var node = ReadRunCode(tree);
+                total = checked(total + node.Value);
+                if (node.Value >= 0) ValidatePosition(0, total);
+                if (node.Value >= 64) continue;
+                return node.Value >= 0 ? total : columns;
+            }
+        }
 
-                if (node is null)
-                {
-                    throw new CorruptCompressedDataException("Unknown code in Huffman RLE stream");
-                }
+        private Node ReadRunCode(Tree tree)
+        {
+            var node = TryReadFastCode(tree);
+            if (node != null) return node;
 
-                if (node.IsLeaf)
+            node = tree.Root;
+            while (true)
+            {
+                node = node.Walk(ReadBit());
+                if (node is null) throw new CorruptCompressedDataException("Unknown code in Huffman RLE stream");
+                if (node.IsLeaf) return node;
+            }
+        }
+
+        private Node? TryReadFastCode(Tree tree)
+        {
+            if (!EnsureBits(8)) return null;
+            var prefix = (int)((bitBuffer >> (availableBits - 8)) & 0xFF);
+            var node = tree.FastNodes[prefix];
+            if (node != null) availableBits -= tree.FastLengths[prefix];
+            return node;
+        }
+
+        private bool EnsureBits(int count)
+        {
+            while (availableBits < count && !inputEnded)
+            {
+                var next = Stream.ReadByte();
+                if (next < 0) inputEnded = true;
+                else
                 {
-                    total = checked(total + node.Value);
-                    if (node.Value >= 0) ValidatePosition(0, total);
-                    if (node.Value >= 64)
-                    {
-                        node = tree.Root;
-                    }
-                    else if (node.Value >= 0)
-                    {
-                        return total;
-                    }
-                    else
-                    {
-                        return columns;
-                    }
+                    bitBuffer = (bitBuffer << 8) | (uint)next;
+                    availableBits += 8;
                 }
             }
+            return availableBits >= count;
         }
 
         private void ResetBuffer()
         {
-            bufferPos = -1;
+            // Discard only padding in the current byte; keep whole prefetched bytes.
+            availableBits -= availableBits % 8;
         }
 
         private bool ReadBit()
         {
-            if (bufferPos < 0 || bufferPos > 7)
-            {
-                buffer = Stream.ReadByte();
-
-                if (buffer == -1)
-                {
-                    throw new EndOfStreamException("Unexpected end of Huffman RLE stream");
-                }
-
-                bufferPos = 0;
-            }
-
-            var isSet = (buffer >> 7 - bufferPos & 1) == 1;
-
-            bufferPos++;
-
-            if (bufferPos > 7)
-            {
-                bufferPos = -1;
-            }
-
-            return isSet;
+            if (!EnsureBits(1)) throw new EndOfStreamException("Unexpected end of Huffman RLE stream");
+            availableBits--;
+            return ((bitBuffer >> availableBits) & 1) != 0;
         }
 
         public override int ReadByte()
@@ -573,6 +580,30 @@
         private sealed class Tree
         {
             public Node Root { get; } = new Node();
+
+            // These tables are generated from the existing trees, not copied from another codec.
+            // Short codes decode in one lookup; long codes, fill and malformed prefixes retain
+            // the original tree traversal and its error handling.
+            public Node?[] FastNodes { get; } = new Node?[256];
+            public byte[] FastLengths { get; } = new byte[256];
+
+            public void BuildLookup()
+            {
+                for (var prefix = 0; prefix < 256; prefix++)
+                {
+                    var node = Root;
+                    for (var length = 1; length <= 8; length++)
+                    {
+                        node = node.Walk((prefix & (1 << (8 - length))) != 0);
+                        if (node is null) break;
+                        if (!node.IsLeaf) continue;
+                        FastNodes[prefix] = node;
+                        FastLengths[prefix] = (byte)length;
+                        break;
+                    }
+                }
+            }
+
 
             public void Fill(int depth, int path, int value)
             {
@@ -858,6 +889,10 @@
             CodeTree.Fill(3, 2, -1); // V_L(1)
             CodeTree.Fill(6, 2, -2); // V_L(2)
             CodeTree.Fill(7, 2, -3); // V_L(3)
+
+            WhiteRunTree.BuildLookup();
+            BlackRunTree.BuildLookup();
+            CodeTree.BuildLookup();
         }
     }
 }

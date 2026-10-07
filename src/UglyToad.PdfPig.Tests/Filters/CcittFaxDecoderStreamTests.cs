@@ -9,6 +9,18 @@
 
     public class CcittFaxDecoderStreamTests
     {
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ByteAlignmentRetainsPrefetchedNextRow(bool lenient)
+        {
+            // First row: white one, black one, white six (13 bits plus byte padding).
+            // Looking ahead for the final short code can prefetch the second white row.
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x1D, 0x70, 0x98 }), 8, CcittFaxCompressionType.ModifiedHuffman, true, lenient);
+            Assert.Equal(0x40, decoder.ReadByte());
+            Assert.Equal(0x00, decoder.ReadByte());
+        }
+
         [Fact]
         public void DecoderRejectsSeekingWithoutChangingDecodedState()
         {
