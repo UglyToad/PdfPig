@@ -9,6 +9,78 @@
 
     public class CcittFaxDecoderStreamTests
     {
+        [Fact]
+        public void DecoderRejectsSeekingWithoutChangingDecodedState()
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x98, 0xA0 }), 16, CcittFaxCompressionType.ModifiedHuffman, false);
+            Assert.False(decoder.CanSeek);
+            Assert.Equal(0, decoder.ReadByte());
+            Assert.Throws<NotSupportedException>(() => decoder.Seek(0, SeekOrigin.Begin));
+            Assert.Throws<NotSupportedException>(() => { _ = decoder.Position; });
+            Assert.Throws<NotSupportedException>(() => decoder.Position = 0);
+            Assert.Throws<NotSupportedException>(() => { _ = decoder.Length; });
+            Assert.Equal(0xFF, decoder.ReadByte());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void OversizedRunRespectsParsingMode(bool lenient)
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0xA8 }), 8, CcittFaxCompressionType.ModifiedHuffman, false, lenient);
+            if (lenient) Assert.Equal(0, decoder.ReadByte());
+            else Assert.Throws<CorruptCompressedDataException>(() => decoder.ReadByte());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void UnknownTwoDimensionalCodeRespectsParsingMode(bool lenient)
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x00, 0x80 }), 8, CcittFaxCompressionType.Group4_2D, false, lenient);
+            if (lenient) Assert.Equal(0, decoder.ReadByte());
+            else Assert.Throws<CorruptCompressedDataException>(() => decoder.ReadByte());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void NegativeVerticalPositionRespectsParsingMode(bool lenient)
+        {
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x05 }), 1, CcittFaxCompressionType.Group4_2D, false, lenient);
+            if (lenient) Assert.Equal(0x80, decoder.ReadByte());
+            else Assert.Throws<CorruptCompressedDataException>(() => decoder.ReadByte());
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Group4EndOfBlockRetainsZeroPadding(bool lenient)
+        {
+            // Two consecutive EOL codes form a legal Group 4 EOFB marker.
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(new byte[] { 0x00, 0x10, 0x01 }), 8, CcittFaxCompressionType.Group4_2D, false, lenient);
+            Assert.Equal(0, decoder.ReadByte());
+            Assert.Equal(0, decoder.ReadByte());
+        }
+
+        [Fact]
+        public void RunAccumulationOverflowIsRejectedEvenInLenientMode()
+        {
+            // Each 12-bit 000000011111 makeup code adds 2560 white pixels. Two fit
+            // into three bytes; enough repetitions overflow Int32 without a huge bitmap.
+            var pairs = (int.MaxValue / 2560 + 2) / 2;
+            var input = new byte[pairs * 3];
+            for (var i = 0; i < input.Length; i += 3)
+            {
+                input[i] = 0x01;
+                input[i + 1] = 0xF0;
+                input[i + 2] = 0x1F;
+            }
+            using var decoder = new CcittFaxDecoderStream(new MemoryStream(input), 8, CcittFaxCompressionType.ModifiedHuffman, false, true);
+            var exception = Assert.Throws<CorruptCompressedDataException>(() => decoder.ReadByte());
+            Assert.IsType<OverflowException>(exception.InnerException);
+        }
+
         [Theory]
         [InlineData(false)]
         [InlineData(true)]

@@ -56,6 +56,43 @@
             optionByteAligned = byteAligned;
         }
 
+        public override bool CanSeek => false;
+
+        public override long Length => throw new NotSupportedException("CCITT decoded length is not available.");
+
+        public override long Position
+        {
+            get => throw new NotSupportedException("CCITT decoded position is not available.");
+            set => throw new NotSupportedException("Seeking is not supported by the CCITT decoder.");
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException("Seeking is not supported by the CCITT decoder.");
+        }
+
+        private int AddRun(int position, int run)
+        {
+            var next = checked(position + run);
+            ValidatePosition(position, next);
+            return next;
+        }
+
+        private void ValidatePosition(int previous, int next)
+        {
+            if (!useLenientParsing && (next < previous || next < 0 || next > columns))
+            {
+                throw new CorruptCompressedDataException($"Invalid CCITT changing position: {next}, previous={previous}, columns={columns}.");
+            }
+        }
+
+        private int ReadBits(int count)
+        {
+            var value = 0;
+            for (var i = 0; i < count; i++) value = (value << 1) | (ReadBit() ? 1 : 0);
+            return value;
+        }
+
         private void Fetch()
         {
             if (decodedPos >= decodedLength)
@@ -71,6 +108,10 @@
                     // Malformed runs must never expose an implementation array exception,
                     // even when parsing is lenient.
                     throw new CorruptCompressedDataException("Malformed CCITT stream: decoder buffer bounds exceeded.", exception);
+                }
+                catch (OverflowException exception)
+                {
+                    throw new CorruptCompressedDataException("Malformed CCITT stream: run arithmetic overflow.", exception);
                 }
                 catch (EndOfStreamException)
                 {
@@ -96,7 +137,7 @@
             do
             {
                 var completeRun = white ? DecodeRun(WhiteRunTree) : DecodeRun(BlackRunTree);
-                index += completeRun;
+                index = AddRun(index, completeRun);
                 changesCurrentRow[changesCurrentRowCount++] = index;
 
                 // Flip color for next run
@@ -118,13 +159,29 @@
         mode: while (index < columns)
             {
                 var node = CodeTree.Root;
+                var code = 0;
+                var codeLength = 0;
 
                 while (true)
                 {
-                    node = node.Walk(ReadBit());
+                    var bit = ReadBit();
+                    code = (code << 1) | (bit ? 1 : 0);
+                    codeLength++;
+                    node = node.Walk(bit);
 
                     if (node is null)
                     {
+                        if (!useLenientParsing)
+                        {
+                            // Group 4 EOFB is two EOL codes, not an invalid 2D mode.
+                            if (type == CcittFaxCompressionType.Group4_2D && index == 0
+                                && changesCurrentRowCount == 0 && codeLength == 6 && code == 0
+                                && ReadBits(6) == 1 && ReadBits(12) == 1)
+                            {
+                                throw new EndOfStreamException("CCITT end-of-facsimile block.");
+                            }
+                            throw new CorruptCompressedDataException("Unknown code in CCITT 2D stream.");
+                        }
                         goto mode;
                     }
                     else if (node.IsLeaf)
@@ -133,11 +190,11 @@
                         {
                             case VALUE_HMODE:
                                 var runLength = DecodeRun(white ? WhiteRunTree : BlackRunTree);
-                                index += runLength;
+                                index = AddRun(index, runLength);
                                 changesCurrentRow[changesCurrentRowCount++] = index;
 
                                 runLength = DecodeRun(white ? BlackRunTree : WhiteRunTree);
-                                index += runLength;
+                                index = AddRun(index, runLength);
                                 changesCurrentRow[changesCurrentRowCount++] = index;
                                 break;
 
@@ -150,24 +207,28 @@
                                 }
                                 else
                                 {
-                                    index = changesReferenceRow[pChangingElement];
+                                    var next = changesReferenceRow[pChangingElement];
+                                    ValidatePosition(index, next);
+                                    index = next;
                                 }
 
                                 break;
 
                             default:
                                 // Vertical mode (-3 to 3)
+                                var previousIndex = index;
                                 var vChangingElement = GetNextChangingElement(index, white);
 
                                 if (vChangingElement >= changesReferenceRowCount || vChangingElement == -1)
                                 {
-                                    index = columns + node.Value;
+                                    index = checked(columns + node.Value);
                                 }
                                 else
                                 {
-                                    index = changesReferenceRow[vChangingElement] + node.Value;
+                                    index = checked(changesReferenceRow[vChangingElement] + node.Value);
                                 }
 
+                                ValidatePosition(previousIndex, index);
                                 changesCurrentRow[changesCurrentRowCount] = index;
                                 changesCurrentRowCount++;
                                 white = !white;
@@ -296,6 +357,7 @@
                     nextChange = changesCurrentRow[i];
                 }
 
+                ValidatePosition(index, nextChange);
                 if (nextChange > columns)
                 {
                     nextChange = columns;
@@ -362,7 +424,8 @@
 
                 if (node.IsLeaf)
                 {
-                    total += node.Value;
+                    total = checked(total + node.Value);
+                    if (node.Value >= 0) ValidatePosition(0, total);
                     if (node.Value >= 64)
                     {
                         node = tree.Root;
