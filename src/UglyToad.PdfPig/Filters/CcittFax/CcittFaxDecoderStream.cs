@@ -424,10 +424,28 @@
 
         public override int Read(byte[] b, int off, int len)
         {
+            return ReadDecoded(b.AsSpan(off, len));
+        }
+
+#if NET || NETSTANDARD2_1
+        public override int Read(Span<byte> destination)
+        {
+            return ReadDecoded(destination);
+        }
+#endif
+
+        private int ReadDecoded(Span<byte> destination)
+        {
+            // A zero-length read must not advance either the compressed or decoded stream.
+            if (destination.IsEmpty)
+            {
+                return 0;
+            }
+
             if (decodedLength < 0)
             {
-                b.AsSpan(off, len).Fill(0x0);
-                return len;
+                destination.Clear();
+                return destination.Length;
             }
 
             if (decodedPos >= decodedLength)
@@ -436,13 +454,13 @@
 
                 if (decodedLength < 0)
                 {
-                    b.AsSpan(off, len).Fill(0x0);
-                    return len;
+                    destination.Clear();
+                    return destination.Length;
                 }
             }
 
-            var read = Math.Min(decodedLength - decodedPos, len);
-            Array.Copy(decodedRow, decodedPos, b, off, read);
+            var read = Math.Min(decodedLength - decodedPos, destination.Length);
+            decodedRow.AsSpan(decodedPos, read).CopyTo(destination);
             decodedPos += read;
 
             return read;
