@@ -247,7 +247,8 @@
                 bookmarksProvider,
                 parsingOptions,
                 crossReferenceTable,
-                trailer);
+                trailer,
+                resourceContainer);
         }
 
         private static (IndirectReference, DictionaryToken) ParseTrailer(

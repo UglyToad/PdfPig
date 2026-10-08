@@ -47,7 +47,7 @@
             using (canvas = recorder.BeginRecording(SKRect.Create(width, height)))
             {
                 canvas.Clear(SKColors.White);
-                ProcessOperations(operations);
+                ProcessContentStream(operations);
                 canvas.Flush();
                 return recorder.EndRecording();
             }
@@ -281,16 +281,6 @@
         }
 
         public override void ClosePath()
-        {
-            // No op
-        }
-
-        public override void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
-        {
-            // No op
-        }
-
-        public override void EndMarkedContent()
         {
             // No op
         }

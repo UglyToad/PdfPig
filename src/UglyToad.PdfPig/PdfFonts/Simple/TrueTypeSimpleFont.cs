@@ -264,6 +264,11 @@
                 return (value & target) == target;
             }
 
+            // The (3,1)-by-unicode step below reads the unicode cache, which TryGetUnicode populates. Warm it
+            // so the glyph found (and the bounding box cached from it) does not depend on whether a caller
+            // happened to ask for the unicode value first.
+            TryGetUnicode(characterCode, out _);
+
             if (descriptor is null || !unicodeValuesCache.TryGetValue(characterCode, out var unicode)
                                    || font!.TableRegister.CMapTable is null
                                    || encoding is null
@@ -408,10 +413,6 @@
             {
                 return false;
             }
-
-            // CharacterCodeToGlyphId reads the unicode cache populated by TryGetUnicode; warm it so the
-            // 9.6.6.4 (3,1)-by-unicode step behaves identically to the TryGetPath call sequence.
-            TryGetUnicode(characterCode, out _);
 
             // Delegate first (encoding-name rules), then raw code in the cmap - the same order TryGetPath uses.
             return font.TryGetGlyphIndex(characterCode, CharacterCodeToGlyphId, out glyphIndex);

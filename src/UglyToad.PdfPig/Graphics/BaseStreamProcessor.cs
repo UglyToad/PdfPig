@@ -124,12 +124,49 @@
 
         private readonly Dictionary<StreamToken, IReadOnlyList<IGraphicsStateOperation>> _formOperationsCache = new();
 
+        private readonly MarkedContentTracker _markedContent;
+
+        /// <summary>
+        /// Whether the current content is hidden in the visibility state passed to the constructor; always
+        /// <see langword="false"/> without one.
+        /// <para>
+        /// While it is <see langword="true"/>, the base class does not call <see cref="RenderInlineImage"/> or
+        /// <see cref="RenderXObjectImage"/>, does not process form XObjects, and calls <see cref="RenderGlyph"/>
+        /// only for glyphs in a clip text rendering mode (4 to 7); text still advances. Those glyphs, path painting
+        /// (<see cref="StrokePath"/>, <see cref="FillPath"/>, <see cref="FillStrokePath"/>) and
+        /// <see cref="PaintShading"/> are still called: implementations should not output the painted content then,
+        /// but must still apply clipping and other graphics state changes (8.11.3.1), e.g. add a clip-mode glyph
+        /// to the text clipping path.
+        /// </para>
+        /// </summary>
+        protected bool IsOptionalContentHidden => _markedContent.IsHidden;
+
+        /// <summary>
+        /// The optional content in effect for what is being emitted now: enclosing <c>BDC /OC</c> sequences and the
+        /// <c>/OC</c> entries of enclosing form XObjects, image XObjects and annotations. Processors that produce
+        /// layered output tag what they emit with it.
+        /// </summary>
+        protected OptionalContentCondition CurrentOptionalContent => _markedContent.Current;
+
+        /// <summary>
+        /// Adds the <c>/OC</c> entry of <paramref name="dictionary"/> (an XObject or annotation dictionary, 8.11.3.3)
+        /// to <see cref="CurrentOptionalContent"/> until the returned scope is disposed. The base class does this for
+        /// every form and image XObject; use it around annotation drawing with the annotation dictionary.
+        /// </summary>
+        protected OptionalContentScope EnterOptionalContent(DictionaryToken dictionary)
+            => new OptionalContentScope(_markedContent, _markedContent.Enter(dictionary));
+
         /// <summary>
         /// Abstract stream processor constructor.
         /// </summary>
         /// <param name="outputIntentProfile">
         /// The profile device colours are colour-managed through for this content (14.11.5), or
         /// <see langword="null"/> when they are not managed.
+        /// </param>
+        /// <param name="optionalContentVisibility">
+        /// The state hidden optional content is evaluated against: content hidden in it is skipped (glyphs other than
+        /// clip-mode ones, inline images, image and form XObjects); graphics state changes still apply.
+        /// Null: nothing is skipped.
         /// </param>
         protected BaseStreamProcessor(
             int pageNumber,
@@ -142,7 +179,8 @@
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
             IIccProfile? outputIntentProfile,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            OptionalContentState? optionalContentVisibility = null)
         {
             this.PageNumber = pageNumber;
             this.ResourceStore = resourceStore;
@@ -152,6 +190,11 @@
             this.PageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.FilterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.ParsingOptions = parsingOptions;
+            this._markedContent = new MarkedContentTracker(
+                resourceStore.OptionalContent,
+                optionalContentVisibility,
+                parsingOptions.UseActualText,
+                pdfScanner);
 
             GraphicsStack.Push(new CurrentGraphicsState()
             {
@@ -177,6 +220,32 @@
         /// Process the <see cref="IGraphicsStateOperation"/>s and return content.
         /// </summary>
         public abstract TPageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations);
+
+        /// <summary>
+        /// Process the operations of a whole content stream: the page's, or a form XObject's. Marked-content
+        /// sequences are balanced within a content stream (14.6), so an EMC in it cannot end a sequence an
+        /// enclosing stream opened, and the sequences it leaves open are ended when it is done.
+        /// <see cref="Process"/> implementations and <see cref="ProcessFormXObject"/> overrides should call this
+        /// rather than <see cref="ProcessOperations"/>, so that every <see cref="OnBeginMarkedContent"/> call is
+        /// matched by an <see cref="OnEndMarkedContent"/> call and hidden optional content does not leak out.
+        /// </summary>
+        protected void ProcessContentStream(IReadOnlyList<IGraphicsStateOperation> operations)
+        {
+            int enclosingMarkedContentFloor = _markedContent.EnterStream();
+            try
+            {
+                ProcessOperations(operations);
+            }
+            finally
+            {
+                while (_markedContent.CanEnd)
+                {
+                    EndMarkedContent();
+                }
+
+                _markedContent.ExitStream(enclosingMarkedContentFloor);
+            }
+        }
 
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s.
@@ -292,20 +361,12 @@
                     .Transform(new PdfRectangle(0, 0, 1, fontSize)).Height,
                 2);
 
+            // (8.11.3.1) - a glyph in a clip rendering mode still adds to the text clipping path applied at ET
+            bool renderGlyphs = !IsOptionalContentHidden || currentState.FontState.TextRenderingMode.IsClip();
+
             while (bytes.MoveNext())
             {
                 var code = font.ReadCharacterCode(bytes, out int codeLength);
-
-                var foundUnicode = font.TryGetUnicode(code, out var unicode);
-
-                if (!foundUnicode || unicode is null)
-                {
-                    ParsingOptions.Logger.Warn(
-                        $"We could not find the corresponding character with code {code} in font {font.Name}.");
-
-                    // Try casting directly to string as in PDFBox 1.8.
-                    unicode = new string((char)code, 1);
-                }
 
                 var wordSpacing = 0.0;
                 if (code == ' ' && codeLength == 1)
@@ -313,44 +374,61 @@
                     wordSpacing += GetCurrentState().FontState.WordSpacing;
                 }
 
-                var textMatrix = TextMatrices.TextMatrix;
-
-                if (font.IsVertical)
-                {
-                    if (!(font is IVerticalWritingSupported verticalFont))
-                    {
-                        throw new InvalidOperationException(
-                            $"Font {font.Name} was in vertical writing mode but did not implement {nameof(IVerticalWritingSupported)}.");
-                    }
-
-                    var positionVector = verticalFont.GetPositionVector(code);
-
-                    textMatrix = textMatrix.Translate(positionVector.X, positionVector.Y);
-                }
-
                 var boundingBox = font.GetBoundingBox(code);
 
-                if (font is IType3Font type3Font)
+                // Skipped glyphs still advance the text position.
+                if (renderGlyphs)
                 {
-                    // Special case for type 3 where we can get better bbox from procs
-                    var bbox = GetOrComputeType3GlyphBoundingBox(type3Font, code);
-                    if (bbox.HasValue)
-                    {
-                        boundingBox = new CharacterBoundingBox(bbox.Value, boundingBox.Width);
-                    }
-                }
+                    var foundUnicode = font.TryGetUnicode(code, out var unicode);
 
-                RenderGlyph(font,
-                    currentState,
-                    fontSize,
-                    pointSize,
-                    code,
-                    unicode,
-                    bytes.CurrentOffset,
-                    renderingMatrix,
-                    textMatrix,
-                    transformationMatrix,
-                    boundingBox);
+                    if (!foundUnicode || unicode is null)
+                    {
+                        ParsingOptions.Logger.Warn(
+                            $"We could not find the corresponding character with code {code} in font {font.Name}.");
+
+                        // Try casting directly to string as in PDFBox 1.8.
+                        unicode = new string((char)code, 1);
+                    }
+
+                    var textMatrix = TextMatrices.TextMatrix;
+
+                    if (font.IsVertical)
+                    {
+                        if (!(font is IVerticalWritingSupported verticalFont))
+                        {
+                            throw new InvalidOperationException(
+                                $"Font {font.Name} was in vertical writing mode but did not implement {nameof(IVerticalWritingSupported)}.");
+                        }
+
+                        var positionVector = verticalFont.GetPositionVector(code);
+
+                        textMatrix = textMatrix.Translate(positionVector.X, positionVector.Y);
+                    }
+
+                    var glyphBox = boundingBox;
+
+                    if (font is IType3Font type3Font)
+                    {
+                        // Special case for type 3 where we can get better bbox from procs
+                        var bbox = GetOrComputeType3GlyphBoundingBox(type3Font, code);
+                        if (bbox.HasValue)
+                        {
+                            glyphBox = new CharacterBoundingBox(bbox.Value, boundingBox.Width);
+                        }
+                    }
+
+                    RenderGlyph(font,
+                        currentState,
+                        fontSize,
+                        pointSize,
+                        code,
+                        unicode,
+                        bytes.CurrentOffset,
+                        renderingMatrix,
+                        textMatrix,
+                        transformationMatrix,
+                        glyphBox);
+                }
 
                 double tx, ty;
                 if (font.IsVertical)
@@ -480,13 +558,30 @@
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Skips XObjects inside hidden optional content and XObjects hidden by their own <c>/OC</c> entry.
+        /// An override that does not call the base implementation should check <see cref="IsOptionalContentHidden"/>
+        /// inside an <see cref="EnterOptionalContent"/> scope itself.
+        /// </remarks>
         public virtual void ApplyXObject(NameToken xObjectName)
         {
+            if (IsOptionalContentHidden)
+            {
+                return;
+            }
+
             var hasReference = ResourceStore.TryGetXObjectReference(xObjectName, out var xObjectReference);
 
             if (hasReference && _formXObjectCache.TryGetValue(xObjectReference, out var cachedForm))
             {
-                ProcessFormXObject(cachedForm, xObjectName);
+                using (EnterOptionalContent(cachedForm.StreamDictionary))
+                {
+                    if (!IsOptionalContentHidden)
+                    {
+                        ProcessFormXObject(cachedForm, xObjectName);
+                    }
+                }
+
                 return;
             }
 
@@ -498,6 +593,13 @@
                 }
 
                 throw new PdfDocumentFormatException($"No XObject with name {xObjectName} found on page {PageNumber}.");
+            }
+
+            // The XObject's own /OC (8.11.3.3) applies to everything it draws.
+            using var optionalContentScope = EnterOptionalContent(xObjectStream.StreamDictionary);
+            if (IsOptionalContentHidden)
+            {
+                return;
             }
 
             // For now we will determine the type and store the object with the graphics state information preceding it.
@@ -553,6 +655,10 @@
         /// <summary>
         /// Process a XObject form.
         /// </summary>
+        /// <remarks>
+        /// An override that does not call the base implementation should process the form's operations
+        /// through <see cref="ProcessContentStream"/>.
+        /// </remarks>
         protected virtual void ProcessFormXObject(StreamToken formStream, NameToken xObjectName)
         {
             /*
@@ -697,8 +803,7 @@
                     }
                 }
 
-                ProcessOperations(operations);
-
+                ProcessContentStream(operations);
             }
             finally
             {
@@ -798,12 +903,15 @@
         public abstract PdfPoint? CloseSubpath();
 
         /// <inheritdoc/>
+        /// <remarks>Also called inside hidden optional content: check <see cref="IsOptionalContentHidden"/>.</remarks>
         public abstract void StrokePath(bool close);
 
         /// <inheritdoc/>
+        /// <remarks>Also called inside hidden optional content: check <see cref="IsOptionalContentHidden"/>.</remarks>
         public abstract void FillPath(FillingRule fillingRule, bool close);
 
         /// <inheritdoc/>
+        /// <remarks>Also called inside hidden optional content: check <see cref="IsOptionalContentHidden"/>.</remarks>
         public abstract void FillStrokePath(FillingRule fillingRule, bool close);
 
         /// <inheritdoc/>
@@ -1015,6 +1123,12 @@
                 return;
             }
 
+            if (IsOptionalContentHidden)
+            {
+                InlineImageBuilder = null;
+                return;
+            }
+
             InlineImageBuilder.Bytes = bytes;
 
             var image = InlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix,
@@ -1035,13 +1149,69 @@
         protected abstract void RenderInlineImage(InlineImage inlineImage);
 
         /// <inheritdoc/>
-        public abstract void BeginMarkedContent(
+        /// <remarks>
+        /// Resolves the property list when given by name, tracks the state the sequence carries (hidden
+        /// optional content, replacement text) and then calls <see cref="OnBeginMarkedContent"/>.
+        /// </remarks>
+        public void BeginMarkedContent(
             NameToken name,
             NameToken? propertyDictionaryName,
-            DictionaryToken? properties);
+            DictionaryToken? properties)
+        {
+            if (propertyDictionaryName is not null)
+            {
+                // The properties were given by name rather than inline, so they live in the /Properties
+                // entry of the resource dictionary in scope.
+                properties = ResourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName) ?? properties;
+            }
+
+            _markedContent.Begin(name, properties);
+            OnBeginMarkedContent(name, properties);
+        }
 
         /// <inheritdoc/>
-        public abstract void EndMarkedContent();
+        /// <remarks>
+        /// An EMC with no matching BMC/BDC in the current content stream is ignored. Otherwise the sequence
+        /// is ended and <see cref="OnEndMarkedContent"/> is called.
+        /// </remarks>
+        public void EndMarkedContent()
+        {
+            if (_markedContent.End())
+            {
+                OnEndMarkedContent();
+            }
+        }
+
+        /// <summary>
+        /// Called when a marked-content sequence begins (BMC/BDC). Every call is matched by exactly one
+        /// <see cref="OnEndMarkedContent"/> call: an unbalanced EMC is never reported, and sequences a
+        /// content stream leaves open are ended when it is done, provided it is processed through
+        /// <see cref="ProcessContentStream"/>.
+        /// </summary>
+        /// <param name="name">The marked-content tag.</param>
+        /// <param name="properties">The property list, resolved from the resources when given by name;
+        /// <see langword="null"/> for BMC or when the named properties cannot be found.</param>
+        protected virtual void OnBeginMarkedContent(NameToken name, DictionaryToken? properties)
+        {
+        }
+
+        /// <summary>
+        /// Called when the marked-content sequence most recently begun ends (EMC).
+        /// </summary>
+        protected virtual void OnEndMarkedContent()
+        {
+        }
+
+        /// <summary>
+        /// The text a glyph is to be extracted as. When <see cref="ParsingOptions.UseActualText"/> is set and
+        /// an enclosing marked-content sequence carries replacement text (14.9.4), the first glyph of the
+        /// sequence takes that text and the following ones an empty string; otherwise the glyph's own
+        /// <paramref name="unicode"/> is returned.
+        /// </summary>
+        protected string ApplyActualText(string unicode)
+        {
+            return _markedContent.ApplyActualText(unicode);
+        }
 
         private void AdjustTextMatrix(double tx, double ty)
         {
@@ -1144,6 +1314,26 @@
         }
 
         /// <inheritdoc/>
+        /// <remarks>Also called inside hidden optional content: check <see cref="IsOptionalContentHidden"/>.</remarks>
         public abstract void PaintShading(NameToken shadingName);
+    }
+
+    /// <summary>
+    /// Ends an <see cref="BaseStreamProcessor{TPageContent}.EnterOptionalContent"/> scope when disposed.
+    /// </summary>
+    public readonly struct OptionalContentScope : IDisposable
+    {
+        private readonly MarkedContentTracker? tracker;
+
+        internal OptionalContentScope(MarkedContentTracker tracker, bool entered)
+        {
+            this.tracker = entered ? tracker : null;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            tracker?.Exit();
+        }
     }
 }

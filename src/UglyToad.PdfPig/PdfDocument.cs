@@ -36,6 +36,8 @@
         private readonly ParsingOptions parsingOptions;
         private readonly Pages pages;
         private readonly NamedDestinations namedDestinations;
+
+        private readonly ResourceStore resourceStore;
         
         /// <summary>
         /// The metadata associated with this document.
@@ -84,7 +86,8 @@
             BookmarksProvider bookmarksProvider,
             ParsingOptions parsingOptions,
             CrossReferenceTable crossReferenceTable,
-            TrailerDictionary trailer)
+            TrailerDictionary trailer,
+            ResourceStore resourceStore)
         {
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
@@ -94,6 +97,7 @@
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
             this.parsingOptions = parsingOptions;
+            this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
 
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = catalog.Pages;
@@ -162,6 +166,13 @@
         {
             pages.AddPageFactory<TPage, TPageFactory>(configureFactory);
         }
+
+        /// <summary>
+        /// The default on/off state of the document's optional content groups (the <c>/D</c> configuration), or
+        /// <see langword="null"/> when the document has none. Read-only: pass states derived from it with
+        /// <see cref="OptionalContentState.WithGroupState"/> to stream processors and layered outputs.
+        /// </summary>
+        public OptionalContentState? OptionalContent => resourceStore.OptionalContent;
 
         /// <summary>
         /// Get the page with the specified page number (1 indexed).

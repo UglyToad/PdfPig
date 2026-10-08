@@ -232,11 +232,6 @@
             protected override void ClipToRectangle(PdfRectangle rectangle, FillingRule clippingRule)
                 => throw new NotSupportedException();
 
-            public override void BeginMarkedContent(NameToken name, NameToken? propertyDictionaryName,
-                DictionaryToken? properties) => throw new NotSupportedException();
-
-            public override void EndMarkedContent() => throw new NotSupportedException();
-
             public override void PaintShading(NameToken shadingName) => throw new NotSupportedException();
         }
 
