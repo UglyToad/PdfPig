@@ -41,26 +41,6 @@ namespace UglyToad.PdfPig.Graphics
 
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
-        /// <summary>
-        /// The replacement text (/ActualText) the next glyph receives, or <see langword="null"/> when
-        /// no replacement is in effect. It stands for the content of its whole marked-content
-        /// sequence, nested sequences included, so the first glyph takes it and it becomes empty for
-        /// the rest. See the PDF specification, 14.9.4 "Replacement text".
-        /// </summary>
-        private string activeActualText;
-
-        /// <summary>
-        /// The depth of the sequence that brought <see cref="activeActualText"/>, so that the
-        /// matching end can clear it, or 0 when no replacement is in effect.
-        /// </summary>
-        private int actualTextDepth;
-
-        /// <summary>
-        /// The number of sequences open when the content stream being processed began. The stream
-        /// can only end sequences it opened itself, so this is the floor it cannot end past.
-        /// </summary>
-        private int streamMarkedContentDepth;
-
         public PdfSubpath CurrentSubpath { get; private set; }
 
         public PdfPath CurrentPath { get; private set; }
@@ -96,7 +76,7 @@ namespace UglyToad.PdfPig.Graphics
             PageNumber = pageNumberCurrent;
             CloneAllStates();
 
-            ProcessOperations(operations);
+            ProcessContentStream(operations);
 
             return new PageContent(operations,
                 letters,
@@ -107,33 +87,6 @@ namespace UglyToad.PdfPig.Graphics
                 FilterProvider,
                 ResourceStore,
                 ParsingOptions);
-        }
-
-        protected override void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
-        {
-            var enclosingDepth = markedContentStack.Depth;
-            var enclosingActualTextDepth = actualTextDepth;
-            var enclosingStreamDepth = streamMarkedContentDepth;
-
-            streamMarkedContentDepth = enclosingDepth;
-
-            try
-            {
-                base.ProcessOperations(operations);
-            }
-            finally
-            {
-                streamMarkedContentDepth = enclosingStreamDepth;
-
-                if (actualTextDepth > enclosingDepth)
-                {
-                    // The replacement text came from a sequence this stream opened, which it never
-                    // closed. Nothing outside the stream is part of that sequence.
-                    activeActualText = null;
-                }
-
-                actualTextDepth = activeActualText is null ? 0 : enclosingActualTextDepth;
-            }
         }
 
         public override void RenderGlyph(IFont font,
@@ -148,14 +101,13 @@ namespace UglyToad.PdfPig.Graphics
             in TransformationMatrix transformationMatrix,
             CharacterBoundingBox characterBoundingBox)
         {
-            if (activeActualText is not null)
+            if (IsOptionalContentHidden)
             {
-                // The active marked-content sequence specifies replacement text (/ActualText) for
-                // extraction. It applies to the whole sequence, so assign it to the first glyph and
-                // give the remaining glyphs an empty value to avoid duplicating the replaced text.
-                unicode = activeActualText;
-                activeActualText = string.Empty;
+                // A hidden glyph in a clip rendering mode: it only matters for clipping, which letters ignore.
+                return;
             }
+
+            unicode = ApplyActualText(unicode);
 
             var transformedGlyphBounds = PerformantRectangleTransformer
                 .Transform(renderingMatrix, textMatrix, transformationMatrix, characterBoundingBox.GlyphBounds);
@@ -428,17 +380,26 @@ namespace UglyToad.PdfPig.Graphics
                 if (!ParsingOptions.ClipPaths)
                 {
                     // if we don't clip paths, add clipping path to paths
-                    paths.Add(CurrentPath);
-                    markedContentStack.AddPath(CurrentPath);
+                    AddPath(CurrentPath);
                 }
 
                 CurrentPath = null;
                 return;
             }
 
-            paths.Add(CurrentPath);
-            markedContentStack.AddPath(CurrentPath);
+            AddPath(CurrentPath);
             CurrentPath = null;
+        }
+
+        private void AddPath(PdfPath path)
+        {
+            if (IsOptionalContentHidden)
+            {
+                return;
+            }
+
+            paths.Add(path);
+            markedContentStack.AddPath(path);
         }
 
         public override void ClosePath()
@@ -467,14 +428,12 @@ namespace UglyToad.PdfPig.Graphics
                 var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, ParsingOptions.Logger);
                 if (clippedPath != null)
                 {
-                    paths.Add(clippedPath);
-                    markedContentStack.AddPath(clippedPath);
+                    AddPath(clippedPath);
                 }
             }
             else
             {
-                paths.Add(CurrentPath);
-                markedContentStack.AddPath(CurrentPath);
+                AddPath(CurrentPath);
             }
 
             CurrentPath = null;
@@ -537,51 +496,13 @@ namespace UglyToad.PdfPig.Graphics
             markedContentStack.AddImage(inlineImage);
         }
 
-        public override void BeginMarkedContent(NameToken name,
-            NameToken propertyDictionaryName,
-            DictionaryToken properties)
+        protected override void OnBeginMarkedContent(NameToken name, DictionaryToken properties)
         {
-            if (propertyDictionaryName is not null)
-            {
-                var actual = ResourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName);
-
-                properties = actual ?? properties;
-            }
-
             markedContentStack.Push(name, properties);
-
-            // A marked-content sequence may provide replacement text for extraction via /ActualText
-            // (PDF spec, 14.9.4 "Replacement text"). When opted in via ParsingOptions.UseActualText,
-            // honour it so that content with no usable mapping in the font.
-            if (actualTextDepth == 0 && ParsingOptions.UseActualText
-                && properties is not null
-                && properties.TryGet(NameToken.ActualText, PdfScanner, out IDataToken<string> actualTextToken))
-            {
-                // Strip soft hyphens (U+00AD): in replacement text these are conditional hyphens
-                // marking potential line-break points and are meant to be invisible when not broken.
-                // Keeping them would inject invisible characters mid-word and corrupt extracted text.
-                activeActualText = actualTextToken.Data.Replace("\u00ad", string.Empty);
-                actualTextDepth = markedContentStack.Depth;
-            }
         }
 
-        public override void EndMarkedContent()
+        protected override void OnEndMarkedContent()
         {
-            if (markedContentStack.Depth <= streamMarkedContentDepth)
-            {
-                // An end with no beginning in this content stream. Sequences are balanced within a
-                // stream (14.6), so this cannot be ending one an enclosing stream opened, and taking
-                // it for that would drop the enclosing sequence's replacement text for everything
-                // drawn after this stream returns.
-                return;
-            }
-
-            if (markedContentStack.Depth == actualTextDepth)
-            {
-                activeActualText = null;
-                actualTextDepth = 0;
-            }
-
             var mc = markedContentStack.Pop(PdfScanner);
             if (mc is not null)
             {

@@ -20,15 +20,21 @@
         public static readonly NameToken Aesv3 = new NameToken("AESV3");
         public static readonly NameToken After = new NameToken("After");
         public static readonly NameToken Ais = new NameToken("AIS");
+        public static readonly NameToken All = new NameToken("All");
+        public static readonly NameToken AllOff = new NameToken("AllOff");
+        public static readonly NameToken AllOn = new NameToken("AllOn");
         public static readonly NameToken Alt = new NameToken("Alt");
         public static readonly NameToken Alpha = new NameToken("Alpha");
         public static readonly NameToken Alternate = new NameToken("Alternate");
         public static readonly NameToken AN = new NameToken("AN");
+        public static readonly NameToken And = new NameToken("And");
         public static readonly NameToken Annotation3D = new NameToken("3D");
         public static readonly NameToken Annot = new NameToken("Annot");
         public static readonly NameToken Annotation = new NameToken("Annotation");
         public static readonly NameToken Annots = new NameToken("Annots");
         public static readonly NameToken AntiAlias = new NameToken("AntiAlias");
+        public static readonly NameToken AnyOff = new NameToken("AnyOff");
+        public static readonly NameToken AnyOn = new NameToken("AnyOn");
         public static readonly NameToken Ap = new NameToken("AP");
         public static readonly NameToken ApRef = new NameToken("APRef");
         public static readonly NameToken App = new NameToken("App");
@@ -390,6 +396,7 @@
         public static readonly NameToken NonFullScreenPageMode = new NameToken("NonFullScreenPageMode");
         public static readonly NameToken None = new NameToken("None");
         public static readonly NameToken Normal = new NameToken("Normal");
+        public static readonly NameToken Not = new NameToken("Not");
         public static readonly NameToken Nums = new NameToken("Nums");
         // O
         public static readonly NameToken O = new NameToken("O");
@@ -398,6 +405,7 @@
         public static readonly NameToken Oc = new NameToken("OC");
         public static readonly NameToken Ocg = new NameToken("OCG");
         public static readonly NameToken Ocgs = new NameToken("OCGs");
+        public static readonly NameToken Ocmd = new NameToken("OCMD");
         public static readonly NameToken Ocproperties = new NameToken("OCProperties");
         public static readonly NameToken Oe = new NameToken("OE");
 
@@ -419,6 +427,7 @@
         public static readonly NameToken Operation = new NameToken("Operation");
         public static readonly NameToken Opm = new NameToken("OPM");
         public static readonly NameToken Opt = new NameToken("Opt");
+        public static readonly NameToken Or = new NameToken("Or");
         public static readonly NameToken Order = new NameToken("Order");
         public static readonly NameToken Ordering = new NameToken("Ordering");
         public static readonly NameToken Os = new NameToken("OS");
@@ -603,6 +612,7 @@
         public static readonly NameToken Version = new NameToken("Version");
         public static readonly NameToken Vertices = new NameToken("Vertices");
         public static readonly NameToken VerticesPerRow = new NameToken("VerticesPerRow");
+        public static readonly NameToken View = new NameToken("View");
         public static readonly NameToken ViewArea = new NameToken("ViewArea");
         public static readonly NameToken ViewClip = new NameToken("ViewClip");
         public static readonly NameToken ViewerPreferences = new NameToken("ViewerPreferences");

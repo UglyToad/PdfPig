@@ -381,15 +381,6 @@ namespace UglyToad.PdfPig.Tests.Integration
             protected override void ClipToRectangle(PdfRectangle rectangle, FillingRule clippingRule)
             {
             }
-
-            public override void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName,
-                DictionaryToken properties)
-            {
-            }
-
-            public override void EndMarkedContent()
-            {
-            }
         }
 
         #endregion

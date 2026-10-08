@@ -79,5 +79,17 @@
         /// ICC-based color spaces fall back silently to their declared alternate color space.
         /// </summary>
         public IIccProfileService? IccProfileService { get; set; } = null;
+
+        /// <summary>
+        /// Should content in optional content groups (layers) that are hidden by the document's default
+        /// configuration be skipped (see the PDF specification, 8.11 "Optional content"). When enabled,
+        /// hidden letters, paths and images are left out of the page content.
+        /// Graphics state changes made inside hidden content (e.g. <c>cm</c>, clipping) still apply.
+        /// Custom processors built on <see cref="Graphics.BaseStreamProcessor{TPageContent}"/> do not receive hidden
+        /// images or form XObjects, nor hidden glyphs other than those in a clip text rendering mode, but must check
+        /// its <c>IsOptionalContentHidden</c> property before drawing those glyphs, painted paths and shadings.
+        /// Defaults to <see langword="false"/>: all content is returned, whether visible or not.
+        /// </summary>
+        public bool SkipHiddenOptionalContent { get; set; } = false;
     }
 }

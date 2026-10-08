@@ -106,6 +106,7 @@
                 "UglyToad.PdfPig.Content.MarkedContentElement",
                 "UglyToad.PdfPig.Content.MediaBox",
                 "UglyToad.PdfPig.Content.OptionalContentGroupElement",
+                "UglyToad.PdfPig.Content.OptionalContentState",
                 "UglyToad.PdfPig.Content.Page",
                 "UglyToad.PdfPig.Content.PageRotationDegrees",
                 "UglyToad.PdfPig.Content.PageSize",
