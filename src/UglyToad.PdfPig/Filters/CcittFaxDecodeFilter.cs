@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Filters
+namespace UglyToad.PdfPig.Filters
 {
     using System;
     using System.Numerics;
@@ -9,7 +9,10 @@
     using Tokens;
     using Util;
 
-    // Filter updated from original port because of issue #982
+    // PDFBox 3.0.8 source used for dimension validation, bounded EOL detection and EndOfLine handling:
+    // https://github.com/apache/pdfbox/blob/3.0.8/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
+    // Apache-2.0. The historical port is attributed below; PdfPig's work-array budget and leniency
+    // adaptations are described alongside the corresponding checks.
 
     /// <summary>
     /// Decodes image data that has been encoded using either Group 3 or Group 4.
@@ -90,16 +93,11 @@
 
             var compressionType = DetermineCompressionType(input.Span, k, decodeParms);
 
-            using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign, UseLenientParsing))
-            {
-                var decompressed = new byte[arraySize];
-                var blackIsOne = decodeParms.GetBooleanOrDefault(NameToken.BlackIs1, false);
-                stream.DecodeInto(decompressed, blackIsOne);
-
-                return decompressed;
-            }
+            var decompressed = new byte[arraySize];
+            var blackIsOne = decodeParms.GetBooleanOrDefault(NameToken.BlackIs1, false);
+            CcittFaxCompactDecoder.Decode(input.Span, decompressed, cols, rows, compressionType, encodedByteAlign, blackIsOne, UseLenientParsing);
+            return decompressed;
         }
-
         /// <summary>Validates all dimension-dependent decode buffers before any are allocated.</summary>
         internal static int GetDecodedBufferSize(int columns, int rows, bool useLenientParsing = false)
         {
@@ -163,7 +161,7 @@
 
                 return compressionType;
             }
-            
+
             if (k > 0)
             {
                 // Group 3 2D
