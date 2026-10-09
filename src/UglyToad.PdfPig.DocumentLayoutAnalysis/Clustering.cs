@@ -3,6 +3,7 @@
     using Core;
     using System;
     using System.Buffers;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
@@ -16,6 +17,12 @@
         /// on real pages, running in parallel is slower below ~200 elements and allocates more.
         /// </summary>
         private const int ParallelThreshold = 200;
+
+        /// <summary>
+        /// Minimum number of elements for the k-nearest neighbours search to run in parallel. Each search
+        /// does more work than the nearest neighbour search, so running in parallel is faster from ~50 elements.
+        /// </summary>
+        internal const int KNearestParallelThreshold = 50;
 
         /// <summary>
         /// Algorithm to group elements using nearest neighbours.
@@ -83,7 +90,7 @@
                 indexes[k] = -1;
             }
 #endif
-            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
+            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint, maxDegreeOfParallelism);
 
             void FindNearestNeighbourIndex(int e)
             {
@@ -142,9 +149,26 @@
             Func<T, bool> filterPivot, Func<T, T, bool> filterFinal,
             int maxDegreeOfParallelism)
         {
+            foreach (var group in NearestNeighbourGroups(elements, k, distMeasure, maxDistanceFunction,
+                         pivotPoint, candidatesPoint, filterPivot, filterFinal, maxDegreeOfParallelism))
+            {
+                yield return group;
+            }
+        }
+
+        /// <summary>
+        /// Eager version of <see cref="NearestNeighbours{T}(IReadOnlyList{T}, int, Func{PdfPoint, PdfPoint, double}, Func{T, T, double}, Func{T, PdfPoint}, Func{T, PdfPoint}, Func{T, bool}, Func{T, T, bool}, int)"/>.
+        /// </summary>
+        internal static List<T[]> NearestNeighbourGroups<T>(IReadOnlyList<T> elements, int k,
+            Func<PdfPoint, PdfPoint, double> distMeasure,
+            Func<T, T, double> maxDistanceFunction,
+            Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
+            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal,
+            int maxDegreeOfParallelism)
+        {
             /*************************************************************************************
              * Algorithm steps
-             * 1. Find nearest neighbours indexes (done in parallel)
+             * 1. Find nearest neighbours indexes (done in parallel for large inputs)
              *  Iterate every point (pivot) and put its nearest neighbour's index in an array
              *  e.g. if nearest neighbour of point i is point j, then indexes[i] = j.
              *  Only conciders a neighbour if it is within the maximum distance. 
@@ -168,18 +192,24 @@
                 indexes[l] = -1;
             }
 #endif
-            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
+            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint, maxDegreeOfParallelism);
 
-            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
-
-            // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Count, parallelOptions, e =>
+            void FindNearestNeighbourIndexes(int start, int end)
             {
-                var pivot = elements[e];
+                var queue = new KdTree<T>.KNearestNeighboursQueue();
+                var candidates = new List<(T, int, double)>();
 
-                if (filterPivot(pivot))
+                for (int e = start; e < end; e++)
                 {
-                    foreach (var c in kdTree.FindNearestNeighbours(pivot, k, pivotPoint, distMeasure))
+                    var pivot = elements[e];
+
+                    if (!filterPivot(pivot))
+                    {
+                        continue;
+                    }
+
+                    kdTree.FindNearestNeighbours(pivot, k, pivotPoint, distMeasure, queue, candidates);
+                    foreach (var c in candidates)
                     {
                         if (filterFinal(pivot, c.Item1) && c.Item3 < maxDistanceFunction(pivot, c.Item1))
                         {
@@ -188,13 +218,23 @@
                         }
                     }
                 }
-            });
+            }
+
+            // 1. Find nearest neighbours indexes
+            if (elements.Count < KNearestParallelThreshold || maxDegreeOfParallelism == 1)
+            {
+                // The cost of running in parallel outweighs the gain for small inputs
+                FindNearestNeighbourIndexes(0, elements.Count);
+            }
+            else
+            {
+                ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+                Parallel.ForEach(Partitioner.Create(0, elements.Count), parallelOptions,
+                    range => FindNearestNeighbourIndexes(range.Item1, range.Item2));
+            }
 
             // 2. Group indexes
-            foreach (var group in GroupIndexes(indexes, elements))
-            {
-                yield return group;
-            }
+            return GroupIndexes(indexes, elements);
         }
 
         /// <summary>

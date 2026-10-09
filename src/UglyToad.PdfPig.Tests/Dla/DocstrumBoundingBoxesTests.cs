@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
+    using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
     using UglyToad.PdfPig.Fonts.SystemFonts;
@@ -163,6 +164,46 @@
                 for (int i = 0; i < orderedBlocks.Count; i++)
                 {
                     Assert.Equal(expected[i], orderedBlocks[i].Text);
+                }
+            }
+        }
+
+        [Fact]
+        public void AlmostZeroLengthLineIsNotOverlapping()
+        {
+            // A line shorter than epsilon has no direction, like a line of length zero.
+            // Seen in 2108.11480.pdf: hidden text with a very large Y coordinate.
+            var tiny = new PdfLine(new PdfPoint(71.0736, 1.18e75), new PdfPoint(71.0738, 1.18e75));
+            var zero = new PdfLine(new PdfPoint(71.0736, 1.18e75), new PdfPoint(71.0736, 1.18e75));
+            var line = new PdfLine(new PdfPoint(65.9473, 704.8632), new PdfPoint(82.4136, 704.8632));
+
+            Assert.False(DocstrumBoundingBoxes.GetStructuralBlockingParameters(zero, line, 1e-3, out _, out _, out _));
+            Assert.False(DocstrumBoundingBoxes.GetStructuralBlockingParameters(tiny, line, 1e-3, out _, out _, out _));
+        }
+
+        [Fact]
+        public void SpacingEstimationIsDeterministic()
+        {
+            var options = new DocstrumBoundingBoxes.DocstrumBoundingBoxesOptions();
+            using (var document = PdfDocument.Open(DlaHelper.GetDocumentPath("fseprd1102849")))
+            {
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(document.GetPage(1).Letters)
+                    .Where(w => !string.IsNullOrWhiteSpace(w.Text))
+                    .ToList();
+
+                DocstrumBoundingBoxes.GetSpacingEstimation(words, options.WithinLineBounds, options.WithinLineBinSize,
+                    options.BetweenLineBounds, options.BetweenLineBinSize, -1,
+                    out double expectedWithinLine, out double expectedBetweenLine);
+
+                for (int run = 0; run < 20; run++)
+                {
+                    DocstrumBoundingBoxes.GetSpacingEstimation(words, options.WithinLineBounds, options.WithinLineBinSize,
+                        options.BetweenLineBounds, options.BetweenLineBinSize, -1,
+                        out double withinLine, out double betweenLine);
+
+                    // Exactly the same values, not just within a tolerance
+                    Assert.Equal(expectedWithinLine.ToString("R"), withinLine.ToString("R"));
+                    Assert.Equal(expectedBetweenLine.ToString("R"), betweenLine.ToString("R"));
                 }
             }
         }
