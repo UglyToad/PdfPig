@@ -52,6 +52,16 @@
                     continue;
                 }
 
+                // Skip a glyph drawn on top of another at the same position. Some producers draw the
+                // same text more than once at the exact same location (e.g. overprinting / faux-bold by
+                // double-striking). A viewer renders the copies on top of each other so the text is only
+                // seen once, but reporting every glyph would duplicate characters (a visible "12A"
+                // becoming "1122A"). When two letters share the same coordinate, one of them is dropped.
+                if (SamePosition(letter, lastLetter))
+                {
+                    continue;
+                }
+
                 if (letter.Location.Y < y.Value - 0.5)
                 {
                     if (lettersSoFar.Count > 0)
@@ -141,6 +151,17 @@
         private static Word GenerateWord(List<Letter> letters)
         {
             return new Word(letters.ToList());
+        }
+
+        // Two glyphs are treated as occupying the same coordinate when their baseline placements
+        // coincide within this distance (in PDF user-space units). Kept tiny so only (near-)exact
+        // overlaps are collapsed, not glyphs merely close to one another.
+        private const double SamePositionTolerance = 1e-3;
+
+        private static bool SamePosition(Letter a, Letter b)
+        {
+            return Math.Abs(a.Location.X - b.Location.X) <= SamePositionTolerance
+                && Math.Abs(a.Location.Y - b.Location.Y) <= SamePositionTolerance;
         }
 
         /// <summary>
