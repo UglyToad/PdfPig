@@ -6,9 +6,10 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        // Select a benchmark class with BenchmarkDotNet's command-line filter, for example:
-        //     dotnet run -c Release -- --filter *CcittFaxFilterBenchmarks*
-        // With no arguments, run Type4FunctionBenchmarks.
+        // Pass class names on the command line to pick benchmarks, e.g.:
+        //     dotnet run -c Release -- --filter *ShadingAndColorBenchmarks*
+        // When no args are supplied default to the shading/colour suite that the
+        // feature/optimisations-shading work targets.
         if (args.Length == 0)
         {
             BenchmarkRunner.Run<Type4FunctionBenchmarks>();
@@ -25,7 +26,6 @@ internal class Program
                 typeof(LzwFilterBenchmarks),
                 typeof(PngPredictorBenchmarks),
                 typeof(FlateFilterBenchmarks),
-                typeof(CcittFaxFilterBenchmarks),
                 typeof(IccColorManagementBenchmarks),
             }).Run(args);
         }
