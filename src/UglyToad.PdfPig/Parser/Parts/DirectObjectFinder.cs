@@ -23,30 +23,38 @@ namespace UglyToad.PdfPig.Parser.Parts
                 return true;
             }
 
-            if (!(token is IndirectReferenceToken reference))
+            if (token is not IndirectReferenceToken reference)
             {
                 return false;
             }
 
-            scanner.StackDepthGuard.Enter();
+            var entered = 0;
             try
             {
-                var temp = scanner.Get(reference.Data);
-
-                if (temp is null)
+                while (true)
                 {
-                    return false;
-                }
+                    scanner.StackDepthGuard.Enter();
+                    entered++;
 
-                if (temp.Data is T tTemp)
-                {
-                    tokenResult = tTemp;
-                    return true;
-                }
+                    var temp = scanner.Get(reference.Data);
 
-                if (temp.Data is IndirectReferenceToken nestedReferenceToken)
-                {
-                    return TryGet(nestedReferenceToken, scanner, out tokenResult);
+                    if (temp is null)
+                    {
+                        return false;
+                    }
+
+                    if (temp.Data is T tTemp)
+                    {
+                        tokenResult = tTemp;
+                        return true;
+                    }
+
+                    if (temp.Data is not IndirectReferenceToken nestedReferenceToken)
+                    {
+                        return false;
+                    }
+
+                    reference = nestedReferenceToken;
                 }
             }
             catch
@@ -55,10 +63,11 @@ namespace UglyToad.PdfPig.Parser.Parts
             }
             finally
             {
-                scanner.StackDepthGuard.Exit();
+                for (var i = 0; i < entered; i++)
+                {
+                    scanner.StackDepthGuard.Exit();
+                }
             }
-
-            return false;
         }
 
         /// <summary>
@@ -67,45 +76,56 @@ namespace UglyToad.PdfPig.Parser.Parts
         public static T? Get<T>(IndirectReference reference, IPdfTokenScanner scanner)
             where T : class, IToken
         {
-            scanner.StackDepthGuard.Enter();
+            var entered = 0;
             try
             {
-                var temp = scanner.Get(reference);
-                if (temp is null || temp.Data is NullToken)
+                while (true)
                 {
-                    return null;
-                }
+                    scanner.StackDepthGuard.Enter();
+                    entered++;
 
-                if (temp.Data is T locatedResult)
-                {
-                    return locatedResult;
-                }
-
-                if (temp.Data is IndirectReferenceToken nestedReference)
-                {
-                    return Get<T>(nestedReference.Data, scanner);
-                }
-
-                if (temp.Data is ArrayToken array && array.Data.Count == 1)
-                {
-                    var arrayElement = array.Data[0];
-
-                    if (arrayElement is IndirectReferenceToken arrayReference)
+                    var temp = scanner.Get(reference);
+                    if (temp is null || temp.Data is NullToken)
                     {
-                        return Get<T>(arrayReference.Data, scanner);
+                        return null;
                     }
 
-                    if (arrayElement is T arrayToken)
+                    if (temp.Data is T locatedResult)
                     {
-                        return arrayToken;
+                        return locatedResult;
                     }
-                }
 
-                throw new PdfDocumentFormatException($"Could not find the object number {reference} with type {typeof(T).Name} instead, it was found with type {temp.GetType().Name}.");
+                    if (temp.Data is IndirectReferenceToken nestedReference)
+                    {
+                        reference = nestedReference.Data;
+                        continue;
+                    }
+
+                    if (temp.Data is ArrayToken array && array.Data.Count == 1)
+                    {
+                        var arrayElement = array.Data[0];
+
+                        if (arrayElement is IndirectReferenceToken arrayReference)
+                        {
+                            reference = arrayReference.Data;
+                            continue;
+                        }
+
+                        if (arrayElement is T arrayToken)
+                        {
+                            return arrayToken;
+                        }
+                    }
+
+                    throw new PdfDocumentFormatException($"Could not find the object number {reference} with type {typeof(T).Name} instead, it was found with type {temp.GetType().Name}.");
+                }
             }
             finally
             {
-                scanner.StackDepthGuard.Exit();
+                for (var i = 0; i < entered; i++)
+                {
+                    scanner.StackDepthGuard.Exit();
+                }
             }
         }
 
@@ -114,22 +134,14 @@ namespace UglyToad.PdfPig.Parser.Parts
         /// </summary>
         public static T? Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
         {
-            scanner.StackDepthGuard.Enter();
-            try
+            if (token is T result)
             {
-                if (token is T result)
-                {
-                    return result;
-                }
-
-                if (token is IndirectReferenceToken reference)
-                {
-                    return Get<T>(reference.Data, scanner);
-                }
+                return result;
             }
-            finally
+
+            if (token is IndirectReferenceToken reference)
             {
-                scanner.StackDepthGuard.Exit();
+                return Get<T>(reference.Data, scanner);
             }
 
             throw new PdfDocumentFormatException($"Could not find the object {token} with type {typeof(T).Name} instead, it was found with type {token.GetType().Name}.");
