@@ -181,19 +181,19 @@ internal static partial class CcittFaxCompactDecoder
             var lookup = new ushort[4096];
             foreach (var firstCode in firstRunIsWhite ? CcittFaxCodebook.WhiteRunCodes : CcittFaxCodebook.BlackRunCodes)
             {
-                    foreach (var secondCode in firstRunIsWhite ? CcittFaxCodebook.BlackRunCodes : CcittFaxCodebook.WhiteRunCodes)
-                    {
-                        int combinedBitCount = firstCode.Length + secondCode.Length;
-                        if (firstCode.Run >= 64 || secondCode.Run >= 64 || combinedBitCount > 12)
-                            continue;
-                        ushort lookupEntry = checked((ushort)(firstCode.Run | (secondCode.Run << 6) | (combinedBitCount << 12)));
-                        int combinedCodeBits = (firstCode.Bits << secondCode.Length) | secondCode.Bits;
+                foreach (var secondCode in firstRunIsWhite ? CcittFaxCodebook.BlackRunCodes : CcittFaxCodebook.WhiteRunCodes)
+                {
+                    int combinedBitCount = firstCode.Length + secondCode.Length;
+                    if (firstCode.Run >= 64 || secondCode.Run >= 64 || combinedBitCount > 12)
+                        continue;
+                    ushort lookupEntry = checked((ushort)(firstCode.Run | (secondCode.Run << 6) | (combinedBitCount << 12)));
+                    int combinedCodeBits = (firstCode.Bits << secondCode.Length) | secondCode.Bits;
 #if NET8_0_OR_GREATER
-                        Array.Fill(lookup, lookupEntry, combinedCodeBits << (12 - combinedBitCount), 1 << (12 - combinedBitCount));
+                    Array.Fill(lookup, lookupEntry, combinedCodeBits << (12 - combinedBitCount), 1 << (12 - combinedBitCount));
 #else
-                        lookup.AsSpan(combinedCodeBits << (12 - combinedBitCount), 1 << (12 - combinedBitCount)).Fill(lookupEntry);
+                    lookup.AsSpan(combinedCodeBits << (12 - combinedBitCount), 1 << (12 - combinedBitCount)).Fill(lookupEntry);
 #endif
-                    }
+                }
             }
 
             return lookup;
@@ -240,13 +240,6 @@ internal static partial class CcittFaxCompactDecoder
             decodedBitmap.AsSpan().Clear();
             return false;
         }
-    }
-
-    private static int AdvancePositionWithinRow(int startPosition, int runLength, int columns)
-    {
-        if (runLength < 0 || runLength > columns - startPosition)
-            throw new InvalidDataException("CCITT run exceeds row bounds.");
-        return startPosition + runLength;
     }
 
     // Paint black pixels from start (inclusive) to end (exclusive). Callers initialize the row
@@ -391,11 +384,11 @@ internal static partial class CcittFaxCompactDecoder
 
                     if (!isOneDimensional)
                     {
-                        int firstRunEnd = AdvancePositionWithinRow(pixelPosition, DecodeRunLength<T>(ref bitReader, isWhiteRun, columns - pixelPosition), columns);
+                        int firstRunEnd = pixelPosition + DecodeRunLength<T>(ref bitReader, isWhiteRun, columns - pixelPosition);
                         if (transitionCount == currentTransitions.Length)
                             throw new InvalidDataException("Too many CCITT transitions.");
                         currentTransitions[transitionCount++] = checked((ushort)firstRunEnd);
-                        int secondRunEnd = AdvancePositionWithinRow(firstRunEnd, DecodeRunLength<T>(ref bitReader, !isWhiteRun, columns - firstRunEnd), columns);
+                        int secondRunEnd = firstRunEnd + DecodeRunLength<T>(ref bitReader, !isWhiteRun, columns - firstRunEnd);
                         nextModeEntry = ModeLookup[bitReader.PeekBits<T>(7)];
                         hasNextModeEntry = true;
                         PaintBlackInterval<T>(rowPixels, isWhiteRun ? firstRunEnd : pixelPosition, isWhiteRun ? secondRunEnd : firstRunEnd);
@@ -406,7 +399,7 @@ internal static partial class CcittFaxCompactDecoder
                         continue;
                     }
 
-                    int nextPosition = AdvancePositionWithinRow(pixelPosition, DecodeRunLength<T>(ref bitReader, isWhiteRun, columns - pixelPosition), columns);
+                    int nextPosition = pixelPosition + DecodeRunLength<T>(ref bitReader, isWhiteRun, columns - pixelPosition);
                     if (!isWhiteRun)
                         PaintBlackInterval<T>(rowPixels, pixelPosition, nextPosition);
                     if (transitionCount == currentTransitions.Length)
@@ -414,7 +407,6 @@ internal static partial class CcittFaxCompactDecoder
                     currentTransitions[transitionCount++] = checked((ushort)nextPosition);
                     pixelPosition = nextPosition;
                     isWhiteRun = !isWhiteRun;
-
                 }
                 else
                 {
