@@ -1,4 +1,5 @@
-﻿namespace UglyToad.PdfPig.Tests.Filters
+using System.Linq;
+namespace UglyToad.PdfPig.Tests.Filters
 {
     using System.Globalization;
     using System.Text;
@@ -32,8 +33,8 @@
                 { NameToken.DecodeParms, parameters }
             });
 
-            // K defaults to zero and its input sniffing would fail on empty data. Getting the
-            // dimension exception instead proves that neither sniffing nor allocation ran first.
+            // Use empty input so this case needs no compressed image fixture. Unsafe dimensions
+            // must raise a compressed-data exception even when there is nothing to decode.
             Assert.Throws<CorruptCompressedDataException>(() =>
                 new CcittFaxDecodeFilter(useLenientParsing: false).Decode(Memory<byte>.Empty, dictionary, TestFilterProvider.Instance, 0));
         }
@@ -126,7 +127,8 @@
         [Fact]
         public void IncludesWorkingBuffersAtTheLimit()
         {
-            // One byte per row plus one byte of row storage and two three-entry int arrays.
+            // A one-pixel row occupies one byte. The conservative working-buffer estimate
+            // adds one row byte and two three-entry Int32 arrays: 25 bytes beyond the bitmap.
             var lastAllowedRowCount = (int)CcittFaxDecodeFilter.MaximumDecodeBufferBytes - 25;
             Assert.Equal(lastAllowedRowCount, CcittFaxDecodeFilter.GetDecodedBufferSize(1, lastAllowedRowCount));
             Assert.Throws<CorruptCompressedDataException>(() =>
@@ -150,8 +152,9 @@
         [InlineData(40_000_000, 1, true, true)]
         public void RejectsAllocationBombInPageImage(int columns, int rows, bool filterChain, bool lenient)
         {
-            // A single compressed byte must not cause a 432 MB bitmap allocation, or two
-            // 160 MB change arrays even though that second image's bitmap is only 5 MB.
+            // The dimensions require either a 432,000,000-byte bitmap or two roughly
+            // 160,000,000-byte transition arrays with only a 5,000,000-byte bitmap.
+            // A one-byte CCITT payload must be rejected before allocating those buffers.
             var pdf = CreateAllocationBombPdf(columns, rows, filterChain);
             Assert.InRange(pdf.Length, 1, 1024);
 
@@ -164,7 +167,8 @@
 #endif
             var exception = Assert.Throws<CorruptCompressedDataException>(() => image.TryGetBytesAsMemory(out _));
 #if NET
-            // Measuring only the decode call avoids charging document parsing to this guard.
+            // Count allocations after parsing the PDF and locating its image. This measures
+            // the cost of rejecting the image, rather than the cost of reading the document.
             Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - allocatedBefore, 0L, 1024L * 1024);
 #endif
             Assert.StartsWith("CCITT decode buffers require ", exception.Message);
@@ -199,7 +203,8 @@
         [InlineData(null)]
         public void DecodesShortWhiteRun(bool? endOfLine)
         {
-            // White run of eight pixels: Modified Huffman 10011, optionally preceded by EOL.
+            // The T.4 code 10011 represents eight white pixels. EndOfLine=true adds
+            // a leading EOL (000000000001); false or absent uses the code alone.
             var input = endOfLine == true ? new byte[] { 0x00, 0x19, 0x80 } : new byte[] { 0x98 };
             var output = new CcittFaxDecodeFilter().Decode(input, CreateSmallImageDictionary(0, endOfLine), TestFilterProvider.Instance, 0);
             Assert.Equal(new byte[] { 0x00 }, output.ToArray());
@@ -225,8 +230,9 @@
         [InlineData(null, 0xFF)]
         public void ExplicitEndOfLineOverridesHeaderDetection(bool? endOfLine, byte expected)
         {
-            // A white RLE row precedes an EOL and a black Group 3 row. Explicit false must
-            // decode the first row rather than follow the EOL found by header detection.
+            // A white Modified Huffman row precedes an EOL and a black Group 3 row.
+            // EndOfLine=false must select the first row, even though header detection would
+            // find the later EOL and select the black row.
             var input = new byte[] { 0x98, 0x00, 0x13, 0x51, 0x40 };
             var output = new CcittFaxDecodeFilter().Decode(input, CreateSmallImageDictionary(0, endOfLine), TestFilterProvider.Instance, 0);
             Assert.Equal(new[] { expected }, output.ToArray());
@@ -253,34 +259,31 @@
         }
 
         [Theory]
-        [InlineData(0)]
         [InlineData(1)]
         [InlineData(7)]
-        [InlineData(15)]
-        [InlineData(16)]
-        [InlineData(17)]
+        [InlineData(8)]
+        [InlineData(9)]
         [InlineData(31)]
         [InlineData(32)]
         [InlineData(33)]
-        [InlineData(63)]
-        [InlineData(64)]
-        [InlineData(65)]
-        [InlineData(255)]
-        [InlineData(256)]
-        [InlineData(257)]
-        [InlineData(700425)]
-        public void InvertsAllBitsWithoutChangingBytesOutsideTheSlice(int length)
+        [InlineData(1800)]
+        public void DirectPolarityPreservesInputSliceAndWhitePadding(int columns)
         {
-            var buffer = new byte[length + 6];
-            for (var i = 0; i < buffer.Length; i++) buffer[i] = (byte)i;
-            var original = (byte[])buffer.Clone();
-            var expected = (byte[])buffer.Clone();
-            for (var i = 3; i < length + 3; i++) expected[i] = (byte)~expected[i];
-
-            CcittFaxDecodeFilter.InvertBitmap(buffer.AsSpan(3, length));
-            Assert.Equal(expected, buffer);
-            CcittFaxDecodeFilter.InvertBitmap(buffer.AsSpan(3, length));
-            Assert.Equal(original, buffer);
+            // Four vertical-zero codes encode four white Group 4 rows. The surrounding bytes
+            // are deliberately outside the supplied input slice and must not be consumed or changed.
+            var input = new byte[] { 0xAA, 0xF0, 0x55 };
+            foreach (bool blackIsOne in new[] { true, false })
+            {
+                var parameters = new DictionaryToken(new Dictionary<NameToken, IToken> {
+                    { NameToken.K, new NumericToken(-1) }, { NameToken.Columns, new NumericToken(columns) },
+                    { NameToken.Rows, new NumericToken(4) }, { NameToken.BlackIs1, blackIsOne ? BooleanToken.True : BooleanToken.False } });
+                var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken> {
+                    { NameToken.Filter, NameToken.CcittfaxDecode }, { NameToken.DecodeParms, parameters } });
+                var actual = new CcittFaxDecodeFilter().Decode(input.AsMemory(1, 1), dictionary, DefaultFilterProvider.Instance, 0);
+                var expected = Enumerable.Repeat(blackIsOne ? (byte)0 : (byte)255, (columns + 7) / 8 * 4).ToArray();
+                Assert.Equal(expected, actual.ToArray());
+                Assert.Equal(new byte[] { 0xAA, 0xF0, 0x55 }, input);
+            }
         }
 
         private static byte[] CreateAllocationBombPdf(int columns, int rows, bool filterChain)

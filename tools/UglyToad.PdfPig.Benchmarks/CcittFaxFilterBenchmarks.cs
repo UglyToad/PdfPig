@@ -35,7 +35,8 @@ public class CcittFaxFilterBenchmarks
         }
         else
         {
-            // One vertical-zero bit per all-white Group 4 row.
+            // Each 1 bit is a vertical-zero operation ending one all-white Group 4 row.
+            // The first row uses an implicit white reference; later rows refer to the previous row.
             input = Enumerable.Repeat((byte)255, (rows + 7) / 8).ToArray();
             expected = new byte[(columns + 7) / 8 * rows];
         }

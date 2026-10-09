@@ -4,15 +4,17 @@ using System.Runtime.CompilerServices;
 
 namespace UglyToad.PdfPig.Filters.CcittFax;
 /// <summary>
-/// Decodes CCITT rows using compact transitions and direct output polarity.
-/// Widths above 65,535 and exceptional input use signed transition positions to preserve compatibility.
+/// Decodes CCITT rows into a bitmap using color-change positions as the 2D reference.
+/// The compact path stores positions in UInt16. Wider rows and input that this path cannot
+/// handle are retried using signed Int32 positions and the requested parsing mode.
 /// </summary>
 // Original C# implementation under the repository Apache-2.0 license.
-// The algorithm represents rows as alternating color-change positions and decodes standard T.4/T.6
-// codes through flat lookup tables. Packing two short terminating runs into one ushort lets a single
-// lookup decode a horizontal pair; longer runs retain ordinary bounded Huffman decoding.
-// Painting black intervals directly in the requested polarity avoids a full-bitmap inversion pass.
-// Every output byte is initialized, including unused row padding.
+// A transition is the pixel position where a row changes between white and black. The previous
+// row supplies reference positions for 2D decoding. Standard T.4/T.6 codewords index flat tables
+// instead of a binary tree. One packed entry decodes two short runs; longer runs are decoded
+// individually and checked against the remaining row width.
+// Rows start white, including unused bits at the end of each row. Black intervals are painted
+// as ones or zeros according to BlackIs1, avoiding a separate inversion pass.
 // Next-operation preloading was inspired by the MIT-licensed libdeflate decompression fast loop:
 // https://github.com/ebiggers/libdeflate/blob/master/lib/decompress_template.h
 // The next CCITT mode is peeked before painting and consumed on the next iteration, allowing
@@ -20,467 +22,447 @@ namespace UglyToad.PdfPig.Filters.CcittFax;
 // no libdeflate implementation code or lookup tables were copied.
 internal static partial class CcittFaxCompactDecoder
 {
-    // A run entry stores the code length in bits 0..3 and the run length in bits 4..15.
-    // Zero is an invalid prefix. Terminating runs are 0..63; makeup runs accumulate until a terminator.
-    private static readonly ushort[] White = Build(CcittFaxCodebook.White, 12), Black = Build(CcittFaxCodebook.Black, 13);
-    private static ushort[] Build(CcittCode[] codes, int lookahead)
+    private const int HorizontalMode = 100;
+    private const int PassMode = 101;
+    private const int UnknownMode = int.MinValue;
+    private const int EndOfLineRunMarker = -2000;
+
+    // Bits 0..3 store the consumed code length; bits 4..15 store its pixel count.
+    // A zero entry marks an unmapped prefix, not a zero-pixel run. A run uses zero or more
+    // makeup codes (multiples of 64), then a terminating code (0..63).
+    private static readonly ushort[] WhiteRunLookup = BuildRunLookup(CcittFaxCodebook.WhiteRunCodes, 12);
+    private static readonly ushort[] BlackRunLookup = BuildRunLookup(CcittFaxCodebook.BlackRunCodes, 13);
+
+    private static ushort[] BuildRunLookup(CcittCode[] runCodes, int lookaheadBitCount)
     {
-        var table = new ushort[1 << lookahead];
-        foreach (var c in codes)
+        var lookup = new ushort[1 << lookaheadBitCount];
+        foreach (var code in runCodes)
+        {
 #if NET8_0_OR_GREATER
-            Array.Fill(table, checked((ushort)((c.Run << 4) | c.Length)), c.Bits << (lookahead - c.Length), 1 << (lookahead - c.Length));
+            Array.Fill(lookup, checked((ushort)((code.Run << 4) | code.Length)), code.Bits << (lookaheadBitCount - code.Length), 1 << (lookaheadBitCount - code.Length));
 #else
-            table.AsSpan(c.Bits << (lookahead - c.Length), 1 << (lookahead - c.Length)).Fill(checked((ushort)((c.Run << 4) | c.Length)));
+            lookup.AsSpan(code.Bits << (lookaheadBitCount - code.Length), 1 << (lookaheadBitCount - code.Length)).Fill(checked((ushort)((code.Run << 4) | code.Length)));
 #endif
-        return table;
+        }
+        return lookup;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int Run<T>(ref CcittFaxCompactBitReader bits, bool white, int remaining)
-        where T : struct, ICcittCompactFeatures
+    private static int DecodeRunLength<T>(ref CcittFaxCompactBitReader bitReader, bool isWhiteRun, int remainingPixels)
+        where T : struct, ICcittRowPolicy
     {
-        var table = white ? White : Black;
-        int lookahead = white ? 12 : 13;
-        int total = 0, run;
+        var lookup = isWhiteRun ? WhiteRunLookup : BlackRunLookup;
+        int lookaheadBitCount = isWhiteRun ? 12 : 13;
+        int accumulatedRunLength = 0;
+        int runLength;
         do
         {
-            int entry = table[bits.Peek<T>(lookahead)];
-            if (entry == 0)
+            int lookupEntry = lookup[bitReader.PeekBits<T>(lookaheadBitCount)];
+            if (lookupEntry == 0)
                 throw new InvalidDataException("Invalid CCITT Huffman code.");
-            bits.Drop(entry & 15);
-            run = entry >> 4;
-            if (run > remaining - total)
+            bitReader.ConsumeBits(lookupEntry & 15);
+            runLength = lookupEntry >> 4;
+            if (runLength > remainingPixels - accumulatedRunLength)
                 throw new InvalidDataException("CCITT run exceeds row bounds.");
-            total += run;
+            accumulatedRunLength += runLength;
         }
-        while (run >= 64);
-        return total;
+        while (runLength >= 64);
+        return accumulatedRunLength;
     }
 
-    // Standard T.4/T.6 vertical, horizontal and pass codes fit in seven bits.
-    // Expand each prefix over its possible suffixes to replace a bit-by-bit tree traversal.
-    // Invalid prefixes fall back without consuming bits to preserve failure semantics.
-    private static readonly int[] Modes = BuildModes();
-    // Mode entries store the consumed length in bits 0..2 and the signed operation above it.
-    // Operations -3..3 are vertical offsets; 100 is horizontal and 101 is pass.
-    private static int[] BuildModes()
+    // Ordinary T.4/T.6 2D operations fit in seven bits. Each code fills all entries beginning
+    // with that code, replacing bit-by-bit tree traversal with one lookup. Unmapped prefixes
+    // use the bit-by-bit reader, which can trigger compatibility decoding.
+    private static readonly int[] ModeLookup = BuildModeLookup();
+    // Bits 0..2 store the code length. The remaining bits store a signed vertical offset
+    // (-3..3), HorizontalMode (two runs), or PassMode (skip two reference transitions).
+    private static int[] BuildModeLookup()
     {
-        var table = new int[128];
-        foreach (var (code, length, mode) in new[]
+        var lookup = new int[128];
+        foreach (var (codeBits, codeBitCount, operation) in new[]
         {
             (1, 1, 0),
             (3, 3, 1),
             (2, 3, -1),
-            (1, 3, 100),
-            (1, 4, 101),
+            (1, 3, HorizontalMode),
+            (1, 4, PassMode),
             (3, 6, 2),
             (2, 6, -2),
             (3, 7, 3),
             (2, 7, -3)
         })
+        {
 #if NET8_0_OR_GREATER
-            Array.Fill(table, (mode << 3) | length, code << (7 - length), 1 << (7 - length));
+            Array.Fill(lookup, (operation << 3) | codeBitCount, codeBits << (7 - codeBitCount), 1 << (7 - codeBitCount));
 #else
-            table.AsSpan(code << (7 - length), 1 << (7 - length)).Fill((mode << 3) | length);
+            lookup.AsSpan(codeBits << (7 - codeBitCount), 1 << (7 - codeBitCount)).Fill((operation << 3) | codeBitCount);
 #endif
-        return table;
+        }
+        return lookup;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int Mode<T>(ref CcittFaxCompactBitReader bits)
-        where T : struct, ICcittCompactFeatures
+    private static int DecodeMode<T>(ref CcittFaxCompactBitReader bitReader)
+        where T : struct, ICcittRowPolicy
     {
-        int entry = Modes[bits.Peek<T>(7)];
-        if (entry == 0)
-            return bits.Mode<T>();
-        bits.Drop(entry & 7);
-        return entry >> 3;
+        int lookupEntry = ModeLookup[bitReader.PeekBits<T>(7)];
+        if (lookupEntry == 0)
+            return bitReader.ReadModeBitByBit<T>();
+        bitReader.ConsumeBits(lookupEntry & 7);
+        return lookupEntry >> 3;
     }
 
-    // The four value-type policies specialize Group 4/general decoding and output polarity.
-    // Constant getters let the JIT remove feature branches. Older targets use constrained instance calls.
+    // Four value-type policies specialize two choices: Group 4 versus other row formats,
+    // and black pixels encoded as one versus zero. The JIT can fold their constant getters.
+    // .NET 8+ uses static interface members; older targets use constrained instance calls
+    // on a default value-type instance, without boxing. The decoding rules are the same.
 #if NET8_0_OR_GREATER
-    private readonly struct Features6OneG4 : ICcittCompactFeatures
+    private readonly struct Group4BlackIsOnePolicy : ICcittRowPolicy
     {
-        public static bool Group4 => true;
-        public static bool Table16 => true;
-        public static bool Preload => true;
-        public static bool Overlap => true;
-        public static bool BlackOne => true;
-        public static bool WholeBitmap => false;
+        public static bool IsGroup4 => true;
+        public static bool BlackIsOne => true;
     }
 
-    private readonly struct Features6ZeroG4 : ICcittCompactFeatures
+    private readonly struct Group4BlackIsZeroPolicy : ICcittRowPolicy
     {
-        public static bool Group4 => true;
-        public static bool Table16 => true;
-        public static bool Preload => true;
-        public static bool Overlap => true;
-        public static bool BlackOne => false;
-        public static bool WholeBitmap => false;
+        public static bool IsGroup4 => true;
+        public static bool BlackIsOne => false;
     }
 
-    private readonly struct Features6OneGeneral : ICcittCompactFeatures
+    private readonly struct GeneralBlackIsOnePolicy : ICcittRowPolicy
     {
-        public static bool Group4 => false;
-        public static bool Table16 => true;
-        public static bool Preload => true;
-        public static bool Overlap => true;
-        public static bool BlackOne => true;
-        public static bool WholeBitmap => false;
+        public static bool IsGroup4 => false;
+        public static bool BlackIsOne => true;
     }
 
-    private readonly struct Features6ZeroGeneral : ICcittCompactFeatures
+    private readonly struct GeneralBlackIsZeroPolicy : ICcittRowPolicy
     {
-        public static bool Group4 => false;
-        public static bool Table16 => true;
-        public static bool Preload => true;
-        public static bool Overlap => true;
-        public static bool BlackOne => false;
-        public static bool WholeBitmap => false;
+        public static bool IsGroup4 => false;
+        public static bool BlackIsOne => false;
     }
 
 #else
-    private readonly struct Features6OneG4 : ICcittCompactFeatures
+    private readonly struct Group4BlackIsOnePolicy : ICcittRowPolicy
     {
-        public bool Group4 => true;
-        public bool Table16 => true;
-        public bool Preload => true;
-        public bool Overlap => true;
-        public bool BlackOne => true;
-        public bool WholeBitmap => false;
+        public bool IsGroup4 => true;
+        public bool BlackIsOne => true;
     }
 
-    private readonly struct Features6ZeroG4 : ICcittCompactFeatures
+    private readonly struct Group4BlackIsZeroPolicy : ICcittRowPolicy
     {
-        public bool Group4 => true;
-        public bool Table16 => true;
-        public bool Preload => true;
-        public bool Overlap => true;
-        public bool BlackOne => false;
-        public bool WholeBitmap => false;
+        public bool IsGroup4 => true;
+        public bool BlackIsOne => false;
     }
 
-    private readonly struct Features6OneGeneral : ICcittCompactFeatures
+    private readonly struct GeneralBlackIsOnePolicy : ICcittRowPolicy
     {
-        public bool Group4 => false;
-        public bool Table16 => true;
-        public bool Preload => true;
-        public bool Overlap => true;
-        public bool BlackOne => true;
-        public bool WholeBitmap => false;
+        public bool IsGroup4 => false;
+        public bool BlackIsOne => true;
     }
 
-    private readonly struct Features6ZeroGeneral : ICcittCompactFeatures
+    private readonly struct GeneralBlackIsZeroPolicy : ICcittRowPolicy
     {
-        public bool Group4 => false;
-        public bool Table16 => true;
-        public bool Preload => true;
-        public bool Overlap => true;
-        public bool BlackOne => false;
-        public bool WholeBitmap => false;
+        public bool IsGroup4 => false;
+        public bool BlackIsOne => false;
     }
 
 #endif
-    // Two terminating runs fit in one ushort: first [0..5], second [6..11], consumed bits [12..15].
-    // Only pairs consuming at most 12 bits are stored; zero requests ordinary run decoding.
-    // Two 4096-entry tables occupy 16 KiB and are shared by both row implementations.
-    private static class Pairs16
+    // A 16-bit entry packs two terminating pixel counts into bits 0..5 and 6..11,
+    // and their combined code length into bits 12..15. Only pairs of at most 12 bits fit
+    // this lookup; a zero entry means decode the runs individually. One table starts
+    // with white, the other with black. Their entry payloads total 16 KiB.
+    private static class RunPairLookup
     {
-        internal static readonly ushort[] WhitePairs = BuildPairs(true), BlackPairs = BuildPairs(false);
-        private static ushort[] BuildPairs(bool white)
+        internal static readonly ushort[] WhiteFirstPairs = BuildRunPairLookup(true);
+        internal static readonly ushort[] BlackFirstPairs = BuildRunPairLookup(false);
+
+        private static ushort[] BuildRunPairLookup(bool firstRunIsWhite)
         {
-            var table = new ushort[4096];
-            foreach (var first in white ? CcittFaxCodebook.White : CcittFaxCodebook.Black)
-                foreach (var second in white ? CcittFaxCodebook.Black : CcittFaxCodebook.White)
-                {
-                    int length = first.Length + second.Length;
-                    if (first.Run >= 64 || second.Run >= 64 || length > 12)
-                        continue;
-                    ushort entry = checked((ushort)(first.Run | (second.Run << 6) | (length << 12)));
-                    int prefix = (first.Bits << second.Length) | second.Bits;
+            var lookup = new ushort[4096];
+            foreach (var firstCode in firstRunIsWhite ? CcittFaxCodebook.WhiteRunCodes : CcittFaxCodebook.BlackRunCodes)
+            {
+                    foreach (var secondCode in firstRunIsWhite ? CcittFaxCodebook.BlackRunCodes : CcittFaxCodebook.WhiteRunCodes)
+                    {
+                        int combinedBitCount = firstCode.Length + secondCode.Length;
+                        if (firstCode.Run >= 64 || secondCode.Run >= 64 || combinedBitCount > 12)
+                            continue;
+                        ushort lookupEntry = checked((ushort)(firstCode.Run | (secondCode.Run << 6) | (combinedBitCount << 12)));
+                        int combinedCodeBits = (firstCode.Bits << secondCode.Length) | secondCode.Bits;
 #if NET8_0_OR_GREATER
-                    Array.Fill(table, entry, prefix << (12 - length), 1 << (12 - length));
+                        Array.Fill(lookup, lookupEntry, combinedCodeBits << (12 - combinedBitCount), 1 << (12 - combinedBitCount));
 #else
-                    table.AsSpan(prefix << (12 - length), 1 << (12 - length)).Fill(entry);
+                        lookup.AsSpan(combinedCodeBits << (12 - combinedBitCount), 1 << (12 - combinedBitCount)).Fill(lookupEntry);
 #endif
-                }
+                    }
+            }
 
-            return table;
+            return lookup;
         }
     }
 
-    // Call after the filter has validated its unchanged total bitmap/work-buffer budget.
-    // Strict compact probe. Decode handles wide images and exceptional input internally.
-    internal static bool TryDecode(ReadOnlySpan<byte> input, byte[] output, int width, int rows, CcittFaxCompressionType mode, bool aligned, bool blackIsOne)
+    // The caller must validate dimensions, output capacity and the filter allocation budget first.
+    // This path requires UInt16 positions within the row that never move backwards.
+    // A wider row returns false without touching output. Invalid or truncated codes clear
+    // the partial output and return false. Decode then retries from the original input with
+    // signed positions, where strict/lenient parsing decides how to handle the data.
+    internal static bool TryDecode(
+        ReadOnlySpan<byte> compressedInput,
+        byte[] decodedBitmap,
+        int columns,
+        int rowCount,
+        CcittFaxCompressionType compressionType,
+        bool encodedByteAlign,
+        bool blackIsOne)
     {
-        if (width > ushort.MaxValue)
+        if (columns > ushort.MaxValue)
             return false;
         try
         {
-            if (mode == CcittFaxCompressionType.Group4_2D)
+            if (compressionType == CcittFaxCompressionType.Group4_2D)
             {
                 if (blackIsOne)
-                    DecodeCore<Features6OneG4>(input, output, width, rows, mode, aligned);
+                    DecodeCompactRows<Group4BlackIsOnePolicy>(compressedInput, decodedBitmap, columns, rowCount, compressionType, encodedByteAlign);
                 else
-                    DecodeCore<Features6ZeroG4>(input, output, width, rows, mode, aligned);
+                    DecodeCompactRows<Group4BlackIsZeroPolicy>(compressedInput, decodedBitmap, columns, rowCount, compressionType, encodedByteAlign);
             }
             else
             {
                 if (blackIsOne)
-                    DecodeCore<Features6OneGeneral>(input, output, width, rows, mode, aligned);
+                    DecodeCompactRows<GeneralBlackIsOnePolicy>(compressedInput, decodedBitmap, columns, rowCount, compressionType, encodedByteAlign);
                 else
-                    DecodeCore<Features6ZeroGeneral>(input, output, width, rows, mode, aligned);
+                    DecodeCompactRows<GeneralBlackIsZeroPolicy>(compressedInput, decodedBitmap, columns, rowCount, compressionType, encodedByteAlign);
             }
 
             return true;
         }
         catch (InvalidDataException)
         {
-            output.AsSpan().Clear();
+            decodedBitmap.AsSpan().Clear();
             return false;
         }
     }
 
-    private static int Advance(int start, int amount, int width)
+    private static int AdvancePositionWithinRow(int startPosition, int runLength, int columns)
     {
-        if (amount < 0 || amount > width - start)
+        if (runLength < 0 || runLength > columns - startPosition)
             throw new InvalidDataException("CCITT run exceeds row bounds.");
-        return start + amount;
+        return startPosition + runLength;
     }
 
-    // Paint the half-open black interval [start, end). Rows start white in the requested polarity,
-    // so only black pixels are changed; unused bits in the last byte remain white.
+    // Paint black pixels from start (inclusive) to end (exclusive). Callers initialize the row
+    // to white first. Edge masks preserve pixels outside the interval, including row padding.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Paint<T>(Span<byte> row, int start, int end)
-        where T : struct, ICcittCompactFeatures
+    private static void PaintBlackInterval<T>(Span<byte> rowPixels, int startPosition, int endPosition)
+        where T : struct, ICcittRowPolicy
     {
-        if (end <= start)
+        if (endPosition <= startPosition)
             return;
-        int first = start >> 3, last = (end - 1) >> 3;
-        int firstMask = 255 >> (start & 7), lastMask = 255 << (7 - ((end - 1) & 7));
-        if (first == last)
+        int firstByteIndex = startPosition >> 3;
+        int lastByteIndex = (endPosition - 1) >> 3;
+        int firstByteMask = 255 >> (startPosition & 7);
+        int lastByteMask = 255 << (7 - ((endPosition - 1) & 7));
+        if (firstByteIndex == lastByteIndex)
         {
-            byte mask = (byte)(firstMask & lastMask);
+            byte pixelMask = (byte)(firstByteMask & lastByteMask);
 #if NET8_0_OR_GREATER
-            row[first] = T.BlackOne ? (byte)(row[first] | mask) : (byte)(row[first] & ~mask);
+            rowPixels[firstByteIndex] = T.BlackIsOne ? (byte)(rowPixels[firstByteIndex] | pixelMask) : (byte)(rowPixels[firstByteIndex] & ~pixelMask);
 #else
-            row[first] = default(T).BlackOne ? (byte)(row[first] | mask) : (byte)(row[first] & ~mask);
+            rowPixels[firstByteIndex] = default(T).BlackIsOne ? (byte)(rowPixels[firstByteIndex] | pixelMask) : (byte)(rowPixels[firstByteIndex] & ~pixelMask);
 #endif
             return;
         }
 
 #if NET8_0_OR_GREATER
-        row[first] = T.BlackOne ? (byte)(row[first] | firstMask) : (byte)(row[first] & ~firstMask);
+        rowPixels[firstByteIndex] = T.BlackIsOne ? (byte)(rowPixels[firstByteIndex] | firstByteMask) : (byte)(rowPixels[firstByteIndex] & ~firstByteMask);
 #else
-        row[first] = default(T).BlackOne ? (byte)(row[first] | firstMask) : (byte)(row[first] & ~firstMask);
+        rowPixels[firstByteIndex] = default(T).BlackIsOne ? (byte)(rowPixels[firstByteIndex] | firstByteMask) : (byte)(rowPixels[firstByteIndex] & ~firstByteMask);
 #endif
 #if NET8_0_OR_GREATER
-        row.Slice(first + 1, last - first - 1).Fill(T.BlackOne ? (byte)255 : (byte)0);
+        rowPixels.Slice(firstByteIndex + 1, lastByteIndex - firstByteIndex - 1).Fill(T.BlackIsOne ? (byte)255 : (byte)0);
 #else
-        row.Slice(first + 1, last - first - 1).Fill(default(T).BlackOne ? (byte)255 : (byte)0);
+        rowPixels.Slice(firstByteIndex + 1, lastByteIndex - firstByteIndex - 1).Fill(default(T).BlackIsOne ? (byte)255 : (byte)0);
 #endif
 #if NET8_0_OR_GREATER
-        row[last] = T.BlackOne ? (byte)(row[last] | lastMask) : (byte)(row[last] & ~lastMask);
+        rowPixels[lastByteIndex] = T.BlackIsOne ? (byte)(rowPixels[lastByteIndex] | lastByteMask) : (byte)(rowPixels[lastByteIndex] & ~lastByteMask);
 #else
-        row[last] = default(T).BlackOne ? (byte)(row[last] | lastMask) : (byte)(row[last] & ~lastMask);
+        rowPixels[lastByteIndex] = default(T).BlackIsOne ? (byte)(rowPixels[lastByteIndex] | lastByteMask) : (byte)(rowPixels[lastByteIndex] & ~lastByteMask);
 #endif
     }
 
-    private static void DecodeCore<T>(ReadOnlySpan<byte> input, byte[] output, int width, int rows, CcittFaxCompressionType mode, bool aligned)
-        where T : struct, ICcittCompactFeatures
+    private static void DecodeCompactRows<T>(
+        ReadOnlySpan<byte> compressedInput,
+        byte[] decodedBitmap,
+        int columns,
+        int rowCount,
+        CcittFaxCompressionType compressionType,
+        bool encodedByteAlign)
+        where T : struct, ICcittRowPolicy
     {
-#if NET8_0_OR_GREATER
-        if (T.WholeBitmap)
-#else
-        if (default(T).WholeBitmap)
-#endif
-#if NET8_0_OR_GREATER
-            output.AsSpan().Fill(T.BlackOne ? (byte)0 : (byte)255);
-#else
-            output.AsSpan().Fill(default(T).BlackOne ? (byte)0 : (byte)255);
-#endif
-        int stride = (width + 7) / 8;
-        // Alternating transition positions describe each row without storing a second bitmap.
-        // Only entries below the associated count are initialized; duplicate positions are meaningful.
-        var previous = new ushort[width + 2];
-        var current = new ushort[width + 2];
-        int previousCount = 0;
-        var bits = new CcittFaxCompactBitReader(input);
-        for (int y = 0; y < rows; y++)
+        int rowByteCount = (columns + 7) / 8;
+        // Reuse two transition arrays: the previous row is the 2D reference, the current
+        // row records newly decoded color changes. Only entries below each row count are valid.
+        // Equal positions represent zero-length runs and must remain in their original order.
+        var referenceTransitions = new ushort[columns + 2];
+        var currentTransitions = new ushort[columns + 2];
+        int referenceTransitionCount = 0;
+        var bitReader = new CcittFaxCompactBitReader(compressedInput);
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
-            var row = output.AsSpan(y * stride, stride);
+            var rowPixels = decodedBitmap.AsSpan(rowIndex * rowByteCount, rowByteCount);
 #if NET8_0_OR_GREATER
-            if (!T.WholeBitmap)
+            rowPixels.Fill(T.BlackIsOne ? (byte)0 : (byte)255);
 #else
-            if (!default(T).WholeBitmap)
+            rowPixels.Fill(default(T).BlackIsOne ? (byte)0 : (byte)255);
 #endif
+            bool isOneDimensional;
 #if NET8_0_OR_GREATER
-                row.Fill(T.BlackOne ? (byte)0 : (byte)255);
+            if (T.IsGroup4)
 #else
-                row.Fill(default(T).BlackOne ? (byte)0 : (byte)255);
-#endif
-            bool oneD;
-#if NET8_0_OR_GREATER
-            if (T.Group4)
-#else
-            if (default(T).Group4)
+            if (default(T).IsGroup4)
 #endif
             {
-                if (aligned)
-                    bits.Align();
-                oneD = false;
+                if (encodedByteAlign)
+                    bitReader.AlignToByteBoundary();
+                isOneDimensional = false;
             }
             else
-                oneD = bits.OneDimensional<T>(mode, aligned);
-            bool white = true;
-            int x = 0, count = 0, cursor = 0, operations = 0;
-            int whiteCursor = 0, blackCursor = 1;
-            int prepared = 0;
-            bool hasPrepared = false;
-            while (x < width)
+                isOneDimensional = bitReader.ReadRowIsOneDimensional<T>(compressionType, encodedByteAlign);
+            bool isWhiteRun = true;
+            int pixelPosition = 0;
+            int transitionCount = 0;
+            int referenceTransitionIndex = 0;
+            int operationCount = 0;
+            int whiteReferenceIndex = 0;
+            int blackReferenceIndex = 1;
+            int nextModeEntry = 0;
+            bool hasNextModeEntry = false;
+            while (pixelPosition < columns)
             {
-                // Zero-length runs can preserve x. Bound operations as well as output size so
-                // malformed rows cannot keep decoding forever without advancing the pixel position.
-                if (++operations > 2L * width + 4)
+                // A zero-length run does not advance pixelPosition. Limit the number of operations too,
+                // so repeated empty runs cannot keep the compact loop busy indefinitely.
+                if (++operationCount > 2L * columns + 4)
                     throw new InvalidDataException("CCITT row does not progress.");
                 int operation;
-                if (oneD)
+                if (isOneDimensional)
                     operation = 0;
-#if NET8_0_OR_GREATER
-                else if (T.Preload && hasPrepared)
-#else
-                else if (default(T).Preload && hasPrepared)
-#endif
+                else if (hasNextModeEntry)
                 {
-                    hasPrepared = false;
-                    if (prepared == 0)
-                        operation = bits.Mode<T>();
+                    hasNextModeEntry = false;
+                    if (nextModeEntry == 0)
+                        operation = bitReader.ReadModeBitByBit<T>();
                     else
                     {
-                        bits.Drop(prepared & 7);
-                        operation = prepared >> 3;
+                        bitReader.ConsumeBits(nextModeEntry & 7);
+                        operation = nextModeEntry >> 3;
                     }
                 }
                 else
-                    operation = Mode<T>(ref bits);
-                if (oneD || operation == 100)
+                    operation = DecodeMode<T>(ref bitReader);
+                if (isOneDimensional || operation == HorizontalMode)
                 {
-                    uint pair = (white ? Pairs16.WhitePairs : Pairs16.BlackPairs)[bits.Peek<T>(12)];
-                    int first = (int)(pair & 63), second = (int)((pair >> 6) & 63);
+                    uint packedRunPair = (isWhiteRun ? RunPairLookup.WhiteFirstPairs : RunPairLookup.BlackFirstPairs)[bitReader.PeekBits<T>(12)];
+                    int firstRunLength = (int)(packedRunPair & 63);
+                    int secondRunLength = (int)((packedRunPair >> 6) & 63);
                     // In 1D, a first run that completes the row must not consume a second run
                     // from the following row. A horizontal 2D operation always contains two runs.
-                    if (pair != 0 && first + second <= width - x && (!oneD || first < width - x))
+                    if (packedRunPair != 0
+                        && firstRunLength + secondRunLength <= columns - pixelPosition
+                        && (!isOneDimensional || firstRunLength < columns - pixelPosition))
                     {
-                        if (current.Length - count < 2)
+                        if (currentTransitions.Length - transitionCount < 2)
                             throw new InvalidDataException("Too many CCITT transitions.");
-                        bits.Drop((int)(pair >> 12));
-                        int middle = x + first, end = middle + second;
-#if NET8_0_OR_GREATER
-                        if (T.Preload && !oneD)
-#else
-                        if (default(T).Preload && !oneD)
-#endif
+                        bitReader.ConsumeBits((int)(packedRunPair >> 12));
+                        int firstRunEnd = pixelPosition + firstRunLength;
+                        int secondRunEnd = firstRunEnd + secondRunLength;
+                        if (!isOneDimensional)
                         {
                             // Peek the next operation before painting to overlap independent work.
                             // Its bits are consumed only at the next loop iteration.
-                            prepared = Modes[bits.Peek<T>(7)];
-                            hasPrepared = true;
+                            nextModeEntry = ModeLookup[bitReader.PeekBits<T>(7)];
+                            hasNextModeEntry = true;
                         }
 
-                        Paint<T>(row, white ? middle : x, white ? end : middle);
-                        current[count++] = checked((ushort)middle);
-                        current[count++] = checked((ushort)end);
-                        x = end;
+                        PaintBlackInterval<T>(rowPixels, isWhiteRun ? firstRunEnd : pixelPosition, isWhiteRun ? secondRunEnd : firstRunEnd);
+                        currentTransitions[transitionCount++] = checked((ushort)firstRunEnd);
+                        currentTransitions[transitionCount++] = checked((ushort)secondRunEnd);
+                        pixelPosition = secondRunEnd;
                         continue;
                     }
 
-#if NET8_0_OR_GREATER
-                    if (T.Preload && !oneD)
-#else
-                    if (default(T).Preload && !oneD)
-#endif
+                    if (!isOneDimensional)
                     {
-                        int middle = Advance(x, Run<T>(ref bits, white, width - x), width);
-                        if (count == current.Length)
+                        int firstRunEnd = AdvancePositionWithinRow(pixelPosition, DecodeRunLength<T>(ref bitReader, isWhiteRun, columns - pixelPosition), columns);
+                        if (transitionCount == currentTransitions.Length)
                             throw new InvalidDataException("Too many CCITT transitions.");
-                        current[count++] = checked((ushort)middle);
-                        int end = Advance(middle, Run<T>(ref bits, !white, width - middle), width);
-                        prepared = Modes[bits.Peek<T>(7)];
-                        hasPrepared = true;
-                        Paint<T>(row, white ? middle : x, white ? end : middle);
-                        if (count == current.Length)
+                        currentTransitions[transitionCount++] = checked((ushort)firstRunEnd);
+                        int secondRunEnd = AdvancePositionWithinRow(firstRunEnd, DecodeRunLength<T>(ref bitReader, !isWhiteRun, columns - firstRunEnd), columns);
+                        nextModeEntry = ModeLookup[bitReader.PeekBits<T>(7)];
+                        hasNextModeEntry = true;
+                        PaintBlackInterval<T>(rowPixels, isWhiteRun ? firstRunEnd : pixelPosition, isWhiteRun ? secondRunEnd : firstRunEnd);
+                        if (transitionCount == currentTransitions.Length)
                             throw new InvalidDataException("Too many CCITT transitions.");
-                        current[count++] = checked((ushort)end);
-                        x = end;
+                        currentTransitions[transitionCount++] = checked((ushort)secondRunEnd);
+                        pixelPosition = secondRunEnd;
                         continue;
                     }
 
-                    int next = Advance(x, Run<T>(ref bits, white, width - x), width);
-                    if (!white)
-                        Paint<T>(row, x, next);
-                    if (count == current.Length)
+                    int nextPosition = AdvancePositionWithinRow(pixelPosition, DecodeRunLength<T>(ref bitReader, isWhiteRun, columns - pixelPosition), columns);
+                    if (!isWhiteRun)
+                        PaintBlackInterval<T>(rowPixels, pixelPosition, nextPosition);
+                    if (transitionCount == currentTransitions.Length)
                         throw new InvalidDataException("Too many CCITT transitions.");
-                    current[count++] = checked((ushort)next);
-                    x = next;
-                    white = !white;
-                    if (!oneD)
-                    {
-                        next = Advance(x, Run<T>(ref bits, white, width - x), width);
-                        if (!white)
-                            Paint<T>(row, x, next);
-                        if (count == current.Length)
-                            throw new InvalidDataException("Too many CCITT transitions.");
-                        current[count++] = checked((ushort)next);
-                        x = next;
-                        white = !white;
-                    }
+                    currentTransitions[transitionCount++] = checked((ushort)nextPosition);
+                    pixelPosition = nextPosition;
+                    isWhiteRun = !isWhiteRun;
+
                 }
                 else
                 {
-#if NET8_0_OR_GREATER
-                    if (T.Preload)
-#else
-                    if (default(T).Preload)
-#endif
-                    {
-                        prepared = Modes[bits.Peek<T>(7)];
-                        hasPrepared = true;
-                    }
+                    nextModeEntry = ModeLookup[bitReader.PeekBits<T>(7)];
+                    hasNextModeEntry = true;
 
-                    // Each parity cursor is monotone because a0 never moves backwards.
-                    // Keep duplicate and initial-zero transitions; do not skip at a0 == 0.
-                    cursor = white ? whiteCursor : blackCursor;
-                    while (cursor < previousCount && x != 0 && previous[cursor] <= x)
-                        cursor += 2;
-                    if (white)
-                        whiteCursor = cursor;
+                    // Even and odd cursors track the next reference transition for each color.
+                    // They only advance because pixelPosition never moves backwards. At the row start,
+                    // retain an initial zero-position transition; it changes the color.
+                    referenceTransitionIndex = isWhiteRun ? whiteReferenceIndex : blackReferenceIndex;
+                    while (referenceTransitionIndex < referenceTransitionCount && pixelPosition != 0 && referenceTransitions[referenceTransitionIndex] <= pixelPosition)
+                        referenceTransitionIndex += 2;
+                    if (isWhiteRun)
+                        whiteReferenceIndex = referenceTransitionIndex;
                     else
-                        blackCursor = cursor;
-                    // The compatibility decoder treats a pass beyond the last reference
-                    // transition as a wrap to its first transition. Preserve its strict/lenient
-                    // result through the shared full-width row path.
-                    if (operation == 101 && x != 0 && previousCount != 0 && cursor >= previousCount)
+                        blackReferenceIndex = referenceTransitionIndex;
+                    // The signed path can wrap this pass to the first reference transition
+                    // when no later transition exists. Retry there instead of substituting width;
+                    // its position validation applies the requested strict/lenient policy.
+                    if (operation == PassMode
+                        && pixelPosition != 0
+                        && referenceTransitionCount != 0
+                        && referenceTransitionIndex >= referenceTransitionCount)
                         throw new InvalidDataException("CCITT pass requires compatibility decoding.");
-                    int b1 = cursor < previousCount ? previous[cursor] : width;
-                    int next = operation == 101 ? (cursor + 1 < previousCount ? previous[cursor + 1] : width) : b1 + operation;
-                    if (next < x || next > width)
+                    // The first reference transition is b1 in the T.4/T.6 notation.
+                    int referencePosition = referenceTransitionIndex < referenceTransitionCount
+                        ? referenceTransitions[referenceTransitionIndex]
+                        : columns;
+                    int nextPosition = operation == PassMode
+                        ? (referenceTransitionIndex + 1 < referenceTransitionCount ? referenceTransitions[referenceTransitionIndex + 1] : columns)
+                        : referencePosition + operation;
+                    if (nextPosition < pixelPosition || nextPosition > columns)
                         throw new InvalidDataException("Invalid CCITT vertical/pass position.");
-                    if (!white)
-                        Paint<T>(row, x, next);
-                    x = next;
-                    if (operation != 101)
+                    if (!isWhiteRun)
+                        PaintBlackInterval<T>(rowPixels, pixelPosition, nextPosition);
+                    pixelPosition = nextPosition;
+                    if (operation != PassMode)
                     {
-                        if (count == current.Length)
+                        if (transitionCount == currentTransitions.Length)
                             throw new InvalidDataException("Too many CCITT transitions.");
-                        current[count++] = checked((ushort)x);
-                        white = !white;
+                        currentTransitions[transitionCount++] = checked((ushort)pixelPosition);
+                        isWhiteRun = !isWhiteRun;
                     }
                 }
             }
 
-            (previous, current) = (current, previous);
-            previousCount = count;
+            (referenceTransitions, currentTransitions) = (currentTransitions, referenceTransitions);
+            referenceTransitionCount = transitionCount;
         }
     }
 }

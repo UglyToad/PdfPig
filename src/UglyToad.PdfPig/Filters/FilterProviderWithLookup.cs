@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Filters
+namespace UglyToad.PdfPig.Filters
 {
     using System;
     using System.Collections.Generic;
@@ -11,41 +11,42 @@
 
     internal class FilterProviderWithLookup : ILookupFilterProvider
     {
-        private readonly IFilterProvider inner;
-        private readonly CcittFaxDecodeFilter ccitt;
+        private readonly IFilterProvider innerProvider;
+        private readonly CcittFaxDecodeFilter ccittFilter;
 
-        public FilterProviderWithLookup(IFilterProvider inner, bool useLenientParsing = true)
+        public FilterProviderWithLookup(IFilterProvider innerProvider, bool useLenientParsing = true)
         {
-            this.inner = inner;
-            ccitt = new CcittFaxDecodeFilter(useLenientParsing);
+            this.innerProvider = innerProvider;
+            ccittFilter = new CcittFaxDecodeFilter(useLenientParsing);
         }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
-            => ConfigureFilters(inner.GetFilters(dictionary));
+            => ConfigureFilters(innerProvider.GetFilters(dictionary));
 
         public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
-            => ConfigureFilters(inner.GetNamedFilters(names));
+            => ConfigureFilters(innerProvider.GetNamedFilters(names));
 
         public IReadOnlyList<IFilter> GetAllFilters()
-            => ConfigureFilters(inner.GetAllFilters());
+            => ConfigureFilters(innerProvider.GetAllFilters());
 
         private IReadOnlyList<IFilter> ConfigureFilters(IReadOnlyList<IFilter> filters)
         {
-            IFilter[]? configured = null;
-            for (var i = 0; i < filters.Count; i++)
+            IFilter[]? configuredFilters = null;
+            for (var filterIndex = 0; filterIndex < filters.Count; filterIndex++)
             {
-                if (filters[i] is CcittFaxDecodeFilter filter && filter.UseLenientParsing != ccitt.UseLenientParsing)
+                if (filters[filterIndex] is CcittFaxDecodeFilter filter && filter.UseLenientParsing != ccittFilter.UseLenientParsing)
                 {
-                    // Never mutate the shared default provider or a caller-owned filter.
-                    // Other custom filters keep their own behavior and identity.
-                    if (configured is null)
+                    // Replace only a built-in CCITT filter whose parsing mode differs. Copy
+                    // the list so the document's policy does not alter a shared provider or
+                    // caller-owned filter. Keep all other filter instances unchanged.
+                    if (configuredFilters is null)
                     {
-                        configured = filters.ToArray();
+                        configuredFilters = filters.ToArray();
                     }
-                    configured[i] = ccitt;
+                    configuredFilters[filterIndex] = ccittFilter;
                 }
             }
-            return configured is null ? filters : configured;
+            return configuredFilters is null ? filters : configuredFilters;
         }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner)
@@ -65,11 +66,11 @@
             {
                 case ArrayToken filters:
                     var result = new NameToken[filters.Data.Count];
-                    for (var i = 0; i < filters.Data.Count; i++)
+                    for (var filterIndex = 0; filterIndex < filters.Data.Count; filterIndex++)
                     {
-                        var filterToken = filters.Data[i];
+                        var filterToken = filters.Data[filterIndex];
                         var filterName = (NameToken)filterToken;
-                        result[i] = filterName;
+                        result[filterIndex] = filterName;
                     }
 
                     return GetNamedFilters(result);

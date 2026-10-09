@@ -2,8 +2,8 @@
 {
     /// <summary>
     /// Specifies the internal CCITT row format selected from PDF decode parameters.
-    /// K selects one-dimensional, mixed Group 3 or Group 4 decoding; the two one-dimensional
-    /// formats distinguish whether rows are synchronized by end-of-line codes.
+    /// K selects one-dimensional, mixed Group 3 or Group 4 decoding. For K = 0, EndOfLine
+    /// or header detection selects whether rows use end-of-line (EOL) synchronization.
     /// </summary>
     internal enum CcittFaxCompressionType : byte
     {
@@ -16,7 +16,7 @@
         /// </summary>
         Group3_1D,
         /// <summary>
-        /// Modified READ (MR), Group 3 (T.4): tagged one- and two-dimensional rows with EOL synchronization.
+        /// Modified READ (MR), Group 3 (T.4): each row starts with EOL and a tag selecting 1D or 2D decoding.
         /// </summary>
         Group3_2D,
         /// <summary>
