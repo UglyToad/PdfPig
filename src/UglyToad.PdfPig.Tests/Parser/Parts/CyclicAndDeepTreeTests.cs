@@ -58,6 +58,19 @@
         }
 
         [Fact]
+        public void EmbeddedFilesSelfReferencingObjectReturnsNoFiles()
+        {
+            var pdf = Build(
+                "<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles 3 0 R >> >>",
+                "<< /Type /Pages /Kids [] /Count 0 >>",
+                "3 0 R");
+
+            using var document = PdfDocument.Open(pdf);
+
+            Assert.False(document.Advanced.TryGetEmbeddedFiles(out _));
+        }
+
+        [Fact]
         public void PagesRingLongerThanTheFormerWindowOpensWithItsSinglePage()
         {
             // Root (2) -> [ring start (4), page (3)]; ring 4 -> 5 -> ... -> 1004 -> 4. The former guard

@@ -30,6 +30,8 @@ namespace UglyToad.PdfPig.Tests.Parser.Parts
             Assert.Equal(4, scanner.GetCallCount);
             Assert.Throws<PdfDocumentStackDepthException>(() => DirectObjectFinder.Get<NumericToken>(first, scanner));
             Assert.Equal(8, scanner.GetCallCount);
+            Assert.Throws<PdfDocumentStackDepthException>(() => DirectObjectFinder.Get<NumericToken>(new IndirectReferenceToken(first), scanner));
+            Assert.Equal(12, scanner.GetCallCount);
 
             // Failure must not consume the budget for a subsequent valid lookup.
             scanner.Objects[first] = new ObjectToken(XrefLocation.File(1), first, new NumericToken(42));
