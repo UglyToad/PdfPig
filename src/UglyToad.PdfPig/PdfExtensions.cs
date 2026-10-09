@@ -142,7 +142,7 @@
             if (token is DictionaryToken dict)
             {
                 var resolvedItems = new Dictionary<NameToken, IToken>();
-                foreach (var kvp in dict.Data)
+                foreach (var kvp in dict.Entries)
                 {
                     var value = kvp.Value;
                     if (kvp.Value is IndirectReferenceToken reference)
@@ -154,22 +154,22 @@
                         value = scanner.Get(reference.Data)?.Data;
                         visited.Add(reference.Data);
                     }
-                    resolvedItems[NameToken.Create(kvp.Key)] = ResolveInternal(value, scanner, visited);
+                    resolvedItems[kvp.Key] = ResolveInternal(value, scanner, visited);
                 }
 
-                if (resolvedItems.Count != dict.Data.Count)
+                if (resolvedItems.Count != dict.Entries.Count)
                 {
-                    if (resolvedItems.Count > dict.Data.Count)
+                    if (resolvedItems.Count > dict.Entries.Count)
                     {
                         throw new InvalidOperationException("Resolved more items than were present in the original dictionary. This should not be possible.");
                     }
 
                     // We missed some due to cycles, try and resolve them now.
-                    foreach (var missing in dict.Data.Keys.Except(resolvedItems.Keys.Select(k => k.Data), StringComparer.OrdinalIgnoreCase))
+                    foreach (var missing in dict.Entries.Keys.Except(resolvedItems.Keys))
                     {
-                        if (dict.Data[missing] is IndirectReferenceToken reference)
+                        if (dict.Entries[missing] is IndirectReferenceToken reference)
                         {
-                            resolvedItems[NameToken.Create(missing)] = ResolveInternal(reference, scanner, visited);
+                            resolvedItems[missing] = ResolveInternal(reference, scanner, visited);
                         }
                     }
                 }

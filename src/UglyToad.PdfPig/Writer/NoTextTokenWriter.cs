@@ -119,9 +119,9 @@ namespace UglyToad.PdfPig.Writer
                     { NameToken.Length, new NumericToken(compressedBytes.Length) },
                     { NameToken.Filter, NameToken.FlateDecode }
                 };
-                foreach (var kv in streamToken.StreamDictionary.Data)
+                foreach (var kv in streamToken.StreamDictionary.Entries)
                 {
-                    var key = NameToken.Create(kv.Key);
+                    var key = kv.Key;
                     if (!outputStreamDictionary.ContainsKey(key))
                     {
                         outputStreamDictionary[key] = kv.Value;

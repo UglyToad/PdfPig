@@ -34,7 +34,9 @@
             }
             if (dictionary.TryGet(destinationToken, pdfScanner, out IDataToken<string>? destStringToken))
             {
-                return namedDestinations.TryGet(destStringToken.Data, out destination);
+                return destStringToken is NameToken name
+                    ? namedDestinations.TryGet(name, out destination)
+                    : namedDestinations.TryGet(destStringToken.Data, out destination);
             }
             destination = null;
             return false;

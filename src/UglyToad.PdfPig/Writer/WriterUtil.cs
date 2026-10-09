@@ -81,11 +81,11 @@
                 case DictionaryToken dictionaryToken:
                 {
                         var newContent = new Dictionary<NameToken, IToken>();
-                        foreach (var setPair in dictionaryToken.Data)
+                        foreach (var setPair in dictionaryToken.Entries)
                         {
                             var name = setPair.Key;
                             var token = setPair.Value;
-                            newContent.Add(NameToken.Create(name), CopyToken(writer, token, tokenScanner, referencesFromDocument, callstack));
+                            newContent.Add(name, CopyToken(writer, token, tokenScanner, referencesFromDocument, callstack));
                         }
 
                         return new DictionaryToken(newContent);
