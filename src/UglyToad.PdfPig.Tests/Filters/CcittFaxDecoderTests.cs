@@ -24,6 +24,250 @@ namespace UglyToad.PdfPig.Tests.Filters;
 /// </remarks>
 public class CcittFaxDecoderTests
 {
+    /*
+     * Portions adapted from Apache PDFBox 3.0.8 CCITTFactoryTest and its TIFF fixtures.
+     * Copyright 2014 The Apache Software Foundation.
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at https://www.apache.org/licenses/LICENSE-2.0
+     * Unless required by applicable law or agreed to in writing, software distributed
+     * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+     * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+     * specific language governing permissions and limitations under the License.
+     * Adaptation: extract the CCITT strips, verify decoded pixels without TIFF import,
+     * and exercise both PdfPig polarity and parsing settings.
+     */
+
+    /// <summary>Checks PDFBox's single-image and multi-image TIFF cases against independently decoded pixels.</summary>
+    /// <remarks>
+    /// Adapted from testCreateFromRandomAccessSingle and testCreateFromRandomAccessMulti in
+    /// <see href="https://github.com/apache/pdfbox/blob/3.0.8/pdfbox/src/test/java/org/apache/pdfbox/pdmodel/graphics/image/CCITTFactoryTest.java">Apache PDFBox 3.0.8 CCITTFactoryTest</see>.
+    /// Base64 constants contain the unchanged single CCITT strip from each source image; no TIFF parser is tested here.
+    /// Expected SHA-256 values were generated once with Pillow 12.3.0 (libtiff) from each decoded
+    /// TIFF image in mode 1: MSB-first, byte-padded rows, white=1. They are independent of PdfPig.
+    /// </remarks>
+    [Theory]
+    [InlineData("ccittg3.tif", 0, 344, 287, 0, PdfBoxGroup3, "3703A34E33947B4426A41AEAB8CD405420D1C5BA4911FA83B1CC41AF40A9ADED")]
+    [InlineData("ccittg4.tif", 0, 344, 287, -1, PdfBoxGroup4, "3703A34E33947B4426A41AEAB8CD405420D1C5BA4911FA83B1CC41AF40A9ADED")]
+    [InlineData("ccittg4multi.tif", 0, 344, 287, -1, PdfBoxMultiPage0, "08E2ABD03263C1076BE0EFE454937F5035AA8C1DB2442E21ABD57623D5D8F856")]
+    [InlineData("ccittg4multi.tif", 1, 344, 287, -1, PdfBoxMultiPage1, "2861E68D2CF43CDF11DB188C9E0315FABFEF88D1BE58BAE00F2D96DFE17BBE7C")]
+    [InlineData("ccittg4multi.tif", 2, 344, 287, -1, PdfBoxMultiPage2, "5D6C75C856CDCAD8204E1A4530EC14316AA932B0D3C7DDBE73638D80596A45E0")]
+    public void PdfBoxTiffImagesMatchIndependentPixels(string sourceFile, int imageIndex,
+        int columns, int rows, int k, string encodedStrip, string expectedPixelHash)
+    {
+        var input = Convert.FromBase64String(encodedStrip);
+        foreach (var lenient in new[] { false, true })
+            foreach (var blackIsOne in new[] { false, true })
+            {
+                var options = new DecodeOptions(columns, rows, k, blackIsOne: blackIsOne, endOfLine: k == 0);
+                var actual = new CcittFaxDecodeFilter(lenient).Decode(input,
+                    CreateImageDictionary(options), DefaultFilterProvider.Instance, 0).ToArray();
+                Assert.Equal(((columns + 7) / 8) * rows, actual.Length);
+                // Normalize polarity to the independently decoded TIFF raster before hashing.
+                if (blackIsOne)
+                    for (var i = 0; i < actual.Length; i++)
+                        actual[i] = (byte)~actual[i];
+                using var hash = System.Security.Cryptography.SHA256.Create();
+                var actualPixelHash = BitConverter.ToString(hash.ComputeHash(actual)).Replace("-", "");
+                Assert.True(expectedPixelHash == actualPixelHash,
+                    $"{sourceFile}, image {imageIndex}, lenient={lenient}, blackIsOne={blackIsOne}: {actualPixelHash}");
+            }
+    }
+
+    /// <summary>Verifies PDFBox's 343 by 287 alternating-pixel image, including the partial final byte.</summary>
+    /// <remarks>
+    /// Adapted from testCreateFromBufferedChessImage in
+    /// <see href="https://github.com/apache/pdfbox/blob/3.0.8/pdfbox/src/test/java/org/apache/pdfbox/pdmodel/graphics/image/CCITTFactoryTest.java">Apache PDFBox 3.0.8 CCITTFactoryTest</see>.
+    /// PDFBox starts with black and alternates pixels while walking columns. Both dimensions are odd,
+    /// so this is equivalent to alternating x+y parity. The existing independent test encoder replaces
+    /// PDFBox's image encoder; expected pixels are checked directly, excluding the unused row-padding bit.
+    /// </remarks>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void PdfBoxChessImagePreservesPixelsAtNonByteAlignedWidth(bool lenient, bool blackIsOne)
+    {
+        const int columns = 343;
+        const int rows = 287;
+        var pixels = new byte[rows][];
+        for (var y = 0; y < rows; y++)
+        {
+            pixels[y] = new byte[columns];
+            for (var x = 0; x < columns; x++)
+                pixels[y][x] = (byte)(((x + y) & 1) == 0 ? 1 : 0);
+        }
+        var options = new DecodeOptions(columns, rows, blackIsOne: blackIsOne);
+        var image = EncodeTestImage(pixels, options, "PDFBox chess image");
+        var actual = new CcittFaxDecodeFilter(lenient).Decode(image.Input,
+            CreateImageDictionary(options), DefaultFilterProvider.Instance, 0).ToArray();
+        AssertPixelsEqual(image.Expected, actual, columns, rows, image.Name);
+    }
+
+    // ccittg3.tif, image 0; original TIFF SHA-256: B8BC24334D4B0D55A5DBB678FFD30A329C86A48C45F0416FEE224EDF3C0566CE.
+    private const string PdfBoxGroup3 =
+        "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" +
+        "duRkADtVDRY3ORmADtYQ4Zi8AAmygA==";
+
+    // ccittg4.tif, image 0; original TIFF SHA-256: 57254CEB1AB84172C5D346B90570971C40079444BBBC7F5BFE11F66CD675ACE7.
+    private const string PdfBoxGroup4 =
+        "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";
+
+    // ccittg4multi.tif, image 0; original TIFF SHA-256: 6E46A84CCE1F7D22BE3C6EAEF45DF37C5B4878C4612C9524A2FD7A722573AE1C.
+    private const string PdfBoxMultiPage0 =
+        "8r+JCDhBwnThOnWnBacLWnWFpwWsLWta1hYLWFrC1hawsLWsLWta0QNx9BdBdLpdLhLoLhBdLhBdAul0Fwl0F0uguklS6XCXQXS6" +
+        "XrpdLpXS6Cel4XCXQXS4QXS6XS6XS4S6C6XXpdLpeul66+l169eq14S4Xa9dqtdrtdhdrhhcMLj//////////////////////f/9" +
+        "/9/++//ff/vv/3/////////3/7/zIFBSmRUBPMhYCsnCQhIY2NBB0HTp06fp+n////a9r2rVq1DChhSurBvH//////gAgAg=";
+
+    // ccittg4multi.tif, image 1; original TIFF SHA-256: 6E46A84CCE1F7D22BE3C6EAEF45DF37C5B4878C4612C9524A2FD7A722573AE1C.
+    private const string PdfBoxMultiPage1 =
+        "/+ZCgeZahqzJAbcEDgg4QcJzsyA+na0B4lOnCDhB06dOE6e6dd090/Tp+nkDw37RBXVvIbY1pBvCegg+Q0wvQV99N99P29f9N2vt" +
+        "2v9rtPa7XDCeGFx9/+///3/7/////////19a+l66rWlWEq0q0oWlWlSrSpQtKFpQlMjAEkyUATwlCChKlMiALISglCVKEoQVKEqV" +
+        "KCVKgqUJUFQVBQgtUFQVECuSmiBRIlQVBUFhUQZF3QWCpaoLVBZAsMyJtUiHh0973Xf3/X3/99X1e1atQ1DU7UwPAkmQGB5R////" +
+        "/////////4AIAIA=";
+
+    // ccittg4multi.tif, image 2; original TIFF SHA-256: 6E46A84CCE1F7D22BE3C6EAEF45DF37C5B4878C4612C9524A2FD7A722573AE1C.
+    private const string PdfBoxMultiPage2 =
+        "/+dlAHg3nYoB4NUIgeGtKsIHQdB06Dw6e6e973v73b9vdu9u8PDcyWg2pkZBrweHv7d7/3///r61rWlWFrSrCVaVKFglBaULCUJQ" +
+        "SpUFCUJQlShKCChKlSglMjgeoSglBBQShKEFO1gDwsIKEFCIHiSAwSggp2UAeDwgoIKEFCUIKgqCoOgdB4dPdPD3h73ve74dvdu3" +
+        "btw3Dc7SgPB5k4HiweZAYKsNw3eG7d7d7duHt+3eG77vu993v7/3///9fWvrS9fXVaVaVLUJVpQsJTsVBuU4H07GwPBWhYSpUq0t" +
+        "UtUtfWta1hWtWsKwrVhWFDChkDwsgQ7WALx////////4AIAI";
+
     [Theory]
     [InlineData("00000010000011010011", 64, 29)]
     [InlineData("000000010011001101010000000100110000110111", 4096, 2048)]
