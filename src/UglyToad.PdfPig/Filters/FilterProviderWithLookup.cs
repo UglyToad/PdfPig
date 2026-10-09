@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Filters
+﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
     using System.Collections.Generic;
@@ -19,23 +19,23 @@ namespace UglyToad.PdfPig.Filters
     /// </remarks>
     internal class FilterProviderWithLookup : ILookupFilterProvider
     {
-        private readonly IFilterProvider innerProvider;
+        private readonly IFilterProvider inner;
         private readonly CcittFaxDecodeFilter ccittFilter;
 
-        public FilterProviderWithLookup(IFilterProvider innerProvider, bool useLenientParsing = true)
+        public FilterProviderWithLookup(IFilterProvider inner, bool useLenientParsing = true)
         {
-            this.innerProvider = innerProvider;
+            this.inner = inner;
             ccittFilter = new CcittFaxDecodeFilter(useLenientParsing);
         }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
-            => ConfigureFilters(innerProvider.GetFilters(dictionary));
+            => ConfigureFilters(inner.GetFilters(dictionary));
 
         public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
-            => ConfigureFilters(innerProvider.GetNamedFilters(names));
+            => ConfigureFilters(inner.GetNamedFilters(names));
 
         public IReadOnlyList<IFilter> GetAllFilters()
-            => ConfigureFilters(innerProvider.GetAllFilters());
+            => ConfigureFilters(inner.GetAllFilters());
 
         private IReadOnlyList<IFilter> ConfigureFilters(IReadOnlyList<IFilter> filters)
         {
@@ -74,11 +74,11 @@ namespace UglyToad.PdfPig.Filters
             {
                 case ArrayToken filters:
                     var result = new NameToken[filters.Data.Count];
-                    for (var filterIndex = 0; filterIndex < filters.Data.Count; filterIndex++)
+                    for (var i = 0; i < filters.Data.Count; i++)
                     {
-                        var filterToken = filters.Data[filterIndex];
+                        var filterToken = filters.Data[i];
                         var filterName = (NameToken)filterToken;
-                        result[filterIndex] = filterName;
+                        result[i] = filterName;
                     }
 
                     return GetNamedFilters(result);

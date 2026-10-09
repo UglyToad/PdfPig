@@ -33,8 +33,6 @@ public class CcittFaxDecoderTests
         foreach (var lenient in new[] { false, true })
             foreach (var blackIsOne in new[] { false, true })
             {
-                Action<byte[], bool> decoder = (destination, polarity) =>
-                    DecodeInto(PackBits(bits), columns, CcittFaxCompressionType.ModifiedHuffman, false, lenient, destination, polarity);
                 var expected = new byte[(columns + 7) / 8];
                 for (var x = whitePixels; x < columns; x++)
                     expected[x / 8] |= (byte)(1 << (7 - x % 8));
@@ -42,7 +40,7 @@ public class CcittFaxDecoderTests
                     for (var i = 0; i < expected.Length; i++)
                         expected[i] = (byte)~expected[i];
                 var actual = new byte[expected.Length];
-                decoder(actual, blackIsOne);
+                CcittFaxCompactDecoder.Decode(PackBits(bits), actual, columns, 1, CcittFaxCompressionType.ModifiedHuffman, false, blackIsOne, lenient);
                 Assert.Equal(expected, actual);
             }
     }
@@ -57,7 +55,7 @@ public class CcittFaxDecoderTests
         {
             0xAA
         };
-        DecodeInto(input, 8, CcittFaxCompressionType.Group3_1D, false, lenient, output, true);
+        CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.Group3_1D, false, true, lenient);
         Assert.Equal(new byte[] { 0 }, output);
         var compact = new byte[]
         {
@@ -85,16 +83,12 @@ public class CcittFaxDecoderTests
                         random.NextBytes(input);
                         foreach (var blackIsOne in new[] { false, true })
                         {
-                            Action<byte[], bool> wholeDecoder = (destination, polarity) =>
-                                DecodeInto(input, columns, type, aligned, lenient, destination, polarity);
                             var paddedInput = Enumerable.Repeat((byte)0xAA, input.Length + 10).ToArray();
                             input.CopyTo(paddedInput, 5);
-                            Action<byte[], bool> directDecoder = (destination, polarity) =>
-                                DecodeInto(paddedInput.AsMemory(5, input.Length), columns, type, aligned, lenient, destination, polarity);
                             var expected = new byte[(columns + 7) / 8 * 4];
                             var actual = new byte[expected.Length];
-                            var wholeException = Record.Exception(() => wholeDecoder(expected, blackIsOne));
-                            var directException = Record.Exception(() => directDecoder(actual, blackIsOne));
+                            var wholeException = Record.Exception(() => CcittFaxCompactDecoder.Decode(input, expected, columns, 4, type, aligned, blackIsOne, lenient));
+                            var directException = Record.Exception(() => CcittFaxCompactDecoder.Decode(paddedInput.AsSpan(5, input.Length), actual, columns, 4, type, aligned, blackIsOne, lenient));
                             if (wholeException != null)
                             {
                                 Assert.NotNull(directException);
@@ -118,15 +112,13 @@ public class CcittFaxDecoderTests
     {
         // A zero-length white run followed by one black pixel completes the first row.
         // Its seven padding bits and the unread rows must stay white in the requested polarity.
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x35, 0x40 }, 1, CcittFaxCompressionType.ModifiedHuffman, true, false, destination, polarity);
         var output = new byte[]
         {
             0xAA,
             0xAA,
             0xAA
         };
-        decoder(output, blackIsOne);
+        CcittFaxCompactDecoder.Decode(new byte[] { 0x35, 0x40 }, output, 1, 3, CcittFaxCompressionType.ModifiedHuffman, true, blackIsOne, false);
         Assert.Equal(new byte[] { (byte)firstByte, blackIsOne ? (byte)0 : (byte)255, blackIsOne ? (byte)0 : (byte)255 }, output);
     }
 
@@ -138,9 +130,9 @@ public class CcittFaxDecoderTests
         // First row: one white pixel, one black pixel and six white pixels (13 bits, then padding).
         // A lookup for its last code may buffer the second row; byte alignment must discard
         // only the first row's padding, preserving the buffered next-row bits.
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x1D, 0x70, 0x98 }, 8, CcittFaxCompressionType.ModifiedHuffman, true, lenient, destination, polarity);
-        Assert.Equal(new byte[] { 0x40, 0 }, DecodeBytes(decoder, 2));
+        var output = new byte[2];
+        CcittFaxCompactDecoder.Decode(new byte[] { 0x1D, 0x70, 0x98 }, output, 8, 2, CcittFaxCompressionType.ModifiedHuffman, true, true, lenient);
+        Assert.Equal(new byte[] { 0x40, 0 }, output);
     }
 
     [Theory]
@@ -148,12 +140,17 @@ public class CcittFaxDecoderTests
     [InlineData(true)]
     public void OversizedRunRespectsParsingMode(bool lenient)
     {
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0xA8 }, 8, CcittFaxCompressionType.ModifiedHuffman, false, lenient, destination, polarity);
+        var input = new byte[] { 0xA8 };
+        var output = new byte[1];
         if (lenient)
-            Assert.Equal(0, DecodeBytes(decoder, 1)[0]);
+        {
+            CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, lenient);
+            Assert.Equal(0, output[0]);
+        }
         else
-            Assert.Throws<CorruptCompressedDataException>(() => DecodeBytes(decoder, 1)[0]);
+        {
+            Assert.Throws<CorruptCompressedDataException>(() => CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, lenient));
+        }
     }
 
     [Theory]
@@ -161,12 +158,17 @@ public class CcittFaxDecoderTests
     [InlineData(true)]
     public void UnknownTwoDimensionalCodeRespectsParsingMode(bool lenient)
     {
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x00, 0x80 }, 8, CcittFaxCompressionType.Group4_2D, false, lenient, destination, polarity);
+        var input = new byte[] { 0x00, 0x80 };
+        var output = new byte[1];
         if (lenient)
-            Assert.Equal(0, DecodeBytes(decoder, 1)[0]);
+        {
+            CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.Group4_2D, false, true, lenient);
+            Assert.Equal(0, output[0]);
+        }
         else
-            Assert.Throws<CorruptCompressedDataException>(() => DecodeBytes(decoder, 1)[0]);
+        {
+            Assert.Throws<CorruptCompressedDataException>(() => CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.Group4_2D, false, true, lenient));
+        }
     }
 
     [Theory]
@@ -174,12 +176,17 @@ public class CcittFaxDecoderTests
     [InlineData(true)]
     public void NegativeVerticalPositionRespectsParsingMode(bool lenient)
     {
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x05 }, 1, CcittFaxCompressionType.Group4_2D, false, lenient, destination, polarity);
+        var input = new byte[] { 0x05 };
+        var output = new byte[1];
         if (lenient)
-            Assert.Equal(0x80, DecodeBytes(decoder, 1)[0]);
+        {
+            CcittFaxCompactDecoder.Decode(input, output, 1, 1, CcittFaxCompressionType.Group4_2D, false, true, lenient);
+            Assert.Equal(0x80, output[0]);
+        }
         else
-            Assert.Throws<CorruptCompressedDataException>(() => DecodeBytes(decoder, 1)[0]);
+        {
+            Assert.Throws<CorruptCompressedDataException>(() => CcittFaxCompactDecoder.Decode(input, output, 1, 1, CcittFaxCompressionType.Group4_2D, false, true, lenient));
+        }
     }
 
     [Theory]
@@ -189,9 +196,9 @@ public class CcittFaxDecoderTests
     {
         // Two consecutive end-of-line (EOL) codes form the Group 4 end-of-facsimile-block
         // (EOFB) marker. Rows requested after this marker remain white.
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x00, 0x10, 0x01 }, 8, CcittFaxCompressionType.Group4_2D, false, lenient, destination, polarity);
-        Assert.Equal(new byte[] { 0, 0 }, DecodeBytes(decoder, 2));
+        var output = new byte[2];
+        CcittFaxCompactDecoder.Decode(new byte[] { 0x00, 0x10, 0x01 }, output, 8, 2, CcittFaxCompressionType.Group4_2D, false, true, lenient);
+        Assert.Equal(new byte[] { 0, 0 }, output);
     }
 
     [Fact]
@@ -208,9 +215,8 @@ public class CcittFaxDecoderTests
             input[i + 2] = 0x1F;
         }
 
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(input, 8, CcittFaxCompressionType.ModifiedHuffman, false, true, destination, polarity);
-        var exception = Assert.Throws<CorruptCompressedDataException>(() => DecodeBytes(decoder, 1)[0]);
+        var output = new byte[1];
+        var exception = Assert.Throws<CorruptCompressedDataException>(() => CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, true));
         Assert.IsType<OverflowException>(exception.InnerException);
         AssertMatchesCompatibilityPath(input, 8, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, true);
     }
@@ -220,14 +226,12 @@ public class CcittFaxDecoderTests
     [InlineData(true)]
     public void ActualEndOfInputStillPadsWithZeros(bool lenient)
     {
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x00 }, 8, CcittFaxCompressionType.ModifiedHuffman, false, lenient, destination, polarity);
         var output = new byte[]
         {
             0xAA,
             0xAA
         };
-        decoder(output, true);
+        CcittFaxCompactDecoder.Decode(new byte[] { 0x00 }, output, 8, 2, CcittFaxCompressionType.ModifiedHuffman, false, true, lenient);
         Assert.Equal(new byte[] { 0, 0 }, output);
     }
 
@@ -236,15 +240,16 @@ public class CcittFaxDecoderTests
     [InlineData(true)]
     public void InvalidHuffmanCodeRespectsParsingMode(bool lenient)
     {
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(new byte[] { 0x00, 0x80 }, 8, CcittFaxCompressionType.ModifiedHuffman, false, lenient, destination, polarity);
+        var input = new byte[] { 0x00, 0x80 };
+        var output = new byte[1];
         if (lenient)
         {
-            Assert.Equal(0, DecodeBytes(decoder, 1)[0]);
+            CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, lenient);
+            Assert.Equal(0, output[0]);
         }
         else
         {
-            var exception = Assert.Throws<CorruptCompressedDataException>(() => DecodeBytes(decoder, 1)[0]);
+            var exception = Assert.Throws<CorruptCompressedDataException>(() => CcittFaxCompactDecoder.Decode(input, output, 8, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, lenient));
             Assert.Equal("Unknown code in Huffman RLE stream", exception.Message);
         }
     }
@@ -291,24 +296,8 @@ public class CcittFaxDecoderTests
         // Each color change is recorded, exhausting the three-entry array for this one-pixel row.
         var bits = string.Concat(Enumerable.Repeat("001101010000110111", 4));
         var input = Enumerable.Range(0, (bits.Length + 7) / 8).Select(i => Convert.ToByte(bits.Substring(i * 8, Math.Min(8, bits.Length - i * 8)).PadRight(8, '0'), 2)).ToArray();
-        Action<byte[], bool> decoder = (destination, polarity) =>
-            DecodeInto(input, 1, CcittFaxCompressionType.ModifiedHuffman, false, lenient, destination, polarity);
-        var exception = Assert.Throws<CorruptCompressedDataException>(() => decoder(new byte[1], true));
+        var exception = Assert.Throws<CorruptCompressedDataException>(() => CcittFaxCompactDecoder.Decode(input, new byte[1], 1, 1, CcittFaxCompressionType.ModifiedHuffman, false, true, lenient));
         Assert.IsType<IndexOutOfRangeException>(exception.InnerException);
-    }
-
-    private static byte[] DecodeBytes(Action<byte[], bool> decoder, int count)
-    {
-        var output = new byte[count];
-        decoder(output, true);
-        return output;
-    }
-
-    private static void DecodeInto(ReadOnlyMemory<byte> input, int width, CcittFaxCompressionType mode, bool aligned, bool lenient, byte[] output, bool polarity)
-    {
-        int stride = (width + 7) / 8;
-        Assert.Equal(0, output.Length % stride);
-        CcittFaxCompactDecoder.Decode(input.Span, output, width, output.Length / stride, mode, aligned, polarity, lenient);
     }
 
     [Theory]
@@ -883,217 +872,51 @@ public class CcittFaxDecoderTests
     // Standard T.4 run codewords from the Apache-2.0 PdfPig master source cited on this class.
     private static readonly (int Bits, int Length, int Run)[] WhiteRunCodes =
     {
-        (0x7, 4, 2),
-        (0x8, 4, 3),
-        (0xB, 4, 4),
-        (0xC, 4, 5),
-        (0xE, 4, 6),
-        (0xF, 4, 7),
-        (0x12, 5, 128),
-        (0x13, 5, 8),
-        (0x14, 5, 9),
-        (0x1B, 5, 64),
-        (0x7, 5, 10),
-        (0x8, 5, 11),
-        (0x17, 6, 192),
-        (0x18, 6, 1664),
-        (0x2A, 6, 16),
-        (0x2B, 6, 17),
-        (0x3, 6, 13),
-        (0x34, 6, 14),
-        (0x35, 6, 15),
-        (0x7, 6, 1),
-        (0x8, 6, 12),
-        (0x13, 7, 26),
-        (0x17, 7, 21),
-        (0x18, 7, 28),
-        (0x24, 7, 27),
-        (0x27, 7, 18),
-        (0x28, 7, 24),
-        (0x2B, 7, 25),
-        (0x3, 7, 22),
-        (0x37, 7, 256),
-        (0x4, 7, 23),
-        (0x8, 7, 20),
-        (0xC, 7, 19),
-        (0x12, 8, 33),
-        (0x13, 8, 34),
-        (0x14, 8, 35),
-        (0x15, 8, 36),
-        (0x16, 8, 37),
-        (0x17, 8, 38),
-        (0x1A, 8, 31),
-        (0x1B, 8, 32),
-        (0x2, 8, 29),
-        (0x24, 8, 53),
-        (0x25, 8, 54),
-        (0x28, 8, 39),
-        (0x29, 8, 40),
-        (0x2A, 8, 41),
-        (0x2B, 8, 42),
-        (0x2C, 8, 43),
-        (0x2D, 8, 44),
-        (0x3, 8, 30),
-        (0x32, 8, 61),
-        (0x33, 8, 62),
-        (0x34, 8, 63),
-        (0x35, 8, 0),
-        (0x36, 8, 320),
-        (0x37, 8, 384),
-        (0x4, 8, 45),
-        (0x4A, 8, 59),
-        (0x4B, 8, 60),
-        (0x5, 8, 46),
-        (0x52, 8, 49),
-        (0x53, 8, 50),
-        (0x54, 8, 51),
-        (0x55, 8, 52),
-        (0x58, 8, 55),
-        (0x59, 8, 56),
-        (0x5A, 8, 57),
-        (0x5B, 8, 58),
-        (0x64, 8, 448),
-        (0x65, 8, 512),
-        (0x67, 8, 640),
-        (0x68, 8, 576),
-        (0xA, 8, 47),
-        (0xB, 8, 48),
-        (0x98, 9, 1472),
-        (0x99, 9, 1536),
-        (0x9A, 9, 1600),
-        (0x9B, 9, 1728),
-        (0xCC, 9, 704),
-        (0xCD, 9, 768),
-        (0xD2, 9, 832),
-        (0xD3, 9, 896),
-        (0xD4, 9, 960),
-        (0xD5, 9, 1024),
-        (0xD6, 9, 1088),
-        (0xD7, 9, 1152),
-        (0xD8, 9, 1216),
-        (0xD9, 9, 1280),
-        (0xDA, 9, 1344),
-        (0xDB, 9, 1408),
-        (0x8, 11, 1792),
-        (0xC, 11, 1856),
-        (0xD, 11, 1920),
-        (0x12, 12, 1984),
-        (0x13, 12, 2048),
-        (0x14, 12, 2112),
-        (0x15, 12, 2176),
-        (0x16, 12, 2240),
-        (0x17, 12, 2304),
-        (0x1C, 12, 2368),
-        (0x1D, 12, 2432),
-        (0x1E, 12, 2496),
-        (0x1F, 12, 2560),
+        (0x7, 4, 2), (0x8, 4, 3), (0xB, 4, 4), (0xC, 4, 5), (0xE, 4, 6),
+        (0xF, 4, 7), (0x12, 5, 128), (0x13, 5, 8), (0x14, 5, 9), (0x1B, 5, 64),
+        (0x7, 5, 10), (0x8, 5, 11), (0x17, 6, 192), (0x18, 6, 1664), (0x2A, 6, 16),
+        (0x2B, 6, 17), (0x3, 6, 13), (0x34, 6, 14), (0x35, 6, 15), (0x7, 6, 1),
+        (0x8, 6, 12), (0x13, 7, 26), (0x17, 7, 21), (0x18, 7, 28), (0x24, 7, 27),
+        (0x27, 7, 18), (0x28, 7, 24), (0x2B, 7, 25), (0x3, 7, 22), (0x37, 7, 256),
+        (0x4, 7, 23), (0x8, 7, 20), (0xC, 7, 19), (0x12, 8, 33), (0x13, 8, 34),
+        (0x14, 8, 35), (0x15, 8, 36), (0x16, 8, 37), (0x17, 8, 38), (0x1A, 8, 31),
+        (0x1B, 8, 32), (0x2, 8, 29), (0x24, 8, 53), (0x25, 8, 54), (0x28, 8, 39),
+        (0x29, 8, 40), (0x2A, 8, 41), (0x2B, 8, 42), (0x2C, 8, 43), (0x2D, 8, 44),
+        (0x3, 8, 30), (0x32, 8, 61), (0x33, 8, 62), (0x34, 8, 63), (0x35, 8, 0),
+        (0x36, 8, 320), (0x37, 8, 384), (0x4, 8, 45), (0x4A, 8, 59), (0x4B, 8, 60),
+        (0x5, 8, 46), (0x52, 8, 49), (0x53, 8, 50), (0x54, 8, 51), (0x55, 8, 52),
+        (0x58, 8, 55), (0x59, 8, 56), (0x5A, 8, 57), (0x5B, 8, 58), (0x64, 8, 448),
+        (0x65, 8, 512), (0x67, 8, 640), (0x68, 8, 576), (0xA, 8, 47), (0xB, 8, 48),
+        (0x98, 9, 1472), (0x99, 9, 1536), (0x9A, 9, 1600), (0x9B, 9, 1728), (0xCC, 9, 704),
+        (0xCD, 9, 768), (0xD2, 9, 832), (0xD3, 9, 896), (0xD4, 9, 960), (0xD5, 9, 1024),
+        (0xD6, 9, 1088), (0xD7, 9, 1152), (0xD8, 9, 1216), (0xD9, 9, 1280), (0xDA, 9, 1344),
+        (0xDB, 9, 1408), (0x8, 11, 1792), (0xC, 11, 1856), (0xD, 11, 1920), (0x12, 12, 1984),
+        (0x13, 12, 2048), (0x14, 12, 2112), (0x15, 12, 2176), (0x16, 12, 2240), (0x17, 12, 2304),
+        (0x1C, 12, 2368), (0x1D, 12, 2432), (0x1E, 12, 2496), (0x1F, 12, 2560),
     };
     private static readonly (int Bits, int Length, int Run)[] BlackRunCodes =
     {
-        (0x2, 2, 3),
-        (0x3, 2, 2),
-        (0x2, 3, 1),
-        (0x3, 3, 4),
-        (0x2, 4, 6),
-        (0x3, 4, 5),
-        (0x3, 5, 7),
-        (0x4, 6, 9),
-        (0x5, 6, 8),
-        (0x4, 7, 10),
-        (0x5, 7, 11),
-        (0x7, 7, 12),
-        (0x4, 8, 13),
-        (0x7, 8, 14),
-        (0x18, 9, 15),
-        (0x17, 10, 16),
-        (0x18, 10, 17),
-        (0x37, 10, 0),
-        (0x8, 10, 18),
-        (0xF, 10, 64),
-        (0x17, 11, 24),
-        (0x18, 11, 25),
-        (0x28, 11, 23),
-        (0x37, 11, 22),
-        (0x67, 11, 19),
-        (0x68, 11, 20),
-        (0x6C, 11, 21),
-        (0x8, 11, 1792),
-        (0xC, 11, 1856),
-        (0xD, 11, 1920),
-        (0x12, 12, 1984),
-        (0x13, 12, 2048),
-        (0x14, 12, 2112),
-        (0x15, 12, 2176),
-        (0x16, 12, 2240),
-        (0x17, 12, 2304),
-        (0x1C, 12, 2368),
-        (0x1D, 12, 2432),
-        (0x1E, 12, 2496),
-        (0x1F, 12, 2560),
-        (0x24, 12, 52),
-        (0x27, 12, 55),
-        (0x28, 12, 56),
-        (0x2B, 12, 59),
-        (0x2C, 12, 60),
-        (0x33, 12, 320),
-        (0x34, 12, 384),
-        (0x35, 12, 448),
-        (0x37, 12, 53),
-        (0x38, 12, 54),
-        (0x52, 12, 50),
-        (0x53, 12, 51),
-        (0x54, 12, 44),
-        (0x55, 12, 45),
-        (0x56, 12, 46),
-        (0x57, 12, 47),
-        (0x58, 12, 57),
-        (0x59, 12, 58),
-        (0x5A, 12, 61),
-        (0x5B, 12, 256),
-        (0x64, 12, 48),
-        (0x65, 12, 49),
-        (0x66, 12, 62),
-        (0x67, 12, 63),
-        (0x68, 12, 30),
-        (0x69, 12, 31),
-        (0x6A, 12, 32),
-        (0x6B, 12, 33),
-        (0x6C, 12, 40),
-        (0x6D, 12, 41),
-        (0xC8, 12, 128),
-        (0xC9, 12, 192),
-        (0xCA, 12, 26),
-        (0xCB, 12, 27),
-        (0xCC, 12, 28),
-        (0xCD, 12, 29),
-        (0xD2, 12, 34),
-        (0xD3, 12, 35),
-        (0xD4, 12, 36),
-        (0xD5, 12, 37),
-        (0xD6, 12, 38),
-        (0xD7, 12, 39),
-        (0xDA, 12, 42),
-        (0xDB, 12, 43),
-        (0x4A, 13, 640),
-        (0x4B, 13, 704),
-        (0x4C, 13, 768),
-        (0x4D, 13, 832),
-        (0x52, 13, 1280),
-        (0x53, 13, 1344),
-        (0x54, 13, 1408),
-        (0x55, 13, 1472),
-        (0x5A, 13, 1536),
-        (0x5B, 13, 1600),
-        (0x64, 13, 1664),
-        (0x65, 13, 1728),
-        (0x6C, 13, 512),
-        (0x6D, 13, 576),
-        (0x72, 13, 896),
-        (0x73, 13, 960),
-        (0x74, 13, 1024),
-        (0x75, 13, 1088),
-        (0x76, 13, 1152),
-        (0x77, 13, 1216),
+        (0x2, 2, 3), (0x3, 2, 2), (0x2, 3, 1), (0x3, 3, 4), (0x2, 4, 6),
+        (0x3, 4, 5), (0x3, 5, 7), (0x4, 6, 9), (0x5, 6, 8), (0x4, 7, 10),
+        (0x5, 7, 11), (0x7, 7, 12), (0x4, 8, 13), (0x7, 8, 14), (0x18, 9, 15),
+        (0x17, 10, 16), (0x18, 10, 17), (0x37, 10, 0), (0x8, 10, 18), (0xF, 10, 64),
+        (0x17, 11, 24), (0x18, 11, 25), (0x28, 11, 23), (0x37, 11, 22), (0x67, 11, 19),
+        (0x68, 11, 20), (0x6C, 11, 21), (0x8, 11, 1792), (0xC, 11, 1856), (0xD, 11, 1920),
+        (0x12, 12, 1984), (0x13, 12, 2048), (0x14, 12, 2112), (0x15, 12, 2176), (0x16, 12, 2240),
+        (0x17, 12, 2304), (0x1C, 12, 2368), (0x1D, 12, 2432), (0x1E, 12, 2496), (0x1F, 12, 2560),
+        (0x24, 12, 52), (0x27, 12, 55), (0x28, 12, 56), (0x2B, 12, 59), (0x2C, 12, 60),
+        (0x33, 12, 320), (0x34, 12, 384), (0x35, 12, 448), (0x37, 12, 53), (0x38, 12, 54),
+        (0x52, 12, 50), (0x53, 12, 51), (0x54, 12, 44), (0x55, 12, 45), (0x56, 12, 46),
+        (0x57, 12, 47), (0x58, 12, 57), (0x59, 12, 58), (0x5A, 12, 61), (0x5B, 12, 256),
+        (0x64, 12, 48), (0x65, 12, 49), (0x66, 12, 62), (0x67, 12, 63), (0x68, 12, 30),
+        (0x69, 12, 31), (0x6A, 12, 32), (0x6B, 12, 33), (0x6C, 12, 40), (0x6D, 12, 41),
+        (0xC8, 12, 128), (0xC9, 12, 192), (0xCA, 12, 26), (0xCB, 12, 27), (0xCC, 12, 28),
+        (0xCD, 12, 29), (0xD2, 12, 34), (0xD3, 12, 35), (0xD4, 12, 36), (0xD5, 12, 37),
+        (0xD6, 12, 38), (0xD7, 12, 39), (0xDA, 12, 42), (0xDB, 12, 43), (0x4A, 13, 640),
+        (0x4B, 13, 704), (0x4C, 13, 768), (0x4D, 13, 832), (0x52, 13, 1280), (0x53, 13, 1344),
+        (0x54, 13, 1408), (0x55, 13, 1472), (0x5A, 13, 1536), (0x5B, 13, 1600), (0x64, 13, 1664),
+        (0x65, 13, 1728), (0x6C, 13, 512), (0x6D, 13, 576), (0x72, 13, 896), (0x73, 13, 960),
+        (0x74, 13, 1024), (0x75, 13, 1088), (0x76, 13, 1152), (0x77, 13, 1216),
     };
     private static void EncodeRun(StringBuilder bits, int run, bool white)
     {

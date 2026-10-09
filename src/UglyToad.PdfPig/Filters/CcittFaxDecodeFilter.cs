@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Filters
+﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
     using CcittFax;

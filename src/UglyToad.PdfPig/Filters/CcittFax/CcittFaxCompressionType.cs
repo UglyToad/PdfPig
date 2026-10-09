@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Filters.CcittFax
+﻿namespace UglyToad.PdfPig.Filters.CcittFax
 {
     /// <summary>Identifies the CCITT row framing and coding family selected from PDF parameters.</summary>
     /// <remarks>
