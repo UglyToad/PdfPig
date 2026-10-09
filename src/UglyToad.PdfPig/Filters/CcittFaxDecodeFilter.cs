@@ -7,26 +7,32 @@ namespace UglyToad.PdfPig.Filters
     using Tokens;
     using Util;
 
-    // PDFBox 3.0.8 source used for dimension validation, bounded EOL detection and EndOfLine handling:
-    // https://github.com/apache/pdfbox/blob/3.0.8/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
-    // Apache-2.0. The allocation budget and strict/lenient policy below are PdfPig additions.
-
-    /// <summary>
-    /// Decodes CCITT image data using Modified Huffman, Group 3 or Group 4 row formats.
-    /// <para>
-    /// Originally ported from https://github.com/apache/pdfbox/blob/714156a15ea6fcfe44ac09345b01e192cbd74450/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
-    /// </para>
-    /// <para>
-    /// Parameter validation and header detection follow PDFBox 3.0.8. PdfPig also limits
-    /// dimension-dependent decode buffers and applies the document's parsing mode.
-    /// </para>
-    /// </summary>
+    /// <summary>Resolves PDF CCITTFaxDecode parameters and decodes image data into a bounded bitmap.</summary>
+    /// <remarks>
+    /// <para>Resolve Columns and the effective Rows/Height before allocating. K selects Group 4,
+    /// mixed Group 3, or 1D coding; for K = 0, explicit EndOfLine or bounded header inspection selects
+    /// EOL-synchronized Group 3 versus Modified Huffman without per-row EOL. EncodedByteAlign and
+    /// BlackIs1 are passed to <see cref="CcittFaxCompactDecoder"/>.</para>
+    /// <para>The 256 MiB per-call buffer estimate includes the bitmap, one row and two Int32 transition
+    /// arrays. It excludes object headers and static lookup tables and is not a document-wide or
+    /// process-memory limit. Strict parsing rejects nonpositive dimensions and empty input; lenient
+    /// parsing can return empty output. Neither parsing mode bypasses the allocation limit.</para>
+    /// <para>Implementation provenance:</para>
+    /// <list type="table">
+    /// <listheader><term>Source</term><description>Reused or added behavior</description></listheader>
+    /// <item><term>Original Apache PDFBox port (Apache-2.0)</term><description>PDF parameter resolution
+    /// and CCITT filter structure. Original attribution:
+    /// <see href="https://github.com/apache/pdfbox/blob/714156a15ea6fcfe44ac09345b01e192cbd74450/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java">CCITTFaxFilter</see>.</description></item>
+    /// <item><term>PDFBox 3.0.8 (Apache-2.0)</term><description>Effective image height, positive-dimension
+    /// validation, explicit EndOfLine handling and bounded EOL header detection.
+    /// See <see href="https://github.com/apache/pdfbox/blob/3.0.8/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java">release filter</see>.
+    /// PdfPig applies its own lenient policy to invalid dimensions.</description></item>
+    /// <item><term>PdfPig (Apache-2.0)</term><description>Int64 buffer-size arithmetic, the per-call
+    /// allocation ceiling, document-scoped strict/lenient configuration and compact bitmap decoding.</description></item>
+    /// </list>
+    /// </remarks>
     public sealed class CcittFaxDecodeFilter : IFilter
     {
-        // Per-decode size limit, estimated as the bitmap plus one row and two Int32 transition arrays.
-        // This conservatively covers either row representation, but is not a limit on total process
-        // memory or all streams in a document. Static tables and object/array headers are excluded.
-        // Lenient parsing can recover from invalid data; it cannot bypass this allocation limit.
         internal const long MaximumDecodeBufferBytes = 256L * 1024 * 1024;
 
         internal bool UseLenientParsing { get; }
@@ -63,12 +69,10 @@ namespace UglyToad.PdfPig.Filters
             }
             else
             {
-                // Use whichever value is positive; validation below handles missing or invalid values.
                 rowCount = Math.Max(rowCount, imageHeight);
             }
 
-            // Validate effective dimensions and the buffer estimate before inspecting or decoding input.
-            // Empty input and lenient parsing still go through the same allocation guard.
+            // Validate before empty-input and lenient recovery can return.
             var bitmapByteCount = GetDecodedBufferSize(columns, rowCount, UseLenientParsing);
 
             if (columns <= 0 || rowCount <= 0)

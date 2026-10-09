@@ -9,6 +9,14 @@ namespace UglyToad.PdfPig.Filters
     using Tokens;
     using UglyToad.PdfPig.Util;
 
+    /// <summary>Resolves PDF filter names, including indirect objects, through a document-scoped provider.</summary>
+    /// <remarks>
+    /// The wrapped provider supplies the filter instances. For a built-in CCITT filter with a
+    /// different parsing mode, copy the returned list and substitute this document's configured
+    /// instance. Keep shared providers and all other filter instances unchanged. This PdfPig
+    /// integration applies ParsingOptions.UseLenientParsing without mutable global filter state;
+    /// it does not implement a decompression algorithm.
+    /// </remarks>
     internal class FilterProviderWithLookup : ILookupFilterProvider
     {
         private readonly IFilterProvider innerProvider;

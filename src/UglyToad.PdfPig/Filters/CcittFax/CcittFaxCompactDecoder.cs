@@ -4,22 +4,46 @@ using System.Runtime.CompilerServices;
 
 namespace UglyToad.PdfPig.Filters.CcittFax;
 /// <summary>
-/// Decodes CCITT rows into a bitmap using color-change positions as the 2D reference.
-/// The compact path stores positions in UInt16. Wider rows and input that this path cannot
-/// handle are retried using signed Int32 positions and the requested parsing mode.
+/// Decodes Modified Huffman, Group 3 and Group 4 CCITT data directly into a packed bitmap.
 /// </summary>
-// Original C# implementation under the repository Apache-2.0 license.
-// A transition is the pixel position where a row changes between white and black. The previous
-// row supplies reference positions for 2D decoding. Standard T.4/T.6 codewords index flat tables
-// instead of a binary tree. One packed entry decodes two short runs; longer runs are decoded
-// individually and checked against the remaining row width.
-// Rows start white, including unused bits at the end of each row. Black intervals are painted
-// as ones or zeros according to BlackIs1, avoiding a separate inversion pass.
-// Next-operation preloading was inspired by the MIT-licensed libdeflate decompression fast loop:
-// https://github.com/ebiggers/libdeflate/blob/master/lib/decompress_template.h
-// The next CCITT mode is peeked before painting and consumed on the next iteration, allowing
-// independent bit decoding and pixel writes to overlap. This is an original adaptation of the idea;
-// no libdeflate implementation code or lookup tables were copied.
+/// <remarks>
+/// <para>Algorithm:</para>
+/// <list type="number">
+/// <item><description>Decode white and black runs through prefix lookup tables. Terminating
+/// codes encode 0..63 pixels; makeup codes add multiples of 64 before a terminating code.</description></item>
+/// <item><description>For 2D rows, store the preceding row's color-change positions. Horizontal
+/// mode reads two runs, vertical mode offsets a reference transition, and pass mode skips a
+/// reference transition pair.</description></item>
+/// <item><description>Paint black intervals directly into rows initialized to white. Apply
+/// BlackIs1 during painting, including white padding bits, to avoid a separate inversion pass.</description></item>
+/// <item><description>Use UInt16 transitions for rows up to 65,535 pixels. If a row is wider or
+/// compact decoding encounters invalid or truncated input, restart from the original compressed
+/// input using signed Int32 transitions and the requested strict/lenient parsing policy.</description></item>
+/// </list>
+/// <para>The caller validates dimensions, output capacity and the allocation budget before
+/// entering this decoder. Runs are bounded while decoding; transition counts and a compact-path
+/// operation limit also prevent repeated zero-length runs from growing the row state indefinitely.</para>
+/// <para>Implementation provenance:</para>
+/// <list type="table">
+/// <listheader><term>Source</term><description>Reused material or adapted idea</description></listheader>
+/// <item><term>PdfPig / Apache PDFBox decoder (Apache-2.0)</term><description>
+/// Standard T.4/T.6 codewords and run, reference-row and malformed-row rules.
+/// See <see href="https://github.com/UglyToad/PdfPig/blob/bdbc5f47fdbca11542db7ee876426ee601374427/src/UglyToad.PdfPig/Filters/CcittFax/CcittFaxDecoderStream.cs">pinned PdfPig source</see>
+/// and its attributed <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">PDFBox source</see>.
+/// </description></item>
+/// <item><term>libdeflate fast loop (MIT)</term><description>Idea of preparing the next operation
+/// before completing independent output work. This decoder peeks the next CCITT mode before
+/// painting and consumes it on the next iteration. No libdeflate code or tables were copied.
+/// See <see href="https://github.com/ebiggers/libdeflate/blob/master/lib/decompress_template.h">decompression loop</see>.
+/// </description></item>
+/// <item><term>This PdfPig implementation (Apache-2.0)</term><description>The flat lookup builders,
+/// packed short-run pairs, compact transition storage, polarity-aware interval painter, generic
+/// row policies and compact-to-signed dispatch are implemented here for CCITT.</description></item>
+/// </list>
+/// <para>The bit-reader refill scheduling and its sources are documented on
+/// <see cref="CcittFaxCompactBitReader"/>. The signed recovery algorithm is documented on
+/// <see cref="CompatibilityRowDecoder"/>.</para>
+/// </remarks>
 internal static partial class CcittFaxCompactDecoder
 {
     private const int HorizontalMode = 100;
@@ -112,29 +136,29 @@ internal static partial class CcittFaxCompactDecoder
         return lookupEntry >> 3;
     }
 
-    // Four value-type policies specialize two choices: Group 4 versus other row formats,
-    // and black pixels encoded as one versus zero. The JIT can fold their constant getters.
-    // .NET 8+ uses static interface members; older targets use constrained instance calls
-    // on a default value-type instance, without boxing. The decoding rules are the same.
 #if NET8_0_OR_GREATER
+    /// <summary>Specializes Group 4 decoding with black pixels represented by one bits.</summary>
     private readonly struct Group4BlackIsOnePolicy : ICcittRowPolicy
     {
         public static bool IsGroup4 => true;
         public static bool BlackIsOne => true;
     }
 
+    /// <summary>Specializes Group 4 decoding with black pixels represented by zero bits.</summary>
     private readonly struct Group4BlackIsZeroPolicy : ICcittRowPolicy
     {
         public static bool IsGroup4 => true;
         public static bool BlackIsOne => false;
     }
 
+    /// <summary>Selects row framing from the compression type and represents black pixels by one bits.</summary>
     private readonly struct GeneralBlackIsOnePolicy : ICcittRowPolicy
     {
         public static bool IsGroup4 => false;
         public static bool BlackIsOne => true;
     }
 
+    /// <summary>Selects row framing from the compression type and represents black pixels by zero bits.</summary>
     private readonly struct GeneralBlackIsZeroPolicy : ICcittRowPolicy
     {
         public static bool IsGroup4 => false;
@@ -142,24 +166,28 @@ internal static partial class CcittFaxCompactDecoder
     }
 
 #else
+    /// <summary>Specializes Group 4 decoding with black pixels represented by one bits.</summary>
     private readonly struct Group4BlackIsOnePolicy : ICcittRowPolicy
     {
         public bool IsGroup4 => true;
         public bool BlackIsOne => true;
     }
 
+    /// <summary>Specializes Group 4 decoding with black pixels represented by zero bits.</summary>
     private readonly struct Group4BlackIsZeroPolicy : ICcittRowPolicy
     {
         public bool IsGroup4 => true;
         public bool BlackIsOne => false;
     }
 
+    /// <summary>Selects row framing from the compression type and represents black pixels by one bits.</summary>
     private readonly struct GeneralBlackIsOnePolicy : ICcittRowPolicy
     {
         public bool IsGroup4 => false;
         public bool BlackIsOne => true;
     }
 
+    /// <summary>Selects row framing from the compression type and represents black pixels by zero bits.</summary>
     private readonly struct GeneralBlackIsZeroPolicy : ICcittRowPolicy
     {
         public bool IsGroup4 => false;
@@ -167,10 +195,15 @@ internal static partial class CcittFaxCompactDecoder
     }
 
 #endif
-    // A 16-bit entry packs two terminating pixel counts into bits 0..5 and 6..11,
-    // and their combined code length into bits 12..15. Only pairs of at most 12 bits fit
-    // this lookup; a zero entry means decode the runs individually. One table starts
-    // with white, the other with black. Their entry payloads total 16 KiB.
+    /// <summary>
+    /// Builds two 12-bit prefix tables that decode a pair of short terminating runs in one lookup.
+    /// </summary>
+    /// <remarks>
+    /// One table starts with white and the other with black. Bits 0..5 and 6..11 store the
+    /// two terminating pixel counts; bits 12..15 store their combined code length. A zero
+    /// entry means decode the runs individually. Only pairs of at most 12 bits fit the lookup.
+    /// Tables are generated from <see cref="CcittFaxCodebook"/>.
+    /// </remarks>
     private static class RunPairLookup
     {
         internal static readonly ushort[] WhiteFirstPairs = BuildRunPairLookup(true);
@@ -200,11 +233,17 @@ internal static partial class CcittFaxCompactDecoder
         }
     }
 
-    // The caller must validate dimensions, output capacity and the filter allocation budget first.
-    // This path requires UInt16 positions within the row that never move backwards.
-    // A wider row returns false without touching output. Invalid or truncated codes clear
-    // the partial output and return false. Decode then retries from the original input with
-    // signed positions, where strict/lenient parsing decides how to handle the data.
+    /// <summary>Attempts direct bitmap decoding with UInt16 color-change positions.</summary>
+    /// <param name="compressedInput">CCITT bytes starting at the first encoded row.</param>
+    /// <param name="decodedBitmap">Caller-allocated bitmap with space for every requested row.</param>
+    /// <param name="columns">Validated positive row width in pixels.</param>
+    /// <param name="rowCount">Validated positive number of output rows.</param>
+    /// <param name="compressionType">Resolved row framing and coding family.</param>
+    /// <param name="encodedByteAlign">Whether each row starts at a byte boundary.</param>
+    /// <param name="blackIsOne">Whether black pixels are represented by one bits.</param>
+    /// <returns>True when all requested rows were decoded on the compact path; otherwise false.
+    /// A width above UInt16 returns without changing output. Invalid or truncated input clears
+    /// output so the caller can restart through the signed decoder.</returns>
     internal static bool TryDecode(
         ReadOnlySpan<byte> compressedInput,
         byte[] decodedBitmap,

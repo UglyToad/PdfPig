@@ -1,8 +1,16 @@
-﻿namespace UglyToad.PdfPig.IO
+namespace UglyToad.PdfPig.IO
 {
     using System;
     using System.IO;
 
+    /// <summary>Forwards stream operations for the unchanged master CCITT decoder used by tests.</summary>
+    /// <remarks>
+    /// <para>Forwarding implementation from the Apache-2.0 PdfPig
+    /// <see href="https://github.com/UglyToad/PdfPig/blob/bdbc5f47fdbca11542db7ee876426ee601374427/src/UglyToad.PdfPig/IO/StreamWrapper.cs">pinned master</see>.</para>
+    /// <para>Read forwards to the wrapped input unless a derived decoder overrides that overload.
+    /// On modern targets Span Read forwards directly, so master comparisons must call the decoder's
+    /// array Read overload.</para>
+    /// </remarks>
     internal class StreamWrapper : Stream
     {
         protected readonly Stream Stream;

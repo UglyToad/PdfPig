@@ -10,9 +10,20 @@ using UglyToad.PdfPig.Tests.Images;
 using UglyToad.PdfPig.Tokens;
 
 namespace UglyToad.PdfPig.Tests.Filters;
+/// <summary>Verifies CCITT pixels, row framing, compact dispatch and strict/lenient recovery.</summary>
+/// <remarks>
+/// <para>Valid inputs are checked against explicit pixel expectations and the unchanged master
+/// decoder. A small test encoder creates 1D or 2D rows from source pixels using its own stored
+/// standard codewords; it does not use the production lookup builders. The standard codewords
+/// were retained from Apache-2.0 PdfPig master at
+/// <see href="https://github.com/UglyToad/PdfPig/blob/bdbc5f47fdbca11542db7ee876426ee601374427/src/UglyToad.PdfPig/Filters/CcittFax/CcittFaxDecoderStream.cs">this pinned source</see>.</para>
+/// <para>Malformed-input tests use fixed examples and deterministic random cases. Comparing
+/// normal dispatch with the signed entry checks retry and exception behavior within the new
+/// decoder; that comparison is not an independent proof of compatibility with master.</para>
+/// <para>The master reference is compiled only into this test assembly and stays byte-for-byte unchanged.</para>
+/// </remarks>
 public class CcittFaxDecoderTests
 {
-    // These regressions specify expected pixels and strict/lenient error behavior directly.
     [Theory]
     [InlineData("00000010000011010011", 64, 29)]
     [InlineData("000000010011001101010000000100110000110111", 4096, 2048)]
@@ -293,7 +304,6 @@ public class CcittFaxDecoderTests
         return output;
     }
 
-    // Output capacity specifies whole rows; every targeted regression invokes the production decoder.
     private static void DecodeInto(ReadOnlyMemory<byte> input, int width, CcittFaxCompressionType mode, bool aligned, bool lenient, byte[] output, bool polarity)
     {
         int stride = (width + 7) / 8;
@@ -301,7 +311,6 @@ public class CcittFaxDecoderTests
         CcittFaxCompactDecoder.Decode(input.Span, output, width, output.Length / stride, mode, aligned, polarity, lenient);
     }
 
-    // Compact path and public filter: fixtures, row formats, alignment and output polarity.
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -424,9 +433,6 @@ public class CcittFaxDecoderTests
         }
     }
 
-    // Compare normal decoding with an explicit signed-path call for malformed input.
-    // This tests path selection, retry, output initialization and exception wrapping. Both calls
-    // use the new decoder; independent master and pixel comparisons cover valid input below.
     private static void AssertMatchesCompatibilityPath(byte[] input, int width, int rows, CcittFaxCompressionType mode, bool aligned, bool polarity, bool lenient)
     {
         var expected = new byte[(width + 7) / 8 * rows];
@@ -591,7 +597,6 @@ public class CcittFaxDecoderTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    // Compare valid input with both independent expected pixels and the unchanged master decoder.
     public void IntegratedFilterMatchesIndependentPixelsAndMasterBytes(bool lenient)
     {
         foreach (var vector in GenerateTestImages())
@@ -614,8 +619,8 @@ public class CcittFaxDecoderTests
     [InlineData(false)]
     public void MalformedFilterMatchesCompatibilityPathAndFailureContract(bool lenient)
     {
-        // Keep both case sets: nonempty input with explicit EOL hints, and input that may
-        // be empty with EOL enabled only for Group 3. Each set resets its deterministic seed.
+        // Exercise empty and nonempty input with different EOL hints. Reset the seed per
+        // set to keep failures reproducible.
         foreach (bool includeEmptyInput in new[] { false, true })
         {
             var random = new Random(1435);
@@ -684,9 +689,7 @@ public class CcittFaxDecoderTests
         Assert.Equal(DecodeMaster(input, options), actual.ToArray());
     }
 
-    // Compare the public filter with signed decoding after fixing dimensions and row format.
-    // Empty input has its own filter policy and is handled explicitly. Dimension and parameter
-    // resolution have separate tests in CcittFaxDecodeFilterTests.
+    // Empty input follows the filter policy rather than the signed decoder's white-row padding.
     private static byte[] DecodeCompatibilityFilter(byte[] input, DecodeOptions options, bool lenient)
     {
         if (input.Length == 0)
@@ -716,6 +719,9 @@ public class CcittFaxDecoderTests
             }
     }
 
+    /// <summary>Groups row format, dimensions, alignment and polarity for a generated CCITT test case.</summary>
+    /// <remarks>Mode is the resolved decoder family; K and EndOfLine retain the corresponding PDF
+    /// parameters so the same case can exercise both the filter and decoder directly.</remarks>
     private readonly struct DecodeOptions
     {
         internal int Width { get; }
@@ -755,6 +761,8 @@ public class CcittFaxDecoderTests
         }
     }
 
+    /// <summary>Holds encoded test input, independently packed expected pixels and its decode parameters.</summary>
+    /// <remarks>Expected bytes are built from the source pixels, not from a decoder result.</remarks>
     private sealed class TestImage
     {
         internal string Name { get; }
@@ -771,9 +779,6 @@ public class CcittFaxDecoderTests
         }
     }
 
-    // Build compressed input from pixels using the standard codewords stored in this test class.
-    // Pack expected bitmap bytes directly from those pixels, without using either decoder or
-    // the production lookup builders.
     private static TestImage EncodeTestImage(byte[][] pixels, DecodeOptions options, string name)
     {
         var bits = new StringBuilder();
@@ -839,11 +844,7 @@ public class CcittFaxDecoderTests
                     }
     }
 
-    // Unmodified source reference: origin/master bdbc5f47fdbca11542db7ee876426ee601374427,
-    // src/UglyToad.PdfPig/Filters/CcittFax/CcittFaxDecoderStream.cs (Apache-2.0).
-    // The single baseline file is compiled only into this test assembly. It reuses the production
-    // enum and StreamWrapper; its original namespace and source bytes are preserved.
-    // Pass the resolved row format directly, leaving filter header-policy changes to separate tests.
+    // Use the resolved row format; header detection is tested separately.
     private static byte[] DecodeMaster(byte[] input, DecodeOptions options)
     {
         using var memory = new MemoryStream(input, writable: false);
@@ -879,10 +880,7 @@ public class CcittFaxDecoderTests
         Assert.Equal(new byte[1], lenient);
     }
 
-    // Standard T.4 run codewords for the independent test encoder. Definitions retained from
-    // the pinned master above; expected output is packed directly from the source pixels.
-    // Keeping these definitions in the test encoder avoids another baseline file and keeps
-    // synthetic input generation independent of the production lookup builder.
+    // Standard T.4 run codewords from the Apache-2.0 PdfPig master source cited on this class.
     private static readonly (int Bits, int Length, int Run)[] WhiteRunCodes =
     {
         (0x7, 4, 2),

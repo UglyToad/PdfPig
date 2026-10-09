@@ -1,10 +1,11 @@
-﻿namespace UglyToad.PdfPig.Filters.CcittFax
+namespace UglyToad.PdfPig.Filters.CcittFax
 {
-    /// <summary>
-    /// Specifies the internal CCITT row format selected from PDF decode parameters.
-    /// K selects one-dimensional, mixed Group 3 or Group 4 decoding. For K = 0, EndOfLine
-    /// or header detection selects whether rows use end-of-line (EOL) synchronization.
-    /// </summary>
+    /// <summary>Identifies the CCITT row framing and coding family selected from PDF parameters.</summary>
+    /// <remarks>
+    /// K less than zero selects Group 4; positive K selects mixed Group 3. For K equal to zero,
+    /// EndOfLine or header detection selects synchronized Group 3 versus Modified Huffman runs
+    /// without per-row EOL.
+    /// </remarks>
     internal enum CcittFaxCompressionType : byte
     {
         /// <summary>

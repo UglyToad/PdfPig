@@ -9,6 +9,12 @@ namespace UglyToad.PdfPig.Tests.Filters
     using UglyToad.PdfPig.Tests.Images;
     using UglyToad.PdfPig.Tokens;
 
+    /// <summary>Verifies CCITT parameter resolution, allocation bounds and document-scoped parsing policy.</summary>
+    /// <remarks>
+    /// Synthetic PDF streams exercise the public filter and filter chains with attacker-controlled
+    /// dimensions. Unsafe dimensions must be rejected before a large allocation; lenient recovery
+    /// must not bypass that limit. Header, polarity and slice cases specify output directly.
+    /// </remarks>
     public class CcittFaxDecodeFilterTests
     {
         [Theory]
@@ -33,8 +39,7 @@ namespace UglyToad.PdfPig.Tests.Filters
                 { NameToken.DecodeParms, parameters }
             });
 
-            // Use empty input so this case needs no compressed image fixture. Unsafe dimensions
-            // must raise a compressed-data exception even when there is nothing to decode.
+            // Unsafe dimensions must be rejected even when there is nothing to decode.
             Assert.Throws<CorruptCompressedDataException>(() =>
                 new CcittFaxDecodeFilter(useLenientParsing: false).Decode(Memory<byte>.Empty, dictionary, TestFilterProvider.Instance, 0));
         }

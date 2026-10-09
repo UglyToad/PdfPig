@@ -4,20 +4,29 @@ using System.Runtime.CompilerServices;
 using UglyToad.PdfPig.Fonts;
 
 namespace UglyToad.PdfPig.Filters.CcittFax;
-// Signed Int32 positions handle wide rows and invalid transitions that lenient parsing may accept.
-// This path shares lookup tables, the bit reader and polarity-aware painting with the compact path.
-// The signed-position implementation is original C# under the repository Apache-2.0 license.
-// Transition ordering and recovery rules follow the previous optimized PdfPig implementation.
-// The standard codewords and original row-decoding rules came from the Apache-2.0 C# port of:
-// https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java
-// End-of-line (EOL) codes synchronize Group 3 rows. The end-of-facsimile-block (EOFB) marker
-// terminates Group 4 data. Input exhaustion discards an incomplete row and keeps completed rows.
-// PdfPig adds strict/lenient error handling; malformed input can therefore behave differently
-// from master/PDFBox. The signed arrays and lookup optimizations are an original implementation.
 internal static partial class CcittFaxCompactDecoder
 {
-    // Signed positions represent both wide valid rows and negative, backwards or oversized
-    // transitions, allowing validation to apply the requested parsing policy.
+    /// <summary>
+    /// Decodes a CCITT row using signed color-change positions for wide or malformed input.
+    /// </summary>
+    /// <remarks>
+    /// <para>Algorithm: decode the row's EOL/tag framing, then execute 1D runs or 2D horizontal,
+    /// vertical and pass operations against the previous row's transitions. Int32 positions can
+    /// represent wide rows and invalid negative or backwards transitions for policy validation.</para>
+    /// <para>Ordered black intervals are painted directly. After an invalid transition accepted in
+    /// lenient mode, repaint the completed row in its recorded transition order.
+    /// Sorting or normalizing these positions would change accepted malformed
+    /// input. Strict mode rejects invalid positions and codes.</para>
+    /// <para>Input exhaustion discards the incomplete row while keeping earlier rows; a legal Group 4
+    /// end-of-facsimile-block marker also ends decoding. The outer row loop pads unfinished output
+    /// with white. Lenient mode additionally recovers from certain compressed-data errors; buffer
+    /// bounds failures and arithmetic overflow remain errors in both modes.</para>
+    /// <para>Provenance: row/reference-transition and malformed bitmap-write rules are adapted from
+    /// the former Apache-2.0 PdfPig decoder, whose C# port attributes
+    /// <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">this PDFBox decoder</see>.
+    /// Signed storage, shared prefix lookups, direct painting and strict/lenient recovery are the
+    /// current PdfPig implementation.</para>
+    /// </remarks>
     private sealed class CompatibilityRowDecoder
     {
         private readonly int columns;
@@ -25,8 +34,7 @@ internal static partial class CcittFaxCompactDecoder
         private readonly bool encodedByteAlign;
         private readonly bool useLenientParsing;
         // After an invalid transition in a lenient row, stop direct painting. Once the row
-        // is decoded, clear it and render all recorded transitions in order. This preserves
-        // earlier malformed-row behavior instead of normalizing the positions.
+        // is decoded, clear it and render all recorded transitions without normalizing positions.
         private bool hasInvalidTransitions;
         private int[] referenceTransitions;
         private int[] currentTransitions;
@@ -261,8 +269,7 @@ internal static partial class CcittFaxCompactDecoder
             {
                 codePrefix = (codePrefix << 1) | bitReader.ReadBitsExact(1);
                 if (codeBitCount == 12 && codePrefix == 1)
-                    // The sentinel marks EOL rather than a pixel count. DecodeRunLength returns columns for
-                    // this marker, preserving earlier EOL handling inside a run sequence.
+                    // EOL encountered within a run is treated as a full-width run.
                     return EndOfLineRunMarker;
                 if (codeBitCount == 12 && codePrefix == 0)
                 {
@@ -322,9 +329,8 @@ internal static partial class CcittFaxCompactDecoder
             return UnknownMode;
         }
 
-        // Repaint a malformed row using the previous implementation's transition order and
-        // byte-write rules. Sorting, merging, or additionally clipping recorded positions
-        // would change output for inputs that lenient parsing has historically accepted.
+        // Repaint transitions in their recorded order. Sorting, merging or extra clipping
+        // would change the pixels produced for invalid positions in lenient mode.
         private void RenderMalformedRow(Span<byte> rowPixels, bool blackIsOne)
         {
             var pixelPosition = 0;
@@ -378,8 +384,8 @@ internal static partial class CcittFaxCompactDecoder
                 }
                 else
                 {
-                    // Negative or backwards positions need the previous per-bit arithmetic;
-                    // the normal interval painter assumes ordered, nonnegative positions.
+                    // Negative or backwards positions cannot use the interval painter,
+                    // which requires ordered, nonnegative bounds.
                     var byteIndex = pixelPosition / 8;
                     while (pixelPosition % 8 != 0 && nextTransitionPosition - pixelPosition > 0)
                     {
@@ -430,6 +436,9 @@ internal static partial class CcittFaxCompactDecoder
         }
     }
 
+    /// <summary>Decodes the bitmap, retrying the original input through signed decoding when needed.</summary>
+    /// <remarks>Dimensions, output capacity and the allocation budget must already be validated.
+    /// A retry rebuilds every reference row; it does not resume from a partially decoded row.</remarks>
     internal static void Decode(
         ReadOnlySpan<byte> compressedInput,
         byte[] decodedBitmap,
@@ -442,14 +451,12 @@ internal static partial class CcittFaxCompactDecoder
     {
         if (TryDecode(compressedInput, decodedBitmap, columns, rowCount, compressionType, encodedByteAlign, blackIsOne))
             return;
-        // A compact attempt may have consumed input and written complete or partial rows.
-        // Restart the whole decode so the signed path rebuilds its reference rows too.
-        // Keeping no per-row checkpoints avoids extra work on successful compact decodes.
+        // Rebuilding signed reference rows avoids per-row checkpoints on the compact fast path.
         DecodeCompatibility(compressedInput, decodedBitmap, columns, rowCount, compressionType, encodedByteAlign, blackIsOne, useLenientParsing);
     }
 
-    // Decode all rows with signed positions and the same tables, bit reader and painter.
-    // Tests also use this entry to check compact dispatch against the signed path.
+    /// <summary>Decodes all requested rows through the signed-position recovery path.</summary>
+    /// <remarks>Uses the same codewords, lookup tables, bit reader and interval painter as compact decoding.</remarks>
     internal static void DecodeCompatibility(
         ReadOnlySpan<byte> compressedInput,
         byte[] decodedBitmap,

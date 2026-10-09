@@ -4,8 +4,12 @@ using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
 namespace UglyToad.PdfPig.Filters.CcittFax;
-// Each row policy fixes the encoding family and BlackIs1 polarity for a generic decoder call.
-// Constant getters allow the JIT to remove branches that do not apply to that policy.
+/// <summary>Supplies constant coding-family and output-polarity choices to generic decoder methods.</summary>
+/// <remarks>
+/// Value-type policies let the JIT specialize Group 4 framing and BlackIs1 painting.
+/// .NET 8 and later use static interface properties; older targets use constrained instance
+/// properties on a default struct without boxing.
+/// </remarks>
 internal interface ICcittRowPolicy
 {
 #if NET8_0_OR_GREATER
@@ -21,17 +25,28 @@ internal interface ICcittRowPolicy
 #endif
 }
 
-// Original C# implementation under the repository Apache-2.0 license.
-// The 64-bit reservoir stores unread input bits. PeekBits inspects a prefix; ConsumeBits consumes bits.
-// When the prefix is already buffered, PeekBits computes its value before loading another four
-// bytes. This ordering allows prefix extraction and the next load to execute independently.
-// Appending 32 bits is safe only when at most 32 unread bits remain. Short input tails are read
-// byte by byte; missing bits may help index a table but cannot be consumed as input.
-// The instruction-scheduling idea comes from these articles; implementation code was not copied:
-// Dougall Johnson, "Reading bits with zero refill latency":
-// https://dougallj.wordpress.com/2022/08/26/reading-bits-with-zero-refill-latency/
-// Fabian Giesen, "Reading bits in far too many ways, part 2":
-// https://fgiesen.wordpress.com/2018/02/20/reading-bits-in-far-too-many-ways-part-2/
+/// <summary>Reads most-significant-bit-first CCITT codes from a span using a 64-bit reservoir.</summary>
+/// <remarks>
+/// <para>Algorithm: store unread bits in the low buffered-bit-count positions, with the next bit
+/// at their upper end. Append four bytes in big-endian order when at most 32 bits remain;
+/// refill short input tails byte by byte. Peek extracts a prefix without consuming its code.</para>
+/// <para>When a complete prefix is already buffered, extract it before loading the next word.
+/// This lets prefix decoding and refill proceed independently. Compact lookups may index using
+/// zero-padded missing bits, but consumption checks the actual buffered count. Exact reads instead
+/// report exhausted input, allowing signed decoding to distinguish truncation from invalid codes.</para>
+/// <para>Idea provenance; no article or third-party implementation code was copied:</para>
+/// <list type="table">
+/// <listheader><term>Source</term><description>Adapted idea</description></listheader>
+/// <item><term>Fabian Giesen</term><description>Stateful reservoirs with separate refill, peek
+/// and consume operations, and the effect of their dependency chains.
+/// See <see href="https://fgiesen.wordpress.com/2018/02/20/reading-bits-in-far-too-many-ways-part-2/">Reading bits in far too many ways, part 2</see>.</description></item>
+/// <item><term>Dougall Johnson</term><description>Decode from an already buffered prefix while
+/// preparing refill, removing refill from that prefix's dependency chain.
+/// See <see href="https://dougallj.wordpress.com/2022/08/26/reading-bits-with-zero-refill-latency/">Reading bits with zero refill latency</see>.</description></item>
+/// <item><term>PdfPig (Apache-2.0)</term><description>This bounded MSB-first span reader,
+/// 32-bit refill, zero-padded lookup handling and exact-read failure semantics.</description></item>
+/// </list>
+/// </remarks>
 internal ref struct CcittFaxCompactBitReader
 {
     // The low bufferedBitCount bits are unread; bit bufferedBitCount - 1 is consumed next.
@@ -51,6 +66,9 @@ internal ref struct CcittFaxCompactBitReader
 
     // T keeps the generic call specialized with its decoder caller; bit extraction itself
     // is identical for every row policy.
+    /// <summary>Peeks a code prefix, allowing zero padding only for lookup indexing.</summary>
+    /// <remarks>The actual buffered count is unchanged by padding. ConsumeBits must check
+    /// the selected code's true length before it is accepted.</remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int PeekBits<T>(int bitCount)
         where T : struct, ICcittRowPolicy
@@ -90,9 +108,8 @@ internal ref struct CcittFaxCompactBitReader
         }
     }
 
-    // PeekBits pads missing low bits with zero when input ends before a full lookup prefix.
-    // ConsumeBits checks the actual code length against real buffered bits, so padding cannot
-    // turn an incomplete code into valid input. A shorter complete code can still be decoded.
+    /// <summary>Consumes real buffered bits and rejects an incomplete code.</summary>
+    /// <exception cref="InvalidDataException">The requested code length exceeds real buffered bits.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void ConsumeBits(int bitCount)
     {
@@ -158,8 +175,8 @@ internal ref struct CcittFaxCompactBitReader
         throw new InvalidDataException("Unsupported extension, EOFB or invalid CCITT mode.");
     }
 
-    // Compatibility decoding must distinguish exhausted input from an invalid code.
-    // EnsureBits and the exact reads below never supply zero bits after the input ends.
+    /// <summary>Refills until the requested prefix is present or compressed input ends.</summary>
+    /// <returns>True only when all requested bits come from real input.</returns>
     internal bool EnsureBits(int bitCount)
     {
         if (bufferedBitCount < bitCount)
@@ -169,6 +186,8 @@ internal ref struct CcittFaxCompactBitReader
 
     // Call only after EnsureBits(bitCount) returned true; the prefix is then fully buffered.
     internal int PeekBufferedBits(int bitCount) => (int)((bitBuffer >> (bufferedBitCount - bitCount)) & ((1UL << bitCount) - 1));
+    /// <summary>Reads and consumes a complete code fragment without zero padding.</summary>
+    /// <exception cref="EndOfStreamException">Compressed input ends before the requested bits are available.</exception>
     internal int ReadBitsExact(int bitCount)
     {
         if (!EnsureBits(bitCount))
