@@ -278,8 +278,16 @@
                 }
                 else
                 {
-                    arg1 = data.ReadByte();
-                    arg2 = data.ReadByte();
+                    if (HasFlag(flags, CompositeGlyphFlags.ArgsAreXAndYValues))
+                    {
+                        arg1 = (sbyte)data.ReadByte();
+                        arg2 = (sbyte)data.ReadByte();
+                    }
+                    else
+                    {
+                        arg1 = data.ReadByte();
+                        arg2 = data.ReadByte();
+                    }
                 }
 
                 double xscale = 1;
