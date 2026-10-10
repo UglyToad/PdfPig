@@ -112,6 +112,31 @@
             Assert.Equal(1, document.NumberOfPages);
         }
 
+        [Fact]
+        public void FormXObjectsInvokingEachOtherDrawTheirTextOnce()
+        {
+            // The page draws "page" and invokes X1, X1 draws "one" and invokes X2, X2 draws "two" and invokes X1.
+            const string formEntries = "/Type /XObject /Subtype /Form /BBox [0 0 200 200] /Resources << /Font << /F1 4 0 R >> /XObject";
+            var pdf = Build(
+                "<< /Type /Catalog /Pages 2 0 R >>", Pages,
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /Font << /F1 4 0 R >> /XObject << /X1 6 0 R >> >> /Contents 5 0 R >>",
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+                Stream(string.Empty, "BT /F1 12 Tf 10 150 Td (page) Tj ET /X1 Do"),
+                Stream($"{formEntries} << /X2 7 0 R >> >>", "BT /F1 12 Tf 10 100 Td (one) Tj ET /X2 Do"),
+                Stream($"{formEntries} << /X1 6 0 R >> >>", "BT /F1 12 Tf 10 50 Td (two) Tj ET /X1 Do"));
+
+            using var document = PdfDocument.Open(pdf);
+
+            var page = document.GetPage(1);
+
+            Assert.Equal("pageonetwo", string.Concat(page.Letters.Select(l => l.Value)));
+        }
+
+        private static string Stream(string entries, string content)
+        {
+            return $"<< {entries} /Length {content.Length} >>\nstream\n{content}\nendstream";
+        }
+
         private static byte[] Build(params string[] objects)
         {
             var builder = new StringBuilder("%PDF-1.7\n");
