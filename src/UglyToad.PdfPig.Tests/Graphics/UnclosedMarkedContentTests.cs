@@ -73,6 +73,28 @@ namespace UglyToad.PdfPig.Tests.Graphics
             Assert.Equal("XY", extracted);
         }
 
+        /// <summary>
+        /// The page stream leaves its sequence open: it ends with the stream, so it is still reported,
+        /// with what it contains, rather than dropped from the marked content.
+        /// </summary>
+        [Fact]
+        public void AnUnclosedSequenceInThePageIsStillReported()
+        {
+            using var document = PdfDocument.Open(BuildSinglePagePdfWithForm(
+                Encoding.ASCII.GetBytes("/Span <</MCID 0>> BDC\nBT\n/F1 12 Tf\n10 50 Td\n(A) Tj\nET\n"
+                                        + "/Artifact BMC\nBT\n/F1 12 Tf\n10 20 Td\n(B) Tj\nET\n"),
+                Encoding.ASCII.GetBytes(string.Empty)));
+
+            var span = Assert.Single(document.GetPage(1).GetMarkedContents());
+
+            Assert.Equal("Span", span.Tag);
+            Assert.Equal("A", string.Concat(span.Letters.Select(l => l.Value)));
+
+            var artifact = Assert.Single(span.Children);
+            Assert.Equal("Artifact", artifact.Tag);
+            Assert.Equal("B", string.Concat(artifact.Letters.Select(l => l.Value)));
+        }
+
         private static string Extract(string pageContent, string formContent)
         {
             using var document = PdfDocument.Open(

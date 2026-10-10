@@ -62,6 +62,10 @@
 
         private readonly Dictionary<IndirectReference, IReadOnlyList<OutputIntent>> pageOutputIntents = new();
 
+        private readonly Lazy<OptionalContentState?> optionalContent;
+
+        public OptionalContentState? OptionalContent => optionalContent.Value;
+
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
@@ -76,6 +80,7 @@
                 ? new Lazy<IReadOnlyList<OutputIntent>>(() => [])
                 : new Lazy<IReadOnlyList<OutputIntent>>(() => OutputIntentParser.CreateAll(catalogDictionary,
                     scanner, filterProvider, parsingOptions.IccProfileService, iccProfileCache, Logger));
+            this.optionalContent = new Lazy<OptionalContentState?>(() => OptionalContentState.Create(catalogDictionary, scanner));
         }
 
         /// <inheritdoc/>

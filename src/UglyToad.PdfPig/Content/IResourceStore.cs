@@ -117,5 +117,11 @@
         /// </summary>
         /// <param name="pageDictionary">The page dictionary, or <c>null</c> to use the document scope.</param>
         IIccProfile? GetPageOutputIntentProfile(DictionaryToken? pageDictionary);
+
+        /// <summary>
+        /// The default on/off state (<c>/D</c>) of the document's optional content groups, or <see langword="null"/>
+        /// when the document declares no optional content (8.11.4.1). Stream processors read it when created.
+        /// </summary>
+        OptionalContentState? OptionalContent { get; }
     }
 }

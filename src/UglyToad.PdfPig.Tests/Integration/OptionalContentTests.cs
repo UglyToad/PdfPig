@@ -58,5 +58,35 @@
                 Assert.Equal(2, oc3["WDL Shell text"].Count);
             }
         }
+
+        // Ghent Workgroup optional content test files: the default configuration shows the "Default View"
+        // layer only. The hidden "GWG View 1" / "GWG View 2" layers each carry a label and the paths of a
+        // tick, drawn mirrored so that together with the visible tick they form an X.
+        // GWG150: /D with alternate /Configs; GWG151: radio-button group; GWG152: membership dictionaries.
+        [Theory]
+        [InlineData("GWG150_OptionalContent-OCCD_X4", 11)]
+        [InlineData("GWG151_OptionalContent-RBGroup_X4", 10)]
+        [InlineData("GWG152_OptionalContent-OCMD_X4", 11)]
+        public void GetPage_ReturnsEveryLayer(string document, int allPaths)
+        {
+            var path = IntegrationHelpers.GetDocumentPath(document);
+
+            using var all = PdfDocument.Open(path);
+
+            // Hidden content is returned too: Page does not depend on the document's optional content state.
+            var page = all.GetPage(1);
+
+            Assert.Contains("Default View", page.Text);
+            Assert.EndsWith("GWG View 1GWG View 2", page.Text);
+            Assert.Equal(allPaths, page.Paths.Count);
+        }
+
+        [Fact]
+        public void DocumentWithoutOptionalContentHasNoState()
+        {
+            using var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("AcroFormsBasicFields.pdf"));
+
+            Assert.Null(document.OptionalContent);
+        }
     }
 }
