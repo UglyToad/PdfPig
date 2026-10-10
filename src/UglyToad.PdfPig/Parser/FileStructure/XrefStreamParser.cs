@@ -95,9 +95,6 @@ internal static class XrefStreamParser
             var objectNumbers = GetObjectNumbers(dictToken);
 
             var lineNumber = 0;
-            Span<byte> lineBuffer = fieldSizes.LineLength <= 1024
-                ? stackalloc byte[fieldSizes.LineLength]
-                : new byte[fieldSizes.LineLength];
 
             var numbers = new List<(long obj, int gen, XrefLocation location)>();
 
@@ -108,12 +105,7 @@ internal static class XrefStreamParser
                     break;
                 }
 
-                var byteOffset = lineNumber * fieldSizes.LineLength;
-
-                for (var i = 0; i < fieldSizes.LineLength; i++)
-                {
-                    lineBuffer[i] = decoded[byteOffset + i];
-                }
+                var lineBuffer = decoded.Slice(lineNumber * fieldSizes.LineLength, fieldSizes.LineLength);
 
                 int type;
                 if (fieldSizes.Field1Size == 0)
@@ -383,27 +375,27 @@ internal static class XrefStreamParser
     /// <summary>
     /// The array representing the size of the fields in a cross reference stream.
     /// </summary>
-    private class XrefFieldSize
+    private readonly struct XrefFieldSize
     {
         /// <summary>
         /// The type of the entry.
         /// </summary>
-        public int Field1Size { get; }
+        public readonly int Field1Size;
 
         /// <summary>
         /// Type 0 and 2 is the object number, Type 1 this is the byte offset from beginning of file.
         /// </summary>
-        public int Field2Size { get; }
+        public readonly int Field2Size;
 
         /// <summary>
         /// For types 0 and 1 this is the generation number. For type 2 it is the stream index.
         /// </summary>
-        public int Field3Size { get; }
+        public readonly int Field3Size;
 
         /// <summary>
         /// How many bytes are in a line.
         /// </summary>
-        public int LineLength { get; }
+        public readonly int LineLength;
 
         public XrefFieldSize(ArrayToken wArray)
         {
@@ -412,11 +404,43 @@ internal static class XrefStreamParser
                 throw new PdfDocumentFormatException($"There must be at least 3 entries in a W entry for a stream dictionary: {wArray}.");
             }
 
-            Field1Size = wArray.GetNumeric(0).Int;
-            Field2Size = wArray.GetNumeric(1).Int;
-            Field3Size = wArray.GetNumeric(2).Int;
+            Field1Size = GetFieldSize(wArray, 0);
+            Field2Size = GetFieldSize(wArray, 1);
+            Field3Size = GetFieldSize(wArray, 2);
 
-            LineLength = Field1Size + Field2Size + Field3Size;
+            /* Not enforced for now as we don't have the lenient flag
+            // 7.5.8.2: "A value of zero shall not be used for the second element of the array."
+            if (Field2Size == 0)
+            {
+                throw new PdfDocumentFormatException($"The second entry in a W entry for a stream dictionary must not be zero: {wArray}.");
+            }
+            */
+
+            // No line longer than a span can be read, so a sum that does not fit in an int is invalid.
+            var lineLength = (long)Field1Size + Field2Size + Field3Size;
+            if (lineLength > int.MaxValue)
+            {
+                throw new PdfDocumentFormatException($"The entries in a W entry for a stream dictionary are too large: {wArray}.");
+            }
+
+            if (lineLength == 0)
+            {
+                throw new PdfDocumentFormatException($"The entries in a W entry for a stream dictionary must not all be zero: {wArray}.");
+            }
+
+            LineLength = (int)lineLength;
+        }
+
+        private static int GetFieldSize(ArrayToken wArray, int index)
+        {
+            var size = wArray.GetNumeric(index).Int;
+
+            if (size < 0)
+            {
+                throw new PdfDocumentFormatException($"Invalid field size {size} at index {index} in the W entry for a stream dictionary: {wArray}.");
+            }
+
+            return size;
         }
     }
 }
