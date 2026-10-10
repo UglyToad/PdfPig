@@ -972,6 +972,103 @@
         }
 
         [Fact]
+        public void AddPageDoesNotTransformNewContentWhenSaveRestoreSpansCopiedStreams()
+        {
+            // The first content stream ends with an opening 'q' which the second one closes, so every
+            // transform of the second stream sits inside a save/restore and none is left active.
+            // Content added afterwards must not be transformed. See issue #1462.
+            byte[] source;
+            {
+                var builder = new PdfDocumentBuilder();
+                var page = builder.AddPage(PageSize.A4);
+
+                page.CurrentStream.Operations.Add(Push.Value);
+
+                page.NewContentStreamAfter();
+
+                page.CurrentStream.Operations.Add(Pop.Value);
+
+                for (var i = 0; i < 200; i++)
+                {
+                    page.CurrentStream.Operations.Add(Push.Value);
+                    page.CurrentStream.Operations.Add(new ModifyCurrentTransformationMatrix([100, 0, 0, 100, 0, 0]));
+                    page.CurrentStream.Operations.Add(Push.Value);
+                    page.CurrentStream.Operations.Add(new ModifyCurrentTransformationMatrix([0.01, 0, 0, 0.01, 0, 0]));
+                    page.CurrentStream.Operations.Add(Pop.Value);
+                    page.CurrentStream.Operations.Add(Pop.Value);
+                }
+
+                source = builder.Build();
+            }
+
+            byte[] result;
+            using (var document = PdfDocument.Open(source, ParsingOptions.LenientParsingOff))
+            {
+                var builder = new PdfDocumentBuilder();
+                builder.AddPage(document, 1).DrawRectangle(new PdfPoint(100, 200), 50, 25);
+
+                result = builder.Build();
+            }
+
+            WriteFile(nameof(AddPageDoesNotTransformNewContentWhenSaveRestoreSpansCopiedStreams), result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                var path = Assert.Single(document.GetPage(1).Paths);
+                var box = path.GetBoundingRectangle();
+
+                Assert.NotNull(box);
+                Assert.Equal(100, box.Value.Left, 4);
+                Assert.Equal(200, box.Value.Bottom, 4);
+                Assert.Equal(50, box.Value.Width, 4);
+                Assert.Equal(25, box.Value.Height, 4);
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void DoesNotWriteInverseOfNonInvertibleSourceTransform(bool copyFrom)
+        {
+            // The transform left active by the source page cannot be inverted, there is no 'cm' able to undo it.
+            byte[] source;
+            {
+                var builder = new PdfDocumentBuilder();
+                var page = builder.AddPage(PageSize.A4);
+
+                page.CurrentStream.Operations.Add(new ModifyCurrentTransformationMatrix([0, 0, 0, 0, 0, 0]));
+
+                // CopyFrom only resets the transform of pages having resources.
+                page.AddText("Hello", 12, new PdfPoint(30, 50), builder.AddStandard14Font(Standard14Font.Helvetica));
+
+                source = builder.Build();
+            }
+
+            byte[] result;
+            using (var document = PdfDocument.Open(source, ParsingOptions.LenientParsingOff))
+            {
+                var builder = new PdfDocumentBuilder();
+
+                var page = copyFrom
+                    ? builder.AddPage(PageSize.A4).CopyFrom(document.GetPage(1))
+                    : builder.AddPage(document, 1);
+
+                page.DrawRectangle(new PdfPoint(100, 200), 50, 25);
+
+                result = builder.Build();
+            }
+
+            WriteFile($"{nameof(DoesNotWriteInverseOfNonInvertibleSourceTransform)}_{copyFrom}", result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                var transform = Assert.Single(document.GetPage(1).Operations.OfType<ModifyCurrentTransformationMatrix>());
+
+                Assert.Equal([0, 0, 0, 0, 0, 0], transform.Value);
+            }
+        }
+
+        [Fact]
         public void CanCopyPage()
         {
 

@@ -376,6 +376,8 @@ namespace UglyToad.PdfPig.Writer
                     contentReferences.Add(ir);
                 }
 
+                var stackDepth = 0;
+
                 foreach (var indirectReferenceToken in contentReferences)
                 {
                     // Detect any globally applied transforms to the graphics state from the content stream.
@@ -388,7 +390,7 @@ namespace UglyToad.PdfPig.Writer
                         {
                             var contentBytes = contentStream.Decode(document.Structure.FilterProvider);
                             var parsedOperations = pcp.Parse(0, new MemoryInputBytes(contentBytes), new NoOpLog());
-                            globalTransform = PdfContentTransformationReader.GetGlobalTransform(parsedOperations);
+                            globalTransform = PdfContentTransformationReader.GetGlobalTransform(parsedOperations, ref stackDepth);
                         }
                     }
                     catch
