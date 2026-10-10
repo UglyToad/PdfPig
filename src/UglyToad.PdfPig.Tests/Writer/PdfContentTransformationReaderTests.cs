@@ -99,5 +99,60 @@ namespace UglyToad.PdfPig.Tests.Writer
                 TransformationMatrix.FromValues(2, 0, 0, 2, 0, 0),
                 PdfContentTransformationReader.GetGlobalTransform(operations));
         }
+
+        [Fact]
+        public void InverseOperationUndoesTransform()
+        {
+            var transform = TransformationMatrix.FromValues(0.75, 0, 0, -0.75, 0, 841.89);
+
+            var inverse = PdfContentTransformationReader.GetInverseOperation(transform);
+
+            Assert.NotNull(inverse);
+            AssertMatrix(TransformationMatrix.Identity, TransformationMatrix.FromArray(inverse.Value).Multiply(transform));
+        }
+
+        [Theory]
+        [InlineData(0, 0, 0, 0, 0, 0)]
+        [InlineData(1, 2, 2, 4, 10, 20)]
+        [InlineData(double.PositiveInfinity, 0, 0, double.PositiveInfinity, 0, 0)]
+        public void InverseOperationIsNullWhenTransformIsNotInvertible(double a, double b, double c, double d, double e, double f)
+        {
+            var transform = TransformationMatrix.FromValues(a, b, c, d, e, f);
+
+            Assert.Null(PdfContentTransformationReader.GetInverseOperation(transform));
+        }
+
+        [Fact]
+        public void CarriesSaveRestoreDepthAcrossContentStreams()
+        {
+            // A page's content streams are a single stream once concatenated, the first one can end inside
+            // a 'q' that the second one closes. See https://github.com/UglyToad/PdfPig/issues/1462.
+            var first = new IGraphicsStateOperation[]
+            {
+                Cm(2, 0, 0, 2, 0, 0),
+                Push.Value
+            };
+
+            var second = new IGraphicsStateOperation[]
+            {
+                Cm(3, 0, 0, 3, 0, 0),
+                Pop.Value,
+                Push.Value,
+                Cm(100, 0, 0, 100, 0, 0),
+                Pop.Value
+            };
+
+            var stackDepth = 0;
+
+            AssertMatrix(
+                TransformationMatrix.FromValues(2, 0, 0, 2, 0, 0),
+                PdfContentTransformationReader.GetGlobalTransform(first, ref stackDepth));
+
+            Assert.Equal(1, stackDepth);
+
+            Assert.Null(PdfContentTransformationReader.GetGlobalTransform(second, ref stackDepth));
+
+            Assert.Equal(0, stackDepth);
+        }
     }
 }

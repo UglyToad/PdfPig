@@ -173,18 +173,11 @@
 
             if (globalTransform.HasValue)
             {
-                var inverse = globalTransform.Value.Inverse();
-                writeableContentStream.Add(
-                    new ModifyCurrentTransformationMatrix(
-                        [
-                            inverse.A,
-                            inverse.B,
-                            inverse.C,
-                            inverse.D,
-                            inverse.E,
-                            inverse.F
-                        ]
-                    ));
+                var inverse = PdfContentTransformationReader.GetInverseOperation(globalTransform.Value);
+                if (inverse is not null)
+                {
+                    writeableContentStream.Add(inverse);
+                }
             }
 
             currentStream = writeableContentStream;
@@ -1144,16 +1137,11 @@
             var globalTransform = PdfContentTransformationReader.GetGlobalTransform(operations);
             if (globalTransform.HasValue)
             {
-                var inverse = globalTransform.Value.Inverse();
-                operations.Add(new ModifyCurrentTransformationMatrix(
-                    [
-                        inverse.A,
-                        inverse.B,
-                        inverse.C,
-                        inverse.D,
-                        inverse.E,
-                        inverse.F
-                    ]));
+                var inverse = PdfContentTransformationReader.GetInverseOperation(globalTransform.Value);
+                if (inverse is not null)
+                {
+                    operations.Add(inverse);
+                }
             }
 
             destinationStream.Operations.AddRange(operations);
