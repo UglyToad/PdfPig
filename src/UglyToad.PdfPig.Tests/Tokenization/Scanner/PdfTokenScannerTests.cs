@@ -486,6 +486,71 @@ endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
         }
 
         [Theory]
+        [InlineData("\n")]
+        [InlineData("\r\n")]
+        [InlineData("\r")]
+        public void ReadsStreamWithWrongLengthFollowedByStreamObject(string eol)
+        {
+            // The 'endobj' directly after 'endstream' must end the data. If it is missed, the data
+            // runs on through the next stream object (seen with a form XObject swallowing the forms
+            // after it, including a 'Do' of itself).
+            var input = $"1 0 obj{eol}<< /Length 7707 >>{eol}stream{eol}ABC{eol}endstream{eol}endobj{eol}" +
+                        $"2 0 obj{eol}<< /Length 3 >>{eol}stream{eol}DEF{eol}endstream{eol}endobj{eol}" +
+                        $"3 0 obj{eol}<< /A 1 >>{eol}endobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(3, tokens.Count);
+
+            var first = Assert.IsType<StreamToken>(tokens[0].Data);
+            Assert.Equal("ABC", Encoding.ASCII.GetString(first.Data.ToArray()));
+
+            Assert.Equal(2, tokens[1].Number.ObjectNumber);
+            var second = Assert.IsType<StreamToken>(tokens[1].Data);
+            Assert.Equal("DEF", Encoding.ASCII.GetString(second.Data.ToArray()));
+
+            Assert.Equal(3, tokens[2].Number.ObjectNumber);
+        }
+
+        [Theory]
+        [InlineData("ABC\nendstreamX\nendstream", "ABC\nendstreamX")]
+        [InlineData("ABC\nendstreamendstream", "ABC\nendstream")]
+        public void ReadsStreamWithWrongLengthAndEndstreamNotFollowedByWhitespace(string body, string expected)
+        {
+            // 'endstream' followed by anything but whitespace is data, not the keyword.
+            var input = $"1 0 obj\n<< /Length 99 >>\nstream\n{body}\nendobj\n2 0 obj\n<< /A 1 >>\nendobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var stream = Assert.IsType<StreamToken>(tokens[0].Data);
+            Assert.Equal(expected, Encoding.ASCII.GetString(stream.Data.ToArray()));
+        }
+
+        [Fact]
+        public void ReadsStreamWithWrongLengthAndNoEndstreamBeforeEndObj()
+        {
+            // With no 'endstream', the first 'endobj' ends the data, even when the declared length is not reached.
+            var input = "1 0 obj\n<< /Length 99 >>\nstream\nABC\nendobj\n2 0 obj\n<< /A 1 >>\nendobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var stream = Assert.IsType<StreamToken>(tokens[0].Data);
+            Assert.Equal("ABC", Encoding.ASCII.GetString(stream.Data.ToArray()));
+
+            Assert.Equal(2, tokens[1].Number.ObjectNumber);
+        }
+
+        [Theory]
         [InlineData("ABC\nendstream", "ABC")]
         [InlineData("ABC\r\nendstream", "ABC")]
         [InlineData("ABC\rendstream", "ABC")]

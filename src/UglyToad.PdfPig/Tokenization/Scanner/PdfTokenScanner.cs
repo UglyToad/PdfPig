@@ -407,19 +407,25 @@
                         endObjPosition = 0;
                         endStreamPosition++;
 
-                        // We've finished reading 'endstream', add it to the end tokens we've seen.
-                        if (endStreamPosition == streamPart.Length && (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte)))
+                        if (endStreamPosition == streamPart.Length)
                         {
-                            var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndStream.Data.Length, OperatorToken.EndStream);
-
-                            possibleEndLocation = token;
-
-                            if (length.HasValue && read > length)
+                            // We've finished reading 'endstream', add it to the end tokens we've seen.
+                            // Followed by anything but whitespace it is data, not the keyword.
+                            if (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte))
                             {
-                                break;
+                                var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndStream.Data.Length, OperatorToken.EndStream);
+
+                                possibleEndLocation = token;
+
+                                if (length.HasValue && read > length)
+                                {
+                                    break;
+                                }
                             }
 
+                            // The byte after 'stream' has already been read and may start a new 'end'.
                             endStreamPosition = 0;
+                            commonPartPosition = (inputBytes.CurrentByte == endWordPart[0]) ? 1 : 0;
                         }
                     }
                     else if (inputBytes.CurrentByte == objPart[endObjPosition])
@@ -450,6 +456,9 @@
                             {
                                 break;
                             }
+
+                            endObjPosition = 0;
+                            commonPartPosition = 0;
                         }
                     }
                     else
