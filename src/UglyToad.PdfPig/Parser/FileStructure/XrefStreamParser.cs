@@ -3,6 +3,7 @@
 using Core;
 using Filters;
 using Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Tokenization.Scanner;
 using Tokens;
@@ -84,11 +85,11 @@ internal static class XrefStreamParser
                 return null;
             }
 
-            var stream = new StreamToken(dictToken, data);
+            var fieldSizes = new XrefFieldSize(dictArray);
+
+            var stream = new StreamToken(WithValidColumns(dictToken, fieldSizes.LineLength, log), data);
 
             var decoded = stream.Decode(filterProvider).Span;
-
-            var fieldSizes = new XrefFieldSize(dictArray);
 
             var lineCount = decoded.Length / fieldSizes.LineLength;
 
@@ -169,6 +170,65 @@ internal static class XrefStreamParser
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The rows of a predicted cross reference stream are its entries, so where the /Columns decode
+    /// parameter cannot be used the entry length from /W is used instead. Otherwise the decode fails
+    /// and every entry in the stream is lost.
+    /// </summary>
+    private static DictionaryToken WithValidColumns(DictionaryToken dictionary, int lineLength, ILog log)
+    {
+        // TODO - Should be in Lenient parsing only
+        if (!dictionary.TryGet(NameToken.DecodeParms, out var decodeParmsToken))
+        {
+            return dictionary;
+        }
+
+        if (decodeParmsToken is DictionaryToken decodeParms)
+        {
+            return TryGetWithValidColumns(decodeParms, lineLength, log, out var corrected)
+                ? dictionary.With(NameToken.DecodeParms, corrected)
+                : dictionary;
+        }
+
+        // With a filter array, one entry per filter.
+        if (decodeParmsToken is ArrayToken decodeParmsArray)
+        {
+            IToken[]? correctedArray = null;
+
+            for (var i = 0; i < decodeParmsArray.Length; i++)
+            {
+                if (decodeParmsArray[i] is DictionaryToken filterParms
+                    && TryGetWithValidColumns(filterParms, lineLength, log, out var corrected))
+                {
+                    correctedArray ??= decodeParmsArray.Data.ToArray();
+                    correctedArray[i] = corrected;
+                }
+            }
+
+            return correctedArray is null
+                ? dictionary
+                : dictionary.With(NameToken.DecodeParms, new ArrayToken(correctedArray));
+        }
+
+        return dictionary;
+
+        static bool TryGetWithValidColumns(DictionaryToken decodeParms, int lineLength, ILog log, [NotNullWhen(true)] out DictionaryToken? corrected)
+        {
+            corrected = null;
+
+            if (!decodeParms.TryGet(NameToken.Columns, out var columnsToken)
+                || columnsToken is NumericToken columns && columns.Double >= 1 && columns.Double <= int.MaxValue)
+            {
+                return false;
+            }
+
+            log.Warn($"Invalid /Columns {columnsToken} in the decode parameters of a cross reference stream, using the entry length {lineLength} from /W.");
+
+            corrected = decodeParms.With(NameToken.Columns, new NumericToken(lineLength));
+            return true;
+        }
     }
 
     private static void ReadNextStreamObject(
