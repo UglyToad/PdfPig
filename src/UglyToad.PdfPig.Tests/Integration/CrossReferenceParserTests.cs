@@ -33,5 +33,18 @@
 
             // NB: There might be a way to not throw when lenient is ON, out of scope for now
         }
+
+        [Fact]
+        public void CanReadXRefStreamWithInvalidPredictorColumns()
+        {
+            // The xref stream locating the page fonts and colour spaces declares /Columns 4444444444444444444444444444444.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("GHOSTSCRIPT-695040-0.zip-87");
+            using var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true });
+
+            Assert.Equal(10, document.NumberOfPages);
+
+            var page = document.GetPage(1);
+            Assert.Contains("Avant d’entamer la procédure de demande d’intervention financière pour effectuer un séjour", page.Text);
+        }
     }
 }
