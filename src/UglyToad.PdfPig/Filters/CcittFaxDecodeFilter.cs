@@ -3,6 +3,7 @@
     using System;
     using CcittFax;
     using Core;
+    using Fonts;
     using Tokens;
     using Util;
 
@@ -41,13 +42,14 @@
                 rows = Math.Max(rows, height);
             }
 
+            var arraySize = GetDecodedBufferSize(cols, rows);
+
             var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
             var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
             var compressionType = DetermineCompressionType(input.Span, k);
 
             using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign))
             {
-                var arraySize = (cols + 7) / 8 * rows;
                 var decompressed = new byte[arraySize];
                 ReadFromDecoderStream(stream, decompressed);
 
@@ -60,6 +62,29 @@
 
                 return decompressed;
             }
+        }
+
+        internal static int GetDecodedBufferSize(int columns, int rows)
+        {
+            if (columns <= 0 || rows <= 0)
+            {
+                throw new CorruptCompressedDataException($"Invalid CCITT image dimensions: columns={columns}, rows={rows}.");
+            }
+
+            // PDFBOX-6243: cap the bitmap and both decoder change arrays at 256 MiB.
+            // Widen before arithmetic and validate before constructing the decoder.
+            // https://github.com/apache/pdfbox/blob/3.0/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
+            var bitmapBytes = ((long)columns + 7) / 8 * rows;
+            var changesBytes = ((long)columns + 2) * sizeof(int) * 2;
+            const long maximumDecodeBufferBytes = 256L * 1024 * 1024;
+            if (bitmapBytes + changesBytes > maximumDecodeBufferBytes)
+            {
+                throw new CorruptCompressedDataException(
+                    $"CCITT decode buffers require {bitmapBytes + changesBytes} bytes for columns={columns}, rows={rows}; "
+                    + $"at most {maximumDecodeBufferBytes} bytes are allowed.");
+            }
+
+            return (int)bitmapBytes;
         }
 
         private static CcittFaxCompressionType DetermineCompressionType(ReadOnlySpan<byte> input, int k)
