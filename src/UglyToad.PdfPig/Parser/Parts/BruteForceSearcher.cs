@@ -163,16 +163,16 @@
                     bytes.Seek(offset);
                 }
 
-                if (objectNumberBytes.Length == 0 || generationBytes.Length == 0)
+                if (objectNumberBytes.Length == 0
+                    || generationBytes.Length == 0
+                    || !long.TryParse(objectNumberBytes.ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out var obj)
+                    || !int.TryParse(generationBytes.ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out var generation))
                 {
                     generationBytes.Clear();
                     objectNumberBytes.Clear();
                     currentOffset++;
                     continue;
                 }
-
-                var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
-                var generation = int.Parse(generationBytes.ToString(), CultureInfo.InvariantCulture);
 
                 results[new IndirectReference(obj, generation)] = XrefLocation.File(bytes.CurrentOffset);
 

@@ -145,6 +145,35 @@ endobj";
             Assert.Equal(expectedLocations, locations.Values.Select(x => x.Value1));
         }
 
+        [Theory]
+        [InlineData("1 99999999999 obj")]
+        [InlineData("99999999999999999999 0 obj")]
+        public void ReaderEscapesNumberTooLargeForObjectHeader(string header)
+        {
+            var s = $@"%PDF-2.0
+1 0 obj
+256
+endobj
+
+{header}
+
+5 0 obj
+<< /IsEmpty false >>
+endobj";
+
+            var bytes = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+
+            var locations = BruteForceSearcher.GetObjectLocations(bytes);
+
+            var expectedLocations = new long[]
+            {
+                s.IndexOf("1 0 obj", StringComparison.OrdinalIgnoreCase),
+                s.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
+            };
+
+            Assert.Equal(expectedLocations, locations.Values.Select(x => x.Value1));
+        }
+
         [Fact]
         public void BruteForceSearcherFileOffsetsCorrect()
         {
