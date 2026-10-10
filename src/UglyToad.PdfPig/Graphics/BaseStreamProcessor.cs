@@ -125,6 +125,14 @@
         private readonly Dictionary<StreamToken, IReadOnlyList<IGraphicsStateOperation>> _formOperationsCache = new();
 
         /// <summary>
+        /// The deepest nesting of form XObjects that is processed, as in PDFBox. Forms that invoke each
+        /// other would otherwise recurse until the stack overflows.
+        /// </summary>
+        internal const int MaxFormXObjectDepth = 50;
+
+        private int _formXObjectDepth;
+
+        /// <summary>
         /// Abstract stream processor constructor.
         /// </summary>
         /// <param name="outputIntentProfile">
@@ -565,6 +573,17 @@
              * 5. Restore the saved graphics state, as if by invoking the Q operator.
              */
 
+            if (_formXObjectDepth >= MaxFormXObjectDepth)
+            {
+                if (!ParsingOptions.UseLenientParsing)
+                {
+                    throw new PdfDocumentFormatException($"The XObject form named '{xObjectName}' is nested more than {MaxFormXObjectDepth} levels deep.");
+                }
+
+                ParsingOptions.Logger.Warn($"The XObject form named '{xObjectName}' is nested more than {MaxFormXObjectDepth} levels deep and was skipped.");
+                return;
+            }
+
             bool resourcesLoaded = false;
             if (formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources,
                     PdfScanner,
@@ -576,6 +595,7 @@
 
             // 1. Save current state.
             PushState();
+            _formXObjectDepth++;
 
             try
             {
@@ -702,6 +722,8 @@
             }
             finally
             {
+                _formXObjectDepth--;
+
                 // 5. Restore saved state.
                 PopState();
 
