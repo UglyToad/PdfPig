@@ -125,12 +125,18 @@
         private readonly Dictionary<StreamToken, IReadOnlyList<IGraphicsStateOperation>> _formOperationsCache = new();
 
         /// <summary>
-        /// The deepest nesting of form XObjects that is processed, as in PDFBox. Forms that invoke each
-        /// other would otherwise recurse until the stack overflows.
+        /// The deepest nesting of form XObjects that is processed, as in PDFBox. A long chain of nested
+        /// forms would otherwise recurse until the stack overflows.
         /// </summary>
         internal const int MaxFormXObjectDepth = 50;
 
         private int _formXObjectDepth;
+
+        /// <summary>
+        /// The form XObjects being processed by the enclosing form invocations. A form found here again
+        /// is invoking itself, directly or through other forms.
+        /// </summary>
+        private readonly HashSet<IndirectReference> _activeFormXObjects = new();
 
         /// <summary>
         /// Abstract stream processor constructor.
@@ -494,7 +500,7 @@
 
             if (hasReference && _formXObjectCache.TryGetValue(xObjectReference, out var cachedForm))
             {
-                ProcessFormXObject(cachedForm, xObjectName);
+                ProcessReferencedFormXObject(cachedForm, xObjectName, xObjectReference);
                 return;
             }
 
@@ -541,14 +547,50 @@
                 if (hasReference)
                 {
                     _formXObjectCache[xObjectReference] = xObjectStream;
+                    ProcessReferencedFormXObject(xObjectStream, xObjectName, xObjectReference);
                 }
-
-                ProcessFormXObject(xObjectStream, xObjectName);
+                else
+                {
+                    // Only a custom resource store returns a form without a reference. There is nothing to
+                    // recognize such a form by, so only the nesting limit applies.
+                    ProcessFormXObject(xObjectStream, xObjectName);
+                }
             }
             else
             {
                 throw new InvalidOperationException(
                     $"XObject encountered with unexpected SubType {subType}. {xObjectStream.StreamDictionary}.");
+            }
+        }
+
+        /// <summary>
+        /// Process a form XObject unless it is already being processed further up the current chain of
+        /// form invocations. Forms that invoke each other would otherwise repeat until the nesting limit,
+        /// which takes exponential time when one of them invokes the other more than once.
+        /// </summary>
+        private void ProcessReferencedFormXObject(StreamToken formStream, NameToken xObjectName, IndirectReference reference)
+        {
+            if (!_activeFormXObjects.Add(reference))
+            {
+                // Reported the same way as a form naming itself, see HasFormXObjectCircularReference.
+                if (!ParsingOptions.UseLenientParsing)
+                {
+                    throw new PdfDocumentFormatException(
+                        $"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour.");
+                }
+
+                ParsingOptions.Logger.Warn(
+                    $"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour. The invocation was skipped.");
+                return;
+            }
+
+            try
+            {
+                ProcessFormXObject(formStream, xObjectName);
+            }
+            finally
+            {
+                _activeFormXObjects.Remove(reference);
             }
         }
 
