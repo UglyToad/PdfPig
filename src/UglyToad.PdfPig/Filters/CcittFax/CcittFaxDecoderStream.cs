@@ -4,12 +4,17 @@
     using System.IO;
     using IO;
 
-    /// <summary>
-    /// CCITT Modified Huffman RLE, Group 3 (T4) and Group 4 (T6) fax compression.
-    /// <para>
-    /// Ported from https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java
-    /// </para>
-    /// </summary>
+    /// <summary>Exposes the legacy CCITT decoder as a stream of packed, black-one bitmap rows.</summary>
+    /// <remarks>
+    /// <para>Walks Huffman and 2D code trees bit by bit, recording color-change positions in
+    /// Int32 arrays. Reads decode a row only when its predecessor has been consumed. The legacy
+    /// filter supplies the output dimensions and applies BlackIs1 after reading the bitmap.</para>
+    /// <para>Retained for the original malformed-input recovery behavior and widths beyond the
+    /// fast decoder's UInt16 positions. This stream does not expose a verified PDF end-marker
+    /// boundary; fixed output dimensions belong to the calling filter.</para>
+    /// <para>Ported from the Apache-2.0
+    /// <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">PDFBox CCITTFaxDecoderStream</see>.</para>
+    /// </remarks>
     internal sealed class CcittFaxDecoderStream : StreamWrapper
     {
         // See TIFF 6.0 Specification, Section 10: "Modified Huffman Compression", page 43.
@@ -107,7 +112,8 @@
             var index = 0;
             changesCurrentRowCount = 0;
 
-        mode: while (index < columns)
+            mode:
+            while (index < columns)
             {
                 var node = CodeTree.Root;
 
@@ -215,7 +221,8 @@
                 ResetBuffer();
             }
 
-        eof: while (true)
+            eof:
+            while (true)
             {
                 // read till next EOL code
                 var node = EolOnlyTree.Root;
@@ -236,7 +243,7 @@
                 }
             }
 
-        done:
+            done:
             if (type == CcittFaxCompressionType.Group3_1D || ReadBit())
             {
                 Decode1D();
@@ -330,7 +337,8 @@
 
             if (index != columns)
             {
-                throw new InvalidOperationException($"Sum of run-lengths does not equal scan line width: {index} > {columns}");
+                throw new InvalidOperationException(
+                    $"Sum of run-lengths does not equal scan line width: {index} > {columns}");
             }
 
             decodedLength = (index + 7) / 8;
@@ -743,6 +751,7 @@
                     BlackRunTree.Fill(i + 2, BLACK_CODES[i][j], BLACK_RUN_LENGTHS[i][j]);
                 }
             }
+
             BlackRunTree.Fill(12, 0, FILL);
             BlackRunTree.Fill(12, 1, EOL);
 
