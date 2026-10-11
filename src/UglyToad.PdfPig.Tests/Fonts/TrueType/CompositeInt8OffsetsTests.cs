@@ -33,6 +33,27 @@
             Assert.Equal(-20, firstMove.Location.Y, 0);
         }
 
+        [Fact]
+        public void CompositeWithPointIndexBytes_DoesNotApplyThemAsSignedOffsets()
+        {
+            // ARGS_ARE_XY_VALUES clear: the two bytes are point indices and stay unsigned.
+            // 200 and 201 would be -56 and -55 if they were sign-extended and used as x,y.
+            // A following component with real signed byte offsets must still land at (-10, -20),
+            // which is only possible when the point-index bytes are consumed as two bytes
+            // and are not applied as offsets.
+            var bytes = BuildFontWithPointIndicesThenSignedOffset();
+            var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(bytes));
+
+            bool result = font.TryGetPath(2, c => c, out var path);
+            Assert.True(result);
+            Assert.NotNull(path);
+            Assert.Single(path);
+
+            var firstMove = path[0].Commands.OfType<UglyToad.PdfPig.Core.PdfSubpath.Move>().First();
+            Assert.Equal(-10, firstMove.Location.X, 0);
+            Assert.Equal(-20, firstMove.Location.Y, 0);
+        }
+
         private static byte[] BuildFontWithSignedByteOffsets()
         {
             // Glyph 0: empty
@@ -53,6 +74,26 @@
             // Glyph 2: composite with signed byte offsets
             loca.Add((uint)glyf.Count);
             glyf.AddRange(MakeCompositeWithSignedByteOffsets(1, -10, -20));
+            while (glyf.Count % 4 != 0) glyf.Add(0);
+
+            loca.Add((uint)glyf.Count);
+
+            return AssembleSfnt(3, glyf.ToArray(), loca.ToArray());
+        }
+
+        private static byte[] BuildFontWithPointIndicesThenSignedOffset()
+        {
+            var glyf = new List<byte>();
+            var loca = new List<uint>();
+
+            loca.Add((uint)glyf.Count);
+
+            loca.Add((uint)glyf.Count);
+            glyf.AddRange(MakeSimpleSquare(0, 0, 100, 100));
+            while (glyf.Count % 4 != 0) glyf.Add(0);
+
+            loca.Add((uint)glyf.Count);
+            glyf.AddRange(MakeCompositePointIndicesThenSignedOffset(1));
             while (glyf.Count % 4 != 0) glyf.Add(0);
 
             loca.Add((uint)glyf.Count);
@@ -102,6 +143,25 @@
             ];
         }
 
+        private static byte[] MakeCompositePointIndicesThenSignedOffset(ushort glyphIndex)
+        {
+            // First component: ARGS_ARE_XY_VALUES clear, so the arguments are point indices.
+            // MORE_COMPONENTS is set. 200 and 201 do not fit in a signed byte as positive
+            // offsets; sign-extending them would yield -56 and -55.
+            // Second component: ARGS_ARE_XY_VALUES set, signed byte offsets -10, -20.
+            return
+            [
+                0xFF, 0xFF, // numberOfContours = -1
+                0, 0, 0, 0, 0, 0, 0, 0, // bbox
+                0x00, 0x20, // flags = MoreComponents (not ArgsAreXAndYValues, not words)
+                (byte)(glyphIndex >> 8), (byte)glyphIndex,
+                200, 201, // unsigned point indices
+                0x00, 0x02, // flags = ArgsAreXAndYValues
+                (byte)(glyphIndex >> 8), (byte)glyphIndex,
+                0xF6, 0xEC, // signed offsets -10, -20
+            ];
+        }
+
         private static byte[] BE16(ushort v) => [(byte)(v >> 8), (byte)v];
         private static byte[] BE32(uint v) => [(byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v];
 
@@ -122,9 +182,11 @@
             int pos = 12 + 16 * numTables;
             var dir = new List<byte>();
             var body = new List<byte>();
-            foreach (var (tag, data) in tables)
+            foreach (var entry in tables)
             {
-                dir.AddRange(System.Text.Encoding.Latin1.GetBytes(tag));
+                string tag = entry.Key;
+                byte[] data = entry.Value;
+                dir.AddRange(System.Text.Encoding.ASCII.GetBytes(tag));
                 dir.AddRange(BE32(Checksum(data)));
                 dir.AddRange(BE32((uint)(pos + body.Count)));
                 dir.AddRange(BE32((uint)data.Length));
@@ -153,8 +215,10 @@
         private static int Offset(SortedDictionary<string, byte[]> tables, string tag)
         {
             int at = 0;
-            foreach (var (t, d) in tables)
+            foreach (var entry in tables)
             {
+                string t = entry.Key;
+                byte[] d = entry.Value;
                 if (t == tag) return at;
                 at += (d.Length + 3) & ~3;
             }
