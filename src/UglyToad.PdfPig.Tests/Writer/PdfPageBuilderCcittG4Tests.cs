@@ -9,8 +9,14 @@ namespace UglyToad.PdfPig.Tests.Writer
     using UglyToad.PdfPig.Writer;
     using Xunit;
 
+    /// <summary>Tests CCITT Group 4 image metadata written by PdfPageBuilder.</summary>
+    /// <remarks>These tests inspect the generated PDF image dictionary, not decoded pixels.
+    /// The writer's blackIs1 argument chooses the image Decode array and leaves BlackIs1
+    /// absent from DecodeParms. Decode maps sample values to grayscale: [0, 1] preserves
+    /// their order and [1, 0] reverses it. The TIFF fixture supplies a known polarity.</remarks>
     public class PdfPageBuilderCcittG4Tests
     {
+        /// <summary>Checks that the fixture supplies compressed bytes, positive dimensions and its expected polarity.</summary>
         [Fact]
         public void FixtureProvidesRawCcittData()
         {
@@ -22,6 +28,7 @@ namespace UglyToad.PdfPig.Tests.Writer
             Assert.False(fixture.BlackIs1);
         }
 
+        /// <summary>Writes a CCITT image into a page and reads back its dimensions and one-bit sample metadata.</summary>
         [Fact]
         public void AddCcittG4AddsFaxImage()
         {
@@ -50,6 +57,7 @@ namespace UglyToad.PdfPig.Tests.Writer
             }
         }
 
+        /// <summary>Preserves the TIFF fixture polarity through the writer's grayscale Decode mapping.</summary>
         [Fact]
         public void FixtureWritesDecodeZeroOne()
         {
@@ -58,11 +66,12 @@ namespace UglyToad.PdfPig.Tests.Writer
 
             var decode = Assert.IsType<ArrayToken>(image.ImageDictionary.Data[NameToken.Decode]);
 
-            // The generated fixture comes from a TIFF with Photometric.MINISWHITE, which must map to
-            // blackIs1 = false for AddCcittG4. Reversing this to match TIFF naming reintroduces negative PDFs.
+            // This MINISWHITE TIFF fixture declares blackIs1=false. Its expected [0, 1]
+            // mapping preserves the fixture polarity; swapping the entries would invert the image.
             Assert.Equal([0, 1], decode.Data.OfType<NumericToken>().Select(x => x.Data).ToArray());
         }
 
+        /// <summary>Uses the reversed Decode mapping for blackIs1=true without setting the filter BlackIs1 parameter.</summary>
         [Fact]
         public void AddCcittG4WithBlackIs1TrueWritesDecodeOneZero()
         {
@@ -75,6 +84,7 @@ namespace UglyToad.PdfPig.Tests.Writer
             Assert.False(decodeParms!.Data.ContainsKey(NameToken.BlackIs1));
         }
 
+        /// <summary>Uses the ordered Decode mapping for blackIs1=false without setting the filter BlackIs1 parameter.</summary>
         [Fact]
         public void AddCcittG4WithBlackIs1FalseWritesDecodeZeroOne()
         {
@@ -87,6 +97,7 @@ namespace UglyToad.PdfPig.Tests.Writer
             Assert.False(decodeParms!.Data.ContainsKey(NameToken.BlackIs1));
         }
 
+        /// <summary>Writes the fixture with the requested polarity and returns its image metadata for assertions.</summary>
         private static IPdfImage BuildFaxImage(bool blackIs1)
         {
             var fixture = CcittG4TestImage.Load();

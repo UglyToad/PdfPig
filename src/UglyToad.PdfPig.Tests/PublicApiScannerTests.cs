@@ -129,6 +129,7 @@
                 "UglyToad.PdfPig.Filters.AsciiHexDecodeFilter",
                 "UglyToad.PdfPig.Filters.BrotliFilter",
                 "UglyToad.PdfPig.Filters.CcittFaxDecodeFilter",
+                "UglyToad.PdfPig.Filters.LegacyCcittFaxDecodeFilter",
                 "UglyToad.PdfPig.Filters.DctDecodeFilter",
                 "UglyToad.PdfPig.Filters.FlateFilter",
                 "UglyToad.PdfPig.Filters.Jbig2DecodeFilter",
