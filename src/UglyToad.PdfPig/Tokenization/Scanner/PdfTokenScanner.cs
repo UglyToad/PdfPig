@@ -141,12 +141,24 @@
             }
 
             var readStream = false;
+            var recoveredEndObject = false;
             // Read all tokens between obj and endobj.
-            while (coreTokenScanner.MoveNext() && !IsToken(coreTokenScanner, OperatorToken.EndObject, out _))
+            while (coreTokenScanner.MoveNext())
             {
                 if (coreTokenScanner.CurrentToken is CommentToken)
                 {
                     continue;
+                }
+
+                if (parsingOptions.UseLenientParsing && readTokens.Count > 0 && TryRecoverGluedEndObject())
+                {
+                    recoveredEndObject = true;
+                    break;
+                }
+
+                if (IsToken(coreTokenScanner, OperatorToken.EndObject, out _))
+                {
+                    break;
                 }
 
                 if (ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.StartObject))
@@ -243,7 +255,7 @@
                 previousTokenPositions[2] = coreTokenScanner.CurrentTokenStart;
             }
 
-            if (!readStream && !IsToken(coreTokenScanner, OperatorToken.EndObject, out _))
+            if (!readStream && !recoveredEndObject && !IsToken(coreTokenScanner, OperatorToken.EndObject, out _))
             {
                 readTokens.Clear();
                 return false;
@@ -297,6 +309,23 @@
             objectLocationProvider.UpdateOffset(reference, XrefLocation.File(startPosition));
 
             readTokens.Clear();
+            return true;
+        }
+
+        private bool TryRecoverGluedEndObject()
+        {
+            var endObject = OperatorToken.EndObject.Data;
+            if (coreTokenScanner.CurrentToken is not OperatorToken op || op.Data.Length <= endObject.Length ||
+                !op.Data.StartsWith(endObject, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            // The object body has already been read. Treat the prefix as its end and leave the suffix unread.
+            var tokenStart = coreTokenScanner.CurrentTokenStart;
+            coreTokenScanner.Seek(tokenStart + endObject.Length);
+            coreTokenScanner.ClearPreReadByte();
+            parsingOptions.Logger.Warn($"Recovered a missing separator after endobj at offset {tokenStart}.");
             return true;
         }
 
