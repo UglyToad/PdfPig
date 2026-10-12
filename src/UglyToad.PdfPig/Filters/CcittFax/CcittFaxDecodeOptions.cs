@@ -1,15 +1,8 @@
 namespace UglyToad.PdfPig.Filters.CcittFax
 {
-    /// <summary>Defines row storage, PDF framing and memory limits for one CCITT decode attempt.</summary>
-    /// <remarks>
-    /// DeclaredRows is the PDF Rows parameter; it is independent of InitialRowCapacity and
-    /// MaximumStoredRows (the image Height). EndOfBlock selects marker-based termination.
-    /// Incomplete termination is permitted only after complete rows and the trailer checks
-    /// documented on CcittFaxBitReader. The generic decoder configurations separately select
-    /// coding-family and pixel-polarity specializations; these options are runtime input.
-    /// Passing this value by readonly reference avoids copying the full option set into each
-    /// specialization. The row loop then copies individual values into locals once.
-    /// </remarks>
+    /// <summary>Defines storage, framing and buffer limits for one CCITT decode attempt.</summary>
+    /// <remarks>DeclaredRows controls termination; MaximumStoredRows (Height) limits output;
+    /// InitialRowCapacity is only a storage hint. The filter validates dimensions before construction.</remarks>
     internal readonly struct CcittFaxDecodeOptions
     {
         /// <summary>Validated positive row width in pixels.</summary>
@@ -60,8 +53,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         internal int MaximumDecodedRows { get; }
 
         /// <summary>Stores resolved parameters without validating or allocating decoder state.</summary>
-        /// <remarks>The filter validates dimensions and sets compatible framing and budget options.
-        /// Keeping construction separate from validation also permits focused fixed-capacity tests.</remarks>
         internal CcittFaxDecodeOptions(int columns,
             int initialRowCapacity,
             CcittFaxCompressionType compressionType,

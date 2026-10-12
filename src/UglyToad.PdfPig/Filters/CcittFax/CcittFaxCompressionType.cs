@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters.CcittFax
 {
     /// <summary>Identifies the CCITT row coding and EOL framing used by both decoder implementations.</summary>
-    /// <remarks>The PDF filter resolves K and EndOfLine into these modes. A 1D row encodes
-    /// alternating color runs; a 2D row describes changes relative to the preceding row.</remarks>
     internal enum CcittFaxCompressionType : byte
     {
         /// <summary>Modified Huffman (MH): T.4 one-dimensional run codes without required row EOL synchronization.</summary>

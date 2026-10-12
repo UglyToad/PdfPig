@@ -4,14 +4,10 @@
     using System.IO;
     using IO;
 
-    /// <summary>Exposes the legacy CCITT decoder as a stream of packed, black-one bitmap rows.</summary>
+    /// <summary>Decodes packed black-one rows using the original bit-by-bit CCITT code trees.</summary>
     /// <remarks>
-    /// <para>Walks Huffman and 2D code trees bit by bit, recording color-change positions in
-    /// Int32 arrays. Reads decode a row only when its predecessor has been consumed. The legacy
-    /// filter supplies the output dimensions and applies BlackIs1 after reading the bitmap.</para>
-    /// <para>Retained for the original malformed-input recovery behavior and widths beyond the
-    /// fast decoder's UInt16 positions. This stream does not expose a verified PDF end-marker
-    /// boundary; fixed output dimensions belong to the calling filter.</para>
+    /// <para>Retained for malformed-input recovery and widths beyond UInt16. The legacy filter supplies
+    /// output dimensions and polarity; this stream does not verify the PDF end-marker boundary.</para>
     /// <para>Ported from the Apache-2.0
     /// <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">PDFBox CCITTFaxDecoderStream</see>.</para>
     /// </remarks>

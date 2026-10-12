@@ -2,11 +2,8 @@ namespace UglyToad.PdfPig.Filters.CcittFax
 {
     using System.Collections.Generic;
 
-    /// <summary>Associates a CCITT codeword with its encoded bit count and decoded run length.</summary>
-    /// <remarks>CodeBits is the codeword integer in MSB-first reading order; CodeBitCount counts encoded bits;
-    /// RunLength counts pixels. Runs 0..63 terminate a run sequence; longer values are makeup lengths.
-    /// Keeping all three values together prevents a lookup builder from losing the code length:
-    /// the integers 1 and 01 have the same value but represent different encoded prefixes.</remarks>
+    /// <summary>Pairs an MSB-first codeword and bit count with its pixel run length.</summary>
+    /// <remarks>Bit count distinguishes leading zeros. Lengths 0..63 terminate runs; larger lengths are makeup codes.</remarks>
     internal readonly struct CcittFaxRunCode
     {
         internal int CodeBits { get; }
@@ -30,8 +27,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
     /// <see href="https://github.com/UglyToad/PdfPig/blob/bdbc5f47fdbca11542db7ee876426ee601374427/src/UglyToad.PdfPig/Filters/CcittFax/CcittFaxDecoderStream.cs">pinned PdfPig master decoder</see>.
     /// That decoder attributes its C# port to the Apache-2.0
     /// <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">PDFBox decoder</see>.
-    /// The definitions represent standard T.4 run codes, also used by T.6 horizontal operations.
-    /// Flattening the definitions and building packed lookup entries are the current PdfPig implementation.</para>
+    /// These T.4 codes also encode runs in T.6 horizontal mode.</para>
     /// </remarks>
     internal static class CcittFaxHuffmanCodes
     {

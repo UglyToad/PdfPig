@@ -8,31 +8,13 @@
     using UglyToad.PdfPig.Tests.Images;
     using UglyToad.PdfPig.Tokens;
 
-    /// <summary>Tests decoded CCITT pixels, PDF stream endings, memory limits and legacy fallback.</summary>
+    /// <summary>Tests CCITT pixels, framing, buffer limits and legacy fallback.</summary>
     /// <remarks>
-    /// <para>Three kinds of checks answer different questions:</para>
-    /// <list type="bullet">
-    /// <item><description>Known pixel patterns and independently decoded PDFBox TIFF hashes check
-    /// image correctness, including each row's unused padding bits.</description></item>
-    /// <item><description>Calls to CcittFaxBitmapDecoder check whether the fast path itself accepts
-    /// or rejects a stream. Calls to CcittFaxBitReader isolate lookahead and framing probes.</description></item>
-    /// <item><description>Calls to CcittFaxDecodeFilter check PDF parameter handling and fallback.
-    /// LegacyCcittFaxDecodeFilter supplies the expected recovery result for malformed input;
-    /// agreement with legacy alone does not prove that the pixels are correct.</description></item>
-    /// </list>
-    /// <para>Read bit strings as compressed input, from left to right. Expected byte arrays are
-    /// packed bitmap rows: the leftmost pixel is the most-significant bit. BlackIs1 chooses
-    /// whether black is 1 or 0; unused bits at the row end are white. PackBits adds zero fill
-    /// to the final input byte, which matters when a test distinguishes padding from extra data.</para>
-    /// <para>Rows is the declared encoded row count; Height limits the returned image, and bitmap
-    /// capacity is only allocated storage. These values deliberately differ in termination tests.
-    /// EOL frames a row; RTC and EOFB end an encoded block. Their bit patterns are explained
-    /// beside the constants and individual vectors below.</para>
-    /// <para>Successful filter decoding can include a legacy retry. Where fast-path acceptance
-    /// matters, tests assert direct success or a verified ending status. EndOfBlock denotes a
-    /// full marker, IncompleteEndOfBlock an authorized shortened marker, EndOfInput permitted
-    /// EOF, and RowLimit a Rows-based stop. NotCompleted with zero BytesConsumed supplies no
-    /// verified boundary, including when legacy still returns pixels.</para>
+    /// <para>Known patterns and independently decoded PDFBox TIFF hashes check pixels. Direct decoder
+    /// calls check fast-path acceptance; filter calls check parameters and legacy recovery. Agreement
+    /// with legacy alone does not prove pixel correctness or fast-path success.</para>
+    /// <para>Bit strings are MSB-first compressed input; PackBits zero-pads the final byte. Expected
+    /// bitmap padding is white. Rows, Height and storage capacity deliberately differ in ending tests.</para>
     /// </remarks>
     public class CcittFaxDecodeFilterTests
     {
@@ -140,7 +122,6 @@
 #endif
             var exception = Assert.Throws<CorruptCompressedDataException>(() => image.TryGetBytesAsMemory(out _));
 #if NET
-            // Measuring only the decode call avoids charging document parsing to this guard.
             Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - allocatedBefore, 0L, 1024L * 1024);
 #endif
             Assert.StartsWith("CCITT decode buffers require ", exception.Message);
@@ -1029,10 +1010,8 @@
         }
 
         /// <summary>Distinguishes valid row-boundary EOF from malformed truncation in a real Group 4 image.</summary>
-        /// <remarks>Test the first 96 byte prefixes and spaced late truncations. Valid EOF returns complete rows whose
-        /// pixels match the original image prefix. Truncation within a code rejects and retries
-        /// legacy, retaining its bytes or exception type. Legacy fills requested height at EOF;
-        /// therefore compare successful early-EOF pixels with the complete image prefix instead.</remarks>
+        /// <remarks>Clean EOF returns the original pixel prefix; truncation inside a code retries legacy.
+        /// Legacy pads to the requested height, so only rejected fast attempts are compared with it.</remarks>
         [Fact]
         public void TruncatedFixtureDistinguishesCleanEofFromLegacyRetry()
         {
@@ -1062,9 +1041,7 @@
                 maximumDecodedRows: fixture.Height);
             int rejected = 0;
             int cleanEof = 0;
-            // Bound the regression set: the fixture is large, and all prefixes would repeat
-            // nearly the same work quadratically. Early cuts cover framing; late cuts cover
-            // retained reference rows and failures after a substantial decoded prefix.
+            // Sample early and late cuts; testing every prefix would repeat decoding quadratically.
             var lengths = Enumerable.Range(1, Math.Min(96, fixture.RawCcittData.Length - 1))
                 .Concat(Enumerable.Range(1, 12).Select(i => fixture.RawCcittData.Length * i / 13))
                 .Concat(new[] { fixture.RawCcittData.Length - 1 }).Distinct();
@@ -1239,8 +1216,7 @@
         }
 
         /// <summary>Checks exact-Rows zero-fill endings across coding, polarity, alignment and Height hints.</summary>
-        /// <remarks>Whole zero bytes are a local tolerance, not standard RTC/EOFB. Every declared
-        /// row must be complete. Height affects returned pixels only, not status or consumption.</remarks>
+        /// <remarks>Whole zero bytes are a local EOF tolerance, not RTC/EOFB. Height cannot authorize it.</remarks>
         [Theory]
         [InlineData(0, false)]
         [InlineData(0, true)]
@@ -1294,8 +1270,7 @@
         }
 
         /// <summary>Rejects a shortened Group 4 ending if alignment would hide nonzero bits.</summary>
-        /// <remarks>Zero padding plus one EOL is accepted after exact Rows; set padding is not.
-        /// Both a full initial bitmap and an oversized capacity hint must behave identically.</remarks>
+        /// <remarks>Check zero padding before alignment can discard a set bit; storage capacity must not affect acceptance.</remarks>
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
@@ -1353,8 +1328,7 @@
         }
 
         /// <summary>Unknown Rows without EndOfBlock checks every complete row while limiting stored pixels.</summary>
-        /// <remarks>Black rows exercise reference reuse, cropping, growing output, optional alignment
-        /// and missing versus explicit zero Rows. A positive consumed boundary proves no legacy retry.</remarks>
+        /// <remarks>A verified consumed boundary distinguishes fast-path success from a legacy retry.</remarks>
         [Theory]
         [InlineData(0, false)]
         [InlineData(0, true)]
@@ -1509,9 +1483,8 @@
         }
 
         /// <summary>Checks short RTC acceptance across MH, Group 3 1D and tagged mixed Group 3.</summary>
-        /// <remarks>Two intact rows precede two to five EOLs and zero fill. Unknown or exact Rows
-        /// permits the ending; a different positive Rows value cannot. This checks the fast path
-        /// directly so a fallback cannot turn a rejection into an apparent successful RTC.</remarks>
+        /// <remarks>Unknown or exact Rows permit 2–5 EOLs with zero fill; mismatched positive Rows reject.
+        /// Call the fast decoder directly so fallback cannot hide a framing error.</remarks>
         [Theory]
         [InlineData(0, false)]
         [InlineData(0, true)]
@@ -1542,8 +1515,6 @@
         }
 
         /// <summary>An invalid late row cannot authorize a short RTC merely because Rows matches output capacity.</summary>
-        /// <remarks>One intact Group 3 row precedes a malformed run and a short marker. There is
-        /// no repaired-row policy in the fast path; reject rather than inventing a complete row.</remarks>
         [Fact]
         public void DamagedRowCannotAuthorizeIncompleteTermination()
         {
@@ -1559,8 +1530,7 @@
         }
 
         /// <summary>Rejects a makeup run at the row bound before an attacker can accumulate a huge length.</summary>
-        /// <remarks>One 2560-pixel makeup already exceeds width 8. Repeating it does not require
-        /// a large input or bitmap to check early rejection; no Int32 accumulator overflow is needed.</remarks>
+        /// <remarks>A 2560-pixel makeup code already exceeds width 8; rejection must precede accumulation.</remarks>
         [Fact]
         public void MakeupAccumulationRejectsAtRowBound()
         {
@@ -1577,9 +1547,7 @@
         }
 
         /// <summary>Accepts unknown-Rows clean EOF without using image capacity as the stopping condition.</summary>
-        /// <remarks>Two white rows end without a block marker. Vary coding family and capacity:
-        /// exactly full, oversized and initially too small. The fast path must return two rows,
-        /// consume final-byte padding and report EndOfInput rather than requiring a legacy retry.</remarks>
+        /// <remarks>Vary initial capacity around the actual two-row count to ensure it cannot select the ending.</remarks>
         [Theory]
         [InlineData(0, false)]
         [InlineData(0, true)]
@@ -1605,9 +1573,8 @@
         }
 
         /// <summary>Checks optional EOL on black MH/Group 4 rows and optional tagged mixed Group 3 framing.</summary>
-        /// <remarks>Both rows are black. Group 4 repeats two reference edges; mixed Group 3 first
-        /// uses white-zero/black-eight in 1D, then two vertical-zero codes in 2D. With optional
-        /// framing, a missing row EOL must not consume a mode tag or skip a black pixel.</remarks>
+        /// <remarks>Mixed Group 3 encodes the first black row in 1D and repeats it in 2D; optional EOL
+        /// probes must preserve the mode tag and the first run.</remarks>
         [Theory]
         [InlineData(0)]
         [InlineData(2)]
@@ -1658,8 +1625,6 @@
         }
 
         /// <summary>Reports consumed code bytes without counting bytes loaded only for lookahead.</summary>
-        /// <remarks>Load at least 32 bits after consuming three. BytesConsumed must still be one;
-        /// consuming six more crosses into the second byte. Prefetched whole bytes are excluded.</remarks>
         [Fact]
         public void ConsumptionExcludesUnreadReservoirBytes()
         {
@@ -1737,9 +1702,8 @@
         }
 
         /// <summary>Compares bytes or exception types with the retained master filter.</summary>
-        /// <remarks>The comparison preserves fallback behavior; it does not independently validate pixels.
-        /// requireLegacyBoundary additionally checks zero consumption and NotCompleted: legacy
-        /// cannot report a verified stream ending even when it returns a bitmap.</remarks>
+        /// <remarks>This checks historical recovery, not independent pixel correctness. requireLegacyBoundary
+        /// asserts zero consumption and NotCompleted because legacy cannot verify the encoded end.</remarks>
         private static void AssertFilterMatchesLegacy(byte[] input,
             DictionaryToken dictionary,
             bool requireLegacyBoundary)
@@ -1947,9 +1911,7 @@
             "UtUtfWta1hWtWsKwrVhWFDChkDwsgQ7WALx////////4AIAI";
 
         /// <summary>Decodes readable framing vectors with the same ending policy as the PDF filter.</summary>
-        /// <remarks>Start with one row of storage, permit bounded growth, and return complete-row
-        /// and boundary metadata. Unlike the public filter, this helper never retries legacy:
-        /// false means the fast decoder rejected the vector. Output polarity is fixed to black=0.</remarks>
+        /// <remarks>No legacy retry: false means fast-path rejection. Output uses black=0.</remarks>
         private static bool TryDecodeFramed(string bits,
             CcittFaxCompressionType compression,
             int rows,
@@ -1981,8 +1943,6 @@
         }
 
         /// <summary>Creates eight-pixel PDF framing parameters with independent Rows and Height.</summary>
-        /// <remarks>BlackIs1 and EncodedByteAlign are absent: black=0 and no row-byte alignment.
-        /// Tests explicitly select Rows, Height, coding family and end-marker policy.</remarks>
         private static DictionaryToken CreateFramingDictionary(int rows,
             int height,
             int k,
