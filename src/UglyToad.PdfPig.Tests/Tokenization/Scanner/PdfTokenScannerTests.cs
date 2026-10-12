@@ -914,7 +914,134 @@ endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
             Assert.NotSame(first, second);
         }
 
-        private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null, bool useLenientParsing = false)
+        [Theory]
+        [InlineData("3 0 obj", 3, 0)]
+        [InlineData("123 17 obj", 123, 17)]
+        [InlineData("3 % generation follows\n0 % object marker follows\nobj", 3, 0)]
+        public void LenientParsingRecoversEndObjectGluedToNextObjectHeader(string header, int number, int generation)
+        {
+            var input = $"1 0 obj\n<< /First true >>\nendobj{header}\n<< /Second true >>\nendobj";
+            using var scanner = GetScanner(input, useLenientParsing: true);
+
+            Assert.True(scanner.MoveNext());
+            var first = Assert.IsType<ObjectToken>(scanner.CurrentToken);
+            Assert.Equal(new IndirectReference(1, 0), first.Number);
+            Assert.True(Assert.IsType<DictionaryToken>(first.Data).ContainsKey(NameToken.Create("First")));
+
+            Assert.True(scanner.MoveNext());
+            var second = Assert.IsType<ObjectToken>(scanner.CurrentToken);
+            Assert.Equal(new IndirectReference(number, generation), second.Number);
+            Assert.True(Assert.IsType<DictionaryToken>(second.Data).ContainsKey(NameToken.Create("Second")));
+            Assert.Equal(input.IndexOf(header, StringComparison.Ordinal), second.Position.Value1);
+            Assert.False(scanner.MoveNext());
+        }
+
+        [Fact]
+        public void StrictParsingDoesNotRecoverEndObjectGluedToNextObjectHeader()
+        {
+            using var scanner = GetScanner("1 0 obj\n<< /First true >>\nendobj3 0 obj\n<< /Second true >>\nendobj");
+            Assert.False(scanner.MoveNext());
+        }
+
+        [Theory]
+        [InlineData("xref")]
+        [InlineData("trailer")]
+        [InlineData("garbage")]
+        [InlineData("garbageendobj")]
+        [InlineData("3foo 0 obj")]
+        [InlineData("+3 0 obj")]
+        [InlineData("0 0 obj")]
+        [InlineData("9223372036854775808 0 obj")]
+        [InlineData("3 -1 obj")]
+        [InlineData("3 65536 obj")]
+        [InlineData("3 0.5 obj")]
+        [InlineData("3 /Zero obj")]
+        [InlineData("3 0 nope")]
+        [InlineData("3")]
+        public void GluedEndObjectRecoveryLeavesSuffixUnreadWithoutRequiringHeader(string suffix)
+        {
+            var input = $"1 0 obj\n<< /First true >>\nendobj{suffix}";
+            using var scanner = GetScanner(input, useLenientParsing: true);
+            Assert.True(scanner.MoveNext());
+            Assert.True(Assert.IsType<DictionaryToken>(Assert.IsType<ObjectToken>(scanner.CurrentToken).Data)
+                .ContainsKey(NameToken.Create("First")));
+            Assert.Equal(input.IndexOf("endobj", StringComparison.Ordinal) + "endobj".Length, scanner.CurrentPosition);
+        }
+
+        [Fact]
+        public void GluedEndObjectRecoveryLogsWarning()
+        {
+            var log = new GluedEndObjectLog();
+            using var scanner = GetScanner("1 0 obj true endobj3 0 obj false endobj", useLenientParsing: true, logger: log);
+            Assert.True(scanner.MoveNext());
+            var warning = Assert.Single(log.Warnings);
+            Assert.Contains("missing separator after endobj", warning);
+            Assert.Contains("offset", warning);
+            Assert.True(scanner.MoveNext());
+            Assert.Single(log.Warnings);
+        }
+
+        [Fact]
+        public void GluedEndObjectRecoveryContinuesAfterUnrecognizedSuffix()
+        {
+            using var scanner = GetScanner("1 0 obj true endobjgarbage 2 0 obj 42 endobj", useLenientParsing: true);
+            Assert.True(scanner.MoveNext());
+            Assert.True(Assert.IsType<BooleanToken>(Assert.IsType<ObjectToken>(scanner.CurrentToken).Data).Data);
+            Assert.True(scanner.MoveNext());
+            var second = Assert.IsType<ObjectToken>(scanner.CurrentToken);
+            Assert.Equal(new IndirectReference(2, 0), second.Number);
+            Assert.Equal(42, Assert.IsType<NumericToken>(second.Data).Int);
+        }
+
+        [Theory]
+        [InlineData("(endobj3 0 obj)", typeof(StringToken))]
+        [InlineData("/endobj3", typeof(NameToken))]
+        public void GluedEndObjectRecoveryDoesNotSplitStringsOrNames(string body, Type tokenType)
+        {
+            using var scanner = GetScanner($"1 0 obj {body} endobj2 0 obj 42 endobj", useLenientParsing: true);
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(tokenType, Assert.IsType<ObjectToken>(scanner.CurrentToken).Data.GetType());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(new IndirectReference(2, 0), Assert.IsType<ObjectToken>(scanner.CurrentToken).Number);
+        }
+
+        [Fact]
+        public void GluedEndObjectRecoveryDoesNotSplitComments()
+        {
+            var log = new GluedEndObjectLog();
+            using var scanner = GetScanner("1 0 obj true % endobj99 0 obj\nendobj2 0 obj 42 endobj",
+                useLenientParsing: true, logger: log);
+            Assert.True(scanner.MoveNext());
+            Assert.True(Assert.IsType<BooleanToken>(Assert.IsType<ObjectToken>(scanner.CurrentToken).Data).Data);
+            Assert.Single(log.Warnings);
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(new IndirectReference(2, 0), Assert.IsType<ObjectToken>(scanner.CurrentToken).Number);
+        }
+
+        private sealed class GluedEndObjectLog : Logging.ILog
+        {
+            public List<string> Warnings { get; } = new List<string>();
+            public void Debug(string message) { }
+            public void Debug(string message, Exception ex) { }
+            public void Warn(string message) => Warnings.Add(message);
+            public void Error(string message) { }
+            public void Error(string message, Exception ex) { }
+        }
+
+        [Fact]
+        public void GluedEndObjectRecoveryPreservesStreamData()
+        {
+            const string body = "endobj3 0 obj";
+            var input = $"1 0 obj\n<< /Length {body.Length} >>\nstream\n{body}\nendstream\nendobj2 0 obj\n42\nendobj";
+            using var scanner = GetScanner(input, useLenientParsing: true);
+            Assert.True(scanner.MoveNext());
+            var first = Assert.IsType<ObjectToken>(scanner.CurrentToken);
+            Assert.Equal(Encoding.ASCII.GetBytes(body), Assert.IsType<StreamToken>(first.Data).Data.ToArray());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(42, Assert.IsType<NumericToken>(Assert.IsType<ObjectToken>(scanner.CurrentToken).Data).Int);
+        }
+
+        private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null, bool useLenientParsing = false, Logging.ILog logger = null)
         {
             var input = StringBytesTestConverter.Convert(s, false);
 
@@ -923,7 +1050,7 @@ endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
                 new TestFilterProvider(),
                 NoOpEncryptionHandler.Instance,
                 new FileHeaderOffset(0),
-                useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff,
+                new ParsingOptions { UseLenientParsing = useLenientParsing, Logger = logger ?? new TestingLog() },
                 new StackDepthGuard(256));
         }
 
