@@ -35,10 +35,7 @@ namespace UglyToad.PdfPig.Filters
         }
 
         /// <summary>Decodes with the original stream decoder, optionally reusing a bitmap from a failed fast attempt.</summary>
-        /// <remarks>A supplied bitmap must have exactly the resolved image size. The caller must
-        /// clear it before retrying: the legacy decoder can leave unread output bytes untouched.
-        /// A null bitmap requests a new zero-initialized array. Reusing the fast attempt's bitmap
-        /// avoids allocating a second image during fallback.</remarks>
+        /// <remarks>A reused bitmap must match the resolved size and be cleared: legacy can leave unread output bytes untouched.</remarks>
         internal Memory<byte> DecodeInto(Memory<byte> input,
             DictionaryToken streamDictionary,
             IFilterProvider filterProvider,

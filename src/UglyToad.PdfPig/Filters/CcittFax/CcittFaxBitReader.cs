@@ -5,35 +5,20 @@ namespace UglyToad.PdfPig.Filters.CcittFax
     using System.IO;
     using System.Runtime.CompilerServices;
 
-    /// <summary>Reads most-significant-bit-first CCITT codes from a span using a 64-bit reservoir.</summary>
+    /// <summary>Reads MSB-first CCITT codes from a span through a 64-bit reservoir.</summary>
     /// <remarks>
-    /// <para>A ref struct keeps the input span without copying or allocating a stream wrapper.
-    /// The reservoir batches byte loads so run and mode decoding do not fetch each bit separately.
-    /// Store unread bits in the low buffered-bit-count positions, with the next bit
-    /// at their upper end. Append four bytes in big-endian order when at most 32 bits remain;
-    /// refill short input tails byte by byte. Peek extracts a prefix without consuming its code.</para>
-    /// <para>When a complete prefix is already buffered, extract it before loading the next word.
-    /// This shortens the dependent work before a lookup result is available. Compact lookups may index using
-    /// zero-padded missing bits, but consumption checks the actual buffered count. Exact reads instead
-    /// report exhausted input during EOL framing probes.</para>
-    /// <para>Idea provenance; no article or third-party implementation code was copied:</para>
-    /// <list type="table">
-    /// <listheader><term>Source</term><description>Adapted idea</description></listheader>
-    /// <item><term>Fabian Giesen</term><description>Stateful reservoirs with separate refill, peek
-    /// and consume operations, and the effect of their dependency chains.
-    /// See <see href="https://fgiesen.wordpress.com/2018/02/20/reading-bits-in-far-too-many-ways-part-2/">Reading bits in far too many ways, part 2</see>.</description></item>
-    /// <item><term>Dougall Johnson</term><description>Decode from an already buffered prefix while
-    /// preparing refill, removing refill from that prefix's dependency chain.
-    /// See <see href="https://dougallj.wordpress.com/2022/08/26/reading-bits-with-zero-refill-latency/">Reading bits with zero refill latency</see>.</description></item>
-    /// <item><term>PdfPig (Apache-2.0)</term><description>This bounded MSB-first span reader,
-    /// 32-bit refill, zero-padded lookup handling and exact-read failure semantics.</description></item>
-    /// </list>
+    /// <para>Unread bits occupy the low bufferedBitCount positions, highest bit first. Refill appends
+    /// 32-bit big-endian words when space permits, then individual tail bytes. Peek may zero-pad
+    /// lookup indices near EOF; ConsumeBits rejects codes whose actual bits are missing.</para>
+    /// <para>Inspiration: <see href="https://fgiesen.wordpress.com/2018/02/20/reading-bits-in-far-too-many-ways-part-2/">Fabian Giesen's bit-reader discussion</see>
+    /// for separate refill, peek and consume operations;
+    /// <see href="https://dougallj.wordpress.com/2022/08/26/reading-bits-with-zero-refill-latency/">Dougall Johnson's refill-latency discussion</see>
+    /// for extracting an already buffered prefix before refilling. No source code was copied;
+    /// the bounded MSB-first span reader and framing probes are implemented here.</para>
     /// </remarks>
     internal ref struct CcittFaxBitReader
     {
-        // The low bufferedBitCount bits are unread; bit bufferedBitCount - 1 is consumed next.
-        // Higher bits are ignored.
-        // inputOffset is the index of the next byte to append to bitBuffer.
+        // inputOffset points to the next byte to append, not the logical consumed position.
         private readonly ReadOnlySpan<byte> compressedInput;
         private int inputOffset;
         private int bufferedBitCount;
@@ -50,9 +35,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         /// <summary>Bytes containing consumed bits, including the final byte's unused bits.</summary>
         /// <remarks>Subtract whole unread bytes so reservoir lookahead is not counted as consumption.
         /// This is ceil((8 * inputOffset - bufferedBitCount) / 8), without multiplying an Int32 offset.</remarks>
-        /// <example>If two bytes were loaded and only three bits consumed, 13 bits remain buffered:
-        /// 2 - (13 / 8) = 1 byte consumed. Loading ahead does not move the logical boundary.
-        /// After nine bits are consumed, seven remain and the boundary becomes two bytes.</example>
         internal int BytesConsumed => inputOffset - bufferedBitCount / 8;
 
         /// <summary>Peeks a code prefix, allowing zero padding only for lookup indexing.</summary>
@@ -164,10 +146,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         internal void AlignToByteBoundary() => bufferedBitCount -= bufferedBitCount & 7;
 
         /// <summary>Consumes row framing and returns whether this row uses 1D run coding.</summary>
-        /// <remarks>MH and Group 3 1D always return true; Group 4 returns false. Mixed Group 3
-        /// reads a tag: one selects 1D and zero selects 2D. MH probes only optional EOL; Group 3
-        /// checks requireEndOfLine. Group 4 checks it when optional framing probes are enabled.
-        /// Failed optional probes leave ordinary row data unconsumed.</remarks>
+        /// <remarks>Mixed Group 3 uses a tag: one selects 1D, zero selects 2D. Failed optional EOL probes preserve row data.</remarks>
         internal bool ReadRowIsOneDimensional<T>(CcittFaxCompressionType compressionType,
             bool acceptOptionalEndOfLine,
             bool requireEndOfLine)
@@ -212,10 +191,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         }
 
         /// <summary>Consumes an EOL, including preceding zero fill, only when the complete marker exists.</summary>
-        /// <remarks>Read eleven or more zero bits followed by one. Additional leading zeros are
-        /// fill, not additional EOLs: each EOL must end in its own set bit. A copy of the reader
-        /// makes a failed probe leave the original logical bit position intact. This decoder uses
-        /// EOL for row framing and for the RTC/EOFB probes below.</remarks>
+        /// <remarks>Eleven or more zeros followed by one form EOL. Probe a copy so failed matches consume nothing.</remarks>
         internal bool TryReadEndOfLine()
         {
             // Ordinary Huffman/mode prefixes cannot begin with eleven zero bits. Reject them
@@ -292,9 +268,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                         return CcittFaxDecodeStatus.IncompleteEndOfBlock;
                     }
 
-                    // One Group 3 EOL is a separate local EOF tolerance, not a complete RTC.
-                    // The caller requires exact positive Rows without repairs. As with shortened RTCs,
-                    // every remaining bit must be zero; this may include whole zero-fill bytes.
+                    // A single Group 3 EOL is tolerated after exact Rows and zero fill, not as a full RTC.
                     if (allowSingleGroup3Eol && compressionType != CcittFaxCompressionType.Group4_2D && i == 1 &&
                         probe.TryReadZeroFillToEnd())
                     {
@@ -303,11 +277,9 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                         return CcittFaxDecodeStatus.IncompleteEndOfBlock;
                     }
 
-                    // Compatibility at EOF, not a shortened RTC definition: retain complete rows
-                    // when the caller permits Group 3 termination with at least two EOLs and zero fill.
-                    // The caller checks the declared row count; this reader only validates the trailer.
-                    // Behavior comparison only; no Poppler implementation code was copied.
-                    // Poppler also retains decoded data after reporting an incomplete RTC:
+                    // Accept 2–5 EOLs with zero fill only when the caller's row checks permit it.
+                    // Behavior comparison: Poppler retains decoded data after incomplete RTC;
+                    // no Poppler implementation code was copied.
                     // https://skia.googlesource.com/third_party/poppler/+/db9634f3a05c92b3687881259afdf707e1d614d1/poppler/Stream.cc#2252
                     if (!allowIncompleteRtc || compressionType == CcittFaxCompressionType.Group4_2D || i < 2 ||
                         !probe.TryReadZeroFillToEnd())
@@ -331,13 +303,8 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         }
 
         /// <summary>Consumes the remaining input only when every remaining bit is zero.</summary>
-        /// <remarks>This scans buffered bits and input once without allocating an output buffer.
-        /// Probe a copy: a nonzero bit preserves the original logical input position. Success
-        /// consumes through EOF, including whole zero bytes, so BytesConsumed includes the fill.
-        /// Callers must separately authorize this local termination tolerance from exact positive
-        /// Rows without repairs, or the existing two-to-five-EOL Group 3 rule. Unknown Rows alone
-        /// authorize only HasOnlyBytePadding, not arbitrary zero fill. All-zero tails can also be
-        /// truncated code prefixes; the reader cannot distinguish those from intended fill.</remarks>
+        /// <remarks>Failure preserves the input position; success consumes through EOF, including whole zero bytes.
+        /// Callers must authorize this tolerance: a zero tail can also be a truncated code.</remarks>
         internal bool TryReadZeroFillToEnd()
         {
             var probe = this;

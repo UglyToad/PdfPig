@@ -5,13 +5,8 @@ namespace UglyToad.PdfPig.Filters.CcittFax
     using System.Runtime.CompilerServices;
     using UglyToad.PdfPig.Fonts;
 
-    /// <summary>Supplies constant coding-family and output-polarity choices to generic decoder methods.</summary>
-    /// <remarks>
-    /// Group 4 framing and BlackIs1 are chosen once per call, not per pixel. Value-type
-    /// configurations let the JIT remove the unused branches from each specialized row loop.
-    /// .NET 8 and later use static interface properties; older targets use constrained instance
-    /// properties on a default struct without boxing.
-    /// </remarks>
+    /// <summary>Lets the JIT specialize row decoding for Group 4 and output polarity.</summary>
+    /// <remarks>Value-type configurations avoid boxing; older targets use constrained instance properties.</remarks>
     internal interface ICcittFaxDecodingConfiguration
     {
 #if NET8_0_OR_GREATER
@@ -25,80 +20,26 @@ namespace UglyToad.PdfPig.Filters.CcittFax
 #endif
     }
 
-    /// <summary>
-    /// Decodes Modified Huffman, Group 3 and Group 4 CCITT data directly into a packed bitmap.
-    /// </summary>
+    /// <summary>Decodes MH, Group 3 and Group 4 CCITT data into an MSB-first packed bitmap.</summary>
     /// <remarks>
-    /// <para>Start here: CCITT encodes a black-and-white image one row at a time. A run is a
-    /// sequence of pixels of the same color. Instead of storing each pixel, a one-dimensional
-    /// (1D) row stores alternating white and black run lengths. For example, WWWBBWWW becomes
-    /// runs of 3 white, 2 black and 3 white pixels. Every row starts with a white run; a row whose
-    /// first pixel is black therefore begins with a zero-length white run.</para>
-    /// <para>A two-dimensional (2D) row describes differences from the preceding row. Here 1D
-    /// and 2D refer to coding, not to the dimensions of the resulting image. Adjacent scanned
-    /// rows often have similar edges, so relative positions can use fewer bits than full run
-    /// lengths. A transition is the position immediately after a run: the example above records
-    /// positions 3, 5 and 8, including the row edge. Before the first row, the reference is all white.</para>
-    /// <para>High-level call flow:</para>
-    /// <code>
-    /// CcittFaxDecodeFilter: resolve PDF parameters and reserve bounded bitmap storage
-    ///     CcittFaxDecodeOptions: pass coding, framing, storage and budget choices
-    ///     CcittFaxBitmapDecoder: repeat the complete-row loop below
-    ///         CcittFaxBitReader: read code bits and recognize row/block boundaries
-    ///         CcittFaxHuffmanCodes: supply the standard codewords used by lookup tables
-    ///     CcittFaxDecodeResult: report rows, consumed input, ending and allocations
-    /// CcittFaxDecodeFilter: return the stored bitmap, or restart with the legacy filter
-    /// </code>
-    /// <para>The row loop follows this sequence:</para>
-    /// <list type="number">
-    /// <item><description>At a complete-row boundary, check whether decoding may stop. The
-    /// encoded end and the stored image height are separate: extra encoded rows may still be
-    /// needed to validate the end and preserve the next row's reference.</description></item>
-    /// <item><description>Read the row framing and select 1D or 2D coding. Modified Huffman
-    /// and Group 3 1D use run lengths; mixed Group 3 has a tag selecting the row's coding;
-    /// Group 4 uses 2D coding. EOL (end of line) frames rows where required. RTC (return to
-    /// control) and EOFB (end of facsimile block) mark the encoded block's end.</description></item>
-    /// <item><description>Decode until the validated row width is reached. For 1D coding,
-    /// read alternating run lengths. For 2D coding, horizontal mode reads two run lengths,
-    /// vertical mode places an edge relative to a reference-row edge, and pass mode advances
-    /// past two reference edges without changing the current color.</description></item>
-    /// <item><description>While decoding, record transitions and paint black intervals into
-    /// a row initialized to white. Each output byte holds eight pixels, most-significant bit
-    /// first. BlackIs1 selects which bit value means black; unused bits at the row end stay white.</description></item>
-    /// <item><description>Promote the completed row's transitions to the reference for the
-    /// next row, swap the reusable transition arrays, and repeat. Rows beyond image Height
-    /// use a reusable scratch row; they update the reference but are not returned as pixels.</description></item>
-    /// </list>
-    /// <para>The filter validates dimensions and initial output capacity. This decoder checks
-    /// run bounds, transition counts, row operations and buffer growth while decoding. A rejected
-    /// attempt exposes no partial bitmap: the filter can retry the original compressed input with
-    /// LegacyCcittFaxDecodeFilter. Budget failures propagate instead of triggering a retry that
-    /// could bypass the limit. This class reports rejection; the filter chooses the fallback.</para>
-    /// <para>Performance choices preserve this row algorithm: flat prefix tables replace
-    /// bit-by-bit code-tree walks; short run pairs combine two lookups; a buffered span reader
-    /// batches input loads; UInt16 transitions compact the reference state for widths up to
-    /// 65,535 pixels. Wider rows use the legacy filter. Painting with the selected polarity avoids
-    /// a separate inversion pass, and generic value-type configurations let the JIT specialize
-    /// Group 4 and polarity branches. The methods below document these representations locally.</para>
-    /// <para>Implementation provenance:</para>
-    /// <list type="table">
-    /// <listheader><term>Source</term><description>Reused material or adapted idea</description></listheader>
-    /// <item><term>PdfPig / Apache PDFBox decoder (Apache-2.0)</term><description>
-    /// Standard T.4/T.6 codewords and run, reference-row and malformed-row rules.
-    /// See <see href="https://github.com/UglyToad/PdfPig/blob/bdbc5f47fdbca11542db7ee876426ee601374427/src/UglyToad.PdfPig/Filters/CcittFax/CcittFaxDecoderStream.cs">pinned PdfPig source</see>
-    /// and its attributed <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">PDFBox source</see>.
-    /// </description></item>
-    /// <item><term>libdeflate fast loop (MIT)</term><description>Idea of preparing the next operation
-    /// before completing independent output work. This decoder peeks the next CCITT mode before
-    /// painting and consumes it on the next iteration. No libdeflate code or tables were copied.
-    /// See <see href="https://github.com/ebiggers/libdeflate/blob/8ae3a19a59173f16e3738d45b54a1cdf05ad12d4/lib/decompress_template.h">decompression loop</see>.
-    /// </description></item>
-    /// <item><term>This PdfPig implementation (Apache-2.0)</term><description>The flat lookup builders,
-    /// packed short-run pairs, compact transition storage, polarity-aware interval painter, generic
-    /// decoding configurations are implemented here for CCITT. The PDF filter controls legacy retries.</description></item>
-    /// </list>
-    /// <para>The bit-reader refill scheduling and its sources are documented on
-    /// <see cref="CcittFaxBitReader"/>.</para>
+    /// <para>1D rows alternate white and black run lengths, starting with white (possibly zero pixels).
+    /// 2D rows describe changes from the preceding row, initially all white. Horizontal mode reads two
+    /// runs; vertical mode places an edge relative to a reference edge; pass mode skips two reference
+    /// edges without changing color. Completed run ends become the next row's reference transitions.</para>
+    /// <para>The row loop checks termination, reads framing, decodes runs or relative edges, paints black
+    /// intervals, then swaps the transition arrays. Prefix tables and short-run pairs replace tree walks;
+    /// UInt16 transitions reduce working storage. Painting in the requested polarity avoids inversion.</para>
+    /// <para>Height limits stored pixels, not decoding: extra rows update the reference until termination.
+    /// The filter owns parameter resolution, buffer limits and legacy retries; this decoder reports the
+    /// ending and input consumption. Invalid rows return false; budget failures throw.</para>
+    /// <para>Provenance: T.4/T.6 codewords and reference-row rules derive from the Apache-2.0
+    /// <see href="https://github.com/UglyToad/PdfPig/blob/bdbc5f47fdbca11542db7ee876426ee601374427/src/UglyToad.PdfPig/Filters/CcittFax/CcittFaxDecoderStream.cs">PdfPig decoder</see>
+    /// and its attributed Apache-2.0
+    /// <see href="https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java">PDFBox decoder</see>.
+    /// The MIT <see href="https://github.com/ebiggers/libdeflate/blob/8ae3a19a59173f16e3738d45b54a1cdf05ad12d4/lib/decompress_template.h">libdeflate fast loop</see>
+    /// inspired peeking the next mode before painting; no libdeflate code or tables were copied.
+    /// Packed run pairs, lookup builders, compact transitions and polarity painting are implemented here.
+    /// Bit-reader inspiration is documented on <see cref="CcittFaxBitReader"/>.</para>
     /// </remarks>
     internal static class CcittFaxBitmapDecoder
     {
@@ -133,10 +74,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         /// <example>
         /// The white terminating code 1000 represents three pixels. With 12-bit lookahead,
         /// indices 1000xxxxxxxx (0x800..0x8FF) all contain (3 &lt;&lt; 4) | 4 = 0x34.
-        /// DecodeRunLength extracts length 4 from the low bits and pixel count 3 from the
-        /// upper bits. It consumes only 1000; the eight lookahead bits remain for later codes.
-        /// The entry is therefore valid regardless of the next code's prefix. Near EOF, missing
-        /// lookahead bits may be padded for indexing, but all four consumed bits must exist.
+        /// Only the four code bits are consumed; the remaining bits belong to later codes.
         /// </example>
         private static ushort[] BuildRunLookupTable(CcittFaxRunCode[] runCodes, int lookaheadBitCount)
         {
@@ -159,9 +97,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         }
 
         /// <summary>Adds makeup lengths until a terminating code completes one run of a single color.</summary>
-        /// <remarks>A run ends with a 0..63-pixel code, even when makeup lengths already reach
-        /// the row edge. Check remainingPixels before adding so invalid input cannot paint outside
-        /// the row. Zero pixels are valid and still consume a terminating code.</remarks>
+        /// <remarks>A run requires a terminating code (0..63), even when makeup codes already reach the row edge.</remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int DecodeRunLength<T>(ref CcittFaxBitReader bitReader, bool isWhiteRun, int remainingPixels)
             where T : struct, ICcittFaxDecodingConfiguration
@@ -248,8 +184,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         }
 
         /// <summary>Reads the 2D code tree when a prefix has no ordinary lookup entry.</summary>
-        /// <remarks>Block endings must have been consumed at the row boundary. Encountering one here,
-        /// or an unsupported extension, rejects the row instead of inventing pixel transitions.</remarks>
+        /// <remarks>End markers are valid only between rows. Unsupported extensions reject the attempt.</remarks>
         private static int DecodeModeBitByBit<T>(ref CcittFaxBitReader bitReader)
             where T : struct, ICcittFaxDecodingConfiguration
         {
@@ -345,9 +280,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         /// One table starts with white and the other with black. Bits 0..5 and 6..11 store the
         /// two terminating pixel counts; bits 12..15 store their combined code length. A zero
         /// entry means decode the runs individually. Only pairs of at most 12 bits fit the lookup.
-        /// Tables are generated from <see cref="CcittFaxHuffmanCodes"/>. Decode two common short runs
-        /// together to reduce dependent lookups. Longer or unmapped pairs use DecodeRunLength;
-        /// a pair must not consume the first run of the next 1D row.
         /// </remarks>
         private static class RunPairLookup
         {
@@ -500,12 +432,9 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         }
 
         /// <summary>Paints the black interval [startPosition, endPosition) into a white-initialized row.</summary>
-        /// <remarks>Mask the first and last bytes to preserve adjacent pixels and unused row-end bits.
-        /// Fill whole bytes between them in one span operation. Applying BlackIs1 here avoids a
-        /// separate full-bitmap inversion after decoding.</remarks>
+        /// <remarks>Boundary masks preserve adjacent pixels and white padding. Whole interior bytes use Span.Fill.</remarks>
         /// <example>For an eight-pixel row, painting [3, 5) produces 00011000 with BlackIs1,
-        /// or 11100111 without it. The interval end is exclusive; both pixels share one byte,
-        /// so intersecting the first/last masks changes only those two bits.</example>
+        /// or 11100111 without it. The interval end is exclusive.</example>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void PaintBlackInterval<T>(Span<byte> rowPixels, int startPosition, int endPosition)
             where T : struct, ICcittFaxDecodingConfiguration
@@ -557,7 +486,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
 #endif
         }
 
-        /// <summary>Reads the selected polarity through the interface form supported by the target framework.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool BlackIsOne<T>()
             where T : struct, ICcittFaxDecodingConfiguration
@@ -583,33 +511,14 @@ namespace UglyToad.PdfPig.Filters.CcittFax
         }
 
         /// <summary>Decodes complete rows, keeps their reference transitions and validates the encoded end.</summary>
-        /// <remarks>
-        /// Check RTC/EOFB or permitted EOF before reading a new row: an ending marker shares the
-        /// EOL prefix used by row framing. Stored height only limits output; extra rows still update
-        /// the 2D reference and use a reusable scratch row until termination.
-        /// Invalid runs or positions reject the attempt. Allocation and logical discarded-output
-        /// limits apply while decoding, so neither growth nor discarded rows bypass the budget.
-        /// </remarks>
+        /// <remarks>Check block endings before row framing: RTC/EOFB shares the EOL prefix.
+        /// Only completed rows become the next 2D reference.</remarks>
         /// <example>
-        /// Reference row: WWWBBWWW, width 8, transitions [3, 5, 8]. Positions are boundaries
-        /// between pixels, so a run ending at 3 covers pixels [0, 3). Even transition indices
-        /// end white runs (white-to-black); odd indices end black runs (black-to-white).
-        /// In T.4/T.6 notation, pixelPosition plays the role of a0, referencePosition is b1,
-        /// and the following reference transition is b2. At the initial boundary this code
-        /// also permits a transition at zero, representing a black first pixel.
-        ///
-        /// The following are independent examples starting at position 0 in white:
-        /// - Vertical +1: b1 is 3, so the current white run ends at 4. Record transition 4,
-        ///   then switch to black. Its next reference edge uses the odd cursor: b1 is 5.
-        /// - Horizontal: lengths 3 white and 2 black end at 3 and 5. Record both transitions
-        ///   and advance to 5. Two color switches leave the current color white.
-        /// - Pass: b1 is 3 and b2 is 5. Advance to 5 without recording a transition or changing
-        ///   color: the current white run continues beyond both edges in the reference row.
-        ///
-        /// Each color has its own forward-only reference cursor. After the row-start special
-        /// case, skip matching-color transitions at or before pixelPosition to find b1 ahead.
-        /// If no such edge exists, use the row width as the boundary. Equal recorded positions
-        /// must remain: an empty run changes color even though it does not advance a pixel.
+        /// Reference WWWBBWWW has transitions [3, 5, 8]. Starting in white at position 0:
+        /// vertical +1 ends the white run at 4; horizontal white-3/black-2 records edges 3 and 5;
+        /// pass advances to reference edge 5 while continuing white, without recording an edge.
+        /// Even reference indices end white runs; odd indices end black runs. Equal positions
+        /// represent zero-length runs and must remain because they still change color.
         /// </example>
         private static RowDecodeResult DecodeRows<T>(ref CcittFaxBitReader bitReader,
             ref byte[] decodedBitmap,
@@ -617,8 +526,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
             ref long allocatedBufferBytes)
             where T : struct, ICcittFaxDecodingConfiguration
         {
-            // Copy immutable runtime options once; the row loop keeps scalar locals and its
-            // existing generic specialization for coding family and output polarity.
             int columns = options.Columns;
             int rowCapacity = options.InitialRowCapacity;
             var compressionType = options.CompressionType;
@@ -634,9 +541,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
             int maximumStoredRows = options.MaximumStoredRows;
             int maximumDecodedRows = options.MaximumDecodedRows;
             int rowByteCount = (columns + 7) / 8;
-            // Reuse two transition arrays: the previous row is the 2D reference, the current
-            // row records newly decoded color changes. Only entries below each row count are valid.
-            // Equal positions represent zero-length runs and must remain in their original order.
+            // Reuse both arrays; entries beyond each row's transition count are stale.
             var referenceTransitions = new ushort[columns + 2];
             var currentTransitions = new ushort[columns + 2];
             // Before the first 2D row, the reference is all white: no transitions exist,
@@ -649,13 +554,10 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                  (maximumDecodedRows == 0 || rowIndex < maximumDecodedRows);
                  rowIndex++)
             {
-                // rowIndex counts completed rows; rowCapacity is merely this bitmap's capacity.
-                // Every counted row is complete. Only the independent PDF Rows value can
-                // authorize declared-row EOF or a single Group 3/4 EOL, not the Height hint.
+                // Only complete declared Rows can authorize an abbreviated ending, never Height or capacity.
                 bool exactDeclaredRows = declaredRows > 0 && rowIndex == declaredRows;
-                // Unknown Rows allow final-byte padding only. Exact positive Rows additionally
-                // authorize all-zero fill through EOF, including whole bytes. This local policy
-                // trusts the intact declared image even though a truncated extra code can be all zero.
+                // Unknown Rows permit only final-byte padding. Exact positive Rows also permit
+                // whole zero-fill bytes; an all-zero truncated code is indistinguishable from fill.
                 bool cleanEndOfInput = rowIndex > 0 && ((allowEndOfInput && bitReader.HasOnlyBytePadding) ||
                                                         allowIncompleteTermination && exactDeclaredRows &&
                                                         bitReader.TryReadZeroFillToEnd());
@@ -684,17 +586,14 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                     }
                 }
 
-                // EOF follows complete rows with final-byte padding or authorized declared-Rows zero fill.
                 if (cleanEndOfInput)
                 {
                     bitReader.AlignToByteBoundary();
                     return new RowDecodeResult(rowIndex, CcittFaxDecodeStatus.EndOfInput);
                 }
 
-                // The image output limit is independent of the encoded block's end. Decode
-                // excess rows into one reusable scratch row, retaining transitions for 2D coding.
-                // Count their logical decoded bytes too: discarding output must not remove the
-                // existing finite work bound supplied by the decode-buffer limit.
+                // Rows beyond Height still update the 2D reference. Charge their logical bytes
+                // to the work budget even though one scratch row stores them all.
                 bool discardRow = maximumStoredRows > 0 && rowIndex >= maximumStoredRows;
                 if (discardRow && (long)(rowIndex + 1) * rowByteCount > maximumAllocatedBufferBytes)
                 {
@@ -765,11 +664,8 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                             requireEndOfLine);
                 }
 
-                // Row-state invariants: pixelPosition is the next undecoded pixel boundary;
-                // isWhiteRun is the color continuing from it. currentTransitions holds only
-                // this row's completed runs, while referenceTransitions remains unchanged until
-                // the row is complete. Horizontal/run-pair steps switch twice, vertical/single
-                // run steps switch once, and pass steps keep the color and record no edge.
+                // Reference transitions stay unchanged until this row is complete. Horizontal
+                // steps change color twice, vertical/1D steps once, and pass steps never.
                 bool isWhiteRun = true;
                 int pixelPosition = 0;
                 int transitionCount = 0;
@@ -788,7 +684,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                         throw new InvalidDataException("CCITT row does not progress.");
                     }
 
-                    // Select the current mode, consuming any prefix prepared by the previous operation.
                     int operation;
                     if (isOneDimensional)
                     {
@@ -916,9 +811,8 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                             blackReferenceIndex = referenceTransitionIndex;
                         }
 
-                        // The legacy path can wrap this pass to the first reference transition
-                        // when no later transition exists. Retry there instead of substituting width;
-                        // it preserves the original malformed-input behavior.
+                        // Legacy wraps this malformed pass to the first reference edge.
+                        // Reject here so the filter retries with that historical recovery rule.
                         if (operation == PassMode && pixelPosition != 0 && referenceTransitionCount != 0 &&
                             referenceTransitionIndex >= referenceTransitionCount)
                         {
@@ -958,7 +852,6 @@ namespace UglyToad.PdfPig.Filters.CcittFax
                     }
                 }
 
-                // Promote the completed row to the reference and reuse the other transition array.
                 (referenceTransitions, currentTransitions) = (currentTransitions, referenceTransitions);
                 referenceTransitionCount = transitionCount;
             }
@@ -966,9 +859,7 @@ namespace UglyToad.PdfPig.Filters.CcittFax
             var status = CcittFaxDecodeStatus.RowLimit;
             if (verifyEndMarker)
             {
-                // A full bitmap does not prove the image ended: Height can be too small. Apply
-                // the same trailer rules as at an earlier row boundary. If none matches, fail
-                // this compact attempt so the caller can restart using the legacy filter.
+                // Fixed-capacity decoding needs the same boundary checks; a full bitmap is not an end marker.
                 bool exactDeclaredRows = declaredRows > 0 && rowCapacity == declaredRows;
                 bool cleanEndOfInput = (allowEndOfInput && bitReader.HasOnlyBytePadding) ||
                                        allowIncompleteTermination && exactDeclaredRows &&

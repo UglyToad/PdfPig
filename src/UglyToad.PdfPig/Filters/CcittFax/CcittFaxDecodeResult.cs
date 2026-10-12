@@ -1,13 +1,8 @@
 namespace UglyToad.PdfPig.Filters.CcittFax
 {
-    /// <summary>Reports complete encoded rows, their input boundary and cumulative buffer allocations.</summary>
-    /// <remarks>
-    /// DecodedRows includes checked rows beyond the stored image height. BytesConsumed is
-    /// rounded up to the last byte containing consumed bits and excludes unread lookahead.
-    /// AllocatedBufferBytes includes replaced bitmap arrays and working buffers, allowing the
-    /// filter to budget a legacy retry. An unsuccessful attempt reports zero rows and consumption
-    /// with NotCompleted, but retains its allocation count.
-    /// </remarks>
+    /// <summary>Reports decoded rows, input consumption, termination and cumulative buffer allocations.</summary>
+    /// <remarks>Rejection reports zero rows and consumption, but retains allocations for budgeting a retry.
+    /// DecodedRows includes rows beyond Height; AllocatedBufferBytes includes replaced arrays.</remarks>
     internal readonly struct CcittFaxDecodeResult
     {
         /// <summary>Number of fully decoded encoded rows, including rows discarded beyond image Height.</summary>
