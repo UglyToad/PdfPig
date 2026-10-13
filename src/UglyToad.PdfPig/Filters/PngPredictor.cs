@@ -93,11 +93,11 @@
         /// reading the rows where they are and writing the decoded rows to the result. For data that
         /// has to leave a buffer anyway this is <see cref="Decode"/> folded into the copy.
         /// </summary>
-        public static byte[] DecodeToArray(ReadOnlySpan<byte> data, int predictor, int colors, int bitsPerComponent, int columns)
+        public static byte[] DecodeToArray(ReadOnlySpan<byte> data, int predictor, int colors, int bitsPerComponent, int columns, int maximumCapacity = DecodeBuffer.MaximumCapacity)
         {
             if (predictor <= 1 || data.Length == 0)
             {
-                var copy = NewArray(data.Length);
+                var copy = NewArray(data.Length, maximumCapacity);
                 data.CopyTo(copy);
 
                 return copy;
@@ -106,7 +106,7 @@
             var decoder = new Decoder(predictor, colors, bitsPerComponent, columns);
 
             // Every byte of every row is written, including the padding of a short last row.
-            var decoded = NewArray(decoder.FinalLength(data.Length));
+            var decoded = NewArray(decoder.FinalLength(data.Length), maximumCapacity);
 
             decoder.Advance(data, data.Length, decoded);
             decoder.Finish(data, data.Length, decoded);
@@ -115,8 +115,9 @@
         }
 
         /// <summary>An array whose every byte the caller is about to write.</summary>
-        private static byte[] NewArray(int length)
+        private static byte[] NewArray(int length, int maximumCapacity)
         {
+            DecodeBuffer.CheckLength(length, maximumCapacity);
 #if NET
             return GC.AllocateUninitializedArray<byte>(length);
 #else

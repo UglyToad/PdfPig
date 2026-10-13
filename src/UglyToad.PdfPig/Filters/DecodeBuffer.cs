@@ -11,8 +11,31 @@
     /// </summary>
     internal static class DecodeBuffer
     {
-        /// <summary>The largest array the runtime will hand out.</summary>
-        public const int MaximumCapacity = 0x7FFFFFC7;
+        /// <summary>Caps each decode buffer at 1 GiB, including predictor and LZW scratch space.</summary>
+        public const int MaximumCapacity = 1024 * 1024 * 1024;
+
+        [Serializable]
+        internal sealed class LimitExceededException : CorruptCompressedDataException
+        {
+            public LimitExceededException() : base("The decompressed stream exceeds its output limit.") { }
+#if !NET
+            private LimitExceededException(System.Runtime.Serialization.SerializationInfo info,
+                System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+#endif
+        }
+
+        public static void CheckLength(long length, int maximumCapacity = MaximumCapacity)
+        {
+            if (length > maximumCapacity)
+            {
+                throw new LimitExceededException();
+            }
+        }
+
+        // PNG predictors include a filter byte per row; LZW also keeps literals and copy slack.
+        // Bound that working data separately from the bytes returned to the caller.
+        public static int WorkingCapacity(int outputLimit, int predictor, int overhead = 0)
+            => (int)Math.Min(MaximumCapacity, (long)outputLimit * (predictor >= 10 ? 2 : 1) + 1 + overhead);
 
         /// <summary>
         /// For a filter whose compression has no usable bound on how far it can expand, as Brotli
@@ -42,7 +65,7 @@
         /// times the compressed length, the most the filter's compression can expand by. A stated
         /// length is a hint; a buffer that was short grows.
         /// </summary>
-        public static int Capacity(int compressedLength, DictionaryToken streamDictionary, int factor, int minimum, int maximumExpansion)
+        public static int Capacity(int compressedLength, DictionaryToken streamDictionary, int factor, int minimum, int maximumExpansion, int maximumCapacity = MaximumCapacity)
         {
             long stated = 0;
 
@@ -65,10 +88,10 @@
 
             if (IsPlausible(stated, compressedLength, maximumExpansion))
             {
-                return (int)Math.Min(MaximumCapacity, stated + Slack);
+                return (int)Math.Min(maximumCapacity, stated + Slack);
             }
 
-            return (int)Math.Min(MaximumCapacity, Math.Max(minimum, (long)compressedLength * factor));
+            return (int)Math.Min(maximumCapacity, Math.Max(minimum, (long)compressedLength * factor));
         }
 
         /// <summary>
@@ -84,17 +107,17 @@
         /// <summary>
         /// Replaces a rented buffer with a larger one, at least <paramref name="required"/> bytes and
         /// otherwise twice the size, carrying over the <paramref name="written"/> bytes. A stream
-        /// that decodes to more than one array can hold is refused, in every filter alike, rather
+        /// that exceeds the permitted buffer size is refused, in every filter alike, rather
         /// than cut short in silence.
         /// </summary>
-        public static void Grow(ref byte[] buffer, int written, long required)
+        public static void Grow(ref byte[] buffer, int written, long required, int maximumCapacity = MaximumCapacity)
         {
-            if (required > MaximumCapacity || buffer.Length >= MaximumCapacity)
+            if (required > maximumCapacity || buffer.Length >= maximumCapacity)
             {
-                throw new CorruptCompressedDataException("The stream decodes to more than can be held in one array.");
+                throw new LimitExceededException();
             }
 
-            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(MaximumCapacity, Math.Max(required, buffer.Length * 2L)));
+            var grown = ArrayPool<byte>.Shared.Rent((int)Math.Min(maximumCapacity, Math.Max(required, buffer.Length * 2L)));
 
             // Only what was written: the rest of a rented buffer is whatever the pool left in it.
             buffer.AsSpan(0, written).CopyTo(grown);
