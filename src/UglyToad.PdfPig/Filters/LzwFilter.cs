@@ -60,27 +60,31 @@
 
         /// <inheritdoc />
         public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
+
+        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
 
             var earlyChange = parameters.GetIntOrDefault(NameToken.EarlyChange, 1);
-            return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns, streamDictionary);
+            return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns, streamDictionary, outputLimit);
         }
 
-        private static Memory<byte> Decode(ReadOnlySpan<byte> input, bool isEarlyChange, int predictor, int colors, int bitsPerComponent, int columns, DictionaryToken streamDictionary)
+        private static Memory<byte> Decode(ReadOnlySpan<byte> input, bool isEarlyChange, int predictor, int colors, int bitsPerComponent, int columns, DictionaryToken streamDictionary, int outputLimit)
         {
             // The output is decoded into a rented buffer and only the finished length is handed to
             // the caller, so nothing oversized stays alive behind the result. The buffer is sized
             // from the dictionary where that states the decoded length, plus the literal preamble
             // the decoder keeps in front of the data.
+            var maximumCapacity = DecodeBuffer.WorkingCapacity(outputLimit, predictor, LiteralPreamble + CopySlack);
             var buffer = ArrayPool<byte>.Shared.Rent(
-                (int)Math.Min(DecodeBuffer.MaximumCapacity, (long)DecodeBuffer.Capacity(input.Length, streamDictionary, ExpectedExpansion, MinimumCapacity, MaximumExpansion) + LiteralPreamble));
+                (int)Math.Min(maximumCapacity, (long)DecodeBuffer.Capacity(input.Length, streamDictionary, ExpectedExpansion, MinimumCapacity, MaximumExpansion, maximumCapacity) + LiteralPreamble));
 
             try
             {
-                var length = Decode(input, isEarlyChange, ref buffer);
+                var length = Decode(input, isEarlyChange, ref buffer, maximumCapacity);
 
                 // The Flate filter decodes rows as they inflate, straight into the result, which
                 // spares it a buffer for the whole inflated stream. The LZW decoder needs that
@@ -88,7 +92,7 @@
                 // stream is decoded whole and the predictor is undone in the pass that moves the
                 // data out of the rented buffer, as the Brotli filter does too. Most streams carry
                 // no predictor at all, and then the pass is the copy.
-                return PngPredictor.DecodeToArray(buffer.AsSpan(LiteralPreamble, length), predictor, colors, bitsPerComponent, columns);
+                return PngPredictor.DecodeToArray(buffer.AsSpan(LiteralPreamble, length), predictor, colors, bitsPerComponent, columns, outputLimit);
             }
             finally
             {
@@ -100,7 +104,7 @@
         /// Decodes the LZW codes into <paramref name="output"/> after its first <see cref="LiteralPreamble"/> bytes,
         /// growing it as needed, and returns the number of bytes decoded.
         /// </summary>
-        private static int Decode(ReadOnlySpan<byte> input, bool isEarlyChange, ref byte[] output)
+        private static int Decode(ReadOnlySpan<byte> input, bool isEarlyChange, ref byte[] output, int maximumCapacity)
         {
             // The table is the output itself. Every code the decoder adds stands for the sequence it
             // has just written followed by the first byte of the next one, and those bytes sit next
@@ -160,7 +164,7 @@
                     {
                         sequenceLength = lengths[code];
 
-                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack), maximumCapacity);
 
                         Copy(output, offsets[code], position, sequenceLength);
                     }
@@ -171,7 +175,7 @@
                         // repeats itself immediately.
                         sequenceLength = previousLength + 1;
 
-                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack));
+                        EnsureCapacity(ref output, position, (long)position + Math.Max(sequenceLength, CopySlack), maximumCapacity);
 
                         Copy(output, previousPosition, position, previousLength);
                         output[position + previousLength] = output[position];
@@ -245,11 +249,12 @@
         }
 
         /// <summary>Makes room for <paramref name="required"/> bytes, carrying over the <paramref name="written"/> that are there.</summary>
-        private static void EnsureCapacity(ref byte[] output, int written, long required)
+        private static void EnsureCapacity(ref byte[] output, int written, long required, int maximumCapacity)
         {
+            DecodeBuffer.CheckLength(required, maximumCapacity);
             if (required > output.Length)
             {
-                DecodeBuffer.Grow(ref output, written, required);
+                DecodeBuffer.Grow(ref output, written, required, maximumCapacity);
             }
         }
     }
