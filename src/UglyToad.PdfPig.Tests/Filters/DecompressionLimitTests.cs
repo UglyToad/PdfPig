@@ -101,6 +101,29 @@ namespace UglyToad.PdfPig.Tests.Filters
         }
 
         [Fact]
+        public void InlineImagesApplyTheSameIntermediateRatioLimitAsStreams()
+        {
+            var data = Enumerable.Repeat((byte)'z', 2_000_000).ToArray();
+            var encoded = Compress(data);
+            Assert.True(data.Length > encoded.Length * 1000L);
+            var dictionary = new DictionaryToken(new System.Collections.Generic.Dictionary<NameToken, IToken>
+            {
+                [NameToken.Filter] = new ArrayToken(new IToken[] { NameToken.FlateDecode, NameToken.Ascii85Decode })
+            });
+            Assert.Throws<PdfDocumentFormatException>(() =>
+                new StreamToken(dictionary, encoded).Decode(new FilterProviderWithLookup(DefaultFilterProvider.Instance)));
+
+            var image = new PdfPig.Content.InlineImage(
+                new PdfRectangle(0, 0, 1, 1), 1, 1, 8, false,
+                PdfPig.Graphics.Core.RenderingIntent.RelativeColorimetric, false,
+                Array.Empty<double>(), encoded, new FilterProviderWithLookup(DefaultFilterProvider.Instance),
+                new[] { NameToken.FlateDecode, NameToken.Ascii85Decode }, dictionary,
+                PdfPig.Graphics.Colors.DeviceGrayColorSpaceDetails.Instance, null);
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => image.TryGetBytesAsMemory(out _));
+            Assert.IsType<DecodeBuffer.LimitExceededException>(ex.InnerException);
+        }
+
+        [Fact]
         public void Ascii85BoundsZeroBlocksAndPartialBlocks()
         {
             var filter = new Ascii85Filter();

@@ -53,7 +53,7 @@
         private static bool IsCorrectlySized(IPdfImage image, ReadOnlySpan<byte> bytesPure)
         {
             var numberOfComponents = image.ColorSpaceDetails!.BaseNumberOfColorComponents;
-            var requiredSize = (image.WidthInSamples * image.HeightInSamples * numberOfComponents);
+            var requiredSize = checked((long)image.WidthInSamples * image.HeightInSamples * numberOfComponents);
 
             var actualSize = bytesPure.Length;
 
@@ -108,12 +108,12 @@
                     }
                 }
 
-                var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, hasMask);
-
-                if (!IsCorrectlySized(image, bytesPure))
+                if (bytesPure.IsEmpty || !IsCorrectlySized(image, bytesPure))
                 {
                     return false;
                 }
+
+                var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, hasMask);
 
                 if (image.ColorSpaceDetails.BaseType == ColorSpace.DeviceCMYK || numberOfComponents == 4)
                 {
