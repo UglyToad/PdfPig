@@ -68,6 +68,11 @@
 
             var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
 
+            if (predictor > 1)
+            {
+                _ = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
+            }
+
             var earlyChange = parameters.GetIntOrDefault(NameToken.EarlyChange, 1);
             return Decode(input.Span, earlyChange == 1, predictor, colors, bitsPerComponent, columns, streamDictionary, outputLimit);
         }

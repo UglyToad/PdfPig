@@ -176,6 +176,73 @@ namespace UglyToad.PdfPig.Tests.Filters
                 => new RunLengthFilter().Decode(input, dictionary, provider, index, SmallLimit);
         }
 
+
+        [Theory]
+        [InlineData(2)]
+        [InlineData(15)]
+        public void UsesPdfBoxPredictorRowLimitBeforeAllocatingOrPadding(int predictor)
+        {
+            var decoder = new PngPredictor.Decoder(predictor, 1, 8, 10_000_000);
+            Assert.Equal(10_000_000, decoder.RowLength);
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                new PngPredictor.Decoder(predictor, 1, 8, 10_000_001));
+            var dictionary = StreamDictionary(NameToken.FlateDecode,
+                new[] { (NameToken.Predictor, predictor), (NameToken.Columns, 10_000_001) });
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                new FlateFilter().Decode(Compress(new byte[] { 42 }), dictionary, TestFilterProvider.Instance, 0));
+        }
+
+        [Fact]
+        public void KeepsLegitimateRepeatedFiltersWhileApplyingTheirLimits()
+        {
+            var data = Enumerable.Repeat((byte)42, 4096).ToArray();
+            var encoded = Compress(Compress(data));
+            var decoded = FilterChainDecoder.Decode(encoded, Dictionary(), TestFilterProvider.Instance,
+                new IFilter[] { new FlateFilter(), new FlateFilter() });
+            Assert.Equal(data, decoded.ToArray());
+        }
+
+        [Fact]
+        public void GrowsFlateImagesPastTheInitialChunkAsRowsArrive()
+        {
+            const int columns = 1024;
+            const int rows = 2048;
+            var data = Enumerable.Repeat((byte)42, columns * rows).ToArray();
+            var predicted = new byte[data.Length];
+            for (var row = 0; row < rows; row++)
+            {
+                predicted[row * columns] = 42;
+            }
+            var dictionary = StreamDictionary(NameToken.FlateDecode,
+                new[] { (NameToken.Predictor, 2), (NameToken.Columns, columns) },
+                (NameToken.Height, rows));
+            Assert.Equal(data, new FlateFilter().Decode(Compress(predicted), dictionary,
+                TestFilterProvider.Instance, 0).ToArray());
+        }
+
+
+        [Theory]
+        [InlineData("Lzw")]
+#if NET
+        [InlineData("Brotli")]
+#endif
+        public void ChecksDeclaredPredictorRowsBeforeDecodingTheCompressedPayload(string filter)
+        {
+            var dictionary = StreamDictionary(NameToken.FlateDecode,
+                new[] { (NameToken.Predictor, 15), (NameToken.Columns, 10_000_001) });
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+            {
+                if (filter == "Lzw")
+                {
+                    new LzwFilter().Decode(new byte[1], dictionary, TestFilterProvider.Instance, 0);
+                }
+                else
+                {
+                    new BrotliFilter().Decode(new byte[1], dictionary, TestFilterProvider.Instance, 0);
+                }
+            });
+        }
+
         private static byte[] Compress(byte[] data)
         {
             using var output = new MemoryStream();

@@ -242,9 +242,9 @@
 
         /// <summary>
         /// An image stream says how many rows it has, so the decoded size is known up front. The
-        /// result is allocated at that size and the rows are decoded straight into it as the inflater
-        /// produces them, from a small input buffer that stays in the cache; nothing is moved or copied
-        /// afterwards. A /Height that turns out wrong is grown around or trimmed at the end.
+        /// result starts at that size, capped like PDFBox's initial cache chunk, and rows are decoded
+        /// straight into it as the inflater produces them. Larger results grow only as rows arrive;
+        /// a /Height that turns out wrong is grown around or trimmed at the end.
         /// </summary>
         private static Memory<byte> DecompressImage(Stream compressed, int predictor, int colors, int bitsPerComponent, int columns, int height, int outputLimit, int blockLength, bool salvaging, out bool damaged)
         {
@@ -253,7 +253,7 @@
             var stride = decoder.Stride;
             var maximumCapacity = DecodeBuffer.WorkingCapacity(outputLimit, predictor);
 
-            var output = AllocateResult((int)Math.Min(outputLimit, (long)height * rowLength), outputLimit);
+            var output = AllocateResult((int)Math.Min(Math.Min(outputLimit, DecodeBuffer.MaximumInitialCapacity), (long)height * rowLength), outputLimit);
 
             // One block of inflated data plus the row it may complete.
             var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(MinimumCapacity, stride + blockLength));
