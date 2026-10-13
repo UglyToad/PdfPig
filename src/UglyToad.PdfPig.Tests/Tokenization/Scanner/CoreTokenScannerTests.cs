@@ -26,7 +26,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
             using var input = new MemoryInputBytes(bytes);
             var scanner = new CoreTokenScanner(input, new StackDepthGuard(256), useLenientParsing: lenient);
             Assert.True(scanner.MoveNext());
-            Assert.Equal(OperatorToken.Create("BI"), scanner.CurrentToken);
+            Assert.Equal(OperatorToken.Create("BI".AsSpan()), scanner.CurrentToken);
             Assert.True(scanner.MoveNext());
             Assert.Equal(new byte[] { 0xe0, 0xe0, 0xe0 }, Assert.IsType<InlineImageDataToken>(scanner.CurrentToken).Data.ToArray());
             Assert.True(scanner.MoveNext());
