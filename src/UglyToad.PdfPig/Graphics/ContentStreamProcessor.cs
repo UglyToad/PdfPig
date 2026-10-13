@@ -61,6 +61,17 @@ namespace UglyToad.PdfPig.Graphics
         /// </summary>
         private int streamMarkedContentDepth;
 
+        /// <summary>
+        /// Counts text objects (BT operators), so a combining mark drawn by its own show text
+        /// operation can still attach to a base letter drawn earlier in the same text object.
+        /// </summary>
+        private int textObjectSequence;
+
+        /// <summary>
+        /// The text object in which the most recent letter was drawn.
+        /// </summary>
+        private int lastLetterTextObjectSequence = -1;
+
         public PdfSubpath CurrentSubpath { get; private set; }
 
         public PdfPath CurrentPath { get; private set; }
@@ -174,7 +185,7 @@ namespace UglyToad.PdfPig.Graphics
             {
                 var attachTo = letters[letters.Count - 1];
 
-                if (attachTo.TextSequence == TextSequence
+                if ((attachTo.TextSequence == TextSequence || lastLetterTextObjectSequence == textObjectSequence)
                     && Diacritics.TryCombineDiacriticWithPreviousLetter(unicode, attachTo.Value, out var newLetter))
                 {
                     // TODO: union of bounding boxes.
@@ -238,7 +249,15 @@ namespace UglyToad.PdfPig.Graphics
             }
 
             letters.Add(letter);
+            lastLetterTextObjectSequence = textObjectSequence;
             markedContentStack.AddLetter(letter);
+        }
+
+        /// <inheritdoc/>
+        public override void BeginText()
+        {
+            textObjectSequence++;
+            base.BeginText();
         }
 
         protected override void RenderXObjectImage(XObjectContentRecord xObjectContentRecord)
