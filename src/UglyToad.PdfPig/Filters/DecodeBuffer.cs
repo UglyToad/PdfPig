@@ -14,10 +14,14 @@
         /// <summary>Caps each decode buffer at 1 GiB, including predictor and LZW scratch space.</summary>
         public const int MaximumCapacity = 1024 * 1024 * 1024;
 
+        // PDFBox Filter.decode() caps its estimated cache chunk size at 1 MiB.
+        // https://github.com/apache/pdfbox/blob/3bac8e5ccae91216dd38d39f39fd7bfe9d4bca37/pdfbox/src/main/java/org/apache/pdfbox/filter/Filter.java
+        internal const int MaximumInitialCapacity = 1 << 20;
+
         [Serializable]
         internal sealed class LimitExceededException : CorruptCompressedDataException
         {
-            public LimitExceededException() : base("The decompressed stream exceeds its output limit.") { }
+            public LimitExceededException(string message = "The decompressed stream exceeds its output limit.") : base(message) { }
 #if !NET
             private LimitExceededException(System.Runtime.Serialization.SerializationInfo info,
                 System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
@@ -67,6 +71,7 @@
         /// </summary>
         public static int Capacity(int compressedLength, DictionaryToken streamDictionary, int factor, int minimum, int maximumExpansion, int maximumCapacity = MaximumCapacity)
         {
+            maximumCapacity = Math.Min(maximumCapacity, MaximumInitialCapacity);
             long stated = 0;
 
             if (TryGetLength(streamDictionary, NameToken.Dl, out var decodedLength))

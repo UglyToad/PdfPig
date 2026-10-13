@@ -80,6 +80,11 @@
                 return Memory<byte>.Empty;
             }
 
+            if (predictor > 1)
+            {
+                _ = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
+            }
+
             // The decoder writes straight into this buffer, so there is no copy per block, and the
             // buffer is rented because only the finished length is handed to the caller. It is sized
             // from the dictionary where that states the decoded length, as embedded files do. A

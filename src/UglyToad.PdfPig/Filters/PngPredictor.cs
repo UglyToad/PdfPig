@@ -32,6 +32,10 @@
     {
         private const int TiffPredictor = 2;
 
+        // PDFBOX-6265: match PDFBox's default row limit before allocating or padding a row.
+        // https://github.com/apache/pdfbox/blob/3bac8e5ccae91216dd38d39f39fd7bfe9d4bca37/pdfbox/src/main/java/org/apache/pdfbox/filter/Predictor.java
+        private const int MaximumRowLength = 10_000_000;
+
         /// <summary>Predictors from this value on are the PNG filters, chosen per row.</summary>
         private const int FirstPngPredictor = 10;
 
@@ -285,6 +289,11 @@
                 this.compact = compact;
 
                 rowLength = CalculateRowLength(colors, bitsPerComponent, columns);
+                if (rowLength > MaximumRowLength)
+                {
+                    throw new DecodeBuffer.LimitExceededException(
+                        $"Calculated predictor row length is too high: {rowLength} (colors: {colors}, bitsPerComponent: {bitsPerComponent}, columns: {columns}); maximum: {MaximumRowLength}.");
+                }
                 bytesPerPixel = ((colors * bitsPerComponent) + 7) / 8;
                 stride = predictor >= FirstPngPredictor ? rowLength + 1 : rowLength;
 
