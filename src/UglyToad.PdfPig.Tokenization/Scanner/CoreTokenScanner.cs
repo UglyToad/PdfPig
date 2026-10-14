@@ -369,11 +369,12 @@
             {
                 var currentByte = inputBytes.CurrentByte;
 
-                // The EI operator that terminates an inline image data must be delimited by white-space
-                // (ISO 32000-2, 8.9.7), i.e. rejects the many "EI" byte pairs that occur naturally inside
-                // binary or ASCII-encoded (e.g. ASCII85) image data.
+                // Keep the existing whitespace-before-EI rule. Also allow image data directly
+                // before EI, like PDFBox, when ASCII space (32), LF (10), or CR (13) follows.
+                // Both cases still have to pass the existing binary-data lookahead below.
                 if (currentByte == 'I' && prevByte == 'E' &&
-                    imageData.Count >= 2 && ReadHelper.IsWhitespace(imageData[imageData.Count - 2]))
+                    ((imageData.Count >= 2 && ReadHelper.IsWhitespace(imageData[imageData.Count - 2])) ||
+                     inputBytes.Peek() is 32 or 10 or 13))
                 {
                     // Confirm "EI" really ends the image rather than appearing within the data by
                     // checking the following bytes look like content (plain text including white-space).
@@ -383,10 +384,10 @@
 
                     var isEnd = true;
 
-                    if (read == buffer.Length)
+                    if (read > 0)
                     {
                         var containsWhitespace = false;
-                        for (var i = 0; i < buffer.Length; i++)
+                        for (var i = 0; i < read; i++)
                         {
                             var b = buffer[i];
 

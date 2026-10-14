@@ -14,6 +14,80 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
             scannerFactory = x => new CoreTokenScanner(x, new StackDepthGuard(256));
         }
 
+        [Theory]
+        [InlineData(" ", false)]
+        [InlineData("\n", false)]
+        [InlineData("\r", false)]
+        [InlineData("\n", true)]
+        public void ReadsInlineImageWithoutWhitespaceBeforeEnd(string separator, bool lenient)
+        {
+            // Three one-bit bitmap rows, immediately followed by EI.
+            var bytes = System.Text.Encoding.GetEncoding(28591).GetBytes("BI ID \u00e0\u00e0\u00e0EI" + separator + "Q");
+            using var input = new MemoryInputBytes(bytes);
+            var scanner = new CoreTokenScanner(input, new StackDepthGuard(256), useLenientParsing: lenient);
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(OperatorToken.Create("BI".AsSpan()), scanner.CurrentToken);
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(new byte[] { 0xe0, 0xe0, 0xe0 }, Assert.IsType<InlineImageDataToken>(scanner.CurrentToken).Data.ToArray());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(OperatorToken.QPop, scanner.CurrentToken);
+        }
+
+        [Theory]
+        [InlineData("\t")]
+        [InlineData("\f")]
+        [InlineData("\0")]
+        [InlineData("")]
+        public void PreservesWhitespaceBeforeEndWithLegacyFollowingBytes(string separator)
+        {
+            using var input = new MemoryInputBytes(System.Text.Encoding.ASCII.GetBytes("BI ID x EI" + separator + "Q q q"));
+            var scanner = new CoreTokenScanner(input, new StackDepthGuard(256));
+            Assert.True(scanner.MoveNext());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(new byte[] { (byte)'x', (byte)' ' }, Assert.IsType<InlineImageDataToken>(scanner.CurrentToken).Data.ToArray());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(OperatorToken.QPop, scanner.CurrentToken);
+        }
+
+        [Fact]
+        public void PreservesWhitespaceBeforeEndAtEndOfStream()
+        {
+            using var input = new MemoryInputBytes(System.Text.Encoding.ASCII.GetBytes("BI ID x EI"));
+            var scanner = new CoreTokenScanner(input, new StackDepthGuard(256));
+            Assert.True(scanner.MoveNext());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(new byte[] { (byte)'x', (byte)' ' }, Assert.IsType<InlineImageDataToken>(scanner.CurrentToken).Data.ToArray());
+            Assert.False(scanner.MoveNext());
+        }
+
+        [Theory]
+        [InlineData("EI!")]
+        [InlineData("EI\tQ ")]
+        [InlineData("EI\0Q ")]
+        [InlineData("EI Q \u00ff")]
+        public void KeepsFalseInlineImageEndInBinaryData(string candidate)
+        {
+            var data = "x" + candidate + "yyyyyyyyyyy";
+            using var input = new MemoryInputBytes(System.Text.Encoding.GetEncoding(28591).GetBytes("BI ID " + data + "EI\nQ"));
+            var scanner = new CoreTokenScanner(input, new StackDepthGuard(256));
+            Assert.True(scanner.MoveNext());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(System.Text.Encoding.GetEncoding(28591).GetBytes(data), Assert.IsType<InlineImageDataToken>(scanner.CurrentToken).Data.ToArray());
+            Assert.True(scanner.MoveNext());
+            Assert.Equal(OperatorToken.QPop, scanner.CurrentToken);
+        }
+
+        [Theory]
+        [InlineData("BI ID data")]
+        [InlineData("BI ID xEI \u00ff")]
+        public void StrictInlineImageRequiresEndWithNonBinaryFollowingBytes(string content)
+        {
+            using var input = new MemoryInputBytes(System.Text.Encoding.GetEncoding(28591).GetBytes(content));
+            var scanner = new CoreTokenScanner(input, new StackDepthGuard(256));
+            Assert.True(scanner.MoveNext());
+            Assert.Throws<PdfDocumentFormatException>(() => scanner.MoveNext());
+        }
+
         [Fact]
         public void ScansSpecificationArrayExampleContents()
         {
