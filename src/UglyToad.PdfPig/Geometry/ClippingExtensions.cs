@@ -71,8 +71,24 @@
             // Subject path
             // Filled and clipping path need to be closed
             bool subjectClose = subject.IsFilled || subject.IsClipping;
+            var unaffectedSubpaths = new HashSet<PdfSubpath>();
+            var clippingBounds = clipping.GetBoundingRectangle();
             foreach (var subPathSubject in subject)
             {
+                if (!subjectClose && clippingBounds.HasValue)
+                {
+                    // An open subpath that lies entirely inside the clipping region is not
+                    // affected by the clip operation. Sending it through Clipper still causes
+                    // the open-path intersection to synthesise an edge out to the clipping
+                    // boundary, so pass it through unchanged instead (see #1242).
+                    var subPathBounds = subPathSubject.GetBoundingRectangle();
+                    if (subPathBounds.HasValue && clippingBounds.Value.Contains(subPathBounds.Value))
+                    {
+                        unaffectedSubpaths.Add(subPathSubject);
+                        continue;
+                    }
+                }
+
                 if (subPathSubject.Commands.Count == 0)
                 {
                     continue;
@@ -108,7 +124,22 @@
             {
                 PdfPath clippedPath = subject.CloneEmpty();
 
-                // Case where subject is not closed
+                // Case where subject is not closed.
+                // Subpaths which lie wholly within the clipping path are added back unchanged,
+                // only the remaining subpaths are passed through the clipper.
+                foreach (var subPathSubject in subject)
+                {
+                    if (unaffectedSubpaths.Contains(subPathSubject))
+                    {
+                        clippedPath.Add(subPathSubject);
+                    }
+                }
+
+                if (unaffectedSubpaths.Count == subject.Count)
+                {
+                    return clippedPath;
+                }
+
                 var solutions = new ClipperPolyTree();
                 if (clipper.Execute(ClipperClipType.Intersection, solutions, subjectFillType, clippingFillType))
                 {
