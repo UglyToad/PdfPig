@@ -3,6 +3,8 @@
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Content;
+    using Core;
+    using System;
     using Logging;
     using Parser.Parts;
     using Tokenization.Scanner;
@@ -13,6 +15,7 @@
         internal static NamedDestinations Read(DictionaryToken catalogDictionary, IPdfTokenScanner pdfScanner, Pages pages, ILog? log)
         {
             var destinationsByName = new Dictionary<string, ExplicitDestination>();
+            Dictionary<NameToken, ExplicitDestination>? nameObjects = null;
 
             if (catalogDictionary.TryGet(NameToken.Dests, pdfScanner, out DictionaryToken? destinations))
             {
@@ -21,13 +24,14 @@
                  * The value of this entry is a dictionary in which each key is a destination name and the corresponding value is either an array
                  * defining the destination, using the explicit destination syntax, or a dictionary with a /D entry whose value is such an array. 
                  */
-                foreach (var kvp in destinations.Data)
+                nameObjects = new Dictionary<NameToken, ExplicitDestination>();
+                foreach (var kvp in destinations.Entries)
                 {
                     var value = kvp.Value;
 
                     if (TryReadExplicitDestination(value, pdfScanner, pages, log, false, out var destination))
                     {
-                        destinationsByName[kvp.Key] = destination;
+                        nameObjects[kvp.Key] = destination;
                     }
                 }
             }
@@ -51,7 +55,7 @@
                 }, destinationsByName!);
             }
 
-            return new NamedDestinations(destinationsByName, pages);
+            return new NamedDestinations(destinationsByName, pages, nameObjects);
         }
 
         private static bool TryReadExplicitDestination(

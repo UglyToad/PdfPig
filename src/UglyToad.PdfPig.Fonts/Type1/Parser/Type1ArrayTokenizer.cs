@@ -60,7 +60,7 @@
 
                 if (part[0] == '/')
                 {
-                    tokens.Add(NameToken.Create(part.Substring(1)));
+                    tokens.Add(NameToken.Create(OtherEncodings.StringAsLatin1Bytes(part.Substring(1)).AsSpan()));
                     continue;
                 }
 

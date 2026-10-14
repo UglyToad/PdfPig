@@ -64,15 +64,15 @@
                 lastCharacter, widths, toUnicodeCMap!, charProcs, resources);
         }
 
-        private IReadOnlyDictionary<string, StreamToken>? ReadCharProcs(DictionaryToken dictionary)
+        private IReadOnlyDictionary<NameToken, StreamToken>? ReadCharProcs(DictionaryToken dictionary)
         {
             if (!dictionary.TryGet(NameToken.CharProcs, scanner, out DictionaryToken? charProcsDictionary))
             {
                 return null;
             }
 
-            var result = new Dictionary<string, StreamToken>(charProcsDictionary.Data.Count);
-            foreach (var entry in charProcsDictionary.Data)
+            var result = new Dictionary<NameToken, StreamToken>(charProcsDictionary.Entries.Count);
+            foreach (var entry in charProcsDictionary.Entries)
             {
                 if (DirectObjectFinder.TryGet(entry.Value, scanner, out StreamToken? charProcStream))
                 {

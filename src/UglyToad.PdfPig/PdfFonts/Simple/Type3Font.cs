@@ -20,7 +20,7 @@
         private readonly int lastChar;
         private readonly double[] widths;
         private readonly ToUnicodeCMap toUnicodeCMap;
-        private readonly IReadOnlyDictionary<string, StreamToken>? charProcs;
+        private readonly IReadOnlyDictionary<NameToken, StreamToken>? charProcs;
         private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache = new();
 
         /// <summary>
@@ -37,7 +37,7 @@
 
         public Type3Font(NameToken name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
             Encoding encoding, int firstChar, int lastChar, double[] widths,
-            CMap toUnicodeCMap, IReadOnlyDictionary<string, StreamToken>? charProcs,
+            CMap toUnicodeCMap, IReadOnlyDictionary<NameToken, StreamToken>? charProcs,
             DictionaryToken? resources)
         {
             Name = name;
@@ -218,7 +218,7 @@
                 return false;
             }
 
-            return charProcs.TryGetValue(name, out charProcStream);
+            return charProcs.TryGetValue(NameToken.Create(name), out charProcStream);
         }
 
         /// <summary>
