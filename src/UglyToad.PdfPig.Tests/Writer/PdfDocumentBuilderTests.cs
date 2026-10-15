@@ -155,10 +155,28 @@
             Assert.Contains("/Courier", OtherEncodings.BytesAsLatin1String(result));
         }
 
+        [Theory]
+        [InlineData("<< /Type /Page /Parent 2 0 R /Resources null >>", "null")]
+        [InlineData("<< /Type /Pages /Parent 2 0 R /Kids [5 0 R] /Count 1 /Resources null >>", "<< /Type /Page /Parent 3 0 R >>")]
+        public void AddPageInheritsPastNullResources(string third, string fifth)
+        {
+            // A null /Resources counts as none and hides nothing above it.
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 100] /Resources << /Font << /F1 4 0 R >> >> >>",
+                third,
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>",
+                fifth);
+
+            var result = AddFirstPage(source);
+
+            Assert.Contains("/Courier", OtherEncodings.BytesAsLatin1String(result));
+        }
+
         [Fact]
         public void AddPageDoesNotMergeInheritedResourcesIntoPageResources()
         {
-            // A page's own /Resources replace the inherited ones, they are not merged (PDF specification, 7.7.3.4).
+            // Own /Resources replace inherited ones, no merge (PDF 32000-1 7.7.3.4).
             var source = BuildRawPdf(
                 "<< /Type /Catalog /Pages 2 0 R >>",
                 "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 100] /Resources << /Font << /F1 4 0 R >> >> >>",
@@ -176,7 +194,7 @@
         [Fact]
         public void AddPageDoesNotCopySourcePageTreeThroughBackReference()
         {
-            // A private page key reaches back to the page itself, whose /Parent leads to every other page.
+            // A private key points back at the page; its /Parent reaches every page.
             var source = BuildRawPdf(
                 "<< /Type /Catalog /Pages 2 0 R >>",
                 "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 /MediaBox [0 0 100 100] /Resources << >> >>",
