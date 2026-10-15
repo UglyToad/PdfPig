@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
     using Integration;
+    using PdfPig.Tokens;
     using PdfPig.Writer;
 
     public class PdfMergerTests
@@ -344,6 +345,31 @@
             catch (StackOverflowException)
             {
                 Assert.True(false);
+            }
+        }
+
+        [Fact]
+        public void CopiedStreamsFromAesSourceHaveCorrectLength()
+        {
+            // AES decryption strips the IV and padding, so the source /Length is too long.
+            var bytes = PdfMerger.Merge(IntegrationHelpers.GetSpecificTestDocumentPath("r4_aesv2_no_length.pdf"));
+
+            using (var document = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+            {
+                var streamCount = 0;
+                foreach (var offset in document.Structure.CrossReferenceTable.ObjectOffsets)
+                {
+                    if (document.Structure.GetObject(offset.Key).Data is not StreamToken stream)
+                    {
+                        continue;
+                    }
+
+                    var length = stream.StreamDictionary.Get<NumericToken>(NameToken.Length, document.Structure.TokenScanner);
+                    Assert.Equal(stream.Data.Length, length.Int);
+                    streamCount++;
+                }
+
+                Assert.True(streamCount > 0);
             }
         }
     }

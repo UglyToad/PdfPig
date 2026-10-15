@@ -512,7 +512,9 @@
         /// <param name="outputStream"></param>
         protected virtual void WriteStream(StreamToken streamToken, Stream outputStream)
         {
-            WriteDictionary(streamToken.StreamDictionary, outputStream);
+            // A copied stream can carry a stale /Length, eg: AES decryption strips the IV and padding.
+            var dictionary = streamToken.StreamDictionary.With(NameToken.Length, new NumericToken(streamToken.Data.Length));
+            WriteDictionary(dictionary, outputStream);
             WriteLineBreak(outputStream);
             outputStream.Write(StreamStart);
             WriteLineBreak(outputStream);
