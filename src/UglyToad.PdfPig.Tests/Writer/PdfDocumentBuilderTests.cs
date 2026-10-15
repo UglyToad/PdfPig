@@ -142,6 +142,113 @@
         }
 
         [Fact]
+        public void AddPageUsesInheritedResourcesWhenPageHasNone()
+        {
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 100] /Resources << /Font << /F1 4 0 R >> >> >>",
+                "<< /Type /Page /Parent 2 0 R >>",
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>");
+
+            var result = AddFirstPage(source);
+
+            Assert.Contains("/Courier", OtherEncodings.BytesAsLatin1String(result));
+        }
+
+        [Fact]
+        public void AddPageDoesNotMergeInheritedResourcesIntoPageResources()
+        {
+            // A page's own /Resources replace the inherited ones, they are not merged (PDF specification, 7.7.3.4).
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 100] /Resources << /Font << /F1 4 0 R >> >> >>",
+                "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F2 5 0 R >> >> >>",
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>",
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+            var result = AddFirstPage(source);
+
+            var text = OtherEncodings.BytesAsLatin1String(result);
+            Assert.Contains("/Helvetica", text);
+            Assert.DoesNotContain("/Courier", text);
+        }
+
+        [Fact]
+        public void AddPageDoesNotCopySourcePageTreeThroughBackReference()
+        {
+            // A private page key reaches back to the page itself, whose /Parent leads to every other page.
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 /MediaBox [0 0 100 100] /Resources << >> >>",
+                "<< /Type /Page /Parent 2 0 R /PrivateData 5 0 R >>",
+                "<< /Type /Page /Parent 2 0 R /PrivateMarker (OTHER PAGE) >>",
+                "<< /Pg 3 0 R >>");
+
+            var result = AddFirstPage(source);
+
+            Assert.DoesNotContain("OTHER PAGE", OtherEncodings.BytesAsLatin1String(result));
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+            }
+        }
+
+        [Fact]
+        public void AddPageDoesNotCopySourcePageTreeThroughAnnotationPopup()
+        {
+            // The popup's /Parent is the original annotation, whose /P is the page.
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 /MediaBox [0 0 100 100] /Resources << >> >>",
+                "<< /Type /Page /Parent 2 0 R /Annots [5 0 R] >>",
+                "<< /Type /Page /Parent 2 0 R /PrivateMarker (OTHER PAGE) >>",
+                "<< /Type /Annot /Subtype /Text /Rect [10 10 20 20] /P 3 0 R /Popup 6 0 R >>",
+                "<< /Type /Annot /Subtype /Popup /Rect [20 20 60 60] /Parent 5 0 R >>");
+
+            var result = AddFirstPage(source);
+
+            Assert.DoesNotContain("OTHER PAGE", OtherEncodings.BytesAsLatin1String(result));
+        }
+
+        private static byte[] AddFirstPage(byte[] source)
+        {
+            using (var document = PdfDocument.Open(source, ParsingOptions.LenientParsingOff))
+            using (var builder = new PdfDocumentBuilder())
+            {
+                builder.AddPage(document, 1);
+                return builder.Build();
+            }
+        }
+
+        /// <summary>
+        /// Writes the given dictionaries as objects 1 to n with a valid cross-reference table.
+        /// </summary>
+        private static byte[] BuildRawPdf(params string[] objects)
+        {
+            var invariant = System.Globalization.CultureInfo.InvariantCulture;
+            var pdf = new System.Text.StringBuilder("%PDF-1.7\n");
+            var offsets = new List<int>();
+
+            for (var i = 0; i < objects.Length; i++)
+            {
+                offsets.Add(pdf.Length);
+                pdf.Append(string.Format(invariant, "{0} 0 obj\n{1}\nendobj\n", i + 1, objects[i]));
+            }
+
+            var xref = pdf.Length;
+            pdf.Append(string.Format(invariant, "xref\n0 {0}\n0000000000 65535 f \n", objects.Length + 1));
+            foreach (var offset in offsets)
+            {
+                pdf.Append(string.Format(invariant, "{0:D10} 00000 n \n", offset));
+            }
+
+            pdf.Append(string.Format(invariant, "trailer\n<< /Size {0} /Root 1 0 R >>\nstartxref\n{1}\n%%EOF\n", objects.Length + 1, xref));
+
+            return OtherEncodings.StringAsLatin1Bytes(pdf.ToString());
+        }
+
+        [Fact]
         public void CanFastAddPageWithStreamSubtype()
         {
             var first = IntegrationHelpers.GetDocumentPath("steam_in_page_dict.pdf");
