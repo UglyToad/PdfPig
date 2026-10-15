@@ -297,6 +297,19 @@ namespace UglyToad.PdfPig.Writer
             public IReadOnlyList<DictionaryToken> Parents { get; } = parents;
         }
 
+        private static IEnumerable<IndirectReference> PageTreeReferences(PageTreeNode node)
+        {
+            yield return node.Reference;
+
+            foreach (var child in node.Children ?? Array.Empty<PageTreeNode>())
+            {
+                foreach (var reference in PageTreeReferences(child))
+                {
+                    yield return reference;
+                }
+            }
+        }
+
         private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies = new();
 
         private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees = new();
@@ -338,6 +351,17 @@ namespace UglyToad.PdfPig.Writer
                 }
 
                 existingTrees.Add(document, pagesInfos);
+
+                // Page tree nodes are rebuilt on Build, so a stray reference to one (e.g. a private
+                // key pointing back at its page) must not copy the source page tree.
+                var nullReference = context.WriteToken(NullToken.Instance);
+                foreach (var nodeReference in PageTreeReferences(document.Structure.Catalog.Pages.PageTree))
+                {
+                    if (!refs.ContainsKey(nodeReference))
+                    {
+                        refs.Add(nodeReference, nullReference);
+                    }
+                }
             }
 
             if (!pagesInfos.TryGetValue(pageNumber, out PageInfo? pageInfo))
@@ -416,12 +440,13 @@ namespace UglyToad.PdfPig.Writer
             var links = new List<(DictionaryToken token, PdfAction action)>();
             Dictionary<NameToken, IToken> resources = new Dictionary<NameToken, IToken>();
 
-            // just put all parent resources into new page
+            // Resources are inherited from the nearest ancestor only when the page has none of its own.
+            IToken? inheritedResources = null;
             foreach (var dict in pageInfo.Parents)
             {
                 if (dict.TryGet(NameToken.Resources, out var resourceToken))
                 {
-                    CopyResourceDict(resourceToken, resources);
+                    inheritedResources = resourceToken;
                 }
                 if (dict.TryGet(NameToken.MediaBox, out var mb))
                 {
@@ -435,6 +460,11 @@ namespace UglyToad.PdfPig.Writer
                 {
                     copiedPageDict[NameToken.Rotate] = WriterUtil.CopyToken(context, rt, document.Structure.TokenScanner, refs);
                 }
+            }
+
+            if (inheritedResources != null && !pageInfo.Page.TryGet(NameToken.Resources, out _))
+            {
+                CopyResourceDict(inheritedResources, resources);
             }
 
             foreach (var kvp in pageInfo.Page.Data)
