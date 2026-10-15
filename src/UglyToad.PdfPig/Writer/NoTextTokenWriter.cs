@@ -45,13 +45,7 @@ namespace UglyToad.PdfPig.Writer
                 outputStreamToken = streamToken;
             }
 
-            WriteDictionary(outputStreamToken.StreamDictionary, outputStream);
-            WriteLineBreak(outputStream);
-            outputStream.Write(StreamStart);
-            WriteLineBreak(outputStream);
-            outputStream.Write(outputStreamToken.Data.Span);
-            WriteLineBreak(outputStream);
-            outputStream.Write(StreamEnd);
+            base.WriteStream(outputStreamToken, outputStream);
         }
 
         private static bool IsFormStream(StreamToken streamToken)
