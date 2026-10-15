@@ -347,16 +347,16 @@
                         continue;
                     }
 
-                    var fontObject = DirectObjectFinder.Get<DictionaryToken>(objectKey, scanner);
-
-                    if (fontObject is null)
-                    {
-                        //This is a valid use case
-                        continue;
-                    }
-
                     try
                     {
+                        var fontObject = DirectObjectFinder.Get<DictionaryToken>(objectKey, scanner);
+
+                        if (fontObject is null)
+                        {
+                            //This is a valid use case
+                            continue;
+                        }
+
                         var loadedFont = fontFactory.Get(fontObject);
                         // Stamp the font dictionary's indirect reference so consumers can
                         // distinguish same-named fonts (e.g. two subsets of one typeface
@@ -375,10 +375,21 @@
                 else if (pair.Value is DictionaryToken fd)
                 {
                     var name = NameToken.Create(pair.Key);
-                    var font = fontFactory.Get(fd);
 
-                    directFonts.Add((name, font));
-                    loadedDirectFonts[name] = font;
+                    try
+                    {
+                        var font = fontFactory.Get(fd);
+
+                        directFonts.Add((name, font));
+                        loadedDirectFonts[name] = font;
+                    }
+                    catch
+                    {
+                        if (!parsingOptions.SkipMissingFonts)
+                        {
+                            throw;
+                        }
+                    }
                 }
                 else
                 {
