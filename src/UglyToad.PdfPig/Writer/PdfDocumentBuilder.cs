@@ -314,6 +314,8 @@ namespace UglyToad.PdfPig.Writer
 
         private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees = new();
 
+        private readonly HashSet<string> fieldNames = new HashSet<string>();
+
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
@@ -659,9 +661,28 @@ namespace UglyToad.PdfPig.Writer
                 if (!annotDict.TryGet(NameToken.Subtype, sourceScanner, out NameToken? subtype)
                     || subtype != NameToken.Link)
                 {
+                    var annotToCopy = CopyWithSkippedKeys(annotDict, removedKeys);
+
+                    // Acrobat shows only the first widget with a given field name, so rename clashes.
+                    if (subtype == NameToken.Widget
+                        && !annotDict.TryGet(NameToken.Parent, out _)
+                        && annotDict.TryGet(NameToken.T, sourceScanner, out IDataToken<string>? fieldName))
+                    {
+                        var uniqueName = fieldName.Data;
+                        for (var i = 1; !fieldNames.Add(uniqueName); i++)
+                        {
+                            uniqueName = $"{fieldName.Data}+{i}";
+                        }
+
+                        if (uniqueName != fieldName.Data)
+                        {
+                            annotToCopy = annotToCopy.With(NameToken.T, new StringToken(uniqueName));
+                        }
+                    }
+
                     var copiedRef = WriterUtil.CopyToken(
                         context,
-                        CopyWithSkippedKeys(annotDict, removedKeys),
+                        annotToCopy,
                         sourceScanner,
                         refs);
 

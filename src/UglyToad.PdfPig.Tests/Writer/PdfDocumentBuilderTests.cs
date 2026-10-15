@@ -267,6 +267,39 @@
         }
 
         [Fact]
+        public void AddPageRenamesClashingFieldNames()
+        {
+            // Acrobat shows only the first of two widgets sharing a field name.
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] >> >>",
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 100] /Resources << >> >>",
+                "<< /Type /Page /Parent 2 0 R /Annots [4 0 R] >>",
+                "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [10 10 50 30] /F 132 >>");
+
+            byte[] result;
+            using (var first = PdfDocument.Open(source, ParsingOptions.LenientParsingOff))
+            using (var second = PdfDocument.Open(source, ParsingOptions.LenientParsingOff))
+            using (var builder = new PdfDocumentBuilder())
+            {
+                builder.AddPage(first, 1);
+                builder.AddPage(second, 1);
+                result = builder.Build();
+            }
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                var names = document.GetPages()
+                    .SelectMany(p => p.GetAnnotations())
+                    .Select(a => a.AnnotationDictionary.Get<StringToken>(NameToken.T, document.Structure.TokenScanner).Data)
+                    .ToList();
+
+                Assert.Equal(2, names.Count);
+                Assert.Equal("Signature1", names[0]);
+                Assert.NotEqual(names[0], names[1]);
+            }
+        }
+
+        [Fact]
         public void CanFastAddPageWithStreamSubtype()
         {
             var first = IntegrationHelpers.GetDocumentPath("steam_in_page_dict.pdf");
