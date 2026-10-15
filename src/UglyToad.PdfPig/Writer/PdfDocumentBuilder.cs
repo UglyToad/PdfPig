@@ -444,7 +444,7 @@ namespace UglyToad.PdfPig.Writer
             IToken? inheritedResources = null;
             foreach (var dict in pageInfo.Parents)
             {
-                if (dict.TryGet(NameToken.Resources, out var resourceToken))
+                if (dict.TryGet(NameToken.Resources, out var resourceToken) && IsDictionary(resourceToken))
                 {
                     inheritedResources = resourceToken;
                 }
@@ -462,7 +462,8 @@ namespace UglyToad.PdfPig.Writer
                 }
             }
 
-            if (inheritedResources != null && !pageInfo.Page.TryGet(NameToken.Resources, out _))
+            var hasOwnResources = pageInfo.Page.TryGet(NameToken.Resources, out var ownResources) && IsDictionary(ownResources);
+            if (inheritedResources != null && !hasOwnResources)
             {
                 CopyResourceDict(inheritedResources, resources);
             }
@@ -477,7 +478,7 @@ namespace UglyToad.PdfPig.Writer
 
                 if (kvp.Key == NameToken.Resources)
                 {
-                    // merge parent resources into child
+                    // the page's own resources, used instead of any inherited ones
                     CopyResourceDict(kvp.Value, resources);
                     continue;
                 }
@@ -582,6 +583,11 @@ namespace UglyToad.PdfPig.Writer
 
                     destinationDict[key] = new DictionaryToken(mutableSubDict);
                 }
+            }
+
+            bool IsDictionary(IToken token)
+            {
+                return DirectObjectFinder.TryGet(token, document.Structure.TokenScanner, out DictionaryToken? _);
             }
 
             DictionaryToken? GetRemoteDict(IToken token)
