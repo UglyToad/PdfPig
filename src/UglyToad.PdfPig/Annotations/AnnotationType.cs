@@ -108,6 +108,10 @@
         /// <summary>
         /// A custom annotation type.
         /// </summary>
-        Other = 25
+        Other = 25,
+        /// <summary>
+        /// Rich media such as 3D artwork, video or sound, with its own presentation settings (PDF 2.0).
+        /// </summary>
+        RichMedia = 26
     }
 }
