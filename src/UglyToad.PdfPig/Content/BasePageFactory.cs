@@ -89,22 +89,22 @@
 
             var stackDepth = 0;
 
-            while (pageTreeMembers.ParentResources.Count > 0)
-            {
-                var resource = pageTreeMembers.ParentResources.Dequeue();
-
-                ResourceStore.LoadResourceDictionary(resource);
-                stackDepth++;
-            }
-
-            if (dictionary.TryGet(NameToken.Resources, PdfScanner, out DictionaryToken? resources))
-            {
-                ResourceStore.LoadResourceDictionary(resources);
-                stackDepth++;
-            }         
-
             try
             {
+                while (pageTreeMembers.ParentResources.Count > 0)
+                {
+                    var resource = pageTreeMembers.ParentResources.Dequeue();
+
+                    ResourceStore.LoadResourceDictionary(resource);
+                    stackDepth++;
+                }
+
+                if (dictionary.TryGet(NameToken.Resources, PdfScanner, out DictionaryToken? resources))
+                {
+                    ResourceStore.LoadResourceDictionary(resources);
+                    stackDepth++;
+                }
+
                 UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary, ParsingOptions.UseLenientParsing);
 
                 MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);

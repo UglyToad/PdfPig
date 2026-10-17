@@ -42,12 +42,13 @@
         public override SKPicture Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             CloneAllStates();
+            CancellationToken = token;
 
             using (var recorder = new SKPictureRecorder())
             using (canvas = recorder.BeginRecording(SKRect.Create(width, height)))
             {
                 canvas.Clear(SKColors.White);
-                ProcessOperations(operations, token);
+                ProcessOperations(operations);
                 canvas.Flush();
                 return recorder.EndRecording();
             }

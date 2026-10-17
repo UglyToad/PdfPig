@@ -90,6 +90,12 @@
         /// </summary>
         protected int TextSequence;
 
+        /// <summary>
+        /// The token checked while processing operations, including those of nested form XObjects.
+        /// Implementations of <see cref="Process"/> should set it from the token they receive.
+        /// </summary>
+        protected CancellationToken CancellationToken { get; set; }
+
         /// <inheritdoc/>
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
@@ -195,32 +201,16 @@
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s.
         /// </summary>
-        protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
+        protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
         {
-            if (!token.CanBeCanceled)
-            {
-                // Fast path
-                foreach (var stateOperation in operations)
-                {
-                    stateOperation.Run(this);
-                }
-                return;
-            }
-
-            token.ThrowIfCancellationRequested();
+            CancellationToken.ThrowIfCancellationRequested();
 
             int i = 0;
             foreach (var stateOperation in operations)
             {
                 if (++i % 100 == 0)
                 {
-                    token.ThrowIfCancellationRequested();
-                }
-
-                if (stateOperation is ICancellableGraphicsStateOperation cancellable)
-                {
-                    cancellable.Run(this, token);
-                    continue;
+                    CancellationToken.ThrowIfCancellationRequested();
                 }
 
                 stateOperation.Run(this);
@@ -518,13 +508,13 @@
         }
 
         /// <inheritdoc/>
-        public virtual void ApplyXObject(NameToken xObjectName, CancellationToken token)
+        public virtual void ApplyXObject(NameToken xObjectName)
         {
             var hasReference = ResourceStore.TryGetXObjectReference(xObjectName, out var xObjectReference);
 
             if (hasReference && _formXObjectCache.TryGetValue(xObjectReference, out var cachedForm))
             {
-                ProcessReferencedFormXObject(cachedForm, xObjectName, xObjectReference, token);
+                ProcessReferencedFormXObject(cachedForm, xObjectName, xObjectReference);
                 return;
             }
 
@@ -571,13 +561,13 @@
                 if (hasReference)
                 {
                     _formXObjectCache[xObjectReference] = xObjectStream;
-                    ProcessReferencedFormXObject(xObjectStream, xObjectName, xObjectReference, token);
+                    ProcessReferencedFormXObject(xObjectStream, xObjectName, xObjectReference);
                 }
                 else
                 {
                     // Only a custom resource store returns a form without a reference. There is nothing to
                     // recognize such a form by, so only the nesting limit applies.
-                    ProcessFormXObject(xObjectStream, xObjectName, token);
+                    ProcessFormXObject(xObjectStream, xObjectName);
                 }
             }
             else
@@ -592,7 +582,7 @@
         /// form invocations. Forms that invoke each other would otherwise repeat until the nesting limit,
         /// which takes exponential time when one of them invokes the other more than once.
         /// </summary>
-        private void ProcessReferencedFormXObject(StreamToken formStream, NameToken xObjectName, IndirectReference reference, CancellationToken token)
+        private void ProcessReferencedFormXObject(StreamToken formStream, NameToken xObjectName, IndirectReference reference)
         {
             if (!_activeFormXObjects.Add(reference))
             {
@@ -610,7 +600,7 @@
 
             try
             {
-                ProcessFormXObject(formStream, xObjectName, token);
+                ProcessFormXObject(formStream, xObjectName);
             }
             finally
             {
@@ -627,7 +617,7 @@
         /// <summary>
         /// Process a XObject form.
         /// </summary>
-        protected virtual void ProcessFormXObject(StreamToken formStream, NameToken xObjectName, CancellationToken token)
+        protected virtual void ProcessFormXObject(StreamToken formStream, NameToken xObjectName)
         {
             /*
              * When a form XObject is invoked the following should happen:
@@ -783,7 +773,7 @@
                     }
                 }
 
-                ProcessOperations(operations, token);
+                ProcessOperations(operations);
             }
             finally
             {

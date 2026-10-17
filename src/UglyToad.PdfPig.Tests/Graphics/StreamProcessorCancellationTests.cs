@@ -76,21 +76,7 @@
         }
 
         [Fact]
-        public void ProcessOperations_DispatchesToCancellableOperations()
-        {
-            var processor = CreateTestProcessor();
-            using var cts = new CancellationTokenSource();
-
-            var cancellableOp = new MockCancellableOperation();
-            processor.Process(1, new[] { cancellableOp }, cts.Token);
-
-            Assert.Equal(1, cancellableOp.CancellableExecutionCount);
-            Assert.Equal(0, cancellableOp.NonCancellableExecutionCount);
-            Assert.Equal(cts.Token, cancellableOp.ReceivedToken);
-        }
-
-        [Fact]
-        public void ProcessOperations_DispatchesToStandardOperations()
+        public void ProcessOperations_WithLiveToken_RunsOperations()
         {
             var processor = CreateTestProcessor();
             using var cts = new CancellationTokenSource();
@@ -102,34 +88,7 @@
         }
 
         [Fact]
-        public void InvokeNamedXObject_RunWithoutToken_PassesNoneTokenToContext()
-        {
-            var name = NameToken.Create("Fm0");
-            var op = new InvokeNamedXObject(name);
-            var context = new TrackingOperationContext();
-
-            op.Run(context);
-
-            Assert.Equal(name, context.LastAppliedXObjectName);
-            Assert.Equal(CancellationToken.None, context.LastReceivedToken);
-        }
-
-        [Fact]
-        public void InvokeNamedXObject_RunWithToken_PassesTokenToContext()
-        {
-            var name = NameToken.Create("Fm1");
-            var op = new InvokeNamedXObject(name);
-            var context = new TrackingOperationContext();
-            using var cts = new CancellationTokenSource();
-
-            op.Run(context, cts.Token);
-
-            Assert.Equal(name, context.LastAppliedXObjectName);
-            Assert.Equal(cts.Token, context.LastReceivedToken);
-        }
-
-        [Fact]
-        public void FormXObject_WhenTokenCancelled_ThrowsOperationCanceledException()
+        public void FormXObject_WhenCancelledBeforeInvocation_ThrowsOperationCanceledException()
         {
             var formName = NameToken.Create("Fm0");
             var formRef = new IndirectReference(10, 0);
@@ -164,9 +123,17 @@
             var processor = new TestProcessor(resourceStore, scanner);
 
             using var cts = new CancellationTokenSource();
-            cts.Cancel();
 
-            Assert.Throws<OperationCanceledException>(() => processor.ApplyXObject(formName, cts.Token));
+            // The page's own loop only polls every 100 operations, so the throw comes from the form's
+            // content processing, which reads the same token.
+            var operations = new IGraphicsStateOperation[]
+            {
+                new CallbackOperation(cts.Cancel),
+                new InvokeNamedXObject(formName)
+            };
+
+            Assert.Throws<OperationCanceledException>(() => processor.Process(1, operations, cts.Token));
+            Assert.Equal(1, processor.StackSize);
         }
 
         private static TestProcessor CreateTestProcessor()
@@ -222,30 +189,6 @@
             }
         }
 
-        private sealed class MockCancellableOperation : ICancellableGraphicsStateOperation
-        {
-            public string Operator => "mock_cancellable";
-
-            public int CancellableExecutionCount { get; private set; }
-            public int NonCancellableExecutionCount { get; private set; }
-            public CancellationToken ReceivedToken { get; private set; }
-
-            public void Run(IOperationContext operationContext)
-            {
-                NonCancellableExecutionCount++;
-            }
-
-            public void Run(IOperationContext operationContext, CancellationToken token)
-            {
-                CancellableExecutionCount++;
-                ReceivedToken = token;
-            }
-
-            public void Write(Stream stream)
-            {
-            }
-        }
-
         private sealed class CallbackOperation : IGraphicsStateOperation
         {
             private readonly Action action;
@@ -264,19 +207,6 @@
 
             public void Write(Stream stream)
             {
-            }
-        }
-
-        private sealed class TrackingOperationContext : TestOperationContext, IOperationContext
-        {
-            public NameToken? LastAppliedXObjectName { get; private set; }
-            public CancellationToken LastReceivedToken { get; private set; }
-
-            void IOperationContext.ApplyXObject(NameToken xObjectName, CancellationToken token)
-            {
-                LastAppliedXObjectName = xObjectName;
-                LastReceivedToken = token;
-                base.ApplyXObject(xObjectName, token);
             }
         }
     }

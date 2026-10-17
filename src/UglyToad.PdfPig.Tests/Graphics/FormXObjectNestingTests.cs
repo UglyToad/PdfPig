@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Tests.Graphics
 {
     using System.Collections.Generic;
+    using System.Threading;
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Geometry;
@@ -151,7 +152,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
 
             processor.ApplyXObject(FormAName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>());
+            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
 
             // B's invocation of A is skipped because A is still being processed.
             Assert.Single(content.Paths);
@@ -190,7 +191,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
 
             processor.ApplyXObject(FormAName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>());
+            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
 
             Assert.Single(content.Paths);
         }
@@ -202,7 +203,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
 
             processor.ApplyXObject(FormAName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>());
+            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
 
             Assert.Equal(ContentStreamProcessor.MaxFormXObjectDepth, content.Paths.Count);
         }

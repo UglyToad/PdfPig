@@ -137,8 +137,9 @@
                 IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
             {
                 CloneAllStates();
+                CancellationToken = token;
 
-                ProcessOperations(operations, token);
+                ProcessOperations(operations);
 
                 return new TextOnlyPageContent(_letters);
             }
