@@ -64,10 +64,14 @@
 
         /// <inheritdoc />
         public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
+
+        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var (predictor, colors, bitsPerComponent, columns) = PngPredictor.Parameters.Read(parameters);
+            var maximumCapacity = DecodeBuffer.WorkingCapacity(outputLimit, predictor);
 
             if (input.Length == 0)
             {
@@ -76,16 +80,21 @@
                 return Memory<byte>.Empty;
             }
 
+            if (predictor > 1)
+            {
+                _ = new PngPredictor.Decoder(predictor, colors, bitsPerComponent, columns);
+            }
+
             // The decoder writes straight into this buffer, so there is no copy per block, and the
             // buffer is rented because only the finished length is handed to the caller. It is sized
             // from the dictionary where that states the decoded length, as embedded files do. A
             // single Brotli copy may run to 16 MB, so no expansion ratio bounds what a stated length
             // may plausibly be; only the absolute ceiling does.
-            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, DecodeBuffer.UnboundedExpansion));
+            var buffer = ArrayPool<byte>.Shared.Rent(DecodeBuffer.Capacity(input.Length, streamDictionary, InitialCapacityFactor, MinimumCapacity, DecodeBuffer.UnboundedExpansion, maximumCapacity));
 
             try
             {
-                var total = Decompress(input, ref buffer);
+                var total = Decompress(input, ref buffer, maximumCapacity);
 
                 // The Flate filter decodes rows as they inflate, straight into the result, which
                 // spares it a buffer for the whole inflated stream. The Brotli decoder hands over
@@ -93,7 +102,7 @@
                 // is undone in the pass that moves the data out of the rented buffer. Measured on
                 // a predicted image that pass costs what the plain copy did, so a row-by-row path
                 // for Brotli would have little to gain.
-                return PngPredictor.DecodeToArray(buffer.AsSpan(0, total), predictor, colors, bitsPerComponent, columns);
+                return PngPredictor.DecodeToArray(buffer.AsSpan(0, total), predictor, colors, bitsPerComponent, columns, outputLimit);
             }
             finally
             {
@@ -105,7 +114,7 @@
         /// Decompresses the whole stream into <paramref name="buffer"/>, growing it as needed, and returns
         /// the number of bytes decompressed.
         /// </summary>
-        private static int Decompress(Memory<byte> input, ref byte[] buffer)
+        private static int Decompress(Memory<byte> input, ref byte[] buffer, int maximumCapacity)
         {
             var total = 0;
 
@@ -117,7 +126,7 @@
 
                 while (true)
                 {
-                    var status = decoder.Decompress(remaining.Span, buffer.AsSpan(total), out var consumed, out var written);
+                    var status = decoder.Decompress(remaining.Span, buffer.AsSpan(total, Math.Min(buffer.Length, maximumCapacity) - total), out var consumed, out var written);
 
                     total += written;
                     remaining = remaining.Slice(consumed);
@@ -144,7 +153,7 @@
                     }
 
                     // The buffer doubles; a stream too large for one array is refused there.
-                    DecodeBuffer.Grow(ref buffer, total, buffer.Length + 1L);
+                    DecodeBuffer.Grow(ref buffer, total, total + 1L, maximumCapacity);
                 }
             }
             catch (Exception ex) when (ex is InvalidOperationException || ex is InvalidDataException)
@@ -158,6 +167,9 @@
 
         /// <inheritdoc />
         public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
+
+        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             throw new NotSupportedException(
                 "The BrotliDecode filter is only supported on .NET Standard 2.1, .NET Core and .NET 5.0 or greater targets.");

@@ -27,9 +27,15 @@
         {
             var bpp = hasAlphaChannel ? 4 : 3;
 
-            var length = (height * width * bpp) + height;
+            if (width <= 0 || height <= 0)
+            {
+                throw new ArgumentException("Image width and height must be positive.");
+            }
 
-            return new PngBuilder(new byte[length], hasAlphaChannel, width, height, bpp);
+            var length = checked(((long)width * bpp + 1) * height);
+            DecodeBuffer.CheckLength(length);
+
+            return new PngBuilder(new byte[(int)length], hasAlphaChannel, width, height, bpp);
         }
 
         private PngBuilder(byte[] rawData, bool hasAlphaChannel, int width, int height, int bytesPerPixel)
