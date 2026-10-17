@@ -26,7 +26,7 @@
         public bool ClipPaths { get; set; } = false;
 
         /// <summary>
-        /// Should the parser remove letters that are occluded, i.e. fully covered by an opaque rectangle filled later on the page?
+        /// Should the parser remove letters that are occluded, i.e. fully covered by opaque fills or solid strokes painted later on the page?
         /// Defaults to <see langword="false"/>.
         /// </summary>
         public bool RemoveOccludedText { get; set; } = false;

@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using Colors;
     using Colors.Icc;
@@ -11,6 +12,7 @@ namespace UglyToad.PdfPig.Graphics
     using Core;
     using Filters;
     using Geometry;
+    using Geometry.ClipperLibrary;
     using Operations;
     using Parser;
     using PdfFonts;
@@ -28,6 +30,16 @@ namespace UglyToad.PdfPig.Graphics
         private readonly List<Letter> letters = new List<Letter>();
 
         private readonly HashSet<Letter> occludedLetters = new HashSet<Letter>();
+
+        /// <summary>
+        /// The opaque paint reaching each letter so far, for letters not yet fully covered.
+        /// </summary>
+        private readonly Dictionary<Letter, LetterCoverage> letterCoverage = new Dictionary<Letter, LetterCoverage>();
+
+        /// <summary>
+        /// The axis-aligned box around both glyph boxes of each letter, in the same order as the letters.
+        /// </summary>
+        private readonly List<PdfRectangle> letterEnvelopes = new List<PdfRectangle>();
 
         /// <summary>
         /// Stores each path as it is encountered in the content stream.
@@ -492,11 +504,11 @@ namespace UglyToad.PdfPig.Graphics
             if (CurrentPath.IsFilled)
             {
                 CurrentPath.SetFillDetails(currentState);
+            }
 
-                if (ParsingOptions.RemoveOccludedText)
-                {
-                    MarkOccludedLetters(currentState);
-                }
+            if (ParsingOptions.RemoveOccludedText && (CurrentPath.IsFilled || CurrentPath.IsStroked))
+            {
+                MarkOccludedLetters(currentState);
             }
 
             if (ParsingOptions.ClipPaths)
@@ -532,54 +544,264 @@ namespace UglyToad.PdfPig.Graphics
         }
 
         /// <summary>
-        /// Marks earlier letters fully covered by the current fill when it is an opaque rectangle.
+        /// Adds the opaque area the current path paints to the coverage of each earlier letter,
+        /// and marks the letters it leaves fully covered.
         /// </summary>
         private void MarkOccludedLetters(CurrentGraphicsState currentState)
         {
-            if (currentState.AlphaConstantNonStroking < 1
+            if (letters.Count == 0
                 || currentState.BlendMode != BlendMode.Normal
                 || currentState.SoftMask != null
-                || currentState.CurrentNonStrokingColor is PatternColor
-                || CurrentPath.Count != 1)
+                // Optional content may be hidden, so its paint cannot be trusted to cover anything.
+                || markedContentStack.IsOpen(NameToken.Oc))
             {
                 return;
             }
 
-            var drawnRectangle = CurrentPath[0].GetDrawnRectangle();
-            if (drawnRectangle is null)
+            var countsFill = CurrentPath.IsFilled
+                && currentState.AlphaConstantNonStroking >= 1
+                && currentState.CurrentNonStrokingColor is not PatternColor;
+
+            // A dashed stroke leaves gaps, so only solid strokes count.
+            var countsStroke = CurrentPath.IsStroked
+                && currentState.AlphaConstantStroking >= 1
+                && currentState.CurrentStrokingColor is not PatternColor
+                && currentState.LineDashPattern.Array.Count == 0;
+
+            var rawBounds = PdfSubpath.GetBoundingRectangle(CurrentPath);
+            if ((!countsFill && !countsStroke) || rawBounds is null)
             {
                 return;
             }
 
-            // A small margin absorbs rounding in the letter boxes.
-            const double margin = 0.01;
-            var drawn = drawnRectangle.Value.Normalise();
-            var rectangle = new PdfRectangle(drawn.Left - margin, drawn.Bottom - margin, drawn.Right + margin, drawn.Top + margin);
+            var lineWidth = countsStroke ? currentState.LineWidth * currentState.CurrentTransformationMatrix.GetMinimumScale() : 0;
+            var reach = new PdfRectangle(rawBounds.Value.Left - lineWidth, rawBounds.Value.Bottom - lineWidth,
+                rawBounds.Value.Right + lineWidth, rawBounds.Value.Top + lineWidth);
+
+            // Polygon work is only worth doing for paint that reaches a letter.
+            var candidates = GetCandidateLetters(reach);
+            if (candidates.Count == 0)
+            {
+                return;
+            }
+
+            // The path can be changed once painted, so take its polygons now and leave combining them until a letter needs it.
+            var fillPolygons = countsFill ? CurrentPath.GetFillPolygons() : new List<List<ClipperIntPoint>>();
+            var strokePolygons = countsStroke ? CurrentPath.GetStrokePolygons(lineWidth, currentState.CapStyle) : new List<List<ClipperIntPoint>>();
             var clipping = currentState.CurrentClippingPath;
+            var paint = new Paint(fillPolygons, CurrentPath.GetClipperFillType(), strokePolygons,
+                clipping?.GetFillPolygons(), clipping?.GetClipperFillType() ?? ClipperPolyFillType.NonZero);
 
-            foreach (var letter in letters)
+            var clipBounds = clipping is null ? null : PdfSubpath.GetBoundingRectangle(clipping);
+            var pieceBounds = new List<PdfRectangle>();
+            foreach (var polygon in fillPolygons.Concat(strokePolygons))
             {
-                // Without the font program the glyph box is the whole font bounding box, so also accept the loose box.
-                PdfRectangle covered;
-                if (rectangle.Contains(letter.BoundingBox, true))
+                var bounds = OcclusionExtensions.GetBounds(polygon);
+                if (bounds.HasValue && (clipBounds is null || GetOverlapArea(bounds.Value, clipBounds.Value) > 0))
                 {
-                    covered = letter.BoundingBox;
+                    pieceBounds.Add(bounds.Value);
                 }
-                else if (rectangle.Contains(letter.GlyphRectangleLoose, true))
+            }
+
+            foreach (var index in candidates)
+            {
+                var letter = letters[index];
+                var envelope = letterEnvelopes[index];
+
+                // The overlap with each piece's bounds caps how much this paint can add to the letter's coverage.
+                var bound = 0.0;
+                foreach (var pieceBound in pieceBounds)
                 {
-                    covered = letter.GlyphRectangleLoose;
+                    bound += GetOverlapArea(envelope, pieceBound);
                 }
-                else
+
+                if (bound <= 0)
                 {
                     continue;
                 }
 
-                // The clip check is last since it is the expensive one.
-                if (clipping is null || clipping.Contains(covered, true))
+                if (!letterCoverage.TryGetValue(letter, out var coverage))
+                {
+                    coverage = new LetterCoverage();
+                    letterCoverage[letter] = coverage;
+                }
+
+                coverage.Paints.Add(paint);
+                coverage.UpperBound = Math.Min(coverage.UpperBound + bound, envelope.Area);
+                if (coverage.UpperBound < GetAreaNeeded(letter))
+                {
+                    continue;
+                }
+
+                var envelopePolygon = new List<List<ClipperIntPoint>> { envelope.ToClipperPolygon().ToList() };
+                var covered = new List<List<ClipperIntPoint>>();
+                foreach (var reaching in coverage.Paints)
+                {
+                    covered = OcclusionExtensions.Union(covered, OcclusionExtensions.Intersect(reaching.Area, envelopePolygon));
+                }
+
+                // Without the font program the glyph box is the whole font bounding box, so also accept the loose box.
+                if (IsCovered(covered, letter.BoundingBox) || IsCovered(covered, letter.GlyphRectangleLoose))
                 {
                     occludedLetters.Add(letter);
+                    letterCoverage.Remove(letter);
+                }
+                else
+                {
+                    coverage.Paints.Clear();
+                    coverage.Paints.Add(new Paint(covered));
+                    coverage.UpperBound = OcclusionExtensions.Area(covered) / (ClippingExtensions.Factor * ClippingExtensions.Factor);
                 }
             }
+        }
+
+        private List<int> GetCandidateLetters(PdfRectangle reach)
+        {
+            // A combined diacritic replaces the last letter with one that has the same boxes, so trimming keeps the cache in step.
+            if (letterEnvelopes.Count > letters.Count)
+            {
+                letterEnvelopes.RemoveRange(letters.Count, letterEnvelopes.Count - letters.Count);
+            }
+
+            while (letterEnvelopes.Count < letters.Count)
+            {
+                var letter = letters[letterEnvelopes.Count];
+                letterEnvelopes.Add(GetEnvelope(letter.BoundingBox, letter.GlyphRectangleLoose));
+            }
+
+            var candidates = new List<int>();
+            for (var i = 0; i < letters.Count; i++)
+            {
+                if (GetOverlapArea(letterEnvelopes[i], reach) > 0 && !occludedLetters.Contains(letters[i]))
+                {
+                    candidates.Add(i);
+                }
+            }
+
+            return candidates;
+        }
+
+        /// <summary>
+        /// The least coverage, in square points, that could leave one of the letter's boxes fully covered.
+        /// </summary>
+        private static double GetAreaNeeded(Letter letter)
+        {
+            var needed = double.MaxValue;
+            foreach (var box in new[] { letter.BoundingBox, letter.GlyphRectangleLoose })
+            {
+                var area = GetArea(box);
+                if (area > 0)
+                {
+                    needed = Math.Min(needed, area - GetTolerance(box));
+                }
+            }
+
+            return needed;
+        }
+
+        private static bool IsCovered(List<List<ClipperIntPoint>> coverage, PdfRectangle box)
+        {
+            var area = GetArea(box);
+            if (area == 0)
+            {
+                return false;
+            }
+
+            var scale = ClippingExtensions.Factor * ClippingExtensions.Factor;
+            var covered = OcclusionExtensions.Area(OcclusionExtensions.Intersect(coverage, [box.ToClipperPolygon().ToList()])) / scale;
+            return covered >= area - GetTolerance(box);
+        }
+
+        /// <summary>
+        /// The area inside the box's corners. <see cref="PdfRectangle.Area"/> multiplies the side lengths, which overstates a skewed box.
+        /// </summary>
+        private static double GetArea(PdfRectangle box)
+        {
+            var corners = new[] { box.BottomLeft, box.BottomRight, box.TopRight, box.TopLeft };
+            var twiceArea = 0.0;
+            for (var i = 0; i < corners.Length; i++)
+            {
+                var next = corners[(i + 1) % corners.Length];
+                twiceArea += corners[i].X * next.Y - next.X * corners[i].Y;
+            }
+
+            return Math.Abs(twiceArea) / 2;
+        }
+
+        /// <summary>
+        /// A margin of 0.01 along the box edge absorbs rounding in the letter boxes.
+        /// </summary>
+        private static double GetTolerance(PdfRectangle box)
+        {
+            return 2 * (Math.Abs(box.Width) + Math.Abs(box.Height)) * 0.01;
+        }
+
+        private static double GetOverlapArea(PdfRectangle a, PdfRectangle b)
+        {
+            var width = Math.Min(a.Right, b.Right) - Math.Max(a.Left, b.Left);
+            var height = Math.Min(a.Top, b.Top) - Math.Max(a.Bottom, b.Bottom);
+            return width > 0 && height > 0 ? width * height : 0;
+        }
+
+        private static PdfRectangle GetEnvelope(PdfRectangle a, PdfRectangle b)
+        {
+            var points = new[] { a.BottomLeft, a.BottomRight, a.TopLeft, a.TopRight, b.BottomLeft, b.BottomRight, b.TopLeft, b.TopRight };
+            return new PdfRectangle(points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
+        }
+
+        /// <summary>
+        /// The opaque area one fill or stroke painted, combined on first use.
+        /// </summary>
+        private sealed class Paint
+        {
+            private readonly List<List<ClipperIntPoint>> fill;
+            private readonly ClipperPolyFillType fillType;
+            private readonly List<List<ClipperIntPoint>> stroke;
+            private readonly List<List<ClipperIntPoint>>? clip;
+            private readonly ClipperPolyFillType clipType;
+            private List<List<ClipperIntPoint>>? area;
+
+            public Paint(List<List<ClipperIntPoint>> fill,
+                ClipperPolyFillType fillType,
+                List<List<ClipperIntPoint>> stroke,
+                List<List<ClipperIntPoint>>? clip,
+                ClipperPolyFillType clipType)
+            {
+                this.fill = fill;
+                this.fillType = fillType;
+                this.stroke = stroke;
+                this.clip = clip;
+                this.clipType = clipType;
+            }
+
+            public Paint(List<List<ClipperIntPoint>> area)
+            {
+                fill = stroke = new List<List<ClipperIntPoint>>();
+                this.area = area;
+            }
+
+            public List<List<ClipperIntPoint>> Area => area ??= Combine();
+
+            private List<List<ClipperIntPoint>> Combine()
+            {
+                var painted = OcclusionExtensions.Union(OcclusionExtensions.Union(fill, fillType),
+                    OcclusionExtensions.Union(stroke, ClipperPolyFillType.NonZero));
+
+                return clip is null || painted.Count == 0 ? painted : OcclusionExtensions.Intersect(painted, clip, clipType);
+            }
+        }
+
+        private sealed class LetterCoverage
+        {
+            /// <summary>
+            /// The paint that reaches the letter, kept until the exact coverage is worked out.
+            /// </summary>
+            public List<Paint> Paints { get; } = new List<Paint>();
+
+            /// <summary>
+            /// No less than the area of the letter's envelope covered so far, in square points.
+            /// </summary>
+            public double UpperBound { get; set; }
         }
 
         public override void ModifyClippingIntersect(FillingRule clippingRule)
