@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Tests.Artwork
     using System.Linq;
     using UglyToad.PdfPig.Annotations;
     using UglyToad.PdfPig.Artwork;
+    using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Tests.Integration;
     using Xunit.Abstractions;
 
@@ -43,7 +44,7 @@ namespace UglyToad.PdfPig.Tests.Artwork
             Assert.Equal(Artwork3DMatrixSource.U3DPath, view.MatrixSource);
             Assert.Equal(new[] { "DefaultView" }, view.U3DPath);
             Assert.Null(view.CameraToWorld);
-            Assert.Equal(Artwork3DColor.White, view.Background!.Color);
+            Assert.Equal(RGBColor.White, view.Background!.Color);
 
             Assert.Equal(Artwork3DActivationMode.PageVisible, artwork.Activation.Mode);
             Assert.True(artwork.Activation.ShowToolbar);

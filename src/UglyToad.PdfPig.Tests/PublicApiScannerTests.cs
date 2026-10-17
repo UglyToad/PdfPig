@@ -96,7 +96,6 @@
                 "UglyToad.PdfPig.Artwork.Artwork3DAnimationType",
                 "UglyToad.PdfPig.Artwork.Artwork3DBackground",
                 "UglyToad.PdfPig.Artwork.Artwork3DClippingStyle",
-                "UglyToad.PdfPig.Artwork.Artwork3DColor",
                 "UglyToad.PdfPig.Artwork.Artwork3DCrossSection",
                 "UglyToad.PdfPig.Artwork.Artwork3DDeactivationMode",
                 "UglyToad.PdfPig.Artwork.Artwork3DFormat",

@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Artwork
 {
     using System.Collections.Generic;
+    using Graphics.Colors;
     using Tokens;
 
     /// <summary>
@@ -37,7 +38,7 @@ namespace UglyToad.PdfPig.Artwork
         /// <summary>
         /// The colour of the cutting plane (<c>PC</c>). Specification default: white.
         /// </summary>
-        public Artwork3DColor? PlaneColor { get; }
+        public RGBColor? PlaneColor { get; }
 
         /// <summary>
         /// Whether the intersection of the cutting plane with the artwork is shown (<c>IV</c>).
@@ -49,7 +50,7 @@ namespace UglyToad.PdfPig.Artwork
         /// The colour of the intersection of the cutting plane with the artwork (<c>IC</c>).
         /// Specification default: green.
         /// </summary>
-        public Artwork3DColor? IntersectionColor { get; }
+        public RGBColor? IntersectionColor { get; }
 
         /// <summary>
         /// Whether the part of the model on the clipped side of the plane is shown transparently
@@ -67,9 +68,9 @@ namespace UglyToad.PdfPig.Artwork
             IReadOnlyList<double>? center,
             IReadOnlyList<double?>? orientation,
             double? planeOpacity,
-            Artwork3DColor? planeColor,
+            RGBColor? planeColor,
             bool? intersectionVisible,
-            Artwork3DColor? intersectionColor,
+            RGBColor? intersectionColor,
             bool? showTransparent,
             bool? sectionCapping)
         {

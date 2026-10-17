@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Tests.Artwork
     using System.Linq;
     using UglyToad.PdfPig.Artwork;
     using UglyToad.PdfPig.Core;
+    using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Tests.Tokens;
     using UglyToad.PdfPig.Tokens;
 
@@ -144,7 +145,7 @@ namespace UglyToad.PdfPig.Tests.Artwork
             Assert.Equal(Artwork3DRenderModeType.SolidOutline, v.RenderMode!.Type);
             Assert.Equal("SolidOutline", v.RenderMode.Name);
             Assert.Equal(10, v.RenderMode.CreaseValue);
-            Assert.Equal(new Artwork3DColor(1, 0, 0), v.RenderMode.AuxiliaryColor);
+            Assert.Equal(new RGBColor(1, 0, 0), v.RenderMode.AuxiliaryColor);
             Assert.True(v.RenderMode.FaceColorIsBackground);
             Assert.Null(v.RenderMode.FaceColor);
             Assert.Equal(0.3, v.RenderMode.Opacity);
@@ -156,7 +157,7 @@ namespace UglyToad.PdfPig.Tests.Artwork
         {
             var v = Parse(Dict(("XN", Text("v")), ("BG", Dict(("Subtype", Name("SC"))))));
 
-            Assert.Equal(Artwork3DColor.White, v.Background!.Color);
+            Assert.Equal(RGBColor.White, v.Background!.Color);
             Assert.False(v.Background.EntireAnnotation);
         }
 
@@ -208,7 +209,7 @@ namespace UglyToad.PdfPig.Tests.Artwork
             Assert.Equal(new double[] { 1, 2, 3 }, s.Center);
             Assert.Equal(new double?[] { null, 0, 90 }, s.Orientation);
             Assert.Equal(0.5, s.PlaneOpacity);
-            Assert.Equal(new Artwork3DColor(0, 1, 0), s.PlaneColor);
+            Assert.Equal(new RGBColor(0, 1, 0), s.PlaneColor);
             Assert.True(s.IntersectionVisible);
             Assert.Null(s.IntersectionColor);
             Assert.Null(s.ShowTransparent);

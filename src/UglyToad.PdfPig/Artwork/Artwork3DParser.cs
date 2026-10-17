@@ -3,6 +3,7 @@ namespace UglyToad.PdfPig.Artwork
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using Graphics.Colors;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -132,7 +133,7 @@ namespace UglyToad.PdfPig.Artwork
         /// Reads a colour given either as three numbers, or as a colour space name followed by three numbers.
         /// Only DeviceRGB is valid; any other colour space makes the entry absent, as the specification requires.
         /// </summary>
-        internal static Artwork3DColor? GetColor(IToken? token, IPdfTokenScanner scanner, bool leadingColorSpace)
+        internal static RGBColor? GetColor(IToken? token, IPdfTokenScanner scanner, bool leadingColorSpace)
         {
             if (token is not ArrayToken array)
             {
@@ -153,7 +154,7 @@ namespace UglyToad.PdfPig.Artwork
                 return null;
             }
 
-            return new Artwork3DColor(rgb[0], rgb[1], rgb[2]);
+            return new RGBColor(rgb[0], rgb[1], rgb[2]);
         }
 
         internal static bool TryParseView(IToken? token, IPdfTokenScanner scanner, [NotNullWhen(true)] out Artwork3DView? view)
@@ -315,7 +316,7 @@ namespace UglyToad.PdfPig.Artwork
             dictionary.TryGet(Artwork3DNames.CS, out IToken? colorSpace);
 
             return new Artwork3DBackground(
-                GetColor(Get(dictionary, NameToken.C, scanner), scanner, leadingColorSpace: false) ?? Artwork3DColor.White,
+                GetColor(Get(dictionary, NameToken.C, scanner), scanner, leadingColorSpace: false) ?? RGBColor.White,
                 GetBoolean(dictionary, Artwork3DNames.EA, scanner) ?? false,
                 colorSpace);
         }

@@ -1,5 +1,7 @@
 namespace UglyToad.PdfPig.Artwork
 {
+    using Graphics.Colors;
+
     /// <summary>
     /// The style in which 3D artwork is rendered (ISO 32000-2, Table 318).
     /// </summary>
@@ -20,13 +22,13 @@ namespace UglyToad.PdfPig.Artwork
         /// The auxiliary colour, often used for points or edges (<c>AC</c>). <see langword="null"/> when
         /// absent or given in a colour space other than DeviceRGB; the specification's default is black.
         /// </summary>
-        public Artwork3DColor? AuxiliaryColor { get; }
+        public RGBColor? AuxiliaryColor { get; }
 
         /// <summary>
         /// The face colour, relevant only to <see cref="Artwork3DRenderModeType.Illustration"/>, when given
         /// as a DeviceRGB colour (<c>FC</c>).
         /// </summary>
-        public Artwork3DColor? FaceColor { get; }
+        public RGBColor? FaceColor { get; }
 
         /// <summary>
         /// Whether the face colour is given as the name <c>BG</c>: the background colour currently in use.
@@ -49,8 +51,8 @@ namespace UglyToad.PdfPig.Artwork
         internal Artwork3DRenderMode(
             Artwork3DRenderModeType type,
             string? name,
-            Artwork3DColor? auxiliaryColor,
-            Artwork3DColor? faceColor,
+            RGBColor? auxiliaryColor,
+            RGBColor? faceColor,
             bool faceColorIsBackground,
             double? opacity,
             double? creaseValue)

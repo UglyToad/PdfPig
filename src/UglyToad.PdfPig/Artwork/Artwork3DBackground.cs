@@ -1,5 +1,6 @@
 namespace UglyToad.PdfPig.Artwork
 {
+    using Graphics.Colors;
     using Tokens;
 
     /// <summary>
@@ -11,7 +12,7 @@ namespace UglyToad.PdfPig.Artwork
         /// <summary>
         /// The background colour (<c>C</c>). Default white.
         /// </summary>
-        public Artwork3DColor Color { get; }
+        public RGBColor Color { get; }
 
         /// <summary>
         /// Whether the background applies to the entire annotation (<see langword="true"/>) or only to the
@@ -25,7 +26,7 @@ namespace UglyToad.PdfPig.Artwork
         /// </summary>
         public IToken? ColorSpace { get; }
 
-        internal Artwork3DBackground(Artwork3DColor color, bool entireAnnotation, IToken? colorSpace)
+        internal Artwork3DBackground(RGBColor color, bool entireAnnotation, IToken? colorSpace)
         {
             Color = color;
             EntireAnnotation = entireAnnotation;
