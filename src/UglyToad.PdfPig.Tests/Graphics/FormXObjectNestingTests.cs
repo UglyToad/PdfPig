@@ -55,7 +55,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
 
             public int FormsProcessed { get; private set; }
 
-            protected override void ProcessFormXObject(StreamToken formStream, NameToken xObjectName, CancellationToken token)
+            protected override void ProcessFormXObject(StreamToken formStream, NameToken xObjectName)
             {
                 FormsProcessed++;
 
@@ -64,7 +64,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
                     throw new InvalidOperationException($"More than {RunawayLimit} forms were processed.");
                 }
 
-                base.ProcessFormXObject(formStream, xObjectName, token);
+                base.ProcessFormXObject(formStream, xObjectName);
             }
         }
 
@@ -149,9 +149,9 @@ namespace UglyToad.PdfPig.Tests.Graphics
             // A paints a path and invokes B, B invokes A.
             var processor = CreateProcessor(MutuallyRecursiveForms("0 0 10 10 re f\n/Fm1 Do\n", "/Fm0 Do\n"), useLenientParsing: true);
 
-            processor.ApplyXObject(FormAName, CancellationToken.None);
+            processor.ApplyXObject(FormAName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
+            var content = processor.Process(1, new List<IGraphicsStateOperation>());
 
             // B's invocation of A is skipped because A is still being processed.
             Assert.Single(content.Paths);
@@ -162,7 +162,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
         {
             var processor = CreateProcessor(MutuallyRecursiveForms("0 0 10 10 re f\n/Fm1 Do\n", "/Fm0 Do\n"), useLenientParsing: false);
 
-            Assert.Throws<PdfDocumentFormatException>(() => processor.ApplyXObject(FormAName, CancellationToken.None));
+            Assert.Throws<PdfDocumentFormatException>(() => processor.ApplyXObject(FormAName));
         }
 
         [Fact]
@@ -171,7 +171,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
             // A invokes B twice, B invokes A twice. Repeating them until the nesting limit takes about 2^50 invocations.
             var processor = CreateProcessor(MutuallyRecursiveForms("/Fm1 Do\n/Fm1 Do\n", "/Fm0 Do\n/Fm0 Do\n"), useLenientParsing: true);
 
-            processor.ApplyXObject(FormAName, CancellationToken.None);
+            processor.ApplyXObject(FormAName);
 
             // A once and B once for each of A's two invocations of it.
             Assert.Equal(3, processor.FormsProcessed);
@@ -188,9 +188,9 @@ namespace UglyToad.PdfPig.Tests.Graphics
 
             var processor = CreateProcessor(scanner, useLenientParsing: true);
 
-            processor.ApplyXObject(FormAName, CancellationToken.None);
+            processor.ApplyXObject(FormAName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
+            var content = processor.Process(1, new List<IGraphicsStateOperation>());
 
             Assert.Single(content.Paths);
         }
@@ -200,9 +200,9 @@ namespace UglyToad.PdfPig.Tests.Graphics
         {
             var processor = CreateProcessor(FormChain(10_000), useLenientParsing: true);
 
-            processor.ApplyXObject(FormAName, CancellationToken.None);
+            processor.ApplyXObject(FormAName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
+            var content = processor.Process(1, new List<IGraphicsStateOperation>());
 
             Assert.Equal(ContentStreamProcessor.MaxFormXObjectDepth, content.Paths.Count);
         }
@@ -212,7 +212,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
         {
             var processor = CreateProcessor(FormChain(10_000), useLenientParsing: false);
 
-            Assert.Throws<PdfDocumentFormatException>(() => processor.ApplyXObject(FormAName, CancellationToken.None));
+            Assert.Throws<PdfDocumentFormatException>(() => processor.ApplyXObject(FormAName));
         }
     }
 }

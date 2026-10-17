@@ -83,7 +83,7 @@
         {
         }
 
-        public void ApplyXObject(NameToken xObjectName, CancellationToken token)
+        public void ApplyXObject(NameToken xObjectName)
         {
         }
 

@@ -227,7 +227,6 @@
                 "UglyToad.PdfPig.Graphics.Operations.General.SetLineWidth",
                 "UglyToad.PdfPig.Graphics.Operations.General.SetMiterLimit",
                 "UglyToad.PdfPig.Graphics.Operations.IGraphicsStateOperation",
-                "UglyToad.PdfPig.Graphics.Operations.ICancellableGraphicsStateOperation",
                 "UglyToad.PdfPig.Graphics.Operations.InlineImages.BeginInlineImage",
                 "UglyToad.PdfPig.Graphics.Operations.InlineImages.BeginInlineImageData",
                 "UglyToad.PdfPig.Graphics.Operations.InlineImages.EndInlineImage",

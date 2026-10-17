@@ -111,8 +111,8 @@ namespace UglyToad.PdfPig.Tests.Graphics
             var parser = CreateParser();
             var processor = CreateProcessor(scanner, parser);
 
-            processor.ApplyXObject(FormName, CancellationToken.None);
-            processor.ApplyXObject(FormName, CancellationToken.None);
+            processor.ApplyXObject(FormName);
+            processor.ApplyXObject(FormName);
 
             Assert.Equal(1, parser.ParseCallCount);
         }
@@ -123,10 +123,10 @@ namespace UglyToad.PdfPig.Tests.Graphics
             var scanner = CreateScannerWithForm();
             var processor = CreateProcessor(scanner, CreateParser());
 
-            processor.ApplyXObject(FormName, CancellationToken.None);
+            processor.ApplyXObject(FormName);
             var afterFirstInvocation = scanner.GetCallCount;
 
-            processor.ApplyXObject(FormName, CancellationToken.None);
+            processor.ApplyXObject(FormName);
 
             Assert.Equal(afterFirstInvocation, scanner.GetCallCount);
         }
@@ -137,11 +137,11 @@ namespace UglyToad.PdfPig.Tests.Graphics
             var scanner = CreateScannerWithForm();
             var processor = CreateProcessor(scanner, CreateParser());
 
-            processor.ApplyXObject(FormName, CancellationToken.None);
-            processor.ApplyXObject(FormName, CancellationToken.None);
-            processor.ApplyXObject(FormName, CancellationToken.None);
+            processor.ApplyXObject(FormName);
+            processor.ApplyXObject(FormName);
+            processor.ApplyXObject(FormName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
+            var content = processor.Process(1, new List<IGraphicsStateOperation>());
 
             Assert.Equal(3, content.Paths.Count);
         }
