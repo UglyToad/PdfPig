@@ -489,6 +489,7 @@
         public static readonly NameToken Resume = new NameToken("Resume");
         public static readonly NameToken Rgb = new NameToken("RGB");
         public static readonly NameToken Ri = new NameToken("RI");
+        public static readonly NameToken RichMedia = new NameToken("RichMedia");
         public static readonly NameToken RichMediaExecute = new NameToken("RichMediaExecute");
         public static readonly NameToken Right = new NameToken("Right");
         public static readonly NameToken RoleMap = new NameToken("RoleMap");
