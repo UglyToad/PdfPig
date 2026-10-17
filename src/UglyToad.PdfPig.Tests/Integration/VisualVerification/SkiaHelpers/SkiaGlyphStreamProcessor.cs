@@ -39,7 +39,7 @@
             yAxisFlipMatrix = SKMatrix.CreateScale(1, -1, 0, height / 2f);
         }
 
-        public override SKPicture Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
+        public override SKPicture Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             CloneAllStates();
 
@@ -47,7 +47,7 @@
             using (canvas = recorder.BeginRecording(SKRect.Create(width, height)))
             {
                 canvas.Clear(SKColors.White);
-                ProcessOperations(operations);
+                ProcessOperations(operations, token);
                 canvas.Flush();
                 return recorder.EndRecording();
             }

@@ -77,7 +77,8 @@
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 if (operations.Count == 0)
                 {
@@ -97,7 +98,7 @@
                     ResourceStore.GetPageOutputIntentProfile(dictionary),
                     ParsingOptions);
 
-                TextOnlyPageContent content = context.Process(pageNumber, operations);
+                TextOnlyPageContent content = context.Process(pageNumber, operations, token);
 
                 return new TextOnlyPage(pageNumber, string.Concat(content.Letters));
             }
@@ -133,11 +134,11 @@
             }
 
             public override TextOnlyPageContent Process(int pageNumberCurrent,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
             {
                 CloneAllStates();
 
-                ProcessOperations(operations);
+                ProcessOperations(operations, token);
 
                 return new TextOnlyPageContent(_letters);
             }

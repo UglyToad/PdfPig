@@ -3,6 +3,7 @@
     using PdfPig.Core;
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Tokens;
     using UglyToad.PdfPig.Graphics.Core;
 
@@ -71,7 +72,8 @@
         /// Retrieves the named XObject and applies it to the current state.
         /// </summary>
         /// <param name="xObjectName">The name of the XObject.</param>
-        void ApplyXObject(NameToken xObjectName);
+        /// <param name="token"></param>
+        void ApplyXObject(NameToken xObjectName, CancellationToken token);
 
         /// <summary>
         /// Start a new sub-path.

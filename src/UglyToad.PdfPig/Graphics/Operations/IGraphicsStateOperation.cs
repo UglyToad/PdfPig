@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
+    using System.Threading;
 
     /// <summary>
     /// An operation with associated data from a content stream.
@@ -24,5 +25,17 @@
         /// </summary>
         /// <param name="operationContext"></param>
         void Run(IOperationContext operationContext);
+    }
+
+    /// <inheritdoc/>
+    public interface ICancellableGraphicsStateOperation : IGraphicsStateOperation
+    {
+        /// <summary>
+        /// Applies the operation to the current context with the provided resources.
+        /// <para>Matrix transformations should be implemented in <see cref="IOperationContext"/>.</para>
+        /// </summary>
+        /// <param name="operationContext"></param>
+        /// <param name="token"></param>
+        void Run(IOperationContext operationContext, CancellationToken token);
     }
 }

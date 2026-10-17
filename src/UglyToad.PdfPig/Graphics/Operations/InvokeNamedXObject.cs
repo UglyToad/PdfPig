@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Threading;
     using Tokens;
 
     /// <inheritdoc />
@@ -11,7 +12,7 @@
     /// The associated value must be a stream whose Type entry, if present, is XObject.
     /// The effect of <see cref="T:UglyToad.PdfPig.Graphics.Operations.InvokeNamedXObject" /> depends on the value of the XObject's Subtype entry, which may be Image, Form or PS. 
     /// </summary>
-    public class InvokeNamedXObject : IGraphicsStateOperation
+    public class InvokeNamedXObject : ICancellableGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -38,7 +39,13 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ApplyXObject(Name);
+            Run(operationContext, CancellationToken.None);
+        }
+
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext, CancellationToken token)
+        {
+            operationContext.ApplyXObject(Name, token);
         }
 
         /// <inheritdoc />

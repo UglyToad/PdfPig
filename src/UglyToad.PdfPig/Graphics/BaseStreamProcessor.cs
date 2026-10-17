@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    
+    using System.Threading;
     using Colors;
     using Colors.Icc;
     using Content;
@@ -190,15 +190,39 @@
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s and return content.
         /// </summary>
-        public abstract TPageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations);
+        public abstract TPageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token);
 
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s.
         /// </summary>
-        protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
+        protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
+            if (!token.CanBeCanceled)
+            {
+                // Fast path
+                foreach (var stateOperation in operations)
+                {
+                    stateOperation.Run(this);
+                }
+                return;
+            }
+
+            token.ThrowIfCancellationRequested();
+
+            int i = 0;
             foreach (var stateOperation in operations)
             {
+                if (++i % 100 == 0)
+                {
+                    token.ThrowIfCancellationRequested();
+                }
+
+                if (stateOperation is ICancellableGraphicsStateOperation cancellable)
+                {
+                    cancellable.Run(this, token);
+                    continue;
+                }
+
                 stateOperation.Run(this);
             }
         }
@@ -494,13 +518,13 @@
         }
 
         /// <inheritdoc/>
-        public virtual void ApplyXObject(NameToken xObjectName)
+        public virtual void ApplyXObject(NameToken xObjectName, CancellationToken token)
         {
             var hasReference = ResourceStore.TryGetXObjectReference(xObjectName, out var xObjectReference);
 
             if (hasReference && _formXObjectCache.TryGetValue(xObjectReference, out var cachedForm))
             {
-                ProcessReferencedFormXObject(cachedForm, xObjectName, xObjectReference);
+                ProcessReferencedFormXObject(cachedForm, xObjectName, xObjectReference, token);
                 return;
             }
 
@@ -547,13 +571,13 @@
                 if (hasReference)
                 {
                     _formXObjectCache[xObjectReference] = xObjectStream;
-                    ProcessReferencedFormXObject(xObjectStream, xObjectName, xObjectReference);
+                    ProcessReferencedFormXObject(xObjectStream, xObjectName, xObjectReference, token);
                 }
                 else
                 {
                     // Only a custom resource store returns a form without a reference. There is nothing to
                     // recognize such a form by, so only the nesting limit applies.
-                    ProcessFormXObject(xObjectStream, xObjectName);
+                    ProcessFormXObject(xObjectStream, xObjectName, token);
                 }
             }
             else
@@ -568,7 +592,7 @@
         /// form invocations. Forms that invoke each other would otherwise repeat until the nesting limit,
         /// which takes exponential time when one of them invokes the other more than once.
         /// </summary>
-        private void ProcessReferencedFormXObject(StreamToken formStream, NameToken xObjectName, IndirectReference reference)
+        private void ProcessReferencedFormXObject(StreamToken formStream, NameToken xObjectName, IndirectReference reference, CancellationToken token)
         {
             if (!_activeFormXObjects.Add(reference))
             {
@@ -586,7 +610,7 @@
 
             try
             {
-                ProcessFormXObject(formStream, xObjectName);
+                ProcessFormXObject(formStream, xObjectName, token);
             }
             finally
             {
@@ -603,7 +627,7 @@
         /// <summary>
         /// Process a XObject form.
         /// </summary>
-        protected virtual void ProcessFormXObject(StreamToken formStream, NameToken xObjectName)
+        protected virtual void ProcessFormXObject(StreamToken formStream, NameToken xObjectName, CancellationToken token)
         {
             /*
              * When a form XObject is invoked the following should happen:
@@ -759,8 +783,7 @@
                     }
                 }
 
-                ProcessOperations(operations);
-
+                ProcessOperations(operations, token);
             }
             finally
             {

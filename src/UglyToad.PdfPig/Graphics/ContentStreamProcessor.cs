@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Colors.Icc;
     using Content;
     using Filters;
@@ -102,12 +103,12 @@ namespace UglyToad.PdfPig.Graphics
         {
         }
 
-        public override PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
+        public override PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             PageNumber = pageNumberCurrent;
             CloneAllStates();
 
-            ProcessOperations(operations);
+            ProcessOperations(operations, token);
 
             return new PageContent(operations,
                 letters,
@@ -120,7 +121,7 @@ namespace UglyToad.PdfPig.Graphics
                 ParsingOptions);
         }
 
-        protected override void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
+        protected override void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             var enclosingDepth = markedContentStack.Depth;
             var enclosingActualTextDepth = actualTextDepth;
@@ -130,7 +131,7 @@ namespace UglyToad.PdfPig.Graphics
 
             try
             {
-                base.ProcessOperations(operations);
+                base.ProcessOperations(operations, token);
             }
             finally
             {

@@ -16,6 +16,7 @@
     using Tokens;
     using Outline;
     using Outline.Destinations;
+    using System.Threading;
 
     /// <inheritdoc />
     /// <summary>
@@ -167,8 +168,9 @@
         /// Get the page with the specified page number (1 indexed).
         /// </summary>
         /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
+        /// <param name="token">The cancellation token.</param>
         /// <returns>The page.</returns>
-        public Page GetPage(int pageNumber)
+        public Page GetPage(int pageNumber, CancellationToken token = default)
         {
             if (isDisposed)
             {
@@ -179,7 +181,11 @@
 
             try
             {
-                return pages.GetPage(pageNumber, namedDestinations, parsingOptions);
+                return pages.GetPage(pageNumber, namedDestinations, parsingOptions, token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -197,8 +203,9 @@
         /// </summary>
         /// <typeparam name="TPage"></typeparam>
         /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
+        /// <param name="token">The cancellation token.</param>
         /// <returns>The page.</returns>
-        public TPage GetPage<TPage>(int pageNumber)
+        public TPage GetPage<TPage>(int pageNumber, CancellationToken token = default)
         {
             if (isDisposed)
             {
@@ -209,7 +216,11 @@
 
             try
             {
-                return pages.GetPage<TPage>(pageNumber, namedDestinations, parsingOptions);
+                return pages.GetPage<TPage>(pageNumber, namedDestinations, parsingOptions, token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -225,22 +236,22 @@
         /// <summary>
         /// Gets all pages in this document in order.
         /// </summary>
-        public IEnumerable<Page> GetPages()
+        public IEnumerable<Page> GetPages(CancellationToken token = default)
         {
             for (var i = 0; i < NumberOfPages; i++)
             {
-                yield return GetPage(i + 1);
+                yield return GetPage(i + 1, token);
             }
         }
 
         /// <summary>
         /// Gets all pages in this document in order, using the specified page factory.
         /// </summary>
-        public IEnumerable<TPage> GetPages<TPage>()
+        public IEnumerable<TPage> GetPages<TPage>(CancellationToken token = default)
         {
             for (var i = 0; i < NumberOfPages; i++)
             {
-                yield return GetPage<TPage>(i + 1);
+                yield return GetPage<TPage>(i + 1, token);
             }
         }
 

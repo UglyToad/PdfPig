@@ -185,7 +185,7 @@
 
             private static ParsingOptions Options => new() { UseLenientParsing = true, SkipMissingFonts = true };
 
-            public override object Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
+            public override object Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
                 => throw new NotSupportedException();
 
             public override void RenderGlyph(IFont font, CurrentGraphicsState currentState, double fontSize,

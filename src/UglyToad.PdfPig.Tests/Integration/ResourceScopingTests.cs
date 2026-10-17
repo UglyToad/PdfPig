@@ -252,7 +252,8 @@ namespace UglyToad.PdfPig.Tests.Integration
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 if (operations.Count == 0)
                 {
@@ -263,7 +264,7 @@ namespace UglyToad.PdfPig.Tests.Integration
                     PageContentParser, FilterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
                     ParsingOptions);
 
-                return new ShadingUsagePage(pageNumber, context.Process(pageNumber, operations));
+                return new ShadingUsagePage(pageNumber, context.Process(pageNumber, operations, token));
             }
         }
 
@@ -288,10 +289,10 @@ namespace UglyToad.PdfPig.Tests.Integration
             private int _formDepth;
 
             public override IReadOnlyList<ShadingUsage> Process(int pageNumberCurrent,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
             {
                 CloneAllStates();
-                ProcessOperations(operations);
+                ProcessOperations(operations, token);
                 return _usages;
             }
 
@@ -300,12 +301,12 @@ namespace UglyToad.PdfPig.Tests.Integration
                 _usages.Add(new ShadingUsage(shadingName, ResourceStore.GetShading(shadingName), _formDepth));
             }
 
-            protected override void ProcessFormXObject(StreamToken formStream, NameToken xObjectName)
+            protected override void ProcessFormXObject(StreamToken formStream, NameToken xObjectName, CancellationToken token)
             {
                 _formDepth++;
                 try
                 {
-                    base.ProcessFormXObject(formStream, xObjectName);
+                    base.ProcessFormXObject(formStream, xObjectName, token);
                 }
                 finally
                 {

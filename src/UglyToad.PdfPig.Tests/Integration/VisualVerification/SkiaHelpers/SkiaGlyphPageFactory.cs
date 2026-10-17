@@ -25,7 +25,7 @@
 
         protected override SKPicture ProcessPage(int pageNumber, DictionaryToken dictionary, NamedDestinations namedDestinations,
             MediaBox mediaBox, CropBox cropBox, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
-            TransformationMatrix initialMatrix, IReadOnlyList<IGraphicsStateOperation> operations)
+            TransformationMatrix initialMatrix, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             // Special case where cropbox is outside mediabox: use cropbox instead of intersection
             var effectiveCropBox = new CropBox(mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds);
@@ -34,7 +34,7 @@
                 FilterProvider, effectiveCropBox, userSpaceUnit, rotation, initialMatrix,
                 ResourceStore.GetPageOutputIntentProfile(dictionary), ParsingOptions);
 
-            return context.Process(pageNumber, operations);
+            return context.Process(pageNumber, operations, token);
         }
     }
 }
