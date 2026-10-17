@@ -1,10 +1,36 @@
 ﻿using UglyToad.PdfPig.Tests.Integration;
+using UglyToad.PdfPig.Tokens;
 using UglyToad.PdfPig.Writer;
 
 namespace UglyToad.PdfPig.Tests.Writer
 {
     public class PdfTextRemoverTests
     {
+        [Fact]
+        public void StreamsFromAesSourceHaveCorrectLength()
+        {
+            // AES decryption strips the IV and padding, so the source /Length is too long.
+            var bytes = PdfTextRemover.RemoveText(IntegrationHelpers.GetSpecificTestDocumentPath("r4_aesv2_no_length.pdf"));
+
+            using (var document = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+            {
+                var streamCount = 0;
+                foreach (var offset in document.Structure.CrossReferenceTable.ObjectOffsets)
+                {
+                    if (document.Structure.GetObject(offset.Key).Data is not StreamToken stream)
+                    {
+                        continue;
+                    }
+
+                    var length = stream.StreamDictionary.Get<NumericToken>(NameToken.Length, document.Structure.TokenScanner);
+                    Assert.Equal(stream.Data.Length, length.Int);
+                    streamCount++;
+                }
+
+                Assert.True(streamCount > 0);
+            }
+        }
+
         [Theory]
         [InlineData("Two Page Text Only - from libre office.pdf")]
         [InlineData("cat-genetics.pdf")]
