@@ -4,8 +4,10 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using Colors;
     using Colors.Icc;
     using Content;
+    using Core;
     using Filters;
     using Geometry;
     using Operations;
@@ -23,6 +25,8 @@ namespace UglyToad.PdfPig.Graphics
         /// Stores each letter as it is encountered in the content stream.
         /// </summary>
         private readonly List<Letter> letters = new List<Letter>();
+
+        private readonly HashSet<Letter> occludedLetters = new HashSet<Letter>();
 
         /// <summary>
         /// Stores each path as it is encountered in the content stream.
@@ -108,6 +112,12 @@ namespace UglyToad.PdfPig.Graphics
             CloneAllStates();
 
             ProcessOperations(operations);
+
+            if (occludedLetters.Count > 0)
+            {
+                letters.RemoveAll(occludedLetters.Contains);
+                RemoveOccludedLetters(markedContents);
+            }
 
             return new PageContent(operations,
                 letters,
@@ -479,6 +489,11 @@ namespace UglyToad.PdfPig.Graphics
             if (CurrentPath.IsFilled)
             {
                 CurrentPath.SetFillDetails(currentState);
+
+                if (ParsingOptions.RemoveOccludedText)
+                {
+                    MarkOccludedLetters(currentState);
+                }
             }
 
             if (ParsingOptions.ClipPaths)
@@ -499,6 +514,71 @@ namespace UglyToad.PdfPig.Graphics
             CurrentPath = null;
         }
 
+        private void RemoveOccludedLetters(IReadOnlyList<MarkedContentElement> elements)
+        {
+            foreach (var element in elements)
+            {
+                // The marked content stack hands each element its own letter list.
+                if (element.Letters is List<Letter> elementLetters)
+                {
+                    elementLetters.RemoveAll(occludedLetters.Contains);
+                }
+
+                RemoveOccludedLetters(element.Children);
+            }
+        }
+
+        /// <summary>
+        /// Marks earlier letters fully covered by the current fill when it is an opaque rectangle.
+        /// </summary>
+        private void MarkOccludedLetters(CurrentGraphicsState currentState)
+        {
+            if (currentState.AlphaConstantNonStroking < 1
+                || currentState.BlendMode != BlendMode.Normal
+                || currentState.SoftMask != null
+                || currentState.CurrentNonStrokingColor is PatternColor
+                || CurrentPath.Count != 1)
+            {
+                return;
+            }
+
+            var drawnRectangle = CurrentPath[0].GetDrawnRectangle();
+            if (drawnRectangle is null)
+            {
+                return;
+            }
+
+            // A small margin absorbs rounding in the letter boxes.
+            const double margin = 0.01;
+            var drawn = drawnRectangle.Value.Normalise();
+            var rectangle = new PdfRectangle(drawn.Left - margin, drawn.Bottom - margin, drawn.Right + margin, drawn.Top + margin);
+            var clipping = currentState.CurrentClippingPath;
+
+            foreach (var letter in letters)
+            {
+                // Without the font program the glyph box is the whole font bounding box, so also accept the loose box.
+                PdfRectangle covered;
+                if (rectangle.Contains(letter.BoundingBox, true))
+                {
+                    covered = letter.BoundingBox;
+                }
+                else if (rectangle.Contains(letter.GlyphRectangleLoose, true))
+                {
+                    covered = letter.GlyphRectangleLoose;
+                }
+                else
+                {
+                    continue;
+                }
+
+                // The clip check is last since it is the expensive one.
+                if (clipping is null || clipping.Contains(covered, true))
+                {
+                    occludedLetters.Add(letter);
+                }
+            }
+        }
+
         public override void ModifyClippingIntersect(FillingRule clippingRule)
         {
             if (CurrentPath is null)
@@ -509,7 +589,8 @@ namespace UglyToad.PdfPig.Graphics
             AddCurrentSubpath();
             CurrentPath.SetClipping(clippingRule);
 
-            if (ParsingOptions.ClipPaths)
+            // Occlusion needs the clip to know how much of a fill is painted.
+            if (ParsingOptions.ClipPaths || ParsingOptions.RemoveOccludedText)
             {
                 var graphicsState = GetCurrentState();
                 var currentClipping = graphicsState.CurrentClippingPath!;
