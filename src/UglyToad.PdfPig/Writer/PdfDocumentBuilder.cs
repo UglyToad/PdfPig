@@ -77,7 +77,7 @@ namespace UglyToad.PdfPig.Writer
         public IReadOnlyDictionary<int, PdfPageBuilder> Pages => pages;
 
         /// <summary>
-        /// The fonts currently available in the document builder added via <see cref="AddTrueTypeFont"/> or <see cref="AddStandard14Font"/>. Keyed by id for internal purposes.
+        /// The fonts currently available in the document builder added via <see cref="AddTrueTypeFont"/>, <see cref="AddCompositeTrueTypeFont"/> or <see cref="AddStandard14Font"/>. Keyed by id for internal purposes.
         /// </summary>
         internal IReadOnlyDictionary<Guid, FontStored> Fonts => fonts;
 
@@ -177,18 +177,41 @@ namespace UglyToad.PdfPig.Writer
         /// <returns>An identifier which can be passed to <see cref="PdfPageBuilder.AddText"/>.</returns>
         public AddedFont AddTrueTypeFont(ReadOnlyMemory<byte> fontFileBytes)
         {
+            var font = ParseTrueTypeFont(fontFileBytes);
+            return AddFont(new TrueTypeWritingFont(font, fontFileBytes));
+        }
+
+        /// <summary>
+        /// Adds a TrueType font to the builder as a composite (Type 0) font so that pages in this document can use it.
+        /// Text in this font is written with 2-byte character codes, so unlike a font added by <see cref="AddTrueTypeFont"/>
+        /// it is not limited to 255 distinct characters.
+        /// </summary>
+        /// <param name="fontFileBytes">The bytes of a TrueType font.</param>
+        /// <returns>An identifier which can be passed to <see cref="PdfPageBuilder.AddText"/>.</returns>
+        public AddedFont AddCompositeTrueTypeFont(ReadOnlyMemory<byte> fontFileBytes)
+        {
+            var font = ParseTrueTypeFont(fontFileBytes);
+            return AddFont(new CompositeTrueTypeWritingFont(font, fontFileBytes));
+        }
+
+        private static TrueTypeFont ParseTrueTypeFont(ReadOnlyMemory<byte> fontFileBytes)
+        {
             try
             {
-                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontFileBytes)));
-                var id = Guid.NewGuid();
-                var added = new AddedFont(id, context.ReserveObjectNumber());
-                fonts[id] = new FontStored(added, new TrueTypeWritingFont(font, fontFileBytes));
-                return added;
+                return TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontFileBytes)));
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Writing only supports TrueType fonts, please provide a valid TrueType font.", ex);
             }
+        }
+
+        private AddedFont AddFont(IWritingFont fontProgram)
+        {
+            var id = Guid.NewGuid();
+            var added = new AddedFont(id, context.ReserveObjectNumber());
+            fonts[id] = new FontStored(added, fontProgram);
+            return added;
         }
 
         /// <summary>
@@ -1258,8 +1281,8 @@ namespace UglyToad.PdfPig.Writer
         }
 
         /// <summary>
-        /// A key representing a font available to use on the current document builder. Create by adding a font to a document using either
-        /// <see cref="AddStandard14Font"/> or <see cref="AddTrueTypeFont"/>.
+        /// A key representing a font available to use on the current document builder. Create by adding a font to a document using
+        /// <see cref="AddStandard14Font"/>, <see cref="AddTrueTypeFont"/> or <see cref="AddCompositeTrueTypeFont"/>.
         /// </summary>
         public class AddedFont
         {

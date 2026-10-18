@@ -459,7 +459,7 @@
         /// <param name="fontSize">The size of the font in user space units.</param>
         /// <param name="position">The position of the baseline (lower-left corner) to start drawing the text from.</param>
         /// <param name="font">
-        /// A font added to the document using <see cref="PdfDocumentBuilder.AddTrueTypeFont"/>
+        /// A font added to the document using <see cref="PdfDocumentBuilder.AddTrueTypeFont"/>, <see cref="PdfDocumentBuilder.AddCompositeTrueTypeFont"/>
         /// or <see cref="PdfDocumentBuilder.AddStandard14Font"/> methods.
         /// </param> 
         /// <returns>The letters from the input text with their corresponding size and position.</returns>
@@ -504,7 +504,7 @@
         /// <param name="fontSize">The size of the font in user space units.</param>
         /// <param name="position">The position of the baseline (lower-left corner) to start drawing the text from.</param>
         /// <param name="font">
-        /// A font added to the document using <see cref="PdfDocumentBuilder.AddTrueTypeFont"/>
+        /// A font added to the document using <see cref="PdfDocumentBuilder.AddTrueTypeFont"/>, <see cref="PdfDocumentBuilder.AddCompositeTrueTypeFont"/>
         /// or <see cref="PdfDocumentBuilder.AddStandard14Font"/> methods.
         /// </param> 
         /// <returns>The letters from the input text with their corresponding size and position.</returns>
@@ -553,8 +553,7 @@
                     bytesPerShow.Clear();
                 }
 
-                var b = fontProgram.GetValueForCharacter(letter);
-                bytesPerShow.Add(b);
+                fontProgram.AppendCharacterCode(letter, bytesPerShow);
             }
 
             if (bytesPerShow.Count > 0)

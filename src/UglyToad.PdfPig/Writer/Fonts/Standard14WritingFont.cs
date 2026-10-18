@@ -99,7 +99,12 @@
             return result;
         }
 
-        public byte GetValueForCharacter(char character)
+        public void AppendCharacterCode(char character, List<byte> textBytes)
+        {
+            textBytes.Add(GetValueForCharacter(character));
+        }
+
+        private byte GetValueForCharacter(char character)
         {
             var characterCode = CodeMapIfUnicode(character);
             var characterMetric = metrics.CharacterMetrics

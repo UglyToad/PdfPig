@@ -199,6 +199,10 @@ Passing in the bytes of a TrueType file (.ttf). You can check the suitability of
 
 Which provides a list of reasons why the font cannot be used if the check fails. You should check the license for a TrueType font prior to use, since the compressed font file is embedded in, and distributed with, the resultant document.
 
+A font added by `AddTrueTypeFont` is written as a simple font with 1-byte character codes, so text can use at most 255 distinct characters of it. For text with more distinct characters, for example Chinese, Japanese or Korean, add the font as a composite (Type 0) font which uses 2-byte character codes:
+
+    AddedFont AddCompositeTrueTypeFont(ReadOnlyMemory<byte> fontFileBytes)
+
 The `AddedFont` class represents a key to the font stored on the document builder. This must be provided when adding text content to pages. To add a page to a document use:
 
     PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)

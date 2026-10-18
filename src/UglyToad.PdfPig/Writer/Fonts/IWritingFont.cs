@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
+    using System.Collections.Generic;
     using Core;
     using Tokens;
 
@@ -17,6 +18,9 @@
 
         IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken? reservedIndirect = null);
 
-        byte GetValueForCharacter(char character);
+        /// <summary>
+        /// Adds the character code which selects the glyph for the character to the bytes of a string shown by a text operator.
+        /// </summary>
+        void AppendCharacterCode(char character, List<byte> textBytes);
     }
 }

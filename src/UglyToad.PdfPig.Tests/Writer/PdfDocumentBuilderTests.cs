@@ -782,6 +782,128 @@
         }
 
         [Fact]
+        public void CanWriteMoreThan255DistinctCharactersWithCompositeTrueTypeFont()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddCompositeTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            // Basic Latin, Latin-1 Supplement and Latin Extended-A, without control characters.
+            var characters = Enumerable.Range(0x21, 94)
+                .Concat(Enumerable.Range(0xA0, 224))
+                .Select(x => (char)x)
+                .ToArray();
+
+            var lines = new List<string>();
+            for (var i = 0; i < characters.Length; i += 40)
+            {
+                lines.Add(new string(characters, i, Math.Min(40, characters.Length - i)));
+            }
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                page.AddText(lines[i], 10, new PdfPoint(30, page.PageSize.Height - 50 - (i * 14)), font);
+            }
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteMoreThan255DistinctCharactersWithCompositeTrueTypeFont), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                Assert.Equal(string.Concat(lines), document.GetPage(1).Text);
+            }
+        }
+
+        [Fact]
+        public void CanWriteChineseTextWithCompositeTrueTypeFont()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddCompositeTrueTypeFont(TrueTypeTestHelper.GetFileBytes("PMingLiU.ttf"));
+
+            var characters = Enumerable.Range(0x4E00, 1200).Select(x => (char)x).ToArray();
+
+            var lines = new List<string>();
+            for (var i = 0; i < characters.Length; i += 40)
+            {
+                lines.Add(new string(characters, i, 40));
+            }
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                page.AddText(lines[i], 10, new PdfPoint(30, page.PageSize.Height - 50 - (i * 14)), font);
+            }
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteChineseTextWithCompositeTrueTypeFont), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                Assert.Equal(string.Concat(lines), document.GetPage(1).Text);
+            }
+        }
+
+        [Fact]
+        public void CompositeTrueTypeFontEmbedsOnlyTheGlyphsOfTheText()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddCompositeTrueTypeFont(TrueTypeTestHelper.GetFileBytes("PMingLiU.ttf"));
+
+            page.AddText("你好", 12, new PdfPoint(30, page.PageSize.Height - 50), font);
+
+            var bytes = builder.Build();
+
+            // The font file has 638 KB while a subset with two glyphs needs a few kilobytes.
+            Assert.True(bytes.Length < 20_000, $"The document has {bytes.Length} bytes.");
+        }
+
+        [Fact]
+        public void CompositeTrueTypeFontThrowsForCharacterNotInFont()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddCompositeTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            Assert.Throws<InvalidOperationException>(() => page.AddText("你好", 12, new PdfPoint(30, page.PageSize.Height - 50), font));
+        }
+
+        [Fact]
+        public void CompositeTrueTypeFontLettersAreReadBackWhereTheyWereWritten()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddCompositeTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            var letters = page.AddText("Grüße, Привет, Γεια σου!", 12, new PdfPoint(30, page.PageSize.Height - 50), font);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CompositeTrueTypeFontLettersAreReadBackWhereTheyWereWritten), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var readLetters = document.GetPage(1).Letters;
+
+                Assert.Equal(letters.Count, readLetters.Count);
+
+                var pointComparer = new PointComparer(new DoubleComparer(0.01));
+
+                for (var i = 0; i < letters.Count; i++)
+                {
+                    Assert.Equal(letters[i].Value, readLetters[i].Value);
+                    Assert.Equal(letters[i].Location, readLetters[i].Location, pointComparer);
+                    Assert.Equal(letters[i].BoundingBox.BottomLeft, readLetters[i].BoundingBox.BottomLeft, pointComparer);
+                    Assert.Equal(letters[i].BoundingBox.TopRight, readLetters[i].BoundingBox.TopRight, pointComparer);
+                }
+            }
+        }
+
+        [Fact]
         public void CanWriteSinglePageWithJpeg()
         {
             var builder = new PdfDocumentBuilder();
@@ -907,6 +1029,42 @@
             using (var pdf = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(1, pdf.NumberOfPages);
+
+                Assert.True(pdf.TryGetXmpMetadata(out var xmp));
+
+                Assert.NotNull(xmp.GetXDocument());
+            }
+        }
+
+        [Theory]
+        [InlineData(PdfAStandard.A1B)]
+        [InlineData(PdfAStandard.A1A)]
+        [InlineData(PdfAStandard.A2B)]
+        [InlineData(PdfAStandard.A2A)]
+        [InlineData(PdfAStandard.A3B)]
+        [InlineData(PdfAStandard.A3A)]
+        public void CanGeneratePdfAFileWithCompositeTrueTypeFont(PdfAStandard standard)
+        {
+            var builder = new PdfDocumentBuilder
+            {
+                ArchiveStandard = standard
+            };
+
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddCompositeTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            var text = $"Howdy PDF/{standard}! Grüße, Привет";
+
+            page.AddText(text, 10, new PdfPoint(25, 700), font);
+
+            var bytes = builder.Build();
+
+            WriteFile(nameof(CanGeneratePdfAFileWithCompositeTrueTypeFont) + standard, bytes);
+
+            using (var pdf = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(text, pdf.GetPage(1).Text);
 
                 Assert.True(pdf.TryGetXmpMetadata(out var xmp));
 

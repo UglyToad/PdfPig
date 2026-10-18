@@ -63,6 +63,10 @@
                         output.Seek(0, SeekOrigin.Begin);
                         AdvancedMerge.Run(input, output);
                     })
+                },
+                {10,
+                    ("Generate document with a composite font for text with more than 255 distinct characters",
+                    () => GenerateDocumentWithCompositeFont.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf")))
                 }
             };
 
