@@ -135,7 +135,12 @@
             return writer.WriteToken(token);
         }
 
-        public byte GetValueForCharacter(char character)
+        public void AppendCharacterCode(char character, List<byte> textBytes)
+        {
+            textBytes.Add(GetValueForCharacter(character));
+        }
+
+        private byte GetValueForCharacter(char character)
         {
             lock (mappingLock)
             {
@@ -146,9 +151,9 @@
 
                 if (characterMappingCounter > byte.MaxValue)
                 {
-                    throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, please" +
-                                                    " submit an issue since we will need to add support for composite fonts with multi-byte" +
-                                                    " character identifiers.");
+                    throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, use" +
+                                                    $" {nameof(PdfDocumentBuilder.AddCompositeTrueTypeFont)} to add the font as a composite font" +
+                                                    " with 2-byte character codes instead.");
                 }
 
                 var value = (byte)characterMappingCounter++;
