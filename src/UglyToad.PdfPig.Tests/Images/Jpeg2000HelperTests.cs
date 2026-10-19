@@ -82,6 +82,70 @@
         }
 
         [Fact]
+        public void GetJpxColorSpaceDetails_ReturnsDeviceRgb_ForSrgbJp2WithAnOpacityChannel()
+        {
+            // Four components, the channel definition box making the fourth opacity: three colour channels, not CMYK.
+            var cdef = new byte[] { 0, 4, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 3, 0, 3, 0, 1, 0, 0 };
+            var image = Jp2(4, Box("cdef", cdef));
+
+            Assert.IsType<DeviceRgbColorSpaceDetails>(Jpeg2000Helper.GetJpxColorSpaceDetails(image, ParsingOptions));
+        }
+
+        [Fact]
+        public void GetJpxColorSpaceDetails_ReturnsDeviceRgb_ForSrgbJp2WithAPalette()
+        {
+            // One component mapped through three palette columns: three colour channels, not grey.
+            var cmap = new byte[] { 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 2 };
+            var image = Jp2(1, Box("cmap", cmap));
+
+            Assert.IsType<DeviceRgbColorSpaceDetails>(Jpeg2000Helper.GetJpxColorSpaceDetails(image, ParsingOptions));
+        }
+
+        /// <summary>
+        /// A JP2 file as far as the helper reads it: its signature, an sRGB header holding <paramref name="headerBoxes"/>, and a
+        /// codestream of its SOC and SIZ markers alone, for 2x2 samples of <paramref name="components"/> 8-bit components.
+        /// </summary>
+        private static byte[] Jp2(int components, params byte[][] headerBoxes)
+        {
+            var siz = new List<byte> { 0xFF, 0x4F, 0xFF, 0x51 };
+            siz.AddRange(BigEndian16(38 + 3 * components));
+            siz.AddRange(BigEndian16(0));
+            foreach (var value in new[] { 2, 2, 0, 0, 2, 2, 0, 0 })
+            {
+                siz.AddRange(BigEndian32(value));
+            }
+
+            siz.AddRange(BigEndian16(components));
+            for (var i = 0; i < components; i++)
+            {
+                siz.AddRange(new byte[] { 7, 1, 1 });
+            }
+
+            var header = new List<byte>(Box("colr", new byte[] { 1, 0, 0, 0, 0, 0, 16 }));
+            foreach (var box in headerBoxes)
+            {
+                header.AddRange(box);
+            }
+
+            var file = new List<byte> { 0, 0, 0, 0x0C, 0x6A, 0x50, 0x20, 0x20, 0x0D, 0x0A, 0x87, 0x0A };
+            file.AddRange(Box("jp2h", header.ToArray()));
+            file.AddRange(Box("jp2c", siz.ToArray()));
+            return file.ToArray();
+        }
+
+        private static byte[] Box(string type, byte[] content)
+        {
+            var box = new List<byte>(BigEndian32(8 + content.Length));
+            box.AddRange(System.Text.Encoding.ASCII.GetBytes(type));
+            box.AddRange(content);
+            return box.ToArray();
+        }
+
+        private static byte[] BigEndian32(int value) => new[] { (byte)(value >> 24), (byte)(value >> 16), (byte)(value >> 8), (byte)value };
+
+        private static byte[] BigEndian16(int value) => new[] { (byte)(value >> 8), (byte)value };
+
+        [Fact]
         public void GetJpxColorSpaceDetails_ThrowsException_WhenInputIsTooShort()
         {
             Assert.Throws<InvalidOperationException>(() => Jpeg2000Helper.GetJpxColorSpaceDetails(new byte[11], ParsingOptions));

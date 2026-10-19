@@ -86,7 +86,7 @@
         public static ColorSpaceDetails? GetJpxColorSpaceDetails(ReadOnlyMemory<byte> jpxData, ParsingOptions options)
         {
             ReadOnlySpan<byte> jpxSpan = jpxData.Span;
-            int numberOfComponents = GetNumberOfComponents(jpxSpan);
+            int numberOfComponents = GetNumberOfColorChannels(jpxSpan);
 
             switch (GetColorSpace(jpxSpan, out int iccProfileOffset, out int iccProfileLength))
             {
@@ -161,6 +161,49 @@
         public static ushort GetNumberOfComponents(ReadOnlySpan<byte> jp2Bytes)
         {
             return ParseSiz(jp2Bytes).NumberOfComponents;
+        }
+
+        /// <summary>
+        /// The number of colour channels the image describes. A JP2 file's header says what its channels are: a palette's
+        /// columns are channels through the component mapping box ('cmap'), and a channel definition box ('cdef') types each
+        /// channel, so only those it types as colour count — an opacity channel is not a colour component (ISO/IEC 15444-1,
+        /// I.5.3.4 to I.5.3.6). A raw J2K codestream says nothing of its components, and each one counts.
+        /// </summary>
+        private static int GetNumberOfColorChannels(ReadOnlySpan<byte> jp2Bytes)
+        {
+            int channels = GetNumberOfComponents(jp2Bytes);
+            if (BinaryPrimitives.ReadUInt32BigEndian(jp2Bytes.Slice(0, 4)) == 0xFF4FFF51
+                || !TryFindBox(jp2Bytes, 12, 0x6A703268, out int jp2hStart, out int jp2hEnd)) // 'jp2h'
+            {
+                return channels;
+            }
+
+            // The header's own boxes, searched within it.
+            ReadOnlySpan<byte> header = jp2Bytes.Slice(0, jp2hEnd);
+
+            if (TryFindBox(header, jp2hStart, 0x636D6170, out int cmapStart, out int cmapEnd)) // 'cmap'
+            {
+                // cmap: CMP (2) | MTYP (1) | PCOL (1), one entry a channel.
+                channels = (cmapEnd - cmapStart) / 4;
+            }
+
+            if (TryFindBox(header, jp2hStart, 0x63646566, out int cdefStart, out int cdefEnd) && cdefEnd - cdefStart >= 2) // 'cdef'
+            {
+                // cdef: N (2) | N x (Cn (2) | Typ (2) | Asoc (2)), Typ 0 a colour channel.
+                int definitions = Math.Min(BinaryPrimitives.ReadUInt16BigEndian(jp2Bytes.Slice(cdefStart, 2)), (cdefEnd - cdefStart - 2) / 6);
+                int colorChannels = 0;
+                for (int i = 0; i < definitions; i++)
+                {
+                    if (BinaryPrimitives.ReadUInt16BigEndian(jp2Bytes.Slice(cdefStart + 2 + i * 6 + 2, 2)) == 0)
+                    {
+                        colorChannels++;
+                    }
+                }
+
+                return colorChannels;
+            }
+
+            return channels;
         }
 
         private static Jpeg2000ColorSpace GetColorSpace(ReadOnlySpan<byte> jp2Bytes)
