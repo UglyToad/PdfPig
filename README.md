@@ -397,6 +397,24 @@ var resultFileBytes = PdfMerger.Merge(filePath1, filePath2);
 File.WriteAllBytes(@"C:\pdfs\outputfilename.pdf", resultFileBytes);
 ```
 
+### Incremental Updates
+
+You can change an existing PDF file with an incremental update using the `PdfIncrementalUpdateBuilder` class. The bytes of the original file stay unchanged and are followed by the new and replaced objects and a new cross-reference section:
+
+```cs
+using var document = PdfDocument.Open(filePath);
+var builder = new PdfIncrementalUpdateBuilder(document);
+
+IndirectReferenceToken metadata = builder.AddObject(metadataStream);
+
+var catalog = document.Structure.Catalog.CatalogDictionary;
+builder.ReplaceObject(document.Structure.Trailer.Root, catalog.With(NameToken.Metadata, metadata));
+
+byte[] resultFileBytes = builder.Build();
+```
+
+Encrypted documents and documents whose cross-reference had to be rebuilt by a brute-force search are not supported.
+
 ## Wiki
 Check out our [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples and detailed guides on the API.
 

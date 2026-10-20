@@ -67,6 +67,10 @@
                 {10,
                     ("Generate document with a composite font for text with more than 255 distinct characters",
                     () => GenerateDocumentWithCompositeFont.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf")))
+                },
+                {11,
+                    ("Add XMP metadata to an existing document with an incremental update",
+                    () => AddXmpMetadataWithIncrementalUpdate.Run(Path.Combine(filesDirectory, "data.pdf")))
                 }
             };
 
