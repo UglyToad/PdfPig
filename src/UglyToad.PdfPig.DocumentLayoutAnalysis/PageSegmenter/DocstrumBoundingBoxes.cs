@@ -3,6 +3,7 @@
     using Content;
     using Core;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -153,72 +154,101 @@
         {
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
+            // 1. Estimate within line and between line spacing
+            KdTree<Word> kdTreeBottomLeft = new KdTree<Word>(words, w => w.BoundingBox.BottomLeft, maxDegreeOfParallelism);
+
+            void AddDistances(int i, List<double> wl, List<double> bl,
+                KdTree<Word>.KNearestNeighboursQueue queue, List<(Word, int, double)> neighbours)
+            {
+                var word = words[i];
+
+                // Within-line distance
+                // 1.1.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
+                kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.BottomRight, Distances.Euclidean, queue, neighbours);
+                foreach (var n in neighbours)
+                {
+                    // 1.1.2 Check if the neighbour word is within the angle of the candidate
+                    if (wlBounds.Contains(AngleWL(word, n.Item1)))
+                    {
+                        wl.Add(Distances.Euclidean(word.BoundingBox.BottomRight, n.Item1.BoundingBox.BottomLeft));
+                    }
+                }
+
+                // Between-line distance
+                // 1.2.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
+                kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.TopLeft, Distances.Euclidean, queue, neighbours);
+                foreach (var n in neighbours)
+                {
+                    // 1.2.2 Check if the candidate words is within the angle
+                    var angle = AngleBL(word, n.Item1);
+                    if (blBounds.Contains(angle))
+                    {
+                        // 1.2.3 Compute the vertical (between-line) distance between the candidate
+                        // and the neighbour and add it to the between-line distances list
+                        double hypotenuse = Distances.Euclidean(word.BoundingBox.Centroid, n.Item1.BoundingBox.Centroid);
+
+                        // Angle is kept within [-90, 90]
+                        if (angle > 90)
+                        {
+                            angle -= 180;
+                        }
+
+                        var dist = Math.Abs(hypotenuse * Math.Cos((90 - angle) * Math.PI / 180))
+                            - word.BoundingBox.Height / 2.0 - n.Item1.BoundingBox.Height / 2.0;
+
+                        // The perpendicular distance can be negative because of the subtractions.
+                        // Could occur when words are overlapping, we ignore that.
+                        if (dist >= 0)
+                        {
+                            bl.Add(dist);
+                        }
+                    }
+                }
+            }
+
+            // Each range of words has its own lists, concatenated in the words order: the distances are
+            // always in the same order, so is their average (floating point additions are not associative).
+            const int rangeSize = 64;
+            int rangeCount = (words.Count + rangeSize - 1) / rangeSize;
+            var withinLineDistRanges = new List<double>[rangeCount];
+            var betweenLineDistRanges = new List<double>[rangeCount];
+
+            void AddRangeDistances(int start, int end)
+            {
+                var wl = new List<double>();
+                var bl = new List<double>();
+                var queue = new KdTree<Word>.KNearestNeighboursQueue();
+                var neighbours = new List<(Word, int, double)>();
+                for (int i = start; i < end; i++)
+                {
+                    AddDistances(i, wl, bl, queue, neighbours);
+                }
+
+                withinLineDistRanges[start / rangeSize] = wl;
+                betweenLineDistRanges[start / rangeSize] = bl;
+            }
+
+            if (words.Count < Clustering.KNearestParallelThreshold || maxDegreeOfParallelism == 1)
+            {
+                // The cost of running in parallel outweighs the gain for small inputs
+                for (int start = 0; start < words.Count; start += rangeSize)
+                {
+                    AddRangeDistances(start, Math.Min(start + rangeSize, words.Count));
+                }
+            }
+            else
+            {
+                Parallel.ForEach(Partitioner.Create(0, words.Count, rangeSize), parallelOptions,
+                    range => AddRangeDistances(range.Item1, range.Item2));
+            }
+
             var withinLineDistList = new List<double>();
             var betweenLineDistList = new List<double>();
-
-            // 1. Estimate within line and between line spacing
-            KdTree<Word> kdTreeBottomLeft = new KdTree<Word>(words, w => w.BoundingBox.BottomLeft);
-
-            Parallel.For(0, words.Count, parallelOptions,
-                () => (wl: new List<double>(), bl: new List<double>()),
-                (i, _, local) =>
-                {
-                    var word = words[i];
-
-                    // Within-line distance
-                    // 1.1.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
-                    foreach (var n in kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.BottomRight, Distances.Euclidean))
-                    {
-                        // 1.1.2 Check if the neighbour word is within the angle of the candidate
-                        if (wlBounds.Contains(AngleWL(word, n.Item1)))
-                        {
-                            local.wl.Add(Distances.Euclidean(word.BoundingBox.BottomRight, n.Item1.BoundingBox.BottomLeft));
-                        }
-                    }
-
-                    // Between-line distance
-                    // 1.2.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
-                    foreach (var n in kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.TopLeft, Distances.Euclidean))
-                    {
-                        // 1.2.2 Check if the candidate words is within the angle
-                        var angle = AngleBL(word, n.Item1);
-                        if (blBounds.Contains(angle))
-                        {
-                            // 1.2.3 Compute the vertical (between-line) distance between the candidate
-                            // and the neighbour and add it to the between-line distances list
-                            double hypotenuse = Distances.Euclidean(word.BoundingBox.Centroid, n.Item1.BoundingBox.Centroid);
-
-                            // Angle is kept within [-90, 90]
-                            if (angle > 90)
-                            {
-                                angle -= 180;
-                            }
-
-                            var dist = Math.Abs(hypotenuse * Math.Cos((90 - angle) * Math.PI / 180))
-                                - word.BoundingBox.Height / 2.0 - n.Item1.BoundingBox.Height / 2.0;
-
-                            // The perpendicular distance can be negative because of the subtractions.
-                            // Could occur when words are overlapping, we ignore that.
-                            if (dist >= 0)
-                            {
-                                local.bl.Add(dist);
-                            }
-                        }
-                    }
-
-                    return local;
-                },
-                local =>
-                {
-                    lock (withinLineDistList)
-                    {
-                        withinLineDistList.AddRange(local.wl);
-                    }
-                    lock (betweenLineDistList)
-                    {
-                        betweenLineDistList.AddRange(local.bl);
-                    }
-                });
+            for (int r = 0; r < rangeCount; r++)
+            {
+                withinLineDistList.AddRange(withinLineDistRanges[r]);
+                betweenLineDistList.AddRange(betweenLineDistRanges[r]);
+            }
 
             // Compute average peak value of distribution
             double? withinLinePeak = GetPeakAverageDistance(withinLineDistList, wlBinSize);
@@ -273,11 +303,10 @@
             }
 
             int binCount = (int)Math.Ceiling(max / (double)binLength) + 1;
-            var bins = new List<double>[binCount];
-            for (int i = 0; i < binCount; i++)
-            {
-                bins[i] = new List<double>();
-            }
+
+            // The distances are summed in the same order as they are in the list
+            var counts = new int[binCount];
+            var sums = new double[binCount];
 
             for (int i = 0; i < distances.Count; i++)
             {
@@ -291,30 +320,26 @@
                 {
                     bin = binCount - 1;
                 }
-                bins[bin].Add(distance);
+                counts[bin]++;
+                sums[bin] += distance;
             }
 
-            List<double> best = null;
-            for (int i = 0; i < binCount; i++)
+            // The first bin with the most distances
+            int best = 0;
+            for (int i = 1; i < binCount; i++)
             {
-                var bin = bins[i];
-                if (best == null || bin.Count > best.Count)
+                if (counts[i] > counts[best])
                 {
-                    best = bin;
+                    best = i;
                 }
             }
 
-            if (best == null || best.Count == 0)
+            if (counts[best] == 0)
             {
                 return null;
             }
 
-            double sum = 0;
-            for (int i = 0; i < best.Count; i++)
-            {
-                sum += best[i];
-            }
-            return sum / best.Count;
+            return sums[best] / counts[best];
         }
         #endregion
 
@@ -334,7 +359,7 @@
         public static IEnumerable<TextLine> GetLines(IReadOnlyList<Word> words, double maxWLDistance, AngleBounds wlBounds,
             string wordSeparator, int maxDegreeOfParallelism)
         {
-            var groupedWords = Clustering.NearestNeighbours(words,
+            var groupedWords = Clustering.NearestNeighbourGroups(words,
                 2,
                 Distances.Euclidean,
                 (_, __) => maxWLDistance,
@@ -342,7 +367,7 @@
                 candidate => candidate.BoundingBox.BottomLeft,
                 _ => true,
                 (pivot, candidate) => wlBounds.Contains(AngleWL(pivot, candidate)),
-                maxDegreeOfParallelism).ToList();
+                maxDegreeOfParallelism);
 
             foreach (var g in groupedWords)
             {
@@ -408,20 +433,135 @@
              *  then they are said to meet the criteria to belong to the same structural block.
              ******************************************************************************************************/
 
-            var groupedLines = Clustering.NearestNeighbours(
-                lines,
-                (l1, l2) => PerpendicularOverlappingDistance(l1, l2, angularDifferenceBounds, epsilon),
-                (_, __) => maxBLDistance,
-                pivot => new PdfLine(pivot.BoundingBox.BottomLeft, pivot.BoundingBox.BottomRight),
-                candidate => new PdfLine(candidate.BoundingBox.TopLeft, candidate.BoundingBox.TopRight),
-                _ => true,
-                (_, __) => true,
-                maxDegreeOfParallelism).ToList();
+            var closestLines = GetClosestLineIndexes(lines, maxBLDistance, angularDifferenceBounds, epsilon, maxDegreeOfParallelism);
 
-            foreach (var g in groupedLines)
+            foreach (var g in Clustering.GroupIndexes(closestLines, lines))
             {
                 yield return new TextBlock(g.OrderByReadingOrder(), lineSeparator);
             }
+        }
+
+        /// <summary>
+        /// For each line, the index of the line with the smallest <see cref="PerpendicularOverlappingDistance"/> from the
+        /// line's bottom to its top (the first one for equal distances), if below <paramref name="maxBLDistance"/>, otherwise -1.
+        /// <para>
+        /// Only the lines close enough to be linked are compared: the distance is from a point of the candidate line
+        /// that projects inside the pivot line, so it is at least the distance between the two segments, and so between
+        /// their bounding boxes.
+        /// </para>
+        /// </summary>
+        private static int[] GetClosestLineIndexes(IReadOnlyList<TextLine> lines, double maxBLDistance,
+            AngleBounds angularDifferenceBounds, double epsilon, int maxDegreeOfParallelism)
+        {
+            int n = lines.Count;
+            var indexes = new int[n];
+            var pivots = new PdfLine[n];
+            var candidates = new PdfLine[n];
+            var candidatesMinY = new double[n];
+            var candidatesOrder = new int[n];
+            double candidatesMaxHeight = 0;
+
+            for (int i = 0; i < n; i++)
+            {
+                indexes[i] = -1;
+                var box = lines[i].BoundingBox;
+                pivots[i] = new PdfLine(box.BottomLeft, box.BottomRight);
+                candidates[i] = new PdfLine(box.TopLeft, box.TopRight);
+                candidatesMinY[i] = Math.Min(candidates[i].Point1.Y, candidates[i].Point2.Y);
+                candidatesMaxHeight = Math.Max(candidatesMaxHeight, Math.Abs(candidates[i].Point1.Y - candidates[i].Point2.Y));
+                candidatesOrder[i] = i;
+            }
+
+            // The margin covers the approximations made when computing the distance (e.g. almost vertical lines)
+            double searchDistance = maxBLDistance + Math.Max(epsilon, 0) + 1e-6;
+            if (n < 2 || !(searchDistance >= 0))
+            {
+                return indexes;
+            }
+
+            // Candidates sorted by their bottom
+            Array.Sort(candidatesMinY, candidatesOrder);
+
+            void FindClosestLine(int i)
+            {
+                var pivot = pivots[i];
+                double minX = Math.Min(pivot.Point1.X, pivot.Point2.X) - searchDistance;
+                double maxX = Math.Max(pivot.Point1.X, pivot.Point2.X) + searchDistance;
+                double minY = Math.Min(pivot.Point1.Y, pivot.Point2.Y) - searchDistance;
+                double maxY = Math.Max(pivot.Point1.Y, pivot.Point2.Y) + searchDistance;
+
+                double closestDistance = double.MaxValue;
+                int closestIndex = -1;
+
+                for (int s = LowerBound(candidatesMinY, minY - candidatesMaxHeight); s < n && candidatesMinY[s] <= maxY; s++)
+                {
+                    int j = candidatesOrder[s];
+                    var candidate = candidates[j];
+                    if (j == i ||
+                        Math.Max(candidate.Point1.Y, candidate.Point2.Y) < minY ||
+                        Math.Max(candidate.Point1.X, candidate.Point2.X) < minX ||
+                        Math.Min(candidate.Point1.X, candidate.Point2.X) > maxX)
+                    {
+                        continue;
+                    }
+
+                    double distance = PerpendicularOverlappingDistance(pivot, candidate, angularDifferenceBounds, epsilon);
+                    if (distance < closestDistance || (distance == closestDistance && j < closestIndex))
+                    {
+                        closestDistance = distance;
+                        closestIndex = j;
+                    }
+                }
+
+                if (closestIndex != -1 && closestDistance < maxBLDistance)
+                {
+                    indexes[i] = closestIndex;
+                }
+            }
+
+            if (n < Clustering.KNearestParallelThreshold || maxDegreeOfParallelism == 1)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    FindClosestLine(i);
+                }
+            }
+            else
+            {
+                var parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+                Parallel.ForEach(Partitioner.Create(0, n), parallelOptions, range =>
+                {
+                    for (int i = range.Item1; i < range.Item2; i++)
+                    {
+                        FindClosestLine(i);
+                    }
+                });
+            }
+
+            return indexes;
+        }
+
+        /// <summary>
+        /// The index of the first value greater than or equal to <paramref name="value"/> in the sorted <paramref name="values"/>.
+        /// </summary>
+        private static int LowerBound(double[] values, double value)
+        {
+            int low = 0;
+            int high = values.Length;
+            while (low < high)
+            {
+                int middle = low + (high - low) / 2;
+                if (values[middle] < value)
+                {
+                    low = middle + 1;
+                }
+                else
+                {
+                    high = middle;
+                }
+            }
+
+            return low;
         }
 
         /// <summary>
@@ -487,6 +627,15 @@
             double dYj = j.Point2.Y - j.Point1.Y;
 
             angularDifference = Distances.BoundAngle180((Math.Atan2(dYj, dXj) - Math.Atan2(dYi, dXi)) * 180 / Math.PI);
+
+            if (dXi.AlmostEqualsToZero(epsilon) && dYi.AlmostEqualsToZero(epsilon))
+            {
+                // Line i has no direction, as a line of length zero: the perpendicular distance
+                // would only be measured along the X axis
+                normalisedOverlap = double.NaN;
+                perpendicularDistance = double.NaN;
+                return false;
+            }
 
             PdfPoint? Aj = GetTranslatedPoint(i.Point1.X, i.Point1.Y, j.Point1.X, j.Point1.Y, dXi, dYi, dXj, dYj, epsilon);
             PdfPoint? Bj = GetTranslatedPoint(i.Point2.X, i.Point2.Y, j.Point2.X, j.Point2.Y, dXi, dYi, dXj, dYj, epsilon);
