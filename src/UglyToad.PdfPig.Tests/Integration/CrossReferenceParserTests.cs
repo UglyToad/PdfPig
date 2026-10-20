@@ -46,5 +46,31 @@
             var page = document.GetPage(1);
             Assert.Contains("Avant d’entamer la procédure de demande d’intervention financière pour effectuer un séjour", page.Text);
         }
+
+        [Theory]
+        [InlineData("cat-genetics.pdf", 516248)] // 10 cross-reference tables
+        [InlineData("AcroFormsBasicFields.pdf", 170199)] // 5 cross-reference streams
+        [InlineData("bold-italic.pdf", 100737)] // hybrid-reference file
+        [InlineData("Single Page Non Latin - from acrobat distiller.pdf", 116)] // linearized
+        public void XrefOffsetIsTheOffsetStartxrefPointsTo(string documentName, long startxref)
+        {
+            using var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(documentName));
+
+            Assert.Equal(startxref, document.Structure.XrefOffset);
+        }
+
+        [Fact]
+        public void XrefOffsetIsTheLastCrossReferenceSectionInTheFileWhenFoundByBruteForce()
+        {
+            var bytes = File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("cat-genetics.pdf"));
+
+            // Point startxref past the end of the file so that the cross-reference sections are found by a brute-force search.
+            var startxref = bytes.AsSpan().LastIndexOf("516248"u8);
+            "999999"u8.CopyTo(bytes.AsSpan(startxref));
+
+            using var document = PdfDocument.Open(bytes);
+
+            Assert.Equal(516248, document.Structure.XrefOffset);
+        }
     }
 }

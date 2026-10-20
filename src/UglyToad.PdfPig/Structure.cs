@@ -30,7 +30,8 @@
         public TrailerDictionary Trailer { get; }
         
         /// <summary>
-        /// The offset of the xref table/object stream
+        /// The offset of the most recent cross-reference table or stream, the one startxref points to.
+        /// An incremental update refers to it in its Prev entry.
         /// </summary>
         public long XrefOffset { get; }
 
@@ -57,7 +58,15 @@
             TokenScanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
             FilterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             CrossReferenceTable = xrefTable ?? throw new ArgumentNullException(nameof(xrefTable));
-            XrefOffset = CrossReferenceTable.Parts.Count > 0 ? CrossReferenceTable.Parts.Last().Offset : 0;
+
+            if (CrossReferenceTable.Parts.Count > 0)
+            {
+                // The parts are listed from startxref along the Prev entries, the most recent first,
+                // or in file order if a brute-force search found them.
+                XrefOffset = CrossReferenceTable.IsBruteForced
+                    ? CrossReferenceTable.Parts.Last().Offset
+                    : CrossReferenceTable.Parts[0].Offset;
+            }
         }
 
         /// <summary>
