@@ -47,10 +47,16 @@
         [Obsolete("Useless property. Use each CrossReferenceTablePart.Offset/Prev instead")]
         public IReadOnlyList<CrossReferenceOffset> CrossReferenceOffsets { get; }
 
+        /// <summary>
+        /// Whether the parts were found by a brute-force search of the file instead of from the startxref offset.
+        /// </summary>
+        internal bool IsBruteForced { get; }
+
         internal CrossReferenceTable(
             IReadOnlyList<IXrefSection> sections,
             IReadOnlyDictionary<IndirectReference, XrefLocation> objectOffsets, 
-            TrailerDictionary trailer)
+            TrailerDictionary trailer,
+            bool isBruteForced)
         {
             if (objectOffsets is null)
             {
@@ -73,6 +79,7 @@
             Type = parts.FirstOrDefault()?.Type ?? CrossReferenceType.Table;
             Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
             this.objectOffsets = objectOffsets.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            IsBruteForced = isBruteForced;
         }
 
         /// <summary>
