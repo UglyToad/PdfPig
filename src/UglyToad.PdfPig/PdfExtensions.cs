@@ -61,25 +61,7 @@
         {
             var filters = filterProvider.GetFilters(stream.StreamDictionary);
 
-            double totalMaxEstSize = stream.Data.Length * 100;
-
-            var transform = stream.Data;
-
-            for (var i = 0; i < filters.Count; i++)
-            {
-                var filter = filters[i];
-                totalMaxEstSize *= GetEstimatedSizeMultiplier(filter);
-
-                transform = filter.Decode(transform, stream.StreamDictionary, filterProvider, i);
-
-                if (i < filters.Count - 1 && transform.Length > totalMaxEstSize)
-                {
-                    // Try to prevent malicious decompression, leading to OOM issues
-                    throw new PdfDocumentFormatException($"Decoded stream size exceeds the estimated maximum size. Current decoded stream length: {transform.Length}, {i + 1} filters applied out of {filters.Count}.");
-                }
-            }
-
-            return transform;
+            return FilterChainDecoder.Decode(stream.Data, stream.StreamDictionary, filterProvider, filters);
         }
 
         /// <summary>
@@ -88,39 +70,7 @@
         public static Memory<byte> Decode(this StreamToken stream, ILookupFilterProvider filterProvider, IPdfTokenScanner scanner)
         {
             var filters = filterProvider.GetFilters(stream.StreamDictionary, scanner);
-
-            double totalMaxEstSize = stream.Data.Length * 100;
-
-            var transform = stream.Data;
-
-            for (var i = 0; i < filters.Count; i++)
-            {
-                var filter = filters[i];
-                totalMaxEstSize *= GetEstimatedSizeMultiplier(filter);
-
-                transform = filter.Decode(transform, stream.StreamDictionary, filterProvider, i);
-
-                if (i < filters.Count - 1 && transform.Length > totalMaxEstSize)
-                {
-                    // Try to prevent malicious decompression, leading to OOM issues
-                    throw new PdfDocumentFormatException($"Decoded stream size exceeds the estimated maximum size. Current decoded stream length: {transform.Length}, {i + 1} filters applied out of {filters.Count}.");
-                }
-            }
-
-            return transform;
-        }
-
-        private static double GetEstimatedSizeMultiplier(IFilter filter)
-        {
-            return filter switch
-            {
-                AsciiHexDecodeFilter => 0.5,
-                Ascii85Filter => 0.8,
-                RunLengthFilter => 1.5,
-                LzwFilter => 2,
-                FlateFilter => 10,
-                _ => 1000
-            };
+            return FilterChainDecoder.Decode(stream.Data, stream.StreamDictionary, filterProvider, filters);
         }
 
         /// <summary>

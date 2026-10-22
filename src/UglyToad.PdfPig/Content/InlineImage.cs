@@ -109,14 +109,7 @@
 
             memoryFactory = supportsFilters ? new Lazy<Memory<byte>>(() =>
             {
-                var b = RawMemory;
-                for (var i = 0; i < filters.Count; i++)
-                {
-                    var filter = filters[i];
-                    b = filter.Decode(b, streamDictionary, filterProvider, i);
-                }
-
-                return b;
+                return FilterChainDecoder.Decode(RawMemory, streamDictionary, filterProvider, filters);
             }) : null;
 
             MaskImage = softMaskImage;
