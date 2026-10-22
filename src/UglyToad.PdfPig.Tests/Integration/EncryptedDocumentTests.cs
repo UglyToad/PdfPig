@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using Content;
     using Exceptions;
+    using Outline.Destinations;
+    using PdfPig.Tokens;
 
     public class EncryptedDocumentTests
     {
@@ -90,6 +93,44 @@
             }
         }
 
+        [Fact]
+        public void CancellationIsNotWrappedForEncryptedDocument()
+        {
+            // A page factory that honours a cancellation token throws OperationCanceledException;
+            // callers catch that type, so it must not become a PdfDocumentEncryptedException.
+            using (var document = PdfDocument.Open(GetPath(), new ParsingOptions { Password = Password }))
+            {
+                Assert.True(document.IsEncrypted);
+
+                document.AddPageFactory(new ThrowingPageFactory(new OperationCanceledException()));
+
+                Assert.Throws<OperationCanceledException>(() => document.GetPage<object>(1));
+            }
+        }
+
+        [Fact]
+        public void OtherPageErrorsAreStillWrappedForEncryptedDocument()
+        {
+            using (var document = PdfDocument.Open(GetPath(), new ParsingOptions { Password = Password }))
+            {
+                document.AddPageFactory(new ThrowingPageFactory(new InvalidOperationException()));
+
+                var ex = Assert.Throws<PdfDocumentEncryptedException>(() => document.GetPage<object>(1));
+                Assert.IsType<InvalidOperationException>(ex.InnerException);
+            }
+        }
+
         private static string GetPath() => IntegrationHelpers.GetSpecificTestDocumentPath(FileName);
+
+        private sealed class ThrowingPageFactory(Exception exception) : IPageFactory<object>
+        {
+            public object Create(int number,
+                DictionaryToken dictionary,
+                PageTreeMembers pageTreeMembers,
+                NamedDestinations namedDestinations)
+            {
+                throw exception;
+            }
+        }
     }
 }
