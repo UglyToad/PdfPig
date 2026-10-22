@@ -181,7 +181,7 @@
             {
                 return pages.GetPage(pageNumber, namedDestinations, parsingOptions);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 if (IsEncrypted)
                 {
@@ -211,7 +211,7 @@
             {
                 return pages.GetPage<TPage>(pageNumber, namedDestinations, parsingOptions);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 if (IsEncrypted)
                 {
