@@ -18,24 +18,25 @@
         {
             type = default(SystemFontRecord);
 
+            // Font files are often named in upper case on Windows (e.g. ARIALN.TTF), so ignore case.
             SystemFontType fontType;
-            if (path.EndsWith(".ttf", StringComparison.Ordinal))
+            if (path.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase))
             {
                 fontType = SystemFontType.TrueType;
             }
-            else if (path.EndsWith(".otf", StringComparison.Ordinal))
+            else if (path.EndsWith(".otf", StringComparison.OrdinalIgnoreCase))
             {
                 fontType = SystemFontType.OpenType;
             }
-            else if (path.EndsWith(".ttc", StringComparison.Ordinal))
+            else if (path.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
             {
                 fontType = SystemFontType.TrueTypeCollection;
             }
-            else if (path.EndsWith(".otc", StringComparison.Ordinal))
+            else if (path.EndsWith(".otc", StringComparison.OrdinalIgnoreCase))
             {
                 fontType = SystemFontType.OpenTypeCollection;
             }
-            else if (path.EndsWith(".pfb", StringComparison.Ordinal))
+            else if (path.EndsWith(".pfb", StringComparison.OrdinalIgnoreCase))
             {
                 fontType = SystemFontType.Type1;
             }
