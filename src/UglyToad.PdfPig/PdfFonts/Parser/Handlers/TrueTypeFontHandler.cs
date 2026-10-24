@@ -49,6 +49,15 @@
             this.cmapLocalCache = cmapLocalCache;
         }
 
+        /// <summary>
+        /// A non-embedded TrueType font naming a Standard 14 font that has a registered substitute is read as that
+        /// Standard 14 font, instead of with whichever TrueType font the machine has under that name.
+        /// </summary>
+        private static bool UseStandard14Substitute(string? baseFontName)
+        {
+            return SystemFontFinder.TryGetSubstituteFont(baseFontName, out _);
+        }
+
         public IFont Generate(DictionaryToken dictionary)
         {
             int? firstChar = null;
@@ -86,6 +95,11 @@
 
                 if (isStandard14)
                 {
+                    if (UseStandard14Substitute(baseFont.Data))
+                    {
+                        return type1FontHandler.Generate(dictionary);
+                    }
+
                     var fileSystemFont = systemFontFinder.GetTrueTypeFont(baseFont.Data);
 
                     var thisEncoding = encodingReader.Read(dictionary);
@@ -121,6 +135,13 @@
             var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary);
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, dictionary);
+
+            if (descriptor.FontFile is null
+                && dictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken? baseFontName)
+                && UseStandard14Substitute(baseFontName.Data))
+            {
+                return type1FontHandler.Generate(dictionary);
+            }
 
             var font = ParseTrueTypeFont(descriptor, out var actualHandler);
 

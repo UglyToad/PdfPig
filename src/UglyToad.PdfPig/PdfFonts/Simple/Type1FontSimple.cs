@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.PdfFonts.Simple
+namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
@@ -10,6 +10,7 @@
     using Fonts.AdobeFontMetrics;
     using Fonts.CompactFontFormat;
     using Fonts.Encodings;
+    using Fonts.SystemFonts;
     using Fonts.Type1;
     using Tokens;
 
@@ -36,6 +37,10 @@
 
         private readonly AdobeFontMetrics? standard14Metrics;
 
+        // Only set when there is no font program and the font is a Standard 14 font. Used for outlines only.
+        private readonly SubstituteFont? substituteProgram;
+        private readonly Encoding? substituteEncoding;
+
         private readonly ToUnicodeCMap toUnicodeCMap;
 
         private readonly TransformationMatrix fontMatrix;
@@ -59,7 +64,8 @@
             Encoding encoding,
             CMap toUnicodeCMap,
             Union<Type1Font, CompactFontFormatFontCollection> fontProgram,
-            AdobeFontMetrics? standard14Metrics = null)
+            AdobeFontMetrics? standard14Metrics = null,
+            SubstituteFont? substituteProgram = null)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;
@@ -68,6 +74,13 @@
             this.encoding = encoding;
             this.fontProgram = fontProgram;
             this.standard14Metrics = standard14Metrics;
+
+            if (fontProgram is null && standard14Metrics is not null && substituteProgram is not null)
+            {
+                this.substituteProgram = substituteProgram;
+                // Without a /Encoding the glyph names come from the Standard 14 font's built-in encoding.
+                substituteEncoding = encoding ?? new AdobeFontMetricsEncoding(standard14Metrics);
+            }
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
 
             var matrix = DefaultTransformationMatrix;
@@ -357,6 +370,12 @@
         public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
+
+            if (substituteProgram is not null)
+            {
+                return substituteProgram.TryGetPath(substituteEncoding!.GetName(characterCode), in fontMatrix, out path);
+            }
+
             IReadOnlyList<PdfSubpath>? tempPath = null;
             if (characterCode < firstChar || characterCode > lastChar)
             {
@@ -410,6 +429,11 @@
         /// <inheritdoc/>
         public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
+            if (substituteProgram is not null)
+            {
+                return substituteProgram.TryGetNormalisedPath(substituteEncoding!.GetName(characterCode), out path);
+            }
+
             if (TryGetPath(characterCode, out path))
             {
                 path = fontMatrix.Transform(path).ToArray();

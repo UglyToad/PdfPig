@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
+namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 {
     using Cmap;
     using Core;
@@ -9,6 +9,7 @@
     using Fonts.Encodings;
     using Fonts.Standard14Fonts;
     using Fonts.Type1;
+    using Fonts.SystemFonts;
     using Fonts.Type1.Parser;
     using PdfPig.Parser.Parts;
     using Simple;
@@ -40,6 +41,23 @@
             this.stackDepthGuard = stackDepthGuard;
         }
 
+        private Encoding? ReadStandard14Encoding(DictionaryToken dictionary, AdobeFontMetrics metrics)
+        {
+            // A /Differences array without /BaseEncoding applies on top of the font's built-in encoding. For the
+            // symbolic Standard 14 fonts (Symbol, ZapfDingbats) that is their own encoding, not StandardEncoding.
+            var builtIn = string.Equals(metrics.EncodingScheme, "FontSpecific", StringComparison.Ordinal)
+                ? new AdobeFontMetricsEncoding(metrics)
+                : null;
+
+            return encodingReader.Read(dictionary, null, builtIn);
+        }
+
+        private static SubstituteFont? GetSubstitute(string? fontName)
+        {
+            SystemFontFinder.TryGetSubstituteFont(fontName, out var substitute);
+            return substitute;
+        }
+
         public IFont Generate(DictionaryToken dictionary)
         {
             var usingStandard14Only = !dictionary.ContainsKey(NameToken.FirstChar) || !dictionary.ContainsKey(NameToken.Widths);
@@ -57,9 +75,9 @@
 
                 if (metrics != null)
                 {
-                    var overrideEncoding = encodingReader.Read(dictionary);
+                    var overrideEncoding = ReadStandard14Encoding(dictionary, metrics);
 
-                    return new Type1Standard14Font(metrics, overrideEncoding);
+                    return new Type1Standard14Font(metrics, overrideEncoding, GetSubstitute(metrics.FontName));
                 }
             }
 
@@ -101,9 +119,9 @@
                         }
                     }
 
-                    var overrideEncoding = encodingReader.Read(dictionary);
+                    var overrideEncoding = ReadStandard14Encoding(dictionary, metrics);
 
-                    return new Type1Standard14Font(metrics, overrideEncoding);
+                    return new Type1Standard14Font(metrics, overrideEncoding, GetSubstitute(metrics.FontName));
                 }
             }
 
@@ -147,7 +165,8 @@
                 standard14Metrics = Standard14.GetAdobeFontMetrics(baseFont.Data);
             }
 
-            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding!, toUnicodeCMap!, font!, standard14Metrics);
+            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding!, toUnicodeCMap!, font!,
+                standard14Metrics, standard14Metrics is null ? null : GetSubstitute(standard14Metrics.FontName));
         }
 
         private Union<Type1Font, CompactFontFormatFontCollection>? ParseFontProgram(FontDescriptor descriptor)
