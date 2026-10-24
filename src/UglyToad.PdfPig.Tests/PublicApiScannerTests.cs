@@ -341,6 +341,7 @@
                 "UglyToad.PdfPig.Writer.LinkAnnotation",
                 "UglyToad.PdfPig.Writer.PdfAStandard",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
+                "UglyToad.PdfPig.Writer.PdfIncrementalUpdateBuilder",
                 "UglyToad.PdfPig.Writer.PdfMerger",
                 "UglyToad.PdfPig.Writer.PdfTextRemover",
                 "UglyToad.PdfPig.Writer.PdfWriterType",

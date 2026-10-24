@@ -169,7 +169,8 @@
             var crossReferenceTable = new CrossReferenceTable(
                 initialParse.Parts,
                 initialParse.XrefOffsets,
-                trailer);
+                trailer,
+                initialParse.BruteForceOffsets is not null);
 
             var cidFontFactory = new CidFontFactory(
                 parsingOptions.Logger,
