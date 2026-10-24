@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Fonts.SystemFonts;
+namespace UglyToad.PdfPig.Fonts.SystemFonts;
 
 using System;
 using System.Collections.Concurrent;
@@ -17,6 +17,8 @@ public sealed class SystemFontFinder : ISystemFontFinder
     private static readonly Lazy<IReadOnlyList<SystemFontRecord>> AvailableFonts;
 
     private static readonly ConcurrentDictionary<string, TrueTypeFont> Cache = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ConcurrentDictionary<Standard14Font, SubstituteFont> SubstituteFonts = new();
 
     /// <summary>
     /// Fonts grouped by the upper-case first character of their filename (e.g. 'A' → all fonts
@@ -369,6 +371,76 @@ public sealed class SystemFontFinder : ISystemFontFinder
         readFiles.TryAdd(fileName, 0);
 
         return true;
+    }
+
+    /// <summary>
+    /// Register the font programs to draw <paramref name="font"/> with whenever a document uses it without embedding
+    /// it, replacing any previous registration. Without one, such glyphs have no outline and renderers fall back to an
+    /// installed font, so output varies between machines.
+    /// </summary>
+    /// <param name="font">The Standard 14 font to substitute.</param>
+    /// <param name="fontPrograms">
+    /// One or more Compact Font Format (CFF), Adobe Type 1 (PFB or PFA) or TrueType font programs. Each glyph comes from
+    /// the first program that has it, looked up by its glyph name (TrueType: post table name, else its Unicode value).
+    /// </param>
+    /// <remarks>
+    /// Process-wide. Applies to fonts read after the call: documents keep the fonts they have already loaded.
+    /// </remarks>
+    /// <exception cref="ArgumentException">A program cannot be parsed.</exception>
+    public static void AddSubstituteFont(Standard14Font font, params byte[][] fontPrograms)
+    {
+        if (fontPrograms is null || fontPrograms.Length == 0 || fontPrograms.Any(p => p is null))
+        {
+            throw new ArgumentNullException(nameof(fontPrograms));
+        }
+
+        var substitute = new SubstituteFont(font, fontPrograms.Select(p => (Func<byte[]>)(() => p)).ToArray());
+        if (!substitute.LoadAll())
+        {
+            throw new ArgumentException($"Could not parse a substitute font program for {font}.", nameof(fontPrograms));
+        }
+
+        SubstituteFonts[font] = substitute;
+    }
+
+    /// <summary>
+    /// Register the font programs to draw <paramref name="font"/> with, like
+    /// <see cref="AddSubstituteFont(Standard14Font, byte[][])"/>, but read each program only the first time a document
+    /// needs one of its glyphs. A program that fails to load is skipped.
+    /// </summary>
+    /// <param name="font">The Standard 14 font to substitute.</param>
+    /// <param name="fontProgramLoaders">Functions returning the font programs, in lookup order. Called at most once each.</param>
+    public static void AddSubstituteFont(Standard14Font font, params Func<byte[]>[] fontProgramLoaders)
+    {
+        if (fontProgramLoaders is null || fontProgramLoaders.Length == 0 || fontProgramLoaders.Any(p => p is null))
+        {
+            throw new ArgumentNullException(nameof(fontProgramLoaders));
+        }
+
+        SubstituteFonts[font] = new SubstituteFont(font, fontProgramLoaders);
+    }
+
+    /// <summary>
+    /// Remove the substitute registered for <paramref name="font"/> with <see cref="AddSubstituteFont(Standard14Font, byte[][])"/>.
+    /// </summary>
+    /// <returns><see langword="true"/> if there was one.</returns>
+    public static bool RemoveSubstituteFont(Standard14Font font)
+    {
+        return SubstituteFonts.TryRemove(font, out _);
+    }
+
+    /// <summary>
+    /// Get the substitute registered for the Standard 14 font <paramref name="fontName"/> maps to, including additional
+    /// names such as <c>Symbol,Bold</c>.
+    /// </summary>
+    public static bool TryGetSubstituteFont(string? fontName, out SubstituteFont? substitute)
+    {
+        substitute = null;
+
+        return !SubstituteFonts.IsEmpty
+               && fontName is not null
+               && Standard14.TryGetStandard14Font(fontName, out var font)
+               && SubstituteFonts.TryGetValue(font, out substitute);
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿//// ReSharper disable CompareOfFloatsByEqualityOperator
+//// ReSharper disable CompareOfFloatsByEqualityOperator
 namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System;
@@ -8,6 +8,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
     using Fonts;
     using Fonts.AdobeFontMetrics;
     using Fonts.Encodings;
+    using Fonts.SystemFonts;
     using Tokens;
 
     /// <summary>
@@ -18,6 +19,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         private readonly AdobeFontMetrics standardFontMetrics;
         private readonly Encoding encoding;
         private readonly bool isZapfDingbats;
+        private readonly SubstituteFont? substituteProgram;
 
         public NameToken Name { get; }
 
@@ -29,9 +31,11 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         private readonly double ascent;
         private readonly double descent;
 
-        public Type1Standard14Font(AdobeFontMetrics standardFontMetrics, Encoding? overrideEncoding = null)
+        public Type1Standard14Font(AdobeFontMetrics standardFontMetrics, Encoding? overrideEncoding = null,
+            SubstituteFont? substituteProgram = null)
         {
             this.standardFontMetrics = standardFontMetrics ?? throw new ArgumentNullException(nameof(standardFontMetrics));
+            this.substituteProgram = substituteProgram;
             encoding = overrideEncoding ?? new AdobeFontMetricsEncoding(standardFontMetrics);
 
             Name = NameToken.Create(standardFontMetrics.FontName);
@@ -151,22 +155,22 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         /// <summary>
         /// <inheritdoc/>
-        /// <para>Not implemented.</para>
+        /// <para>The outline comes from the substitute registered with <see cref="SystemFontFinder.AddSubstituteFont(Fonts.Standard14Fonts.Standard14Font, byte[][])"/>; without one this returns <see langword="false"/>.</para>
         /// </summary>
         public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
-            // https://github.com/apache/pdfbox/blob/trunk/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/Standard14Fonts.java
             path = null;
-            return false;
+            return substituteProgram?.TryGetPath(encoding.GetName(characterCode), in fontMatrix, out path) == true;
         }
 
         /// <summary>
         /// <inheritdoc/>
-        /// <para>Not implemeted.</para>
+        /// <para>The outline comes from the substitute registered with <see cref="SystemFontFinder.AddSubstituteFont(Fonts.Standard14Fonts.Standard14Font, byte[][])"/>; without one this returns <see langword="false"/>.</para>
         /// </summary>
         public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
-            return TryGetPath(characterCode, out path);
+            path = null;
+            return substituteProgram?.TryGetNormalisedPath(encoding.GetName(characterCode), out path) == true;
         }
 
         /// <inheritdoc/>

@@ -176,5 +176,31 @@
 
             return mappedName;
         }
+
+        /// <summary>
+        /// Get the <see cref="Standard14Font"/> which the given font name maps to, including additional names
+        /// (e.g. <c>Arial,Bold</c> maps to <see cref="Standard14Font.HelveticaBold"/>).
+        /// </summary>
+        /// <returns><see langword="true"/> if the name maps to a Standard 14 font.</returns>
+        public static bool TryGetStandard14Font(string baseName, out Standard14Font font)
+        {
+            font = default;
+
+            if (baseName is null || !Standard14Mapping.TryGetValue(baseName, out var mappedName))
+            {
+                return false;
+            }
+
+            foreach (var pair in BuilderTypesToNames)
+            {
+                if (string.Equals(pair.Value, mappedName, StringComparison.Ordinal))
+                {
+                    font = pair.Key;
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
