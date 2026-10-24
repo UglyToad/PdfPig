@@ -8,6 +8,7 @@
     using Fonts;
     using Fonts.AdobeFontMetrics;
     using Fonts.Encodings;
+    using Fonts.SystemFonts;
     using Fonts.TrueType;
     using Tokens;
 
@@ -26,6 +27,8 @@
         private readonly Encoding encoding;
         private readonly TrueTypeFont font;
         private readonly MetricOverrides overrides;
+        private readonly SubstituteFont? substitute;
+        private readonly bool isZapfDingbats;
 
         public NameToken? Name { get; }
 
@@ -34,20 +37,21 @@
         public FontDetails Details { get; set; }
 
         public TrueTypeStandard14FallbackSimpleFont(NameToken name, AdobeFontMetrics fontMetrics, Encoding encoding, TrueTypeFont font,
-            MetricOverrides overrides)
+            MetricOverrides overrides, SubstituteFont? substitute = null)
         {
             this.fontMetrics = fontMetrics;
             this.encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
             this.font = font;
             this.overrides = overrides;
+            this.substitute = substitute;
             Name = name;
             Details = fontMetrics is null ? FontDetails.GetDefault(Name?.Data) : new FontDetails(Name?.Data,
                 fontMetrics.Weight == "Bold",
                 fontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
                 fontMetrics.ItalicAngle != 0);
 
-            // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
-            System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
+            isZapfDingbats = encoding is ZapfDingbatsEncoding
+                             || string.Equals(fontMetrics?.FontName, "ZapfDingbats", StringComparison.Ordinal);
 
             // Set font matrix
             if (this.font?.TableRegister.HeaderTable is not null)
@@ -99,10 +103,11 @@
             //  Map the character code to a character name.
             var encodedCharacterName = encoding.GetName(characterCode);
 
-            // Look up the character name in the Adobe Glyph List.
+            // Look up the character name in the Adobe Glyph List, or first the ZapfDingbats one for ZapfDingbats.
             try
             {
-                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
+                value = isZapfDingbats ? GlyphList.ZapfDingbats.NameToUnicode(encodedCharacterName) : null;
+                value ??= GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
             }
             catch
             {
@@ -181,6 +186,11 @@
         public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
+            if (substitute is not null)
+            {
+                return substitute.TryGetPath(encoding.GetName(characterCode), in fontMatrix, out path);
+            }
+
             if (font is null)
             {
                 return false;
@@ -191,6 +201,11 @@
         /// <inheritdoc/>
         public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
+            if (substitute is not null)
+            {
+                return substitute.TryGetNormalisedPath(encoding.GetName(characterCode), out path);
+            }
+
             if (!TryGetPath(characterCode, out path))
             {
                 return false;

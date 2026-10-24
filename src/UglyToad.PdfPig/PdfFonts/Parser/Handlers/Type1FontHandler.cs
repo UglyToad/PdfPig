@@ -43,13 +43,19 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 
         private Encoding? ReadStandard14Encoding(DictionaryToken dictionary, AdobeFontMetrics metrics)
         {
-            // A /Differences array without /BaseEncoding applies on top of the font's built-in encoding. For the
-            // symbolic Standard 14 fonts (Symbol, ZapfDingbats) that is their own encoding, not StandardEncoding.
-            var builtIn = string.Equals(metrics.EncodingScheme, "FontSpecific", StringComparison.Ordinal)
+            return encodingReader.Read(dictionary, null, GetSymbolicBuiltInEncoding(metrics));
+        }
+
+        /// <summary>
+        /// A /Differences array without /BaseEncoding applies on top of the font's built-in encoding. For the
+        /// symbolic Standard 14 fonts (Symbol, ZapfDingbats) that is their own encoding, not StandardEncoding.
+        /// </summary>
+        /// <returns>The built-in encoding of a symbolic Standard 14 font, <see langword="null"/> for the others.</returns>
+        internal static Encoding? GetSymbolicBuiltInEncoding(AdobeFontMetrics metrics)
+        {
+            return string.Equals(metrics.EncodingScheme, "FontSpecific", StringComparison.Ordinal)
                 ? new AdobeFontMetricsEncoding(metrics)
                 : null;
-
-            return encodingReader.Read(dictionary, null, builtIn);
         }
 
         private static SubstituteFont? GetSubstitute(string? fontName)
@@ -152,17 +158,22 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
                 }
             }
 
+            AdobeFontMetrics? standard14Metrics = null;
+            if (font is null && dictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken? baseFont))
+            {
+                standard14Metrics = Standard14.GetAdobeFontMetrics(baseFont.Data);
+                if (standard14Metrics is not null)
+                {
+                    // No program to read the built-in encoding from: it is the Standard 14 font's.
+                    fromFont = GetSymbolicBuiltInEncoding(standard14Metrics);
+                }
+            }
+
             var encoding = encodingReader.Read(dictionary, descriptor, fromFont);
 
             if (encoding is null && font != null && font.TryGetFirst(out var t1FontReplacement) && t1FontReplacement.Encoding?.Count > 0)
             {
                 encoding = new BuiltInEncoding(t1FontReplacement.Encoding);
-            }
-
-            AdobeFontMetrics? standard14Metrics = null;
-            if (font is null && dictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken? baseFont))
-            {
-                standard14Metrics = Standard14.GetAdobeFontMetrics(baseFont.Data);
             }
 
             return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding!, toUnicodeCMap!, font!,

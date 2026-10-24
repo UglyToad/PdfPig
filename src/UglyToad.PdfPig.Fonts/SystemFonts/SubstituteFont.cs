@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using AdobeFontMetrics;
 using CompactFontFormat;
 using Core;
 using Standard14Fonts;
@@ -94,10 +95,14 @@ public sealed class SubstituteFont
             return false;
         }
 
+        AlternativeNames.TryGetValue(characterName!, out var alternativeName);
+
         foreach (var lazy in programs)
         {
             program = lazy.Value;
-            if (program is not null && program.TryGetGlyphSpacePath(characterName!, out path))
+            if (program is not null
+                && (program.TryGetGlyphSpacePath(characterName!, out path)
+                    || (alternativeName is not null && program.TryGetGlyphSpacePath(alternativeName, out path))))
             {
                 return true;
             }
@@ -106,6 +111,23 @@ public sealed class SubstituteFont
         program = null;
         return false;
     }
+
+    /// <summary>
+    /// Other names fonts commonly give a Standard 14 glyph, tried when a program has no glyph by the standard name:
+    /// ligatures named after their components, and the ellipsis as misspelled in ArialMT (as PDFBox's PDType1Font).
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> AlternativeNames = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["ff"] = "f_f",
+        ["ffi"] = "f_f_i",
+        ["ffl"] = "f_f_l",
+        ["fi"] = "f_i",
+        ["fl"] = "f_l",
+        ["st"] = "s_t",
+        ["IJ"] = "I_J",
+        ["ij"] = "i_j",
+        ["ellipsis"] = "elipsis"
+    };
 
     /// <summary>
     /// One substitute font program, whatever its format, with glyphs addressed by name.
@@ -154,7 +176,7 @@ public sealed class SubstituteFont
 
                 if (IsSfnt(bytes))
                 {
-                    return new TrueTypeProgram(TrueTypeFontParser.Parse(new TrueTypeDataBytes(bytes)));
+                    return new TrueTypeProgram(TrueTypeFontParser.Parse(new TrueTypeDataBytes(bytes)), font);
                 }
 
                 return new CffProgram(CompactFontFormatParser.Parse(new CompactFontFormatData(bytes)).FirstFont);
@@ -211,12 +233,22 @@ public sealed class SubstituteFont
     private sealed class TrueTypeProgram : SubstituteProgram
     {
         private readonly TrueTypeFont font;
+        private readonly bool isZapfDingbats;
         private readonly IReadOnlyDictionary<string, int> glyphIndexByName;
         private readonly ConcurrentDictionary<string, IReadOnlyList<PdfSubpath>?> paths = new(StringComparer.Ordinal);
 
-        public TrueTypeProgram(TrueTypeFont font)
+        // The substituted font's built-in encoding, to address a (3,0) symbol cmap by character code.
+        private readonly Encodings.Encoding? builtInEncoding;
+
+        public TrueTypeProgram(TrueTypeFont font, Standard14Font substituted)
         {
             this.font = font;
+            isZapfDingbats = substituted == Standard14Font.ZapfDingbats;
+            if (font.WindowsSymbolCMap is not null)
+            {
+                builtInEncoding = new AdobeFontMetricsEncoding(Standard14.GetAdobeFontMetrics(substituted));
+            }
+
             FontMatrix = TransformationMatrix.FromValues(1.0 / font.GetUnitsPerEm(), 0, 0, 1.0 / font.GetUnitsPerEm(), 0, 0);
 
             var names = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -248,40 +280,63 @@ public sealed class SubstituteFont
 
         private int GetGlyphIndex(string name)
         {
-            // The post table names first; otherwise the name's Unicode value through the (3,1) cmap.
+            // The post table names first, then the name's Unicode value through the (3,1) cmap, then its code in the
+            // substituted font's built-in encoding through the (3,0) cmap.
             if (glyphIndexByName.TryGetValue(name, out int index))
             {
                 return index;
             }
 
-            var cmap = font.WindowsUnicodeCMap;
-            if (cmap is null)
+            var unicodeCmap = font.WindowsUnicodeCMap;
+            if (unicodeCmap is not null && TryGetCodePoint(name, out int codePoint))
+            {
+                int glyphIndex = unicodeCmap.CharacterCodeToGlyphIndex(codePoint);
+                if (glyphIndex == 0 && PrivateUseAlternates.TryGetValue(name, out int alternate))
+                {
+                    glyphIndex = unicodeCmap.CharacterCodeToGlyphIndex(alternate);
+                }
+
+                if (glyphIndex > 0)
+                {
+                    return glyphIndex;
+                }
+            }
+
+            var symbolCmap = font.WindowsSymbolCMap;
+            int code = builtInEncoding?.GetCode(name) ?? -1;
+            if (symbolCmap is null || code < 0)
             {
                 return 0;
             }
+
+            // Symbol fonts usually map their codes into U+F000-F0FF, some map the bare code.
+            int symbolGlyphIndex = symbolCmap.CharacterCodeToGlyphIndex(0xF000 + code);
+            return symbolGlyphIndex > 0 ? symbolGlyphIndex : symbolCmap.CharacterCodeToGlyphIndex(code);
+        }
+
+        private bool TryGetCodePoint(string name, out int codePoint)
+        {
+            codePoint = 0;
 
             string? unicode;
             try
             {
-                unicode = GlyphList.AdobeGlyphList.NameToUnicode(name);
+                // ZapfDingbats glyph names (a1, a2...) are only in its own glyph list.
+                unicode = isZapfDingbats ? GlyphList.ZapfDingbats.NameToUnicode(name) : null;
+                unicode ??= GlyphList.AdobeGlyphList.NameToUnicode(name);
             }
             catch
             {
-                return 0;
+                return false;
             }
 
             if (string.IsNullOrEmpty(unicode) || (unicode!.Length > 1 && !char.IsSurrogatePair(unicode, 0)) || unicode.Length > 2)
             {
-                return 0;
+                return false;
             }
 
-            int glyphIndex = cmap.CharacterCodeToGlyphIndex(char.ConvertToUtf32(unicode, 0));
-            if (glyphIndex == 0 && PrivateUseAlternates.TryGetValue(name, out int alternate))
-            {
-                glyphIndex = cmap.CharacterCodeToGlyphIndex(alternate);
-            }
-
-            return glyphIndex;
+            codePoint = char.ConvertToUtf32(unicode, 0);
+            return true;
         }
 
         /// <summary>

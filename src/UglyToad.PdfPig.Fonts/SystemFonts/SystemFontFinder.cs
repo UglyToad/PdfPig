@@ -381,7 +381,10 @@ public sealed class SystemFontFinder : ISystemFontFinder
     /// <param name="font">The Standard 14 font to substitute.</param>
     /// <param name="fontPrograms">
     /// One or more Compact Font Format (CFF), Adobe Type 1 (PFB or PFA) or TrueType font programs. Each glyph comes from
-    /// the first program that has it, looked up by its glyph name (TrueType: post table name, else its Unicode value).
+    /// the first program that has it, looked up by its glyph name (TrueType: post table name, else its Unicode value
+    /// through the (3,1) cmap, else its code in <paramref name="font"/>'s built-in encoding through the (3,0) cmap).
+    /// A program without the standard name is also searched for the usual alternative: ligatures by their components
+    /// (<c>f_i</c> for <c>fi</c>, <c>f_f_l</c> for <c>ffl</c>...) and <c>elipsis</c>, ArialMT's spelling of <c>ellipsis</c>.
     /// </param>
     /// <remarks>
     /// Process-wide. Applies to fonts read after the call: documents keep the fonts they have already loaded.
