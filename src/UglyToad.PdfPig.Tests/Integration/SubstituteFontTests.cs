@@ -294,6 +294,93 @@ namespace UglyToad.PdfPig.Tests.Integration
         }
 
         [Fact]
+        public void OpenTypeProgramWithCffOutlinesIsSupported()
+        {
+            using var registration = Register(OpenTypeCffFont(DingbatA29), Standard14Font.Helvetica);
+            var pdf = BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", "(A)");
+
+            // /A is found by its CFF glyph name.
+            Assert.True(GetLetters(pdf).Single().GetFont()!.TryGetNormalisedPath(65, out var path));
+            AssertBounds(GetMinionProBounds("A"), path, 0.001);
+        }
+
+        [Fact]
+        public void OpenTypeCffGlyphsAreFoundThroughTheCmap()
+        {
+            // /a29 is not a CFF glyph name: U+2722 through the cmap gives the glyph index of the CFF's /A.
+            using var registration = Register(OpenTypeCffFont(DingbatA29), Standard14Font.ZapfDingbats);
+            var pdf = BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats >>", "(B)");
+
+            Assert.True(GetLetters(pdf).Single().GetFont()!.TryGetNormalisedPath(66, out var path));
+            AssertBounds(GetMinionProBounds("A"), path, 0.001);
+        }
+
+        [Theory]
+        [InlineData(Standard14Font.HelveticaBold, 'o', "B")]
+        [InlineData(Standard14Font.Helvetica, 'a', "A")]
+        public void CollectionUsesTheFacesNamedAfterTheSubstitutedFont(Standard14Font font, char expectedGlyph, string missingName)
+        {
+            // Helvetica has /B (Roboto's a), Helvetica-Bold has /A (Roboto's o): each face only has its own glyph.
+            var collection = FontCollection(
+                SingleGlyphFont('B', unicode: true, glyph: 'a', postScriptName: "Helvetica"),
+                SingleGlyphFont('A', unicode: true, glyph: 'o', postScriptName: "Helvetica-Bold"));
+
+            using var registration = Register(collection, font);
+            Assert.True(SystemFontFinder.TryGetSubstituteFont(Standard14.GetAdobeFontMetrics(font).FontName, out var substitute));
+
+            var presentName = missingName == "A" ? "B" : "A";
+            Assert.True(substitute!.TryGetNormalisedPath(presentName, out var path));
+            AssertBounds(GetRobotoBounds(expectedGlyph), path!, 1);
+
+            // The other face's glyph is not used.
+            Assert.False(substitute.HasGlyph(missingName));
+        }
+
+        [Fact]
+        public void CollectionWithoutAFaceNamedAfterTheFontUsesAllFacesInOrder()
+        {
+            var collection = FontCollection(
+                SingleGlyphFont('A', unicode: true, glyph: 'a', postScriptName: "Roboto-Regular"),
+                SingleGlyphFont('A', unicode: true, glyph: 'o', postScriptName: "Roboto-Bold"),
+                SingleGlyphFont('B', unicode: true, glyph: 'o', postScriptName: "Roboto-Italic"));
+
+            using var registration = Register(collection, Standard14Font.Courier);
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("Courier", out var substitute));
+
+            // /A from the first face that has it, /B from the only one.
+            Assert.True(substitute!.TryGetNormalisedPath("A", out var a));
+            AssertBounds(GetRobotoBounds('a'), a!, 1);
+            Assert.True(substitute.TryGetNormalisedPath("B", out var b));
+            AssertBounds(GetRobotoBounds('o'), b!, 1);
+        }
+
+        [Fact]
+        public void CollectionFaceThatCannotBeReadIsSkipped()
+        {
+            var collection = FontCollection(
+                new byte[64],
+                SingleGlyphFont('A', unicode: true, postScriptName: "Courier"));
+
+            using var registration = Register(collection, Standard14Font.Courier);
+
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("Courier", out var substitute));
+            Assert.True(substitute!.HasGlyph("A"));
+        }
+
+        [Fact]
+        public void InvalidCollectionIsRejected()
+        {
+            // No faces, then more faces than the file could hold, then a face that is not a font.
+            byte[] empty = [(byte)'t', (byte)'t', (byte)'c', (byte)'f', 0, 1, 0, 0, 0, 0, 0, 0];
+            byte[] tooMany = [(byte)'t', (byte)'t', (byte)'c', (byte)'f', 0, 1, 0, 0, 0x7F, 0xFF, 0xFF, 0xFF];
+
+            Assert.Throws<ArgumentException>(() => SystemFontFinder.AddSubstituteFont(Standard14Font.Courier, empty));
+            Assert.Throws<ArgumentException>(() => SystemFontFinder.AddSubstituteFont(Standard14Font.Courier, tooMany));
+            Assert.Throws<ArgumentException>(() => SystemFontFinder.AddSubstituteFont(Standard14Font.Courier, FontCollection(new byte[64])));
+            Assert.False(SystemFontFinder.TryGetSubstituteFont("Courier", out _));
+        }
+
+        [Fact]
         public void InvalidProgramIsRejected()
         {
             Assert.Throws<ArgumentException>(() => SystemFontFinder.AddSubstituteFont(Standard14Font.ZapfDingbats, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
@@ -489,68 +576,166 @@ namespace UglyToad.PdfPig.Tests.Integration
         private const int GreekAlpha = 0x03B1;
 
         /// <summary>
-        /// Roboto cut down to its /a glyph, as glyph 1, with no post table and a cmap whose only entry maps
-        /// <paramref name="code"/> to it: a (3,1) Unicode cmap if <paramref name="unicode"/>, else a (3,0) symbol one.
+        /// Roboto cut down to its <paramref name="glyph"/> glyph, as glyph 1, with no post table and a cmap whose only
+        /// entry maps <paramref name="code"/> to it: a (3,1) Unicode cmap if <paramref name="unicode"/>, else a (3,0)
+        /// symbol one. With <paramref name="postScriptName"/>, its name table holds only that PostScript name.
         /// </summary>
-        private static byte[] SingleGlyphFont(int code, bool unicode)
+        private static byte[] SingleGlyphFont(int code, bool unicode, char glyph = 'a', string? postScriptName = null)
         {
+            var font = TrueTypeSubsetter.Subset(Roboto, new TrueTypeSubsetEncoding(new[] { glyph })).ToList();
+            ReplaceTable(font, "cmap", Format4Cmap(code, 1, unicode));
+            if (postScriptName is not null)
+            {
+                ReplaceTable(font, "name", PostScriptNameTable(postScriptName));
+            }
+
+            return font.ToArray();
+        }
+
+        /// <summary>
+        /// An OpenType font with PostScript outlines ("OTTO"): the <see cref="SingleGlyphFont"/> tables with MinionPro's
+        /// CFF program in place of glyf, and a (3,1) cmap mapping <paramref name="code"/> to MinionPro's /A.
+        /// </summary>
+        private static byte[] OpenTypeCffFont(int code)
+        {
+            Assert.True(CompactFontFormatParser.Parse(new CompactFontFormatData(MinionPro)).FirstFont.TryGetGlyphIndexByName("A", out int glyphA));
+
             var font = TrueTypeSubsetter.Subset(Roboto, new TrueTypeSubsetEncoding(new[] { 'a' })).ToList();
+            ReplaceTable(font, "glyf", MinionPro, "CFF ");
+            ReplaceTable(font, "cmap", Format4Cmap(code, glyphA, unicode: true));
+            for (int i = 0; i < 4; i++)
+            {
+                font[i] = (byte)"OTTO"[i];
+            }
 
+            return font.ToArray();
+        }
+
+        /// <summary>
+        /// A TrueType collection ("ttcf") of <paramref name="faces"/>, in order.
+        /// </summary>
+        private static byte[] FontCollection(params byte[][] faces)
+        {
+            var collection = new List<byte>();
+            AddUInt32(collection, 0x74746366); // "ttcf"
+            AddUInt32(collection, 0x00010000);
+            AddUInt32(collection, faces.Length);
+            int offsetsStart = collection.Count;
+            collection.AddRange(new byte[4 * faces.Length]);
+
+            for (int f = 0; f < faces.Length; f++)
+            {
+                Pad(collection);
+                int faceStart = collection.Count;
+                WriteUInt32(collection, offsetsStart + (4 * f), faceStart);
+                collection.AddRange(faces[f]);
+
+                // Table offsets in a collection are from the start of the file.
+                int numTables = (faces[f][4] << 8) | faces[f][5];
+                for (int t = 0; t < numTables; t++)
+                {
+                    int entry = faceStart + 12 + (16 * t);
+                    WriteUInt32(collection, entry + 8, ReadUInt32(collection, entry + 8) + faceStart);
+                }
+            }
+
+            return collection.ToArray();
+        }
+
+        /// <summary>
+        /// A cmap with a single platform 3 record, (3,1) or (3,0), whose format 4 subtable maps only
+        /// <paramref name="code"/> to <paramref name="glyphIndex"/>.
+        /// </summary>
+        private static byte[] Format4Cmap(int code, int glyphIndex, bool unicode)
+        {
             var cmap = new List<byte>();
-            void U16(int value)
-            {
-                cmap.Add((byte)(value >> 8));
-                cmap.Add((byte)value);
-            }
 
-            // Header: version 0, one encoding record (platform 3) at offset 12.
-            U16(0);
-            U16(1);
-            U16(3);
-            U16(unicode ? 1 : 0);
-            U16(0);
-            U16(12);
+            // Header: version 0, one encoding record at offset 12.
+            AddUInt16s(cmap, 0, 1, 3, unicode ? 1 : 0);
+            AddUInt32(cmap, 12);
 
-            // Format 4, two segments: [code, code] -> glyph 1 and the closing [0xFFFF, 0xFFFF].
-            U16(4);
-            U16(32);
-            U16(0);
-            U16(4);
-            U16(4);
-            U16(1);
-            U16(0);
-            U16(code);
-            U16(0xFFFF);
-            U16(0);
-            U16(code);
-            U16(0xFFFF);
-            U16((1 - code) & 0xFFFF);
-            U16(1);
-            U16(0);
-            U16(0);
+            // Format 4, length 32, two segments: [code, code] -> glyphIndex and the closing [0xFFFF, 0xFFFF].
+            AddUInt16s(cmap, 4, 32, 0, 4, 4, 1, 0);
+            AddUInt16s(cmap, code, 0xFFFF, 0, code, 0xFFFF);
+            AddUInt16s(cmap, (glyphIndex - code) & 0xFFFF, 1, 0, 0);
 
-            // Append the new table and point the directory's cmap entry at it.
-            while (font.Count % 4 != 0)
-            {
-                font.Add(0);
-            }
+            return cmap.ToArray();
+        }
 
+        /// <summary>
+        /// A format 0 name table holding only <paramref name="postScriptName"/>, as a Windows Unicode name 6 record.
+        /// </summary>
+        private static byte[] PostScriptNameTable(string postScriptName)
+        {
+            var value = Encoding.BigEndianUnicode.GetBytes(postScriptName);
+
+            var name = new List<byte>();
+            AddUInt16s(name, 0, 1, 6 + 12);
+            AddUInt16s(name, 3, 1, 0x0409, 6, value.Length, 0);
+            name.AddRange(value);
+
+            return name.ToArray();
+        }
+
+        /// <summary>
+        /// Append <paramref name="table"/> to <paramref name="font"/> and point the directory entry for
+        /// <paramref name="tag"/> at it, renaming it to <paramref name="newTag"/> if given.
+        /// </summary>
+        private static void ReplaceTable(List<byte> font, string tag, byte[] table, string? newTag = null)
+        {
+            Pad(font);
             int offset = font.Count;
-            font.AddRange(cmap);
+            font.AddRange(table);
 
             int numTables = (font[4] << 8) | font[5];
             for (int i = 0; i < numTables; i++)
             {
                 int entry = 12 + (16 * i);
-                if (font[entry] == 'c' && font[entry + 1] == 'm' && font[entry + 2] == 'a' && font[entry + 3] == 'p')
+                if (font[entry] == tag[0] && font[entry + 1] == tag[1] && font[entry + 2] == tag[2] && font[entry + 3] == tag[3])
                 {
+                    if (newTag is not null)
+                    {
+                        for (int c = 0; c < 4; c++)
+                        {
+                            font[entry + c] = (byte)newTag[c];
+                        }
+                    }
+
                     WriteUInt32(font, entry + 8, offset);
-                    WriteUInt32(font, entry + 12, cmap.Count);
-                    return font.ToArray();
+                    WriteUInt32(font, entry + 12, table.Length);
+                    return;
                 }
             }
 
-            throw new InvalidOperationException("The subset font has no cmap table.");
+            throw new InvalidOperationException($"The font has no {tag} table.");
+        }
+
+        private static void Pad(List<byte> bytes)
+        {
+            while (bytes.Count % 4 != 0)
+            {
+                bytes.Add(0);
+            }
+        }
+
+        private static void AddUInt16s(List<byte> bytes, params int[] values)
+        {
+            foreach (int value in values)
+            {
+                bytes.Add((byte)(value >> 8));
+                bytes.Add((byte)value);
+            }
+        }
+
+        private static void AddUInt32(List<byte> bytes, int value)
+        {
+            bytes.AddRange(new byte[4]);
+            WriteUInt32(bytes, bytes.Count - 4, value);
+        }
+
+        private static int ReadUInt32(List<byte> bytes, int index)
+        {
+            return (bytes[index] << 24) | (bytes[index + 1] << 16) | (bytes[index + 2] << 8) | bytes[index + 3];
         }
 
         private static void WriteUInt32(List<byte> bytes, int index, int value)
