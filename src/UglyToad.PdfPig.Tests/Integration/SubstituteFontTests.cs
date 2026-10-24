@@ -10,6 +10,10 @@ namespace UglyToad.PdfPig.Tests.Integration
     using UglyToad.PdfPig.Fonts.CompactFontFormat;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Fonts.SystemFonts;
+    using UglyToad.PdfPig.Fonts.TrueType;
+    using UglyToad.PdfPig.Fonts.TrueType.Parser;
+    using UglyToad.PdfPig.Fonts.TrueType.Subsetting;
+    using UglyToad.PdfPig.Fonts.Type1.Parser;
     using UglyToad.PdfPig.PdfFonts.Simple;
 
     /// <summary>
@@ -86,7 +90,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
             var font = GetLetters(pdf).Single().GetFont()!;
 
-            // Code 66 is ZapfDingbats' /a9, which MinionPro does not have: no outline rather than the .notdef box.
+            // Code 66 is ZapfDingbats' /a29, which MinionPro does not have: no outline rather than the .notdef box.
             Assert.False(font.TryGetNormalisedPath(66, out _));
         }
 
@@ -107,19 +111,112 @@ namespace UglyToad.PdfPig.Tests.Integration
         }
 
         [Fact]
-        public void TrueTypeStandard14FontIsReadAsSubstitutedStandard14Font()
+        public void TrueTypeStandard14FontUsesSubstituteOutline()
         {
-            // Not ZapfDingbats: TrueTypeStandard14FallbackSimpleFont debug-asserts it never gets it.
             var pdf = BuildPdf($"<< /Type /Font /Subtype /TrueType /BaseFont /Symbol {DifferencesA} >>", "(A)");
 
-            var withoutSubstitute = GetLetters(pdf).Single().GetFont()!;
-            Assert.IsType<TrueTypeStandard14FallbackSimpleFont>(withoutSubstitute);
-
             using var registration = Register(MinionPro, Standard14Font.Symbol);
-            var withSubstitute = GetLetters(pdf).Single().GetFont()!;
+            var font = GetLetters(pdf).Single().GetFont()!;
 
-            Assert.IsType<Type1Standard14Font>(withSubstitute);
-            Assert.True(withSubstitute.TryGetNormalisedPath(65, out _));
+            Assert.IsType<TrueTypeStandard14FallbackSimpleFont>(font);
+            Assert.True(font.TryGetPath(65, out var glyphSpacePath));
+            Assert.True(font.TryGetNormalisedPath(65, out var path));
+            AssertBounds(GetMinionProBounds("A"), glyphSpacePath, 1);
+            AssertBounds(GetMinionProBounds("A"), path, 0.001);
+        }
+
+        [Fact]
+        public void TrueTypeStandard14FontKeepsItsWidthsAndNameWithASubstitute()
+        {
+            // No descriptor, so this is read as a Standard 14 font, but /Widths still overrides the AFM width.
+            var pdf = BuildPdf("<< /Type /Font /Subtype /TrueType /BaseFont /Arial /FirstChar 65 /LastChar 65 /Widths [999] >>", "(A)");
+
+            var without = GetLetters(pdf).Single();
+            Letter with;
+            using (Register(Roboto, Standard14Font.Helvetica))
+            {
+                with = GetLetters(pdf).Single();
+                Assert.True(with.GetFont()!.TryGetNormalisedPath(65, out _));
+            }
+
+            Assert.Equal("Arial", with.FontName);
+            Assert.Equal(without.FontName, with.FontName);
+            Assert.Equal(without.Value, with.Value);
+            Assert.Equal(without.Width, with.Width, 6);
+            Assert.Equal(0.999 * 12, with.Width, 6);
+        }
+
+        [Fact]
+        public void TrueTypeZapfDingbatsUsesSubstitute()
+        {
+            using var registration = Register(SingleGlyphFont(DingbatA29, unicode: true), Standard14Font.ZapfDingbats);
+            var pdf = BuildPdf("<< /Type /Font /Subtype /TrueType /BaseFont /ZapfDingbats >>", "(B)");
+
+            var letter = GetLetters(pdf).Single();
+
+            // Code 66 is ZapfDingbats' /a29, U+2722.
+            Assert.Equal("✢", letter.Value);
+            Assert.True(letter.GetFont()!.TryGetNormalisedPath(66, out var path));
+            AssertBounds(GetRobotoBounds('a'), path, 1);
+        }
+
+        [Fact]
+        public void DifferencesOnTrueTypeSymbolicStandard14FontApplyToItsBuiltInEncoding()
+        {
+            // Code 97 keeps Symbol's built-in name (/alpha), not StandardEncoding's /a.
+            var pdf = BuildPdf($"<< /Type /Font /Subtype /TrueType /BaseFont /Symbol {DifferencesA} >>", "(a)");
+
+            Assert.Equal("α", GetLetters(pdf).Single().Value);
+        }
+
+        [Fact]
+        public void DifferencesOnSymbolicStandard14FontWithDescriptorApplyToItsBuiltInEncoding()
+        {
+            var pdf = BuildPdf(
+                $"<< /Type /Font /Subtype /Type1 /BaseFont /Symbol /FirstChar 97 /LastChar 97 /Widths [631] /FontDescriptor 6 0 R {DifferencesA} >>",
+                "(a)",
+                string.Format(Descriptor, "Symbol"));
+
+            Assert.Equal("α", GetLetters(pdf).Single().Value);
+
+            // The substitute is asked for /alpha (U+03B1), which is all it has.
+            using var registration = Register(SingleGlyphFont(GreekAlpha, unicode: true), Standard14Font.Symbol);
+            var font = GetLetters(pdf).Single().GetFont()!;
+
+            Assert.IsType<Type1FontSimple>(font);
+            Assert.True(font.TryGetNormalisedPath(97, out var path));
+            AssertBounds(GetRobotoBounds('a'), path, 1);
+        }
+
+        [Fact]
+        public void ZapfDingbatsGlyphsAreFoundInATrueTypeSubstituteByUnicode()
+        {
+            using var registration = Register(SingleGlyphFont(DingbatA29, unicode: true), Standard14Font.ZapfDingbats);
+            var pdf = BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats >>", "(B)");
+
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("ZapfDingbats", out var substitute));
+            Assert.True(substitute!.HasGlyph("a29"));
+            Assert.False(substitute.HasGlyph("a1"));
+
+            Assert.True(GetLetters(pdf).Single().GetFont()!.TryGetNormalisedPath(66, out var path));
+            AssertBounds(GetRobotoBounds('a'), path, 1);
+        }
+
+        [Theory]
+        [InlineData(0xF000 + 0x61)]
+        [InlineData(0x61)]
+        public void SymbolGlyphsAreFoundThroughASymbolCmap(int mappedCode)
+        {
+            // A (3,0) cmap is addressed by Symbol's own codes (/alpha is 0x61), usually moved to U+F0xx.
+            using var registration = Register(SingleGlyphFont(mappedCode, unicode: false), Standard14Font.Symbol);
+            var pdf = BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /Symbol >>", "(a)");
+
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("Symbol", out var substitute));
+            Assert.True(substitute!.HasGlyph("alpha"));
+            Assert.False(substitute.HasGlyph("beta"));
+
+            Assert.True(GetLetters(pdf).Single().GetFont()!.TryGetNormalisedPath(97, out var path));
+            AssertBounds(GetRobotoBounds('a'), path, 1);
         }
 
         [Fact]
@@ -141,7 +238,7 @@ namespace UglyToad.PdfPig.Tests.Integration
         [Fact]
         public void DifferencesOnSymbolicStandard14FontApplyToItsBuiltInEncoding()
         {
-            // Code 65 is renamed, 66 keeps ZapfDingbats' built-in name (/a9), not StandardEncoding's /B.
+            // Code 65 is renamed, 66 keeps ZapfDingbats' built-in name (/a29), not StandardEncoding's /B.
             var pdf = BuildPdf($"<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats {DifferencesA} >>", "(AB)");
 
             var letters = GetLetters(pdf);
@@ -231,6 +328,37 @@ namespace UglyToad.PdfPig.Tests.Integration
             Assert.False(substitute.HasGlyph("definitely.not.a.glyph"));
         }
 
+        [Theory]
+        [InlineData("ff", "f_f")]
+        [InlineData("ffi", "f_f_i")]
+        [InlineData("ffl", "f_f_l")]
+        [InlineData("fi", "f_i")]
+        [InlineData("fl", "f_l")]
+        [InlineData("st", "s_t")]
+        public void LigaturesAreFoundUnderTheirComponentNames(string standardName, string nameInFont)
+        {
+            // Raleway names its ligatures after their components only.
+            using var registration = Register(RalewayPfb, Standard14Font.Helvetica);
+
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("Helvetica", out var substitute));
+            Assert.True(substitute!.TryGetNormalisedPath(standardName, out var path));
+            AssertBounds(GetRalewayBounds(nameInFont), path!, 1);
+        }
+
+        [Fact]
+        public void Standard14LigatureUsesTheAlternativeNameInTheSubstitute()
+        {
+            using var registration = Register(RalewayPfb, Standard14Font.Helvetica);
+            // No /Encoding: Helvetica's built-in StandardEncoding, where code 174 (octal 256) is /fi.
+            var pdf = BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>", "(\\256)");
+
+            var letter = GetLetters(pdf).Single();
+
+            Assert.Equal("ﬁ", letter.Value);
+            Assert.True(letter.GetFont()!.TryGetNormalisedPath(174, out var path));
+            AssertBounds(GetRalewayBounds("f_i"), path, 1);
+        }
+
         [Fact]
         public void LaterProgramsFillGapsInEarlierOnes()
         {
@@ -293,6 +421,108 @@ namespace UglyToad.PdfPig.Tests.Integration
         }
 
         private static byte[] Roboto => File.ReadAllBytes(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType", "Roboto-Regular.ttf"));
+
+        private const int DingbatA29 = 0x2722;
+
+        private const int GreekAlpha = 0x03B1;
+
+        /// <summary>
+        /// Roboto cut down to its /a glyph, as glyph 1, with no post table and a cmap whose only entry maps
+        /// <paramref name="code"/> to it: a (3,1) Unicode cmap if <paramref name="unicode"/>, else a (3,0) symbol one.
+        /// </summary>
+        private static byte[] SingleGlyphFont(int code, bool unicode)
+        {
+            var font = TrueTypeSubsetter.Subset(Roboto, new TrueTypeSubsetEncoding(new[] { 'a' })).ToList();
+
+            var cmap = new List<byte>();
+            void U16(int value)
+            {
+                cmap.Add((byte)(value >> 8));
+                cmap.Add((byte)value);
+            }
+
+            // Header: version 0, one encoding record (platform 3) at offset 12.
+            U16(0);
+            U16(1);
+            U16(3);
+            U16(unicode ? 1 : 0);
+            U16(0);
+            U16(12);
+
+            // Format 4, two segments: [code, code] -> glyph 1 and the closing [0xFFFF, 0xFFFF].
+            U16(4);
+            U16(32);
+            U16(0);
+            U16(4);
+            U16(4);
+            U16(1);
+            U16(0);
+            U16(code);
+            U16(0xFFFF);
+            U16(0);
+            U16(code);
+            U16(0xFFFF);
+            U16((1 - code) & 0xFFFF);
+            U16(1);
+            U16(0);
+            U16(0);
+
+            // Append the new table and point the directory's cmap entry at it.
+            while (font.Count % 4 != 0)
+            {
+                font.Add(0);
+            }
+
+            int offset = font.Count;
+            font.AddRange(cmap);
+
+            int numTables = (font[4] << 8) | font[5];
+            for (int i = 0; i < numTables; i++)
+            {
+                int entry = 12 + (16 * i);
+                if (font[entry] == 'c' && font[entry + 1] == 'm' && font[entry + 2] == 'a' && font[entry + 3] == 'p')
+                {
+                    WriteUInt32(font, entry + 8, offset);
+                    WriteUInt32(font, entry + 12, cmap.Count);
+                    return font.ToArray();
+                }
+            }
+
+            throw new InvalidOperationException("The subset font has no cmap table.");
+        }
+
+        private static void WriteUInt32(List<byte> bytes, int index, int value)
+        {
+            bytes[index] = (byte)(value >> 24);
+            bytes[index + 1] = (byte)(value >> 16);
+            bytes[index + 2] = (byte)(value >> 8);
+            bytes[index + 3] = (byte)value;
+        }
+
+        /// <summary>
+        /// The bounds of Raleway's glyph called <paramref name="name"/> in text space (1 unit = 1 em).
+        /// </summary>
+        private static PdfRectangle GetRalewayBounds(string name)
+        {
+            var font = Type1FontParser.Parse(new MemoryInputBytes(RalewayPfb), 0, 0, new StackDepthGuard(256));
+            var path = font.GetCharacterPath(name);
+            Assert.NotNull(path);
+            return font.FontMatrix.Transform(PdfSubpath.GetBoundingRectangle(path)!.Value);
+        }
+
+        /// <summary>
+        /// The bounds of Roboto's glyph for <paramref name="c"/> in text space (1 unit = 1 em).
+        /// </summary>
+        private static PdfRectangle GetRobotoBounds(char c)
+        {
+            var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(Roboto));
+            int glyphIndex = font.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(c);
+            Assert.True(font.TableRegister.GlyphTable!.TryGetGlyphPath(glyphIndex, out var path));
+
+            double scale = 1.0 / font.GetUnitsPerEm();
+            var bounds = PdfSubpath.GetBoundingRectangle(path)!.Value;
+            return new PdfRectangle(bounds.Left * scale, bounds.Bottom * scale, bounds.Right * scale, bounds.Top * scale);
+        }
 
         private static IDisposable Register(byte[] program, Standard14Font font)
         {
