@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Fonts.SystemFonts;
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -182,7 +183,7 @@ public sealed class SubstituteFont
                     return [new Type1Program(Type1FontParser.Parse(new MemoryInputBytes(bytes), 0, 0, new StackDepthGuard(256)))];
                 }
 
-                if (HasTag(bytes, 0, "ttcf"))
+                if (TrueTypeFontParser.IsCollection(bytes))
                 {
                     return LoadCollection(font, bytes);
                 }
@@ -207,24 +208,12 @@ public sealed class SubstituteFont
         /// </summary>
         private static IReadOnlyList<SubstituteProgram> LoadCollection(Standard14Font font, byte[] bytes)
         {
-            // Header: "ttcf", major and minor version, number of fonts, then the offset of each font's table directory.
-            long count = ReadUInt32(bytes, 8);
-            if (count > (bytes.Length - 12) / 4)
-            {
-                throw new InvalidFontFormatException($"The font collection claims {count} fonts, more than it can hold.");
-            }
-
             var matching = new List<SubstituteProgram>();
             var others = new List<SubstituteProgram>();
-            for (int i = 0; i < count; i++)
+            foreach (var face in TrueTypeFontParser.ParseCollection(new TrueTypeDataBytes(bytes)))
             {
                 try
                 {
-                    // Table offsets in a collection are from the start of the file, so each face is parsed in place.
-                    var data = new TrueTypeDataBytes(bytes);
-                    data.Seek(ReadUInt32(bytes, 12 + (4 * i)));
-                    var face = TrueTypeFontParser.Parse(data);
-
                     var postScriptName = face.TableRegister.NameTable?.GetPostscriptName();
                     bool isMatch = postScriptName is not null
                                    && Standard14.TryGetStandard14Font(postScriptName, out var faceFont)
@@ -234,28 +223,20 @@ public sealed class SubstituteFont
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Could not read face {i} of a substitute font collection for {font}: {ex}");
+                    // A face without outlines that can be read.
+                    System.Diagnostics.Debug.WriteLine($"Could not read a face of a substitute font collection for {font}: {ex}");
                 }
             }
 
             return matching.Count > 0 ? matching : others;
         }
 
-        private static bool IsSfnt(byte[] bytes)
+        private static bool IsSfnt(ReadOnlySpan<byte> bytes)
         {
-            return (bytes[0] == 0 && bytes[1] == 1 && bytes[2] == 0 && bytes[3] == 0)
-                   || HasTag(bytes, 0, "true")
-                   || HasTag(bytes, 0, "OTTO");
-        }
-
-        private static bool HasTag(byte[] bytes, int offset, string tag)
-        {
-            return bytes[offset] == tag[0] && bytes[offset + 1] == tag[1] && bytes[offset + 2] == tag[2] && bytes[offset + 3] == tag[3];
-        }
-
-        private static long ReadUInt32(byte[] bytes, int offset)
-        {
-            return ((long)bytes[offset] << 24) | ((long)bytes[offset + 1] << 16) | ((long)bytes[offset + 2] << 8) | bytes[offset + 3];
+            var tag = bytes.Slice(0, 4);
+            return BinaryPrimitives.ReadUInt32BigEndian(tag) == 0x00010000
+                   || tag.SequenceEqual("true"u8)
+                   || tag.SequenceEqual("OTTO"u8);
         }
     }
 

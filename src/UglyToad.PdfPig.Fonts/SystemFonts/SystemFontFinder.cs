@@ -170,7 +170,8 @@ public sealed class SystemFontFinder : ISystemFontFinder
         });
     }
 
-    private readonly ConcurrentDictionary<string, string> nameToFileNameMap = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    // Font name to the file holding it and, in a font collection (.ttc), the index of its face; -1 for a single font.
+    private readonly ConcurrentDictionary<string, (string Path, int FaceIndex)> nameToFileNameMap = new(StringComparer.OrdinalIgnoreCase);
 
     // Tracks font file paths that have already been scanned for name matching, so we never open
     // the same file twice during a search.  Value is always 0 – the dictionary is used as a
@@ -250,14 +251,13 @@ public sealed class SystemFontFinder : ISystemFontFinder
             return cachedResult;
         }
 
-        if (nameToFileNameMap.TryGetValue(name, out var fileName))
+        if (nameToFileNameMap.TryGetValue(name, out var location))
         {
-            if (TryReadFile(fileName, false, name, out var result))
-            {
-                return result;
-            }
+            var found = location.FaceIndex < 0
+                ? TryReadFile(location.Path, false, name, out var result)
+                : TryReadCollectionFace(location.Path, location.FaceIndex, out result);
 
-            return null;
+            return found ? result : null;
         }
 
         // First pass: fonts whose filename starts with the same letter as the requested name –
@@ -308,17 +308,109 @@ public sealed class SystemFontFinder : ISystemFontFinder
     {
         font = null;
 
-        if (record.Type == SystemFontType.TrueType)
+        if (record.Type != SystemFontType.TrueType && record.Type != SystemFontType.TrueTypeCollection)
         {
-            if (readFiles.ContainsKey(record.Path))
-            {
-                return false;
-            }
-
-            return TryReadFile(record.Path, true, name, out font);
+            return false;
         }
 
-        return false;
+        if (readFiles.ContainsKey(record.Path))
+        {
+            return false;
+        }
+
+        return record.Type == SystemFontType.TrueType
+            ? TryReadFile(record.Path, true, name, out font)
+            : TryReadCollection(record.Path, name, out font);
+    }
+
+    /// <summary>
+    /// Map the name of every face of the font collection <paramref name="fileName"/>, reading only their name tables,
+    /// and parse the face called <paramref name="fontName"/> if there is one.
+    /// </summary>
+    private bool TryReadCollection(string fileName, string fontName, out TrueTypeFont? font)
+    {
+        font = null;
+
+        if (!TryReadCollectionOffsets(fileName, out var data, out var offsets))
+        {
+            readFiles.TryAdd(fileName, 0);
+            return false;
+        }
+
+        // Map every face before parsing one: the file is then marked as read, so a later search for another of its
+        // faces finds it through the map.
+        int match = -1;
+        for (int i = 0; i < offsets.Count; i++)
+        {
+            try
+            {
+                data.Seek(offsets[i]);
+                var nameTable = TrueTypeFontParser.GetNameTable(data);
+                var faceName = nameTable?.GetPostscriptName() ?? nameTable?.FontName;
+                if (string.IsNullOrEmpty(faceName))
+                {
+                    continue;
+                }
+
+                nameToFileNameMap.TryAdd(faceName!, (fileName, i));
+                if (match < 0 && string.Equals(faceName, fontName, StringComparison.OrdinalIgnoreCase))
+                {
+                    match = i;
+                }
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine(e);
+            }
+        }
+
+        readFiles.TryAdd(fileName, 0);
+
+        return match >= 0 && TryParseCollectionFace(data, offsets[match], out font);
+    }
+
+    /// <summary>
+    /// Parse face <paramref name="faceIndex"/> of the font collection <paramref name="fileName"/>.
+    /// </summary>
+    private static bool TryReadCollectionFace(string fileName, int faceIndex, out TrueTypeFont? font)
+    {
+        font = null;
+
+        return TryReadCollectionOffsets(fileName, out var data, out var offsets)
+               && faceIndex < offsets.Count
+               && TryParseCollectionFace(data, offsets[faceIndex], out font);
+    }
+
+    private static bool TryReadCollectionOffsets(string fileName, out TrueTypeDataBytes data, out IReadOnlyList<long> offsets)
+    {
+        try
+        {
+            data = new TrueTypeDataBytes(File.ReadAllBytes(fileName));
+            offsets = TrueTypeFontParser.ReadCollectionOffsets(data);
+            return true;
+        }
+        catch (Exception e)
+        {
+            System.Diagnostics.Debug.WriteLine(e);
+            data = null!;
+            offsets = [];
+            return false;
+        }
+    }
+
+    private static bool TryParseCollectionFace(TrueTypeDataBytes data, long offset, out TrueTypeFont? font)
+    {
+        // Table offsets in a collection are from the start of the file, so the face is parsed in place.
+        data.Seek(offset);
+        font = TrueTypeFontParser.Parse(data);
+
+        var psName = font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
+        if (psName is not null)
+        {
+            Cache.TryAdd(psName, font);
+        }
+
+        return true;
     }
 
     private bool TryReadFile(string fileName, bool readNameFirst, string fontName, out TrueTypeFont? font)
@@ -353,7 +445,7 @@ public sealed class SystemFontFinder : ISystemFontFinder
             psName = nameTable.GetPostscriptName();
             string? fontNameFromFile = psName ?? nameTable.FontName;
 
-            nameToFileNameMap.TryAdd(fontNameFromFile, fileName);
+            nameToFileNameMap.TryAdd(fontNameFromFile, (fileName, -1));
 
             if (!string.Equals(fontNameFromFile, fontName, StringComparison.OrdinalIgnoreCase))
             {
