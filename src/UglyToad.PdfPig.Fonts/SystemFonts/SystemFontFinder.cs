@@ -434,7 +434,8 @@ public sealed class SystemFontFinder : ISystemFontFinder
 
     /// <summary>
     /// Get the substitute registered for the Standard 14 font <paramref name="fontName"/> maps to, including additional
-    /// names such as <c>Symbol,Bold</c>.
+    /// names such as <c>Symbol,Bold</c> and loose matches such as <c>ABCDEF+Helvetica</c> or <c>Arial-Bold</c>
+    /// (see <see cref="Standard14.TryGetStandard14Font"/>).
     /// </summary>
     public static bool TryGetSubstituteFont(string? fontName, out SubstituteFont? substitute)
     {
