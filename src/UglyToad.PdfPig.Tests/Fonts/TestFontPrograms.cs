@@ -37,16 +37,17 @@ namespace UglyToad.PdfPig.Tests.Fonts
 
         /// <summary>
         /// An OpenType font with PostScript outlines ("OTTO"): the <see cref="SingleGlyphFont"/> tables with MinionPro's
-        /// CFF program in place of glyf, and a (3,1) cmap mapping <paramref name="code"/> to MinionPro's /A.
+        /// CFF program in place of glyf, and a cmap mapping <paramref name="code"/> to MinionPro's /A: a (3,1) Unicode
+        /// cmap if <paramref name="unicode"/>, else a (3,0) symbol one.
         /// </summary>
-        public static byte[] OpenTypeCffFont(int code)
+        public static byte[] OpenTypeCffFont(int code, bool unicode = true)
         {
             var minionPro = MinionPro;
             Assert.True(CompactFontFormatParser.Parse(new CompactFontFormatData(minionPro)).FirstFont.TryGetGlyphIndexByName("A", out int glyphA));
 
             var font = TrueTypeSubsetter.Subset(Roboto, new TrueTypeSubsetEncoding(new[] { 'a' }));
             font = ReplaceTable(font, "glyf", minionPro, "CFF ");
-            font = ReplaceTable(font, "cmap", Format4Cmap(code, glyphA, unicode: true));
+            font = ReplaceTable(font, "cmap", Format4Cmap(code, glyphA, unicode));
             "OTTO"u8.CopyTo(font);
 
             return font;

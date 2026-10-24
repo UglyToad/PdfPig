@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CompactFontFormat;
 using Standard14Fonts;
 using System.Runtime.InteropServices;
 using TrueType;
@@ -297,8 +298,6 @@ public sealed class SystemFontFinder : ISystemFontFinder
             {
                 return font;
             }
-
-            // TODO: OTF
         }
 
         return null;
@@ -308,9 +307,20 @@ public sealed class SystemFontFinder : ISystemFontFinder
     {
         font = null;
 
-        if (record.Type != SystemFontType.TrueType && record.Type != SystemFontType.TrueTypeCollection)
+        // OpenType files are read the same way: the parser handles TrueType and CFF outlines alike.
+        bool isCollection;
+        switch (record.Type)
         {
-            return false;
+            case SystemFontType.TrueType:
+            case SystemFontType.OpenType:
+                isCollection = false;
+                break;
+            case SystemFontType.TrueTypeCollection:
+            case SystemFontType.OpenTypeCollection:
+                isCollection = true;
+                break;
+            default:
+                return false;
         }
 
         if (readFiles.ContainsKey(record.Path))
@@ -318,9 +328,9 @@ public sealed class SystemFontFinder : ISystemFontFinder
             return false;
         }
 
-        return record.Type == SystemFontType.TrueType
-            ? TryReadFile(record.Path, true, name, out font)
-            : TryReadCollection(record.Path, name, out font);
+        return isCollection
+            ? TryReadCollection(record.Path, name, out font)
+            : TryReadFile(record.Path, true, name, out font);
     }
 
     /// <summary>
@@ -403,6 +413,11 @@ public sealed class SystemFontFinder : ISystemFontFinder
         // Table offsets in a collection are from the start of the file, so the face is parsed in place.
         data.Seek(offset);
         font = TrueTypeFontParser.Parse(data);
+        if (IsCidKeyedCff(font))
+        {
+            font = null;
+            return false;
+        }
 
         var psName = font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
         if (psName is not null)
@@ -457,12 +472,39 @@ public sealed class SystemFontFinder : ISystemFontFinder
         }
 
         font = TrueTypeFontParser.Parse(data);
+        readFiles.TryAdd(fileName, 0);
+        if (IsCidKeyedCff(font))
+        {
+            font = null;
+            return false;
+        }
+
         psName ??= font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
 
         Cache.TryAdd(psName, font);
-        readFiles.TryAdd(fileName, 0);
 
         return true;
+    }
+
+    /// <summary>
+    /// Whether the font has CID-keyed CFF outlines, which glyphs cannot be read from correctly yet: such a font is
+    /// not returned, as if it was not installed.
+    /// </summary>
+    /// <remarks>
+    /// TODO (CID-keyed CFF, mostly CJK OpenType fonts such as Source Han / Noto Sans CJK .otf and .otc/.ttc):
+    /// <see cref="TrueTypeFont"/> resolves a character code to a glyph index (cmap or supplied mapping), then asks the
+    /// CFF for that glyph's name with <c>CompactFontFormatFont.GetCharacterName(glyphIndex, isCid: true)</c>. For a
+    /// CID-keyed CFF that calls <c>Charset.GetNameByStringId(glyphIndex)</c>, i.e. it looks up the glyph whose CID
+    /// equals the glyph index: right only when the charset maps glyph indexes to themselves, which installed CJK fonts
+    /// generally do not, so glyphs would come out wrong. It is also a linear scan of the charset on every lookup.
+    /// To fix: give the CFF font a path/bounding-box lookup by glyph index (CharStrings INDEX position, which is what
+    /// the cmap gives), use it from TrueTypeFont's CFF branch, check the embedded CFF-in-OpenType CID case
+    /// (https://github.com/UglyToad/PdfPig/issues/1320, P2P-33713919.pdf) still renders, then remove this check.
+    /// </remarks>
+    private static bool IsCidKeyedCff(TrueTypeFont font)
+    {
+        var cff = font.CffFontCollection?.FirstFont;
+        return cff is CompactFontFormatCidFont || cff?.Charset.IsCidCharset == true;
     }
 
     /// <summary>
