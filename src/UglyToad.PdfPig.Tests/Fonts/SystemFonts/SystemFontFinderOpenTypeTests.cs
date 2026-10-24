@@ -45,13 +45,13 @@ namespace UglyToad.PdfPig.Tests.Fonts.SystemFonts
                 files = GetFiles(SearchOption.AllDirectories, "/usr/local/fonts", "/usr/local/share/fonts", "/usr/share/fonts");
             }
 
-            foreach (var file in files.Where(f => f.EndsWith(".otf", StringComparison.Ordinal) || f.EndsWith(".otc", StringComparison.Ordinal)))
+            foreach (var file in files.Where(f => f.EndsWith(".otf", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".otc", StringComparison.OrdinalIgnoreCase)))
             {
                 IReadOnlyList<TrueTypeFont> faces;
                 try
                 {
                     var data = new TrueTypeDataBytes(File.ReadAllBytes(file));
-                    faces = file.EndsWith(".otc", StringComparison.Ordinal)
+                    faces = file.EndsWith(".otc", StringComparison.OrdinalIgnoreCase)
                         ? TrueTypeFontParser.ParseCollection(data)
                         : new[] { TrueTypeFontParser.Parse(data) };
                 }
