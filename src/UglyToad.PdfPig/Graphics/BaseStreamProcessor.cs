@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    
+    using System.Threading;
     using Colors;
     using Colors.Icc;
     using Content;
@@ -89,6 +89,12 @@
         /// intended grouping of letters into words.
         /// </summary>
         protected int TextSequence;
+
+        /// <summary>
+        /// The token checked while processing operations, including those of nested form XObjects.
+        /// Implementations of <see cref="Process"/> should set it from the token they receive.
+        /// </summary>
+        protected CancellationToken CancellationToken { get; set; }
 
         /// <inheritdoc/>
         public TextMatrices TextMatrices { get; } = new TextMatrices();
@@ -190,15 +196,23 @@
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s and return content.
         /// </summary>
-        public abstract TPageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations);
+        public abstract TPageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token);
 
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s.
         /// </summary>
         protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
         {
+            CancellationToken.ThrowIfCancellationRequested();
+
+            int i = 0;
             foreach (var stateOperation in operations)
             {
+                if (++i % 100 == 0)
+                {
+                    CancellationToken.ThrowIfCancellationRequested();
+                }
+
                 stateOperation.Run(this);
             }
         }
@@ -760,7 +774,6 @@
                 }
 
                 ProcessOperations(operations);
-
             }
             finally
             {

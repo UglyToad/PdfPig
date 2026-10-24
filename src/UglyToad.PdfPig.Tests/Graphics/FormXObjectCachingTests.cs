@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Tests.Graphics
 {
     using System.Collections.Generic;
+    using System.Threading;
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Geometry;
@@ -141,7 +142,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
             processor.ApplyXObject(FormName);
             processor.ApplyXObject(FormName);
 
-            var content = processor.Process(1, new List<IGraphicsStateOperation>());
+            var content = processor.Process(1, new List<IGraphicsStateOperation>(), CancellationToken.None);
 
             Assert.Equal(3, content.Paths.Count);
         }

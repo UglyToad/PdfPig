@@ -160,6 +160,32 @@ namespace UglyToad.PdfPig.Tests.Integration
         }
 
         /// <summary>
+        /// Callers unload only the dictionaries that loaded, so one that fails part way through loading
+        /// must not leave its level on the stack above the enclosing dictionary.
+        /// </summary>
+        [Fact]
+        public void FailedLoadDoesNotLeaveItsLevelBehind()
+        {
+            using var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(AnyDocument));
+
+            var store = CreateStore(document.Structure.TokenScanner);
+
+            store.LoadResourceDictionary(Resources(2));
+
+            // Shadings are loaded after the other categories are pushed, and a shading that is
+            // neither a dictionary nor a stream is rejected.
+            var invalid = Dict(
+                (NameToken.Properties, Dict((Mc0, Dict((Level, new NumericToken(3)))))),
+                (NameToken.Shading, Dict((Sh0, new NumericToken(1)))));
+
+            Assert.ThrowsAny<System.Exception>(() => store.LoadResourceDictionary(invalid));
+
+            Assert.Equal(2, ((NumericToken)store.GetMarkedContentPropertiesDictionary(Mc0)!.Data[Level.Data]).Int);
+
+            store.UnloadResourceDictionary();
+        }
+
+        /// <summary>
         /// A form that does not redefine a name still resolves it against the enclosing dictionary,
         /// matching how fonts / XObjects / ExtGStates / colour spaces already behave.
         /// </summary>
@@ -252,7 +278,8 @@ namespace UglyToad.PdfPig.Tests.Integration
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 if (operations.Count == 0)
                 {
@@ -263,7 +290,7 @@ namespace UglyToad.PdfPig.Tests.Integration
                     PageContentParser, FilterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
                     ParsingOptions);
 
-                return new ShadingUsagePage(pageNumber, context.Process(pageNumber, operations));
+                return new ShadingUsagePage(pageNumber, context.Process(pageNumber, operations, token));
             }
         }
 
@@ -288,9 +315,10 @@ namespace UglyToad.PdfPig.Tests.Integration
             private int _formDepth;
 
             public override IReadOnlyList<ShadingUsage> Process(int pageNumberCurrent,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
             {
                 CloneAllStates();
+                CancellationToken = token;
                 ProcessOperations(operations);
                 return _usages;
             }

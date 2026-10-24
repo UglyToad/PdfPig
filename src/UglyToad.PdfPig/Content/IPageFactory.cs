@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using Outline.Destinations;
+    using System.Threading;
     using Tokens;
 
     /// <summary>
@@ -15,6 +16,7 @@
         TPage Create(int number,
             DictionaryToken dictionary,
             PageTreeMembers pageTreeMembers,
-            NamedDestinations namedDestinations);
+            NamedDestinations namedDestinations,
+            CancellationToken token);
     }
 }

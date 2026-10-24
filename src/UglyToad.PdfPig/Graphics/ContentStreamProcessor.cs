@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Colors.Icc;
     using Content;
     using Filters;
@@ -102,10 +103,11 @@ namespace UglyToad.PdfPig.Graphics
         {
         }
 
-        public override PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
+        public override PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             PageNumber = pageNumberCurrent;
             CloneAllStates();
+            CancellationToken = token;
 
             ProcessOperations(operations);
 

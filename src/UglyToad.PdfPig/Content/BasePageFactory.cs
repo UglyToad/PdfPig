@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Core;
     using Filters;
     using Geometry;
@@ -64,8 +65,10 @@
 
         /// <inheritdoc/>
         public TPage Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers,
-             NamedDestinations namedDestinations)
+             NamedDestinations namedDestinations, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
@@ -73,7 +76,7 @@
 
             var type = dictionary.GetNameOrDefault(NameToken.Type);
 
-            if (type != null && !type.Equals(NameToken.Page))
+            if (type is not null && !type.Equals(NameToken.Page))
             {
                 ParsingOptions.Logger.Error($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
@@ -86,91 +89,92 @@
 
             var stackDepth = 0;
 
-            while (pageTreeMembers.ParentResources.Count > 0)
+            try
             {
-                var resource = pageTreeMembers.ParentResources.Dequeue();
-
-                ResourceStore.LoadResourceDictionary(resource);
-                stackDepth++;
-            }
-
-            if (dictionary.TryGet(NameToken.Resources, PdfScanner, out DictionaryToken? resources))
-            {
-                ResourceStore.LoadResourceDictionary(resources);
-                stackDepth++;
-            }
-
-            UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary, ParsingOptions.UseLenientParsing);
-
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
-
-            var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, cropBox, rotation, ParsingOptions.Logger);
-
-            TPage page;
-
-            if (!dictionary.TryGet(NameToken.Contents, out var contents))
-            {
-                // ignored for now, is it possible? check the spec...
-                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, null);
-            }
-            else if (DirectObjectFinder.TryGet<ArrayToken>(contents, PdfScanner, out var array))
-            {
-                using var bytes = new ArrayPoolBufferWriter<byte>(1024 * 64);
-
-                for (var i = 0; i < array.Data.Count; i++)
+                while (pageTreeMembers.ParentResources.Count > 0)
                 {
-                    var item = array.Data[i];
+                    var resource = pageTreeMembers.ParentResources.Dequeue();
 
-                    if (item is not IndirectReferenceToken obj)
+                    ResourceStore.LoadResourceDictionary(resource);
+                    stackDepth++;
+                }
+
+                if (dictionary.TryGet(NameToken.Resources, PdfScanner, out DictionaryToken? resources))
+                {
+                    ResourceStore.LoadResourceDictionary(resources);
+                    stackDepth++;
+                }
+
+                UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary, ParsingOptions.UseLenientParsing);
+
+                MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
+                CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
+
+                var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, cropBox, rotation, ParsingOptions.Logger);
+
+                if (!dictionary.TryGet(NameToken.Contents, out var contents))
+                {
+                    // ignored for now, is it possible? check the spec...
+                    return ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, null, token);
+                }
+                else if (DirectObjectFinder.TryGet<ArrayToken>(contents, PdfScanner, out var array))
+                {
+                    using var bytes = new ArrayPoolBufferWriter<byte>(1024 * 64);
+
+                    for (var i = 0; i < array.Data.Count; i++)
                     {
-                        // Malformed pdf document
-                        if (ParsingOptions.UseLenientParsing)
+                        var item = array.Data[i];
+
+                        if (item is not IndirectReferenceToken obj)
                         {
-                            // Should not be possible that the token is already a StreamToken
-                            continue; // We skip the token
+                            // Malformed pdf document
+                            if (ParsingOptions.UseLenientParsing)
+                            {
+                                // Should not be possible that the token is already a StreamToken
+                                continue; // We skip the token
+                            }
+
+                            throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
                         }
 
-                        throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
+                        var contentStream = DirectObjectFinder.Get<StreamToken>(obj, PdfScanner);
+
+                        if (contentStream is null)
+                        {
+                            throw new InvalidOperationException($"Could not find the contents for object {obj}.");
+                        }
+
+                        bytes.Write(contentStream.Decode(FilterProvider, PdfScanner).Span);
+
+                        if (i < array.Data.Count - 1)
+                        {
+                            bytes.Write((byte)'\n');
+                        }
                     }
-                    
-                    var contentStream = DirectObjectFinder.Get<StreamToken>(obj, PdfScanner);
+
+                    return ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes.WrittenMemory, token);
+                }
+                else
+                {
+                    var contentStream = DirectObjectFinder.Get<StreamToken>(contents, PdfScanner);
 
                     if (contentStream is null)
                     {
-                        throw new InvalidOperationException($"Could not find the contents for object {obj}.");
+                        throw new InvalidOperationException("Failed to parse the content for the page: " + number);
                     }
 
-                    bytes.Write(contentStream.Decode(FilterProvider, PdfScanner).Span);
+                    var bytes = contentStream.Decode(FilterProvider, PdfScanner);
 
-                    if (i < array.Data.Count - 1)
-                    {
-                        bytes.Write((byte)'\n');
-                    }
+                    return ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes, token);
                 }
-
-                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes.WrittenMemory);
             }
-            else
+            finally
             {
-                var contentStream = DirectObjectFinder.Get<StreamToken>(contents, PdfScanner);
-
-                if (contentStream is null)
+                for (var i = 0; i < stackDepth; i++)
                 {
-                    throw new InvalidOperationException("Failed to parse the content for the page: " + number);
+                    ResourceStore.UnloadResourceDictionary();
                 }
-
-                var bytes = contentStream.Decode(FilterProvider, PdfScanner);
-
-                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes);
             }
-
-            for (var i = 0; i < stackDepth; i++)
-            {
-                ResourceStore.UnloadResourceDictionary();
-            }
-
-            return page;
         }
 
         private TPage ProcessPageInternal(
@@ -182,16 +186,19 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
-            ReadOnlyMemory<byte> contentBytes)
+            ReadOnlyMemory<byte> contentBytes,
+            CancellationToken token)
         {
             IReadOnlyList<IGraphicsStateOperation> operations;
 
             if (contentBytes.IsEmpty)
             {
-                operations = Array.Empty<IGraphicsStateOperation>();
+                operations = [];
             }
             else
             {
+                token.ThrowIfCancellationRequested();
+
                 operations = PageContentParser.Parse(pageNumber,
                     new MemoryInputBytes(contentBytes),
                     ParsingOptions.Logger);
@@ -206,7 +213,8 @@
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
-                operations);
+                operations,
+                token);
         }
 
         /// <summary>
@@ -221,6 +229,7 @@
         /// <param name="rotation">The page rotation.</param>
         /// <param name="initialMatrix"></param>
         /// <param name="operations">The page operations. Can be empty if the page has no content.</param>
+        /// <param name="token"></param>
         protected abstract TPage ProcessPage(
             int pageNumber,
             DictionaryToken dictionary,
@@ -230,7 +239,8 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            IReadOnlyList<IGraphicsStateOperation> operations);
+            IReadOnlyList<IGraphicsStateOperation> operations,
+            CancellationToken token);
 
         /// <summary>
         /// Get the user space units.
