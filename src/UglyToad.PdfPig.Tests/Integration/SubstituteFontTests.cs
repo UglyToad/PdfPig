@@ -14,6 +14,7 @@ namespace UglyToad.PdfPig.Tests.Integration
     using UglyToad.PdfPig.Fonts.TrueType.Parser;
     using UglyToad.PdfPig.Fonts.TrueType.Subsetting;
     using UglyToad.PdfPig.Fonts.Type1.Parser;
+    using static UglyToad.PdfPig.Tests.Fonts.TestFontPrograms;
     using UglyToad.PdfPig.PdfFonts.Simple;
 
     /// <summary>
@@ -33,8 +34,6 @@ namespace UglyToad.PdfPig.Tests.Integration
 
         private const string Descriptor =
             "<< /Type /FontDescriptor /FontName /{0} /Flags 4 /FontBBox [0 0 1000 1000] /ItalicAngle 0 /Ascent 800 /Descent -200 /CapHeight 700 /StemV 80 >>";
-
-        private static byte[] MinionPro => File.ReadAllBytes(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "CompactFontFormat", "MinionPro.bin"));
 
         private static byte[] RalewayPfb => File.ReadAllBytes(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Fonts", "Type1", "Raleway-Black.pfb"));
 
@@ -569,182 +568,9 @@ namespace UglyToad.PdfPig.Tests.Integration
             }
         }
 
-        private static byte[] Roboto => File.ReadAllBytes(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType", "Roboto-Regular.ttf"));
-
         private const int DingbatA29 = 0x2722;
 
         private const int GreekAlpha = 0x03B1;
-
-        /// <summary>
-        /// Roboto cut down to its <paramref name="glyph"/> glyph, as glyph 1, with no post table and a cmap whose only
-        /// entry maps <paramref name="code"/> to it: a (3,1) Unicode cmap if <paramref name="unicode"/>, else a (3,0)
-        /// symbol one. With <paramref name="postScriptName"/>, its name table holds only that PostScript name.
-        /// </summary>
-        private static byte[] SingleGlyphFont(int code, bool unicode, char glyph = 'a', string? postScriptName = null)
-        {
-            var font = TrueTypeSubsetter.Subset(Roboto, new TrueTypeSubsetEncoding(new[] { glyph })).ToList();
-            ReplaceTable(font, "cmap", Format4Cmap(code, 1, unicode));
-            if (postScriptName is not null)
-            {
-                ReplaceTable(font, "name", PostScriptNameTable(postScriptName));
-            }
-
-            return font.ToArray();
-        }
-
-        /// <summary>
-        /// An OpenType font with PostScript outlines ("OTTO"): the <see cref="SingleGlyphFont"/> tables with MinionPro's
-        /// CFF program in place of glyf, and a (3,1) cmap mapping <paramref name="code"/> to MinionPro's /A.
-        /// </summary>
-        private static byte[] OpenTypeCffFont(int code)
-        {
-            Assert.True(CompactFontFormatParser.Parse(new CompactFontFormatData(MinionPro)).FirstFont.TryGetGlyphIndexByName("A", out int glyphA));
-
-            var font = TrueTypeSubsetter.Subset(Roboto, new TrueTypeSubsetEncoding(new[] { 'a' })).ToList();
-            ReplaceTable(font, "glyf", MinionPro, "CFF ");
-            ReplaceTable(font, "cmap", Format4Cmap(code, glyphA, unicode: true));
-            for (int i = 0; i < 4; i++)
-            {
-                font[i] = (byte)"OTTO"[i];
-            }
-
-            return font.ToArray();
-        }
-
-        /// <summary>
-        /// A TrueType collection ("ttcf") of <paramref name="faces"/>, in order.
-        /// </summary>
-        private static byte[] FontCollection(params byte[][] faces)
-        {
-            var collection = new List<byte>();
-            AddUInt32(collection, 0x74746366); // "ttcf"
-            AddUInt32(collection, 0x00010000);
-            AddUInt32(collection, faces.Length);
-            int offsetsStart = collection.Count;
-            collection.AddRange(new byte[4 * faces.Length]);
-
-            for (int f = 0; f < faces.Length; f++)
-            {
-                Pad(collection);
-                int faceStart = collection.Count;
-                WriteUInt32(collection, offsetsStart + (4 * f), faceStart);
-                collection.AddRange(faces[f]);
-
-                // Table offsets in a collection are from the start of the file.
-                int numTables = (faces[f][4] << 8) | faces[f][5];
-                for (int t = 0; t < numTables; t++)
-                {
-                    int entry = faceStart + 12 + (16 * t);
-                    WriteUInt32(collection, entry + 8, ReadUInt32(collection, entry + 8) + faceStart);
-                }
-            }
-
-            return collection.ToArray();
-        }
-
-        /// <summary>
-        /// A cmap with a single platform 3 record, (3,1) or (3,0), whose format 4 subtable maps only
-        /// <paramref name="code"/> to <paramref name="glyphIndex"/>.
-        /// </summary>
-        private static byte[] Format4Cmap(int code, int glyphIndex, bool unicode)
-        {
-            var cmap = new List<byte>();
-
-            // Header: version 0, one encoding record at offset 12.
-            AddUInt16s(cmap, 0, 1, 3, unicode ? 1 : 0);
-            AddUInt32(cmap, 12);
-
-            // Format 4, length 32, two segments: [code, code] -> glyphIndex and the closing [0xFFFF, 0xFFFF].
-            AddUInt16s(cmap, 4, 32, 0, 4, 4, 1, 0);
-            AddUInt16s(cmap, code, 0xFFFF, 0, code, 0xFFFF);
-            AddUInt16s(cmap, (glyphIndex - code) & 0xFFFF, 1, 0, 0);
-
-            return cmap.ToArray();
-        }
-
-        /// <summary>
-        /// A format 0 name table holding only <paramref name="postScriptName"/>, as a Windows Unicode name 6 record.
-        /// </summary>
-        private static byte[] PostScriptNameTable(string postScriptName)
-        {
-            var value = Encoding.BigEndianUnicode.GetBytes(postScriptName);
-
-            var name = new List<byte>();
-            AddUInt16s(name, 0, 1, 6 + 12);
-            AddUInt16s(name, 3, 1, 0x0409, 6, value.Length, 0);
-            name.AddRange(value);
-
-            return name.ToArray();
-        }
-
-        /// <summary>
-        /// Append <paramref name="table"/> to <paramref name="font"/> and point the directory entry for
-        /// <paramref name="tag"/> at it, renaming it to <paramref name="newTag"/> if given.
-        /// </summary>
-        private static void ReplaceTable(List<byte> font, string tag, byte[] table, string? newTag = null)
-        {
-            Pad(font);
-            int offset = font.Count;
-            font.AddRange(table);
-
-            int numTables = (font[4] << 8) | font[5];
-            for (int i = 0; i < numTables; i++)
-            {
-                int entry = 12 + (16 * i);
-                if (font[entry] == tag[0] && font[entry + 1] == tag[1] && font[entry + 2] == tag[2] && font[entry + 3] == tag[3])
-                {
-                    if (newTag is not null)
-                    {
-                        for (int c = 0; c < 4; c++)
-                        {
-                            font[entry + c] = (byte)newTag[c];
-                        }
-                    }
-
-                    WriteUInt32(font, entry + 8, offset);
-                    WriteUInt32(font, entry + 12, table.Length);
-                    return;
-                }
-            }
-
-            throw new InvalidOperationException($"The font has no {tag} table.");
-        }
-
-        private static void Pad(List<byte> bytes)
-        {
-            while (bytes.Count % 4 != 0)
-            {
-                bytes.Add(0);
-            }
-        }
-
-        private static void AddUInt16s(List<byte> bytes, params int[] values)
-        {
-            foreach (int value in values)
-            {
-                bytes.Add((byte)(value >> 8));
-                bytes.Add((byte)value);
-            }
-        }
-
-        private static void AddUInt32(List<byte> bytes, int value)
-        {
-            bytes.AddRange(new byte[4]);
-            WriteUInt32(bytes, bytes.Count - 4, value);
-        }
-
-        private static int ReadUInt32(List<byte> bytes, int index)
-        {
-            return (bytes[index] << 24) | (bytes[index + 1] << 16) | (bytes[index + 2] << 8) | bytes[index + 3];
-        }
-
-        private static void WriteUInt32(List<byte> bytes, int index, int value)
-        {
-            bytes[index] = (byte)(value >> 24);
-            bytes[index + 1] = (byte)(value >> 16);
-            bytes[index + 2] = (byte)(value >> 8);
-            bytes[index + 3] = (byte)value;
-        }
 
         /// <summary>
         /// The bounds of Raleway's glyph called <paramref name="name"/> in text space (1 unit = 1 em).
