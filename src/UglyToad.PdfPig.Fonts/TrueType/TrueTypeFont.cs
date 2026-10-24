@@ -55,8 +55,11 @@
         /// </summary>
         public int NumberOfTables { get; }
 
+        /// <summary>
+        /// The glyph outlines of an OpenType font with PostScript outlines (a CFF table instead of glyf), if any.
+        /// </summary>
         // TODO - It would be better to use 'PdfCidCompactFontFormatFont' but the class is not accessible from here.
-        private readonly CompactFontFormatFontCollection? cffFontCollection;
+        internal CompactFontFormatFontCollection? CffFontCollection { get; }
 
         /// <summary>
         /// Create a new <see cref="TrueTypeFont"/>.
@@ -79,7 +82,7 @@
              * See https://github.com/BobLd/PdfPig.Rendering.Skia/issues/46
              * TODO - Add test coverage and need to review if the logic belongs here
              */
-            this.cffFontCollection = cffFontCollection;
+            CffFontCollection = cffFontCollection;
 
             if (TableRegister.CMapTable is not null)
             {
@@ -126,7 +129,7 @@
 
             if (TableRegister.GlyphTable is null)
             {
-                if (cffFontCollection is not null)
+                if (CffFontCollection is not null)
                 {
                     /*
                      * The presence of a CFF (Compact Font Format) table in a TrueType font creates a hybrid situation where the font
@@ -145,7 +148,7 @@
                      * See https://github.com/UglyToad/PdfPig/issues/1320
                      */
 
-                    var cffFont = cffFontCollection.FirstFont;
+                    var cffFont = CffFontCollection.FirstFont;
                     int cffGlyphId = characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode;
                     var name = cffFont.GetCharacterName(cffGlyphId, true);
                     if (string.IsNullOrEmpty(name))
@@ -197,7 +200,7 @@
 
             if (TableRegister.GlyphTable is null)
             {
-                if (cffFontCollection is not null)
+                if (CffFontCollection is not null)
                 {
                     /*
                      * The presence of a CFF (Compact Font Format) table in a TrueType font creates a hybrid situation where the font
@@ -216,7 +219,7 @@
                      * See https://github.com/UglyToad/PdfPig/issues/1320
                      */
 
-                    var cffFont = cffFontCollection.FirstFont;
+                    var cffFont = CffFontCollection.FirstFont;
                     int cffGlyphId = characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode;
                     var name = cffFont.GetCharacterName(cffGlyphId, true);
                     if (string.IsNullOrEmpty(name))

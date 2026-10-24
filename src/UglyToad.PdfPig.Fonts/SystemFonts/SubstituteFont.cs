@@ -20,13 +20,16 @@ using Type1.Parser;
 /// </summary>
 /// <remarks>
 /// Programs are tried in registration order: a glyph comes from the first program that has it, so later programs fill
-/// gaps in earlier ones. Each program is parsed the first time a glyph is requested.
+/// gaps in earlier ones. Each program is parsed the first time a glyph is requested. A font collection (TTC/OTC)
+/// contributes the faces whose PostScript name is the substituted font's (e.g. <c>Helvetica-Bold</c> from a
+/// Helvetica.ttc), or all its faces in collection order if none is.
 /// Only glyph outlines come from the substitute. Character codes, Unicode values, widths and bounding boxes keep coming
 /// from the document and the Standard 14 Adobe Font Metrics. Safe to use from several threads.
 /// </remarks>
 public sealed class SubstituteFont
 {
-    private readonly Lazy<SubstituteProgram?>[] programs;
+    // One entry per registered program; a font collection gives several, one per face it contributes.
+    private readonly Lazy<IReadOnlyList<SubstituteProgram>>[] programs;
 
     /// <summary>
     /// The Standard 14 font these programs substitute.
@@ -37,7 +40,7 @@ public sealed class SubstituteFont
     {
         Font = font;
         programs = programLoaders
-            .Select(loader => new Lazy<SubstituteProgram?>(() => SubstituteProgram.Load(font, loader), LazyThreadSafetyMode.ExecutionAndPublication))
+            .Select(loader => new Lazy<IReadOnlyList<SubstituteProgram>>(() => SubstituteProgram.Load(font, loader), LazyThreadSafetyMode.ExecutionAndPublication))
             .ToArray();
     }
 
@@ -99,12 +102,14 @@ public sealed class SubstituteFont
 
         foreach (var lazy in programs)
         {
-            program = lazy.Value;
-            if (program is not null
-                && (program.TryGetGlyphSpacePath(characterName!, out path)
-                    || (alternativeName is not null && program.TryGetGlyphSpacePath(alternativeName, out path))))
+            foreach (var candidate in lazy.Value)
             {
-                return true;
+                if (candidate.TryGetGlyphSpacePath(characterName!, out path)
+                    || (alternativeName is not null && candidate.TryGetGlyphSpacePath(alternativeName, out path)))
+                {
+                    program = candidate;
+                    return true;
+                }
             }
         }
 
@@ -157,41 +162,100 @@ public sealed class SubstituteFont
 
         protected abstract bool TryGetPathCore(string characterName, out IReadOnlyList<PdfSubpath>? path);
 
-        public static SubstituteProgram? Load(Standard14Font font, Func<byte[]> loader)
+        /// <summary>
+        /// Parse a registered program: one program, several for a font collection, none if it cannot be read.
+        /// </summary>
+        public static IReadOnlyList<SubstituteProgram> Load(Standard14Font font, Func<byte[]> loader)
         {
             try
             {
                 var bytes = loader();
                 if (bytes is null || bytes.Length < 4)
                 {
-                    return null;
+                    return [];
                 }
 
-                // PFB (segment marker) or PFA ("%!") is Type 1; a TrueType or OpenType sfnt header is TrueType;
-                // anything else is read as a bare CFF program.
+                // PFB (segment marker) or PFA ("%!") is Type 1; an sfnt header is TrueType or OpenType (glyf or CFF
+                // outlines); "ttcf" is a collection of those; anything else is read as a bare CFF program.
                 if (bytes[0] == PfbSegmentMarker || (bytes[0] == '%' && bytes[1] == '!'))
                 {
-                    return new Type1Program(Type1FontParser.Parse(new MemoryInputBytes(bytes), 0, 0, new StackDepthGuard(256)));
+                    return [new Type1Program(Type1FontParser.Parse(new MemoryInputBytes(bytes), 0, 0, new StackDepthGuard(256)))];
+                }
+
+                if (HasTag(bytes, 0, "ttcf"))
+                {
+                    return LoadCollection(font, bytes);
                 }
 
                 if (IsSfnt(bytes))
                 {
-                    return new TrueTypeProgram(TrueTypeFontParser.Parse(new TrueTypeDataBytes(bytes)), font);
+                    return [new TrueTypeProgram(TrueTypeFontParser.Parse(new TrueTypeDataBytes(bytes)), font)];
                 }
 
-                return new CffProgram(CompactFontFormatParser.Parse(new CompactFontFormatData(bytes)).FirstFont);
+                return [new CffProgram(CompactFontFormatParser.Parse(new CompactFontFormatData(bytes)).FirstFont)];
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Could not load a substitute font program for {font}: {ex}");
-                return null;
+                return [];
             }
+        }
+
+        /// <summary>
+        /// The faces of a TrueType/OpenType collection whose PostScript name is <paramref name="font"/>'s, or all of
+        /// them if none is. A face that cannot be read is skipped.
+        /// </summary>
+        private static IReadOnlyList<SubstituteProgram> LoadCollection(Standard14Font font, byte[] bytes)
+        {
+            // Header: "ttcf", major and minor version, number of fonts, then the offset of each font's table directory.
+            long count = ReadUInt32(bytes, 8);
+            if (count > (bytes.Length - 12) / 4)
+            {
+                throw new InvalidFontFormatException($"The font collection claims {count} fonts, more than it can hold.");
+            }
+
+            var matching = new List<SubstituteProgram>();
+            var others = new List<SubstituteProgram>();
+            for (int i = 0; i < count; i++)
+            {
+                try
+                {
+                    // Table offsets in a collection are from the start of the file, so each face is parsed in place.
+                    var data = new TrueTypeDataBytes(bytes);
+                    data.Seek(ReadUInt32(bytes, 12 + (4 * i)));
+                    var face = TrueTypeFontParser.Parse(data);
+
+                    var postScriptName = face.TableRegister.NameTable?.GetPostscriptName();
+                    bool isMatch = postScriptName is not null
+                                   && Standard14.TryGetStandard14Font(postScriptName, out var faceFont)
+                                   && faceFont == font;
+
+                    (isMatch ? matching : others).Add(new TrueTypeProgram(face, font));
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Could not read face {i} of a substitute font collection for {font}: {ex}");
+                }
+            }
+
+            return matching.Count > 0 ? matching : others;
         }
 
         private static bool IsSfnt(byte[] bytes)
         {
             return (bytes[0] == 0 && bytes[1] == 1 && bytes[2] == 0 && bytes[3] == 0)
-                   || (bytes[0] == 't' && bytes[1] == 'r' && bytes[2] == 'u' && bytes[3] == 'e');
+                   || HasTag(bytes, 0, "true")
+                   || HasTag(bytes, 0, "OTTO");
+        }
+
+        private static bool HasTag(byte[] bytes, int offset, string tag)
+        {
+            return bytes[offset] == tag[0] && bytes[offset + 1] == tag[1] && bytes[offset + 2] == tag[2] && bytes[offset + 3] == tag[3];
+        }
+
+        private static long ReadUInt32(byte[] bytes, int offset)
+        {
+            return ((long)bytes[offset] << 24) | ((long)bytes[offset + 1] << 16) | ((long)bytes[offset + 2] << 8) | bytes[offset + 3];
         }
     }
 
@@ -234,6 +298,9 @@ public sealed class SubstituteFont
     {
         private readonly TrueTypeFont font;
         private readonly bool isZapfDingbats;
+
+        // The outlines of an OpenType font with PostScript outlines (CFF table, "OTTO"); null for glyf outlines.
+        private readonly CompactFontFormatFont? cff;
         private readonly IReadOnlyDictionary<string, int> glyphIndexByName;
         private readonly ConcurrentDictionary<string, IReadOnlyList<PdfSubpath>?> paths = new(StringComparer.Ordinal);
 
@@ -249,7 +316,15 @@ public sealed class SubstituteFont
                 builtInEncoding = new AdobeFontMetricsEncoding(Standard14.GetAdobeFontMetrics(substituted));
             }
 
-            FontMatrix = TransformationMatrix.FromValues(1.0 / font.GetUnitsPerEm(), 0, 0, 1.0 / font.GetUnitsPerEm(), 0, 0);
+            cff = font.CffFontCollection?.FirstFont;
+            if (cff is null && font.TableRegister.GlyphTable is null)
+            {
+                // A CFF table the parser could not read, or no outlines at all.
+                throw new InvalidFontFormatException("The font has no glyph outlines that can be read.");
+            }
+
+            FontMatrix = cff?.FontMatrix
+                         ?? TransformationMatrix.FromValues(1.0 / font.GetUnitsPerEm(), 0, 0, 1.0 / font.GetUnitsPerEm(), 0, 0);
 
             var names = new Dictionary<string, int>(StringComparer.Ordinal);
             var glyphNames = font.TableRegister.PostScriptTable?.GlyphNames;
@@ -269,13 +344,36 @@ public sealed class SubstituteFont
 
         protected override bool TryGetPathCore(string characterName, out IReadOnlyList<PdfSubpath>? path)
         {
-            path = paths.GetOrAdd(characterName, name =>
-            {
-                int glyphIndex = GetGlyphIndex(name);
-                return glyphIndex > 0 && font.TableRegister.GlyphTable?.TryGetGlyphPath(glyphIndex, out var p) == true ? p : null;
-            });
-
+            path = paths.GetOrAdd(characterName, GetPath);
             return path is not null;
+        }
+
+        private IReadOnlyList<PdfSubpath>? GetPath(string name)
+        {
+            // CFF glyphs have names of their own; check them before the post table and cmaps.
+            if (cff is not null && cff.TryGetGlyphIndexByName(name, out int cffGlyphIndex) && cffGlyphIndex > 0)
+            {
+                return cff.GetCharacterPath(name);
+            }
+
+            int glyphIndex = GetGlyphIndex(name);
+            if (glyphIndex <= 0)
+            {
+                return null;
+            }
+
+            if (cff is not null)
+            {
+                // A glyph index from the cmap addresses the CFF glyph at that position in its charset.
+                var cffName = cff.GetCharacterName(glyphIndex, true);
+                return !string.IsNullOrEmpty(cffName)
+                       && !string.Equals(cffName, GlyphList.NotDefined, StringComparison.Ordinal)
+                       && cff.TryGetPath(cffName, out var cffPath)
+                    ? cffPath
+                    : null;
+            }
+
+            return font.TableRegister.GlyphTable!.TryGetGlyphPath(glyphIndex, out var p) ? p : null;
         }
 
         private int GetGlyphIndex(string name)
@@ -354,6 +452,6 @@ public sealed class SubstituteFont
     /// </summary>
     internal bool LoadAll()
     {
-        return programs.All(p => p.Value is not null);
+        return programs.All(p => p.Value.Count > 0);
     }
 }

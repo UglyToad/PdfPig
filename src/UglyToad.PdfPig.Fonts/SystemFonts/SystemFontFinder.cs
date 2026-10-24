@@ -380,7 +380,9 @@ public sealed class SystemFontFinder : ISystemFontFinder
     /// </summary>
     /// <param name="font">The Standard 14 font to substitute.</param>
     /// <param name="fontPrograms">
-    /// One or more Compact Font Format (CFF), Adobe Type 1 (PFB or PFA) or TrueType font programs. Each glyph comes from
+    /// One or more Compact Font Format (CFF), Adobe Type 1 (PFB or PFA), TrueType or OpenType (TrueType or CFF outlines)
+    /// font programs, or TrueType/OpenType collections (TTC/OTC), from which the faces whose PostScript name is
+    /// <paramref name="font"/>'s are used, or all faces if none is. Each glyph comes from
     /// the first program that has it, looked up by its glyph name (TrueType: post table name, else its Unicode value
     /// through the (3,1) cmap, else its code in <paramref name="font"/>'s built-in encoding through the (3,0) cmap).
     /// A program without the standard name is also searched for the usual alternative: ligatures by their components
