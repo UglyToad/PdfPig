@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Text;
     using AdobeFontMetrics;
     using Core;
 
@@ -35,6 +36,11 @@
         private static readonly Dictionary<string, string> Standard14Mapping = new Dictionary<string, string>(34);
         private static readonly Dictionary<Standard14Font, string> BuilderTypesToNames = new Dictionary<Standard14Font, string>(14);
         private static readonly Dictionary<string, AdobeFontMetrics> Standard14Cache = new Dictionary<string, AdobeFontMetrics>(34);
+
+        /// <summary>
+        /// <see cref="Standard14Mapping"/> keyed by <see cref="NormalizeName"/>, for names that are not an exact match.
+        /// </summary>
+        private static readonly Dictionary<string, string> NormalizedStandard14Mapping = new Dictionary<string, string>(StringComparer.Ordinal);
 
         static Standard14()
         {
@@ -83,6 +89,15 @@
             AddAdobeFontMetrics("Arial-BoldMT", "Helvetica-Bold");
             AddAdobeFontMetrics("Arial-BoldMT,Bold", "Helvetica-Bold");
             AddAdobeFontMetrics("Arial-BoldItalicMT", "Helvetica-BoldOblique");
+
+            foreach (var pair in Standard14Mapping)
+            {
+                var key = NormalizeName(pair.Key);
+                if (!NormalizedStandard14Mapping.ContainsKey(key))
+                {
+                    NormalizedStandard14Mapping[key] = pair.Value;
+                }
+            }
         }
 
         private static void AddAdobeFontMetrics(string fontName, Standard14Font? type = null)
@@ -180,13 +195,23 @@
         /// <summary>
         /// Get the <see cref="Standard14Font"/> which the given font name maps to, including additional names
         /// (e.g. <c>Arial,Bold</c> maps to <see cref="Standard14Font.HelveticaBold"/>).
+        /// A name that is not one of those exactly is matched loosely, as PDFBox does when it looks for a font to draw a
+        /// non-embedded one with: without a subset tag (<c>ABCDEF+Helvetica</c>), ignoring case, spaces, hyphens and
+        /// commas (<c>Times New Roman,Bold</c> and <c>Arial-Bold</c> map to <see cref="Standard14Font.TimesBold"/> and
+        /// <see cref="Standard14Font.HelveticaBold"/>).
         /// </summary>
+        /// <remarks>
+        /// Unlike <see cref="GetAdobeFontMetrics(string)"/> and <see cref="IsFontInStandard14"/>, which only accept the
+        /// exact names.
+        /// </remarks>
         /// <returns><see langword="true"/> if the name maps to a Standard 14 font.</returns>
         public static bool TryGetStandard14Font(string baseName, out Standard14Font font)
         {
             font = default;
 
-            if (baseName is null || !Standard14Mapping.TryGetValue(baseName, out var mappedName))
+            if (baseName is null
+                || (!Standard14Mapping.TryGetValue(baseName, out var mappedName)
+                    && !NormalizedStandard14Mapping.TryGetValue(NormalizeName(baseName), out mappedName)))
             {
                 return false;
             }
@@ -201,6 +226,25 @@
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Drop a subset tag (everything up to the first '+'), spaces, hyphens and commas, and lower-case the rest.
+        /// </summary>
+        private static string NormalizeName(string name)
+        {
+            int plus = name.IndexOf('+');
+            var builder = new StringBuilder(name.Length);
+            for (int i = plus + 1; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (c != ' ' && c != '-' && c != ',')
+                {
+                    builder.Append(char.ToLowerInvariant(c));
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }

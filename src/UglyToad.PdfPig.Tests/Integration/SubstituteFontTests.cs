@@ -328,6 +328,68 @@ namespace UglyToad.PdfPig.Tests.Integration
             Assert.False(substitute.HasGlyph("definitely.not.a.glyph"));
         }
 
+        [Fact]
+        public void SubsetTaggedType1FontWithoutProgramUsesSubstituteAndStandard14Metrics()
+        {
+            const string font = "<< /Type /Font /Subtype /Type1 /BaseFont /{0} /FirstChar 65 /LastChar 65 /Widths [667] /FontDescriptor 6 0 R >>";
+            var exact = GetLetters(BuildPdf(string.Format(font, "Helvetica"), "(A)", string.Format(Descriptor, "Helvetica"))).Single();
+            var pdf = BuildPdf(string.Format(font, "ABCDEF+Helvetica"), "(A)", string.Format(Descriptor, "ABCDEF+Helvetica"));
+
+            // The glyph box comes from Helvetica's metrics, as for the exact name, not the descriptor's fallback box.
+            Assert.Equal(exact.GlyphRectangle, GetLetters(pdf).Single().GlyphRectangle);
+
+            using var registration = Register(Roboto, Standard14Font.Helvetica);
+            var letter = GetLetters(pdf).Single();
+
+            Assert.Equal("ABCDEF+Helvetica", letter.FontName);
+            Assert.True(letter.GetFont()!.TryGetNormalisedPath(65, out _));
+        }
+
+        [Fact]
+        public void LooselyNamedType1FontWithoutDescriptorUsesItsStandard14Font()
+        {
+            // Not a Standard 14 name as such, so this used to fall back to Times-Roman.
+            var exact = GetLetters(BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>", "(A)")).Single();
+            var pdf = BuildPdf("<< /Type /Font /Subtype /Type1 /BaseFont /ABCDEF+Arial,Bold >>", "(A)");
+
+            var letter = GetLetters(pdf).Single();
+            Assert.Equal(exact.Width, letter.Width, 6);
+            Assert.Equal(exact.GlyphRectangle, letter.GlyphRectangle);
+
+            using var registration = Register(Roboto, Standard14Font.HelveticaBold);
+            Assert.True(GetLetters(pdf).Single().GetFont()!.TryGetNormalisedPath(65, out _));
+        }
+
+        [Fact]
+        public void SubsetTaggedNonEmbeddedTrueTypeFontUsesSubstitute()
+        {
+            using var registration = Register(Roboto, Standard14Font.Helvetica);
+            var pdf = BuildPdf(
+                "<< /Type /Font /Subtype /TrueType /BaseFont /ABCDEF+Arial /FirstChar 65 /LastChar 65 /Widths [999] /FontDescriptor 6 0 R >>",
+                "(A)",
+                string.Format(Descriptor, "ABCDEF+Arial"));
+
+            var letter = GetLetters(pdf).Single();
+
+            Assert.Equal("ABCDEF+Arial", letter.FontName);
+            Assert.Equal(0.999 * 12, letter.Width, 6);
+
+            // The substitute's outline, not one from an Arial the machine may have installed.
+            Assert.True(letter.GetFont()!.TryGetNormalisedPath(65, out var path));
+            AssertBounds(GetRobotoBounds('A'), path, 1);
+        }
+
+        [Fact]
+        public void LooseNamesMapToTheSubstitute()
+        {
+            using var registration = Register(MinionPro, Standard14Font.HelveticaBold);
+
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("ABCDEF+Helvetica-Bold", out var substitute));
+            Assert.Equal(Standard14Font.HelveticaBold, substitute!.Font);
+            Assert.True(SystemFontFinder.TryGetSubstituteFont("arial bold", out _));
+            Assert.False(SystemFontFinder.TryGetSubstituteFont("ABCDEF+Helvetica", out _));
+        }
+
         [Theory]
         [InlineData("ff", "f_f")]
         [InlineData("ffi", "f_f_i")]

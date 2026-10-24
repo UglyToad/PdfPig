@@ -58,6 +58,16 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
                 : null;
         }
 
+        /// <summary>
+        /// The Standard 14 metrics for a font drawn without its own program: by exact name, else by the loose match of
+        /// <see cref="Standard14.TryGetStandard14Font"/> (subset tag, case, spaces, hyphens and commas ignored).
+        /// </summary>
+        private static AdobeFontMetrics? GetStandard14MetricsLoosely(string fontName)
+        {
+            return Standard14.GetAdobeFontMetrics(fontName)
+                   ?? (Standard14.TryGetStandard14Font(fontName, out var font) ? Standard14.GetAdobeFontMetrics(font) : null);
+        }
+
         private static SubstituteFont? GetSubstitute(string? fontName)
         {
             SystemFontFinder.TryGetSubstituteFont(fontName, out var substitute);
@@ -114,9 +124,11 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
                     {
                         if (isLenientParsing)
                         {
-                            // We can support a fallback here to return content.
+                            // We can support a fallback here to return content: a loose match of the name (e.g.
+                            // ABCDEF+Helvetica), else Times-Roman as PDFBox does without a descriptor.
                             // https://github.com/apache/pdfbox/blob/f81c7c5a06126db68aa985a0e755cdbffed7d270/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/FontMapperImpl.java#L304
-                            metrics = Standard14.GetAdobeFontMetrics(Standard14Font.TimesRoman);
+                            metrics = GetStandard14MetricsLoosely(baseFontToken.Data)
+                                      ?? Standard14.GetAdobeFontMetrics(Standard14Font.TimesRoman);
                         }
                         else
                         {
@@ -161,7 +173,7 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
             AdobeFontMetrics? standard14Metrics = null;
             if (font is null && dictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken? baseFont))
             {
-                standard14Metrics = Standard14.GetAdobeFontMetrics(baseFont.Data);
+                standard14Metrics = GetStandard14MetricsLoosely(baseFont.Data);
                 if (standard14Metrics is not null)
                 {
                     // No program to read the built-in encoding from: it is the Standard 14 font's.
