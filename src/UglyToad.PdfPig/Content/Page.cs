@@ -221,7 +221,7 @@
 
             // 4.10.2
             // Optional content in content stream
-            GetOptionalContentsRecursively(Content?.GetMarkedContents(), ref mcesOptional);
+            GetOptionalContents(Content?.GetMarkedContents(), mcesOptional);
 
             // Optional content in XObjects and annotations
             // TO DO
@@ -230,23 +230,35 @@
             return mcesOptional.GroupBy(oc => oc.Name).ToDictionary(g => g.Key!, g => (IReadOnlyList<OptionalContentGroupElement>)g.ToList());
         }
 
-        private void GetOptionalContentsRecursively(IReadOnlyList<MarkedContentElement>? markedContentElements, ref List<OptionalContentGroupElement> mcesOptional)
+        private void GetOptionalContents(IReadOnlyList<MarkedContentElement>? markedContentElements, List<OptionalContentGroupElement> mcesOptional)
         {
             if (markedContentElements is null || markedContentElements.Count == 0)
             {
                 return;
             }
 
-            foreach (var mce in markedContentElements)
+            // Marked content can nest arbitrarily deep, so walk it with an explicit stack rather than recursion.
+            // Elements are pushed in reverse so they are visited in document order.
+            var pending = new Stack<MarkedContentElement>();
+            for (var i = markedContentElements.Count - 1; i >= 0; i--)
             {
+                pending.Push(markedContentElements[i]);
+            }
+
+            while (pending.Count > 0)
+            {
+                var mce = pending.Pop();
+
                 if (mce.Tag == "OC")
                 {
                     mcesOptional.Add(new OptionalContentGroupElement(mce, pdfScanner));
-                    // we don't recurse
+                    // we don't look inside
+                    continue;
                 }
-                else if (mce.Children?.Count > 0)
+
+                for (var i = mce.Children.Count - 1; i >= 0; i--)
                 {
-                    GetOptionalContentsRecursively(mce.Children, ref mcesOptional);
+                    pending.Push(mce.Children[i]);
                 }
             }
         }

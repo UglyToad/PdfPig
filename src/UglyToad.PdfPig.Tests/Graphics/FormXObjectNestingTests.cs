@@ -36,7 +36,7 @@ namespace UglyToad.PdfPig.Tests.Graphics
         /// </summary>
         private sealed class CountingProcessor : ContentStreamProcessor
         {
-            private const int RunawayLimit = 10_000;
+            private const int RunawayLimit = 2 * ContentStreamProcessor.MaxFormXObjectCalls;
 
             public CountingProcessor(IResourceStore resourceStore, TestPdfTokenScanner scanner, ParsingOptions parsingOptions)
                 : base(
@@ -134,6 +134,30 @@ namespace UglyToad.PdfPig.Tests.Graphics
             return scanner;
         }
 
+        /// <summary>
+        /// Distinct forms Fm0 to Fm(n - 1), each invoking the next twice; the last paints a path.
+        /// Fm0 paints 2^(n - 1) paths through 2^n - 1 form invocations.
+        /// </summary>
+        private static TestPdfTokenScanner DoublingFormChain(int length)
+        {
+            var scanner = new TestPdfTokenScanner();
+
+            for (var i = 0; i < length; i++)
+            {
+                var reference = new IndirectReference(FormAReference.ObjectNumber + i, 0);
+                var next = new IndirectReference(FormAReference.ObjectNumber + i + 1, 0);
+                var nextName = NameToken.Create($"Fm{i + 1}");
+
+                var form = i < length - 1
+                    ? Form($"/{nextName.Data} Do\n/{nextName.Data} Do\n", XObjectResources(nextName, next))
+                    : Form("0 0 10 10 re f\n", null);
+
+                scanner.Objects[reference] = new ObjectToken(XrefLocation.File(0), reference, form);
+            }
+
+            return scanner;
+        }
+
         private static CountingProcessor CreateProcessor(TestPdfTokenScanner scanner, bool useLenientParsing)
         {
             var parsingOptions = new ParsingOptions { UseLenientParsing = useLenientParsing, SkipMissingFonts = true };
@@ -213,6 +237,42 @@ namespace UglyToad.PdfPig.Tests.Graphics
         public void DistinctFormsNestedPastTheLimitThrowWhenNotLenient()
         {
             var processor = CreateProcessor(FormChain(10_000), useLenientParsing: false);
+
+            Assert.Throws<PdfDocumentFormatException>(() => processor.ApplyXObject(FormAName));
+        }
+
+        [Fact]
+        public void FormsInvokingTheNextTwiceAreAllPaintedUnderTheCallLimit()
+        {
+            // 1,023 invocations.
+            var processor = CreateProcessor(DoublingFormChain(10), useLenientParsing: true);
+
+            processor.ApplyXObject(FormAName);
+
+            var content = processor.Process(1, new List<IGraphicsStateOperation>());
+
+            Assert.Equal(512, content.Paths.Count);
+        }
+
+        [Fact]
+        public void FormsInvokingTheNextTwiceStopAtTheCallLimitWhenLenient()
+        {
+            // 2^20 - 1 invocations, within the nesting limit.
+            var processor = CreateProcessor(DoublingFormChain(20), useLenientParsing: true);
+
+            processor.ApplyXObject(FormAName);
+
+            var content = processor.Process(1, new List<IGraphicsStateOperation>());
+
+            // Past the limit only the invocations already under way finish, each skipping what it invokes.
+            Assert.InRange(processor.FormsProcessed, ContentStreamProcessor.MaxFormXObjectCalls, ContentStreamProcessor.MaxFormXObjectCalls + 20);
+            Assert.InRange(content.Paths.Count, 1, ContentStreamProcessor.MaxFormXObjectCalls);
+        }
+
+        [Fact]
+        public void FormsInvokingTheNextTwiceThrowAtTheCallLimitWhenNotLenient()
+        {
+            var processor = CreateProcessor(DoublingFormChain(20), useLenientParsing: false);
 
             Assert.Throws<PdfDocumentFormatException>(() => processor.ApplyXObject(FormAName));
         }

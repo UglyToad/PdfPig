@@ -17,6 +17,10 @@
     /// </summary>
     internal class AcroFormFactory
     {
+        // Field trees are a few levels deep in practice. Fields are read recursively, and so are callers walking
+        // the result (such as AcroFormExtensions.GetFields), so fields nested deeper than this are not read.
+        private const int MaxFieldDepth = 64;
+
         private static readonly HashSet<NameToken> InheritableFields =
         [
             NameToken.Ft,
@@ -120,7 +124,7 @@
                 return null;
             }
 
-            var fields = new Dictionary<IndirectReference, AcroFieldBase>(fieldsArray.Length);
+            var roots = new List<(IndirectReference reference, DictionaryToken dictionary)>(fieldsArray.Length);
 
             foreach (var fieldToken in fieldsArray.Data)
             {
@@ -129,18 +133,30 @@
                     throw new PdfDocumentFormatException($"The fields array should only contain indirect references, instead got: {fieldToken}.");
                 }
 
-                var fieldDictionary = DirectObjectFinder.Get<DictionaryToken>(fieldToken, tokenScanner);
+                roots.Add((fieldReferenceToken.Data, DirectObjectFinder.Get<DictionaryToken>(fieldToken, tokenScanner)));
+            }
 
-                var field = GetAcroField(fieldDictionary, catalog, new List<DictionaryToken>(0));
+            // Each field is read once, the first time it is reached. Fields without a parent go first so they keep
+            // their kids when a kid is also listed here; a listed field already reached as a kid is not repeated.
+            var visited = new HashSet<IndirectReference>();
+            var fields = new Dictionary<IndirectReference, AcroFieldBase>(fieldsArray.Length);
 
-                fields[fieldReferenceToken.Data] = field;
+            foreach (var root in roots.Where(r => !r.dictionary.ContainsKey(NameToken.Parent))
+                         .Concat(roots.Where(r => r.dictionary.ContainsKey(NameToken.Parent))))
+            {
+                if (!visited.Add(root.reference))
+                {
+                    continue;
+                }
+
+                fields[root.reference] = GetAcroField(root.dictionary, catalog, new List<DictionaryToken>(0), visited);
             }
 
             return new AcroForm(acroDictionary, signatureFlags, needAppearances, fields);
         }
 
         private AcroFieldBase GetAcroField(DictionaryToken fieldDictionary, Catalog catalog,
-            IReadOnlyList<DictionaryToken> parentDictionaries)
+            IReadOnlyList<DictionaryToken> parentDictionaries, HashSet<IndirectReference> visited)
         {
             var (combinedFieldDictionary, inheritsValue) = CreateInheritedDictionary(fieldDictionary, parentDictionaries);
 
@@ -149,7 +165,7 @@
             fieldDictionary.TryGet(NameToken.Ft, tokenScanner, out NameToken? fieldType);
             fieldDictionary.TryGet(NameToken.Ff, tokenScanner, out NumericToken? fieldFlagsToken);
 
-            var kids = new List<(bool hasParent, DictionaryToken dictionary)>();
+            var kids = new List<(bool hasParent, IndirectReference reference, DictionaryToken dictionary)>();
 
             if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Kids, tokenScanner, out ArrayToken? kidsToken))
             {
@@ -169,7 +185,7 @@
                     if (kidObject.Data is DictionaryToken kidDictionaryToken)
                     {
                         var hasParent = kidDictionaryToken.TryGet(NameToken.Parent, out IndirectReferenceToken _);
-                        kids.Add((hasParent, kidDictionaryToken));
+                        kids.Add((hasParent, kidReferenceToken.Data, kidDictionaryToken));
                     }
                     else
                     {
@@ -207,7 +223,13 @@
                     continue;
                 }
 
-                children.Add(GetAcroField(kid.dictionary, catalog, newParentDictionaries));
+                if (newParentDictionaries.Count >= MaxFieldDepth || !visited.Add(kid.reference))
+                {
+                    // Nested too deeply, or already read: a kid that is an ancestor of this field, or is listed twice.
+                    continue;
+                }
+
+                children.Add(GetAcroField(kid.dictionary, catalog, newParentDictionaries, visited));
             }
 
             var fieldFlags = (uint) (fieldFlagsToken?.Long ?? 0);

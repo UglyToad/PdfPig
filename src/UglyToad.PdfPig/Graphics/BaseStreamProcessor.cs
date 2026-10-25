@@ -138,6 +138,14 @@
         private int _formXObjectDepth;
 
         /// <summary>
+        /// The most form XObject invocations processed for one page. Forms that each invoke the next more
+        /// than once stay within the nesting limit but multiply the work at every level.
+        /// </summary>
+        internal const int MaxFormXObjectCalls = 100_000;
+
+        private long _formXObjectCalls;
+
+        /// <summary>
         /// The form XObjects being processed by the enclosing form invocations. A form found here again
         /// is invoking itself, directly or through other forms.
         /// </summary>
@@ -642,6 +650,23 @@
                 }
 
                 ParsingOptions.Logger.Warn($"The XObject form named '{xObjectName}' is nested more than {MaxFormXObjectDepth} levels deep and was skipped.");
+                return;
+            }
+
+            _formXObjectCalls++;
+            if (_formXObjectCalls > MaxFormXObjectCalls)
+            {
+                if (!ParsingOptions.UseLenientParsing)
+                {
+                    throw new PdfDocumentFormatException($"The page invokes XObject forms more than {MaxFormXObjectCalls} times, at the form named '{xObjectName}'.");
+                }
+
+                // Every later invocation is skipped too, so warn only once.
+                if (_formXObjectCalls == MaxFormXObjectCalls + 1)
+                {
+                    ParsingOptions.Logger.Warn($"The page invokes XObject forms more than {MaxFormXObjectCalls} times. The form named '{xObjectName}' and any invoked after it were skipped.");
+                }
+
                 return;
             }
 
