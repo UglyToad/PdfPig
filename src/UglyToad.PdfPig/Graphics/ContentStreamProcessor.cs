@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Colors.Icc;
     using Content;
     using Filters;
@@ -87,7 +88,8 @@ namespace UglyToad.PdfPig.Graphics
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
             IIccProfile? outputIntentProfile,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            CancellationToken token)
             : base(pageNumber,
                 resourceStore,
                 pdfScanner,
@@ -98,7 +100,8 @@ namespace UglyToad.PdfPig.Graphics
                 rotation,
                 initialMatrix,
                 outputIntentProfile,
-                parsingOptions)
+                parsingOptions,
+                token)
         {
         }
 

@@ -176,7 +176,7 @@
                 IIccProfile? outputIntentProfile)
                 : base(1, resourceStore, scanner, Parser,
                     new TestFilterProvider(), Box, PdfPig.Geometry.UserSpaceUnit.Default, default,
-                    TransformationMatrix.Identity, outputIntentProfile, Options)
+                    TransformationMatrix.Identity, outputIntentProfile, Options, CancellationToken.None)
             {
             }
 

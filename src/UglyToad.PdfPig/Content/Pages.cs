@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
     using Core;
     using Filters;
     using Outline.Destinations;
     using Parser;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -39,14 +40,14 @@
             AddPageFactory(defaultPageFactory);
         }
 
-        internal Page GetPage(int pageNumber, NamedDestinations namedDestinations, ParsingOptions parsingOptions) =>
-            GetPage(defaultPageFactory, pageNumber, namedDestinations, parsingOptions);
+        internal Page GetPage(int pageNumber, NamedDestinations namedDestinations, ParsingOptions parsingOptions, CancellationToken token) =>
+            GetPage(defaultPageFactory, pageNumber, namedDestinations, parsingOptions, token);
 
-        internal TPage GetPage<TPage>(int pageNumber, NamedDestinations namedDestinations, ParsingOptions parsingOptions)
+        internal TPage GetPage<TPage>(int pageNumber, NamedDestinations namedDestinations, ParsingOptions parsingOptions, CancellationToken token)
         {
             if (pageFactoryCache.TryGetValue(typeof(TPage), out var f) && f is IPageFactory<TPage> pageFactory)
             {
-                return GetPage(pageFactory, pageNumber, namedDestinations, parsingOptions);
+                return GetPage(pageFactory, pageNumber, namedDestinations, parsingOptions, token);
             }
 
             throw new InvalidOperationException($"Could not find page factory of type '{typeof(IPageFactory<TPage>)}' for page type {typeof(TPage)}.");
@@ -55,7 +56,8 @@
         private TPage GetPage<TPage>(IPageFactory<TPage> pageFactory,
             int pageNumber,
             NamedDestinations namedDestinations,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            CancellationToken token)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
@@ -101,7 +103,8 @@
                 pageNumber,
                 pageNode.NodeDictionary,
                 pageTreeMembers,
-                namedDestinations);
+                namedDestinations,
+                token);
 
             return page;
         }

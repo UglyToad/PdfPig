@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Annotations;
     using Content;
     using Core;
@@ -33,7 +34,8 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            IReadOnlyList<IGraphicsStateOperation> operations)
+            IReadOnlyList<IGraphicsStateOperation> operations,
+            CancellationToken token)
         {
             var annotationProvider = new AnnotationProvider(PdfScanner,
                 dictionary,
@@ -75,7 +77,8 @@
                 rotation,
                 initialMatrix,
                 ResourceStore.GetPageOutputIntentProfile(dictionary),
-                ParsingOptions);
+                ParsingOptions,
+                token);
 
             PageContent content = context.Process(pageNumber, operations);
 

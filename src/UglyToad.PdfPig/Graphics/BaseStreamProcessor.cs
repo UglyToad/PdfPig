@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    
+    using System.Threading;
     using Colors;
     using Colors.Icc;
     using Content;
@@ -90,6 +90,11 @@
         /// </summary>
         protected int TextSequence;
 
+        /// <summary>
+        /// The token checked while processing operations, including those of nested form XObjects.
+        /// </summary>
+        protected CancellationToken CancellationToken { get; }
+
         /// <inheritdoc/>
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
@@ -156,8 +161,10 @@
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
             IIccProfile? outputIntentProfile,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            CancellationToken token)
         {
+            CancellationToken = token;
             this.PageNumber = pageNumber;
             this.ResourceStore = resourceStore;
             this.UserSpaceUnit = userSpaceUnit;
@@ -195,10 +202,17 @@
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s.
         /// </summary>
+        /// <remarks>
+        /// Checks <see cref="CancellationToken"/> before each operation. An override that does not call
+        /// the base method must check it itself, or cancellation is ignored for this content and the
+        /// form XObjects it invokes.
+        /// </remarks>
         protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
         {
             foreach (var stateOperation in operations)
             {
+                CancellationToken.ThrowIfCancellationRequested();
+
                 stateOperation.Run(this);
             }
         }
@@ -395,7 +409,12 @@
             PdfRectangle? result = null;
             if (type3Font.TryGetCharProc(code, out var charProcStream))
             {
+                CancellationToken.ThrowIfCancellationRequested();
+
                 var contentBytes = charProcStream.Decode(FilterProvider, PdfScanner);
+
+                CancellationToken.ThrowIfCancellationRequested();
+
                 var operations = PageContentParser.Parse(PageNumber,
                     new MemoryInputBytes(contentBytes),
                     ParsingOptions.Logger);
@@ -760,7 +779,6 @@
                 }
 
                 ProcessOperations(operations);
-
             }
             finally
             {
@@ -786,7 +804,11 @@
                 return cached;
             }
 
+            CancellationToken.ThrowIfCancellationRequested();
+
             var contentStream = formStream.Decode(FilterProvider, PdfScanner);
+
+            CancellationToken.ThrowIfCancellationRequested();
 
             var operations = PageContentParser.Parse(PageNumber,
                 new MemoryInputBytes(contentStream), ParsingOptions.Logger);

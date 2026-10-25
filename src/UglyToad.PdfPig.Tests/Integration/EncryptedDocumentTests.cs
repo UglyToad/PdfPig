@@ -127,7 +127,8 @@
             public object Create(int number,
                 DictionaryToken dictionary,
                 PageTreeMembers pageTreeMembers,
-                NamedDestinations namedDestinations)
+                NamedDestinations namedDestinations,
+                CancellationToken token)
             {
                 throw exception;
             }

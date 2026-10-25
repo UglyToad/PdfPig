@@ -77,7 +77,8 @@
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 if (operations.Count == 0)
                 {
@@ -95,7 +96,8 @@
                     rotation,
                     initialMatrix,
                     ResourceStore.GetPageOutputIntentProfile(dictionary),
-                    ParsingOptions);
+                    ParsingOptions,
+                    token);
 
                 TextOnlyPageContent content = context.Process(pageNumber, operations);
 
@@ -117,7 +119,8 @@
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
                 IIccProfile? outputIntentProfile,
-                ParsingOptions parsingOptions)
+                ParsingOptions parsingOptions,
+                CancellationToken token)
                 : base(pageNumber,
                     resourceStore,
                     pdfScanner,
@@ -128,7 +131,8 @@
                     rotation,
                     initialMatrix,
                     outputIntentProfile,
-                    parsingOptions)
+                    parsingOptions,
+                    token)
             {
             }
 
