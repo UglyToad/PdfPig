@@ -150,8 +150,16 @@
             // Patterns and shadings resolve their colour spaces through the resource stack, so unlike the
             // categories above their result depends on the levels below this one and cannot be cached
             // against the resource dictionary alone.
-            LoadPatterns(resourceDictionary);
-            LoadShadings(resourceDictionary);
+            try
+            {
+                LoadPatterns(resourceDictionary);
+                LoadShadings(resourceDictionary);
+            }
+            catch
+            {
+                UnloadResourceDictionary();
+                throw;
+            }
         }
 
         private ResolvedResources ResolveResources(DictionaryToken resourceDictionary)

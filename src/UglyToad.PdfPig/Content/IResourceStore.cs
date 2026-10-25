@@ -15,7 +15,7 @@
     public interface IResourceStore
     {
         /// <summary>
-        /// Load the resource dictionary.
+        /// Load the resource dictionary. If this throws, callers do not unload it, so it must not be left loaded.
         /// </summary>
         void LoadResourceDictionary(DictionaryToken resourceDictionary);
 
