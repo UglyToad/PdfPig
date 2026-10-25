@@ -17,6 +17,11 @@ namespace UglyToad.PdfPig.Tests
         /// </summary>
         public int DecodeCount { get; private set; }
 
+        /// <summary>
+        /// Run after each decode is counted, for example to cancel a token part-way through a page.
+        /// </summary>
+        public Action? OnDecode { get; set; }
+
         public CountingFilterProvider(bool throwOnDecode = false)
         {
             filters = new IFilter[] { new CountingFilter(this, throwOnDecode) };
@@ -47,6 +52,7 @@ namespace UglyToad.PdfPig.Tests
                 IFilterProvider filterProvider, int filterIndex)
             {
                 owner.DecodeCount++;
+                owner.OnDecode?.Invoke();
 
                 if (throwOnDecode)
                 {

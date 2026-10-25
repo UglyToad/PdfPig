@@ -26,10 +26,10 @@
         public SkiaGlyphStreamProcessor(int pageNumber, IResourceStore resourceStore, IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser, ILookupFilterProvider filterProvider, CropBox cropBox,
             UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, TransformationMatrix initialMatrix,
-            IIccProfile? outputIntentProfile, ParsingOptions parsingOptions)
+            IIccProfile? outputIntentProfile, ParsingOptions parsingOptions, CancellationToken token)
             : base(pageNumber, resourceStore, pdfScanner, pageContentParser,
                 filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
-                outputIntentProfile, parsingOptions)
+                outputIntentProfile, parsingOptions, token)
         {
             // The crop box is defined in unrotated default user space; account for the page
             // rotation to get the visible dimensions of the rendering surface.

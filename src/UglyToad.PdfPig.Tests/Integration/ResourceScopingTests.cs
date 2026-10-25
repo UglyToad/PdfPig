@@ -12,6 +12,7 @@ namespace UglyToad.PdfPig.Tests.Integration
     using PdfPig.Graphics.Operations;
     using PdfPig.Parser;
     using PdfPig.PdfFonts;
+    using PdfPig.Tests.Tokens;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
 
@@ -29,14 +30,57 @@ namespace UglyToad.PdfPig.Tests.Integration
         private static readonly NameToken Mc0 = NameToken.Create("MC0");
         private static readonly NameToken Level = NameToken.Create("Level");
 
+        private static readonly NameToken F1 = NameToken.Create("F1");
+
         private sealed class NoOpFontFactory : IFontFactory
         {
             public IFont Get(DictionaryToken dictionary) => null!;
         }
 
-        private static ResourceStore CreateStore(IPdfTokenScanner scanner) => new ResourceStore(
+        /// <summary>
+        /// Returns a new font named after the dictionary's /BaseFont, so tests can tell inline fonts apart.
+        /// </summary>
+        private sealed class InlineFontFactory : IFontFactory
+        {
+            public IFont Get(DictionaryToken dictionary) =>
+                new NamedFont(dictionary.TryGet(NameToken.BaseFont, out NameToken? baseFont) ? baseFont : null);
+        }
+
+        private sealed class NamedFont(NameToken? name) : IFont
+        {
+            public NameToken? Name { get; } = name;
+
+            public bool IsVertical => false;
+
+            // Null rather than throwing: loading an indirect font stamps its reference through Details?.
+            public FontDetails Details => null!;
+
+            public int ReadCharacterCode(IInputBytes bytes, out int codeLength) => throw new System.NotSupportedException();
+
+            public bool TryGetUnicode(int characterCode, out string? value) => throw new System.NotSupportedException();
+
+            public CharacterBoundingBox GetBoundingBox(int characterCode) => throw new System.NotSupportedException();
+
+            public TransformationMatrix GetFontMatrix() => throw new System.NotSupportedException();
+
+            public double GetDescent() => throw new System.NotSupportedException();
+
+            public double GetAscent() => throw new System.NotSupportedException();
+
+            public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath>? path) => throw new System.NotSupportedException();
+
+            public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath>? path) => throw new System.NotSupportedException();
+
+            public bool TryGetGlyphIndex(int characterCode, out int glyphIndex) => throw new System.NotSupportedException();
+        }
+
+        private static DictionaryToken InlineFont(string baseFont) => Dict(
+            (NameToken.Type, NameToken.Font),
+            (NameToken.BaseFont, NameToken.Create(baseFont)));
+
+        private static ResourceStore CreateStore(IPdfTokenScanner scanner, IFontFactory? fontFactory = null) => new ResourceStore(
             scanner,
-            new NoOpFontFactory(),
+            fontFactory ?? new NoOpFontFactory(),
             new FilterProviderWithLookup(DefaultFilterProvider.Instance),
             null,
             new ParsingOptions
@@ -160,6 +204,124 @@ namespace UglyToad.PdfPig.Tests.Integration
         }
 
         /// <summary>
+        /// Callers unload only the dictionaries that loaded, so one that fails part way through loading
+        /// must not leave its level on the stack above the enclosing dictionary.
+        /// </summary>
+        [Fact]
+        public void FailedLoadDoesNotLeaveItsLevelBehind()
+        {
+            using var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(AnyDocument));
+
+            var store = CreateStore(document.Structure.TokenScanner);
+
+            store.LoadResourceDictionary(Resources(2));
+
+            // Shadings are loaded after the other categories are pushed, and a shading that is
+            // neither a dictionary nor a stream is rejected.
+            var invalid = Dict(
+                (NameToken.Properties, Dict((Mc0, Dict((Level, new NumericToken(3)))))),
+                (NameToken.Shading, Dict((Sh0, new NumericToken(1)))));
+
+            Assert.ThrowsAny<System.Exception>(() => store.LoadResourceDictionary(invalid));
+
+            Assert.Equal(2, ((NumericToken)store.GetMarkedContentPropertiesDictionary(Mc0)!.Data[Level.Data]).Int);
+
+            store.UnloadResourceDictionary();
+        }
+
+        /// <summary>
+        /// Fonts written inline in a resource dictionary are scoped like every other resource: a form
+        /// that reuses the page's inline font name shadows it only until the form's dictionary unloads.
+        /// </summary>
+        [Fact]
+        public void InlineFontIsRestoredAfterNestedDictionaryUnloads()
+        {
+            var store = CreateStore(new TestPdfTokenScanner(), new InlineFontFactory());
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, InlineFont("PageFont"))))));
+            var pageFont = store.GetFont(F1);
+            Assert.Equal("PageFont", pageFont?.Name?.Data);
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, InlineFont("FormFont"))))));
+            Assert.Equal("FormFont", store.GetFont(F1)?.Name?.Data);
+
+            store.UnloadResourceDictionary();
+            Assert.Same(pageFont, store.GetFont(F1));
+
+            store.UnloadResourceDictionary();
+            Assert.Null(store.GetFont(F1));
+        }
+
+        /// <summary>
+        /// The innermost dictionary that defines a font name wins, whether the font is written inline or
+        /// referenced indirectly at either level.
+        /// </summary>
+        [Fact]
+        public void NestedInlineFontShadowsOuterIndirectFont()
+        {
+            var scanner = new TestPdfTokenScanner();
+            var pageFontReference = new IndirectReference(20, 0);
+            scanner.Objects[pageFontReference] = new ObjectToken(XrefLocation.File(0), pageFontReference, InlineFont("PageFont"));
+
+            var store = CreateStore(scanner, new InlineFontFactory());
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, new IndirectReferenceToken(pageFontReference))))));
+            var pageFont = store.GetFont(F1);
+            Assert.Equal("PageFont", pageFont?.Name?.Data);
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, InlineFont("FormFont"))))));
+            Assert.Equal("FormFont", store.GetFont(F1)?.Name?.Data);
+
+            store.UnloadResourceDictionary();
+            Assert.Same(pageFont, store.GetFont(F1));
+
+            store.UnloadResourceDictionary();
+        }
+
+        [Fact]
+        public void NestedIndirectFontShadowsOuterInlineFont()
+        {
+            var scanner = new TestPdfTokenScanner();
+            var formFontReference = new IndirectReference(21, 0);
+            scanner.Objects[formFontReference] = new ObjectToken(XrefLocation.File(0), formFontReference, InlineFont("FormFont"));
+
+            var store = CreateStore(scanner, new InlineFontFactory());
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, InlineFont("PageFont"))))));
+            var pageFont = store.GetFont(F1);
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, new IndirectReferenceToken(formFontReference))))));
+            Assert.Equal("FormFont", store.GetFont(F1)?.Name?.Data);
+
+            store.UnloadResourceDictionary();
+            Assert.Same(pageFont, store.GetFont(F1));
+
+            store.UnloadResourceDictionary();
+        }
+
+        /// <summary>
+        /// A dictionary that fails part way through loading must not leave its inline fonts bound either.
+        /// </summary>
+        [Fact]
+        public void FailedLoadDoesNotLeaveItsInlineFontsBehind()
+        {
+            var store = CreateStore(new TestPdfTokenScanner(), new InlineFontFactory());
+
+            store.LoadResourceDictionary(Dict((NameToken.Font, Dict((F1, InlineFont("PageFont"))))));
+            var pageFont = store.GetFont(F1);
+
+            var invalid = Dict(
+                (NameToken.Font, Dict((F1, InlineFont("FormFont")))),
+                (NameToken.Shading, Dict((Sh0, new NumericToken(1)))));
+
+            Assert.ThrowsAny<System.Exception>(() => store.LoadResourceDictionary(invalid));
+
+            Assert.Same(pageFont, store.GetFont(F1));
+
+            store.UnloadResourceDictionary();
+        }
+
+        /// <summary>
         /// A form that does not redefine a name still resolves it against the enclosing dictionary,
         /// matching how fonts / XObjects / ExtGStates / colour spaces already behave.
         /// </summary>
@@ -252,7 +414,8 @@ namespace UglyToad.PdfPig.Tests.Integration
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 if (operations.Count == 0)
                 {
@@ -261,7 +424,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
                 var context = new ShadingUsageStreamProcessor(pageNumber, ResourceStore, PdfScanner,
                     PageContentParser, FilterProvider, cropBox, userSpaceUnit, rotation, initialMatrix,
-                    ParsingOptions);
+                    ParsingOptions, token);
 
                 return new ShadingUsagePage(pageNumber, context.Process(pageNumber, operations));
             }
@@ -280,9 +443,10 @@ namespace UglyToad.PdfPig.Tests.Integration
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            CancellationToken token)
             : BaseStreamProcessor<IReadOnlyList<ShadingUsage>>(pageNumber, resourceStore, pdfScanner,
-                pageContentParser, filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix, null, parsingOptions)
+                pageContentParser, filterProvider, cropBox, userSpaceUnit, rotation, initialMatrix, null, parsingOptions, token)
         {
             private readonly List<ShadingUsage> _usages = [];
             private int _formDepth;

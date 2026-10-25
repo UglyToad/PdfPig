@@ -193,7 +193,8 @@
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 throw new Exception();
             }
@@ -249,7 +250,8 @@
             public SimplePage Create(int number,
                 DictionaryToken dictionary,
                 PageTreeMembers pageTreeMembers,
-                NamedDestinations namedDestinations)
+                NamedDestinations namedDestinations,
+                CancellationToken token)
             {
                 return new SimplePage(number, pageTreeMembers.Rotation, pageTreeMembers.MediaBox, configuredValue);
             }
@@ -305,7 +307,8 @@
                 UserSpaceUnit userSpaceUnit,
                 PageRotationDegrees rotation,
                 TransformationMatrix initialMatrix,
-                IReadOnlyList<IGraphicsStateOperation> operations)
+                IReadOnlyList<IGraphicsStateOperation> operations,
+                CancellationToken token)
             {
                 // Same logic as in Page class:
                 // Special case where cropbox is outside mediabox: use cropbox instead of intersection

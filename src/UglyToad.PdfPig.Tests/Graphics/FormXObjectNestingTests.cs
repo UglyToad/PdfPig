@@ -1,6 +1,7 @@
 namespace UglyToad.PdfPig.Tests.Graphics
 {
     using System.Collections.Generic;
+    using System.Threading;
     using PdfPig.Content;
     using PdfPig.Core;
     using PdfPig.Geometry;
@@ -49,7 +50,8 @@ namespace UglyToad.PdfPig.Tests.Graphics
                     new PageRotationDegrees(0),
                     TransformationMatrix.Identity,
                     null,
-                    parsingOptions)
+                    parsingOptions,
+                    CancellationToken.None)
             {
             }
 

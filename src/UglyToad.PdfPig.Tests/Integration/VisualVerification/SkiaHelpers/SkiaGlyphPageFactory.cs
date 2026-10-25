@@ -25,14 +25,14 @@
 
         protected override SKPicture ProcessPage(int pageNumber, DictionaryToken dictionary, NamedDestinations namedDestinations,
             MediaBox mediaBox, CropBox cropBox, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
-            TransformationMatrix initialMatrix, IReadOnlyList<IGraphicsStateOperation> operations)
+            TransformationMatrix initialMatrix, IReadOnlyList<IGraphicsStateOperation> operations, CancellationToken token)
         {
             // Special case where cropbox is outside mediabox: use cropbox instead of intersection
             var effectiveCropBox = new CropBox(mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds);
 
             var context = new SkiaGlyphStreamProcessor(pageNumber, ResourceStore, PdfScanner, PageContentParser,
                 FilterProvider, effectiveCropBox, userSpaceUnit, rotation, initialMatrix,
-                ResourceStore.GetPageOutputIntentProfile(dictionary), ParsingOptions);
+                ResourceStore.GetPageOutputIntentProfile(dictionary), ParsingOptions, token);
 
             return context.Process(pageNumber, operations);
         }
