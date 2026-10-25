@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.CompactFontFormat
 {
+    using System.Buffers.Binary;
+    using PdfPig.Fonts;
     using PdfPig.Fonts.CompactFontFormat;
 
     public class CompactFontFormatParserTests
@@ -14,6 +16,63 @@
             Assert.Equal(1, font.Header.MajorVersion);
             Assert.Single(font.Fonts);
             Assert.True(font.Fonts.ContainsKey("MinionPro-It"));
+        }
+
+        [Fact]
+        public void CanReadCffTableOfOpenTypeFont()
+        {
+            // An OpenType font with PostScript outlines ("OTTO"), as a PDF embeds it in FontFile3 /Subtype /OpenType.
+            var openType = TestFontPrograms.OpenTypeCffFont(65);
+
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(openType));
+            var expected = CompactFontFormatParser.Parse(new CompactFontFormatData(GetFileBytes("MinionPro.bin")));
+
+            Assert.Single(font.Fonts);
+            Assert.True(font.Fonts.ContainsKey("MinionPro-It"));
+            Assert.Equal(expected.GetCharacterBoundingBox("A"), font.GetCharacterBoundingBox("A"));
+        }
+
+        [Fact]
+        public void CanReadCffTableOfFontTaggedAsTrueType()
+        {
+            // A CFF table under the TrueType sfnt version (0x00010000) instead of "OTTO", as some fonts are mislabelled.
+            var openType = TestFontPrograms.OpenTypeCffFont(65);
+            new byte[] { 0x00, 0x01, 0x00, 0x00 }.CopyTo(openType, 0);
+
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(openType));
+            var expected = CompactFontFormatParser.Parse(new CompactFontFormatData(GetFileBytes("MinionPro.bin")));
+
+            Assert.True(font.Fonts.ContainsKey("MinionPro-It"));
+            Assert.Equal(expected.GetCharacterBoundingBox("A"), font.GetCharacterBoundingBox("A"));
+        }
+
+        [Fact]
+        public void TrueTypeFontWithGlyfOutlinesIsNotSupported()
+        {
+            var ex = Assert.Throws<NotSupportedException>(() => CompactFontFormatParser.Parse(new CompactFontFormatData(TestFontPrograms.Roboto)));
+
+            Assert.Contains("no CFF table", ex.Message);
+        }
+
+        [Fact]
+        public void OpenTypeFontWithCff2OutlinesIsNotSupported()
+        {
+            var cff2 = TestFontPrograms.ReplaceTable(TestFontPrograms.OpenTypeCffFont(65), "CFF ", GetFileBytes("MinionPro.bin"), "CFF2");
+
+            var ex = Assert.Throws<NotSupportedException>(() => CompactFontFormatParser.Parse(new CompactFontFormatData(cff2)));
+
+            Assert.Contains("CFF2", ex.Message);
+        }
+
+        [Fact]
+        public void OpenTypeCffTableOutsideTheFontThrows()
+        {
+            var openType = TestFontPrograms.OpenTypeCffFont(65);
+
+            // Point the 'CFF ' table record at an offset past 2^31, which a signed read would turn negative.
+            BinaryPrimitives.WriteUInt32BigEndian(TestFontPrograms.TableRecord(openType, "CFF ").Slice(8), 0xFFFFFF00);
+
+            Assert.Throws<InvalidFontFormatException>(() => CompactFontFormatParser.Parse(new CompactFontFormatData(openType)));
         }
 
         [Fact]

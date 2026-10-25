@@ -103,25 +103,32 @@ namespace UglyToad.PdfPig.Tests.Fonts
             font.CopyTo(result, 0);
             table.CopyTo(result, tableOffset);
 
-            var span = result.AsSpan();
+            var entry = TableRecord(result, tag);
+            if (newTag is not null)
+            {
+                Encoding.ASCII.GetBytes(newTag).CopyTo(entry);
+            }
+
+            BinaryPrimitives.WriteUInt32BigEndian(entry.Slice(8), (uint)tableOffset);
+            BinaryPrimitives.WriteUInt32BigEndian(entry.Slice(12), (uint)table.Length);
+            return result;
+        }
+
+        /// <summary>
+        /// The 16-byte table directory record for <paramref name="tag"/> in <paramref name="font"/>: tag, checksum,
+        /// offset and length.
+        /// </summary>
+        public static Span<byte> TableRecord(byte[] font, string tag)
+        {
             var tagBytes = Encoding.ASCII.GetBytes(tag);
-            int numTables = BinaryPrimitives.ReadUInt16BigEndian(span.Slice(4));
+            int numTables = BinaryPrimitives.ReadUInt16BigEndian(font.AsSpan(4));
             for (int i = 0; i < numTables; i++)
             {
-                var entry = span.Slice(12 + (16 * i), 16);
-                if (!entry.Slice(0, 4).SequenceEqual(tagBytes.AsSpan()))
+                var entry = font.AsSpan(12 + (16 * i), 16);
+                if (entry.Slice(0, 4).SequenceEqual(tagBytes.AsSpan()))
                 {
-                    continue;
+                    return entry;
                 }
-
-                if (newTag is not null)
-                {
-                    Encoding.ASCII.GetBytes(newTag).CopyTo(entry);
-                }
-
-                BinaryPrimitives.WriteUInt32BigEndian(entry.Slice(8), (uint)tableOffset);
-                BinaryPrimitives.WriteUInt32BigEndian(entry.Slice(12), (uint)table.Length);
-                return result;
             }
 
             throw new InvalidOperationException($"The font has no {tag} table.");

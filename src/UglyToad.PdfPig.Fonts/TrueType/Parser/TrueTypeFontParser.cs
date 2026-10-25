@@ -15,31 +15,36 @@
         /// </summary>
         public static TrueTypeFont Parse(TrueTypeDataBytes data)
         {
-            var version = data.Read32Fixed();
+            var tables = ReadTableDirectory(data, out var version);
+            return ParseTables(version, tables, data);
+        }
+
+        /// <summary>
+        /// Read the table directory of the font at the current position: its sfnt version, then the record of each
+        /// table by tag (ignoring case). Tables of zero length, other than glyf, are left out.
+        /// </summary>
+        internal static IReadOnlyDictionary<string, TrueTypeHeaderTable> ReadTableDirectory(TrueTypeDataBytes data, out float version)
+        {
+            version = data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
 
-            // Read these data points to move to the correct data location.
-            // ReSharper disable UnusedVariable
-            var searchRange = data.ReadUnsignedShort();
-            var entrySelector = data.ReadUnsignedShort();
-            var rangeShift = data.ReadUnsignedShort();
-            // ReSharper restore UnusedVariable
+            // searchRange, entrySelector, rangeShift.
+            _ = data.ReadUnsignedShort();
+            _ = data.ReadUnsignedShort();
+            _ = data.ReadUnsignedShort();
 
             var tables = new Dictionary<string, TrueTypeHeaderTable>(StringComparer.OrdinalIgnoreCase);
 
             for (var i = 0; i < numberOfTables; i++)
             {
                 var table = ReadTable(data);
-
                 if (table.HasValue)
                 {
                     tables[table.Value.Tag] = table.Value;
                 }
             }
 
-            var result = ParseTables(version, tables, data);
-
-            return result;
+            return tables;
         }
 
         /// <summary>

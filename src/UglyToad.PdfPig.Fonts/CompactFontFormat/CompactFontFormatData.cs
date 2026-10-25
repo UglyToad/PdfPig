@@ -7,7 +7,7 @@
     /// <summary>
     /// Provides access to the raw bytes of this Compact Font Format file with utility methods for reading data types from it.
     /// </summary>
-    public class CompactFontFormatData
+    public sealed class CompactFontFormatData
     {
         private readonly ReadOnlyMemory<byte> dataBytes;
 
@@ -20,6 +20,11 @@
         /// The length of the data.
         /// </summary>
         public int Length => dataBytes.Length;
+
+        /// <summary>
+        /// All of the data, whatever the current position.
+        /// </summary>
+        internal ReadOnlyMemory<byte> Memory => dataBytes;
 
         /// <summary>
         /// Create a new <see cref="CompactFontFormatData"/>.

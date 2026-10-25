@@ -4,6 +4,8 @@
     using System.Collections.Generic;
     using Core;
     using Dictionaries;
+    using TrueType;
+    using TrueType.Parser;
 
     /// <summary>
     /// Parse the Compact Font Format (CFF).
@@ -23,13 +25,15 @@
 
             switch (tag)
             {
-                // An OpenType font containing CFF data.
+                // An OpenType font containing CFF data: read its CFF table.
                 case TagOtto:
-                    throw new NotSupportedException("Currently tagged CFF data is not supported.");
+                    return Parse(ReadOpenTypeCffTable(data));
                 case TagTtcf:
                     throw new NotSupportedException("True Type Collection fonts are not currently supported.");
+                // A TrueType sfnt version: normally glyf outlines, which are not CFF, but some fonts mislabelled this way
+                // have a CFF table, as TrueTypeFontParser also allows. Read it if there is one.
                 case TagTtfonly:
-                    throw new NotSupportedException("OpenType fonts containing a true type font are not currently supported.");
+                    return Parse(ReadOpenTypeCffTable(data));
                 default:
                     data.Seek(0);
                     break;
@@ -57,6 +61,29 @@
             }
 
             return new CompactFontFormatFontCollection(header, fonts);
+        }
+
+        /// <summary>
+        /// Get the <c>'CFF '</c> table of an OpenType font, which <paramref name="data"/> holds from its start, from the
+        /// font's table directory.
+        /// </summary>
+        private static CompactFontFormatData ReadOpenTypeCffTable(CompactFontFormatData data)
+        {
+            var tables = TrueTypeFontParser.ReadTableDirectory(new TrueTypeDataBytes(new MemoryInputBytes(data.Memory)), out _);
+
+            if (tables.TryGetValue(TrueTypeHeaderTable.Cff, out var cff))
+            {
+                if ((long)cff.Offset + cff.Length > data.Length)
+                {
+                    throw new InvalidFontFormatException($"The CFF table (offset {cff.Offset}, length {cff.Length}) lies outside the {data.Length} bytes of the OpenType font.");
+                }
+
+                return data.SnapshotPortion((int)cff.Offset, (int)cff.Length);
+            }
+
+            throw new NotSupportedException(tables.ContainsKey("CFF2")
+                ? "The OpenType font has CFF2 outlines, which are not supported."
+                : "The OpenType font has no CFF table.");
         }
 
         private static string ReadTag(CompactFontFormatData data)

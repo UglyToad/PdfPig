@@ -16,7 +16,7 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class Type1FontHandler : IFontHandler
+    internal sealed class Type1FontHandler : IFontHandler
     {
         private readonly IPdfTokenScanner pdfScanner;
         private readonly ILookupFilterProvider filterProvider;
@@ -213,9 +213,10 @@ namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 
                 var bytes = stream.Decode(filterProvider, pdfScanner);
 
-                // We have a Compact Font Format font rather than an Adobe Type 1 Font.
+                // We have a Compact Font Format font rather than an Adobe Type 1 Font: bare (Type1C) or as the CFF table
+                // of an OpenType font with PostScript outlines (OpenType).
                 if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)
-                && NameToken.Type1C.Equals(subTypeName))
+                    && (NameToken.Type1C.Equals(subTypeName) || NameToken.OpenType.Equals(subTypeName)))
                 {
                     var cffFont = CompactFontFormatParser.Parse(new CompactFontFormatData(bytes));
                     return Union<Type1Font, CompactFontFormatFontCollection>.Two(cffFont);
