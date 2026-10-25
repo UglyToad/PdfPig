@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Tests.Integration
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Text;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Fonts.CompactFontFormat;
@@ -12,10 +11,10 @@ namespace UglyToad.PdfPig.Tests.Integration
     using UglyToad.PdfPig.Fonts.SystemFonts;
     using UglyToad.PdfPig.Fonts.TrueType;
     using UglyToad.PdfPig.Fonts.TrueType.Parser;
-    using UglyToad.PdfPig.Fonts.TrueType.Subsetting;
     using UglyToad.PdfPig.Fonts.Type1.Parser;
-    using static UglyToad.PdfPig.Tests.Fonts.TestFontPrograms;
     using UglyToad.PdfPig.PdfFonts.Simple;
+    using static UglyToad.PdfPig.Tests.Fonts.TestFontPrograms;
+    using static UglyToad.PdfPig.Tests.Integration.SingleFontPdf;
 
     /// <summary>
     /// Substitutes are registered process-wide, so these tests must not run alongside the others.
@@ -627,44 +626,6 @@ namespace UglyToad.PdfPig.Tests.Integration
             Assert.Equal(expectedGlyphSpace.Bottom * scale, bounds.Bottom, 6);
             Assert.Equal(expectedGlyphSpace.Right * scale, bounds.Right, 6);
             Assert.Equal(expectedGlyphSpace.Top * scale, bounds.Top, 6);
-        }
-
-        private static byte[] BuildPdf(string font, string text, string? descriptor = null)
-        {
-            string content = $"BT /F1 12 Tf 10 10 Td {text} Tj ET";
-
-            var objects = new List<string>
-            {
-                "<< /Type /Catalog /Pages 2 0 R >>",
-                "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >>",
-                font,
-                $"<< /Length {content.Length} >>\nstream\n{content}\nendstream"
-            };
-
-            if (descriptor is not null)
-            {
-                objects.Add(descriptor);
-            }
-
-            var builder = new StringBuilder("%PDF-1.7\n");
-            var offsets = new List<int>();
-            for (int i = 0; i < objects.Count; i++)
-            {
-                offsets.Add(builder.Length);
-                builder.Append($"{i + 1} 0 obj\n{objects[i]}\nendobj\n");
-            }
-
-            int xref = builder.Length;
-            builder.Append($"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n");
-            foreach (int offset in offsets)
-            {
-                builder.Append($"{offset:D10} 00000 n \n");
-            }
-
-            builder.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF");
-
-            return Encoding.ASCII.GetBytes(builder.ToString());
         }
     }
 }
