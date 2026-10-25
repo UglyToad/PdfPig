@@ -101,7 +101,7 @@
             return AssembleSfnt(3, glyf.ToArray(), loca.ToArray());
         }
 
-        private static byte[] MakeSimpleSquare(int xMin, int yMin, int xMax, int yMax)
+        internal static byte[] MakeSimpleSquare(int xMin, int yMin, int xMax, int yMax)
         {
             return
             [
@@ -165,7 +165,7 @@
         private static byte[] BE16(ushort v) => [(byte)(v >> 8), (byte)v];
         private static byte[] BE32(uint v) => [(byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v];
 
-        private static byte[] AssembleSfnt(int numGlyphs, byte[] glyfData, uint[] locaValues)
+        internal static byte[] AssembleSfnt(int numGlyphs, byte[] glyfData, uint[] locaValues)
         {
             var tables = new SortedDictionary<string, byte[]>(StringComparer.Ordinal);
             tables["glyf"] = glyfData;

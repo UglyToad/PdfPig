@@ -56,68 +56,6 @@
             return new Glyph(false, clonedInstructions, clonedEndPoints, clonedPoints, Bounds);
         }
 
-        public IGlyphDescription Merge(IGlyphDescription glyph)
-        {
-            var newPoints = MergePoints(glyph);
-            var newEndpoints = MergeContourEndPoints(glyph);
-
-            return new Glyph(false, Instructions, newEndpoints, newPoints, Bounds);
-        }
-
-        private GlyphPoint[] MergePoints(IGlyphDescription glyph)
-        {
-            var newPoints = new GlyphPoint[Points.Length + glyph.Points.Length];
-
-            for (int i = 0; i < Points.Length; i++)
-            {
-                newPoints[i] = Points[i];
-            }
-
-            for (int i = 0; i < glyph.Points.Length; i++)
-            {
-                newPoints[i + Points.Length] = glyph.Points[i];
-            }
-
-            return newPoints;
-        }
-
-        private ushort[] MergeContourEndPoints(IGlyphDescription glyph)
-        {
-            var destinationLastEndPoint = (EndPointsOfContours.Length > 0 ? EndPointsOfContours[EndPointsOfContours.Length - 1] : 0) + 1;
-
-            var endPoints = new ushort[EndPointsOfContours.Length + glyph.EndPointsOfContours.Length];
-
-            for (var i = 0; i < EndPointsOfContours.Length; i++)
-            {
-                endPoints[i] = EndPointsOfContours[i];
-            }
-
-            for (var i = 0; i < glyph.EndPointsOfContours.Length; i++)
-            {
-                endPoints[i + EndPointsOfContours.Length] = (ushort)(glyph.EndPointsOfContours[i] + destinationLastEndPoint);
-            }
-
-            return endPoints;
-        }
-
-        public IGlyphDescription Transform(CompositeTransformMatrix3By2 matrix)
-        {
-            var newPoints = new GlyphPoint[Points.Length];
-
-            for (var i = Points.Length - 1; i >= 0; i--)
-            {
-                var point = Points[i];
-
-                var scaled = matrix.ScaleAndRotate(new PdfPoint(point.X, point.Y));
-
-                scaled = matrix.Translate(scaled);
-
-                newPoints[i] = new GlyphPoint((short)scaled.X, (short)scaled.Y, point.IsOnCurve, point.IsEndOfContour);
-            }
-
-            return new Glyph(IsSimple, Instructions, EndPointsOfContours, newPoints, Bounds);
-        }
-
         #region Subpaths
         public bool TryGetGlyphPath(out IReadOnlyList<PdfSubpath> subpaths)
         {

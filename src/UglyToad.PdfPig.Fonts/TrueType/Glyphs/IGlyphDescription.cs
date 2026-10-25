@@ -3,7 +3,7 @@
     using Core;
     using System.Collections.Generic;
 
-    internal interface IGlyphDescription : IMergeableGlyph, ITransformableGlyph
+    internal interface IGlyphDescription
     {
         bool IsSimple { get; }
 

@@ -13,6 +13,11 @@
     /// </summary>
     internal sealed class GlyphDataTable : ITrueTypeTable
     {
+        private const int MaxGlyphPoints = ushort.MaxValue + 1;
+
+        private const long MinTablePointBudget = 1 << 20;
+        private const long TablePointBudgetPerByte = 4;
+
         private readonly IReadOnlyList<uint> glyphOffsets;
         private readonly PdfRectangle maxGlyphBounds;
         private TrueTypeDataBytes tableBytes;
@@ -117,7 +122,10 @@
 
             var emptyGlyph = Glyph.Empty(maxGlyphBounds);
 
-            var compositeLocations = new Dictionary<int, TemporaryCompositeLocation>();
+            // Glyphs that do not fit in what is left of the budget are kept empty.
+            var pointBudget = Math.Max(MinTablePointBudget, TablePointBudgetPerByte * data.Length);
+
+            var composites = new Dictionary<int, TemporaryComposite>();
 
             for (var i = 0; i < glyphCount; i++)
             {
@@ -151,26 +159,65 @@
                 // If the number of contours is greater than or equal zero it's a simple glyph.
                 if (contourCount >= 0)
                 {
-                    result[i] = ReadSimpleGlyph(data, contourCount, bounds);
+                    result[i] = ReadSimpleGlyph(data, contourCount, bounds, pointBudget, emptyGlyph);
+                    pointBudget -= PointCost(result[i]);
                 }
                 else
                 {
-                    compositeLocations.Add(i, new TemporaryCompositeLocation(data.Position, bounds, contourCount));
+                    composites.Add(i, new TemporaryComposite(bounds, contourCount, ReadCompositeComponents(data, glyphCount)));
                 }
             }
 
             // Build composite glyphs by combining simple and other composite glyphs.
-            foreach (var compositeLocation in compositeLocations)
+            var pending = new Stack<(int Index, int NextComponent)>();
+            foreach (var root in composites)
             {
-                result[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, result, emptyGlyph);
+                if (result[root.Key] is not null)
+                {
+                    // Already built as a component of an earlier composite.
+                    continue;
+                }
+
+                // A composite holds the empty glyph while it is on the stack, so a cycle back to it reads as empty.
+                result[root.Key] = emptyGlyph;
+                pending.Push((root.Key, 0));
+
+                while (pending.Count > 0)
+                {
+                    var (index, next) = pending.Pop();
+                    var components = composites[index].Components;
+
+                    while (next < components.Count && result[components[next].Index] is not null)
+                    {
+                        next++;
+                    }
+
+                    if (next < components.Count)
+                    {
+                        // Only composites are still unbuilt: build this component first, then come back.
+                        var child = components[next].Index;
+                        pending.Push((index, next + 1));
+                        result[child] = emptyGlyph;
+                        pending.Push((child, 0));
+                        continue;
+                    }
+
+                    result[index] = BuildCompositeGlyph(composites[index], result, emptyGlyph, pointBudget);
+                    pointBudget -= PointCost(result[index]);
+                }
             }
 
             tableBytes = null;
 
             return result;
+
+            static long PointCost(IGlyphDescription glyph)
+            {
+                return glyph.Points.Length + glyph.EndPointsOfContours.Length;
+            }
         }
 
-        private static Glyph ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds)
+        private static IGlyphDescription ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds, long pointBudget, IGlyphDescription emptyGlyph)
         {
             if (contourCount == 0)
             {
@@ -187,6 +234,11 @@
             if (contourCount > 0)
             {
                 pointCount = endPointsOfContours[contourCount - 1] + 1;
+            }
+
+            if (pointCount + contourCount > pointBudget)
+            {
+                return emptyGlyph;
             }
 
             var flags = ReadFlags(data, pointCount);
@@ -221,53 +273,25 @@
             return new Glyph(true, instructions, endPointsOfContours, points, bounds);
         }
 
-        private static IGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription?[] glyphs,
-            IGlyphDescription emptyGlyph, TemporaryCompositeLocation? previousLocation = null)
+        private static List<CompositeComponent> ReadCompositeComponents(TrueTypeDataBytes data, int glyphCount)
         {
             bool HasFlag(CompositeGlyphFlags value, CompositeGlyphFlags target)
             {
                 return (value & target) == target;
             }
 
-            data.Seek(compositeLocation.Position);
-
             var components = new List<CompositeComponent>();
 
-            // First recursively find all components and ensure they are available.
             CompositeGlyphFlags flags;
             do
             {
                 flags = (CompositeGlyphFlags)data.ReadUnsignedShort();
                 var glyphIndex = data.ReadUnsignedShort();
 
-                if (glyphIndex >= glyphs.Length)
+                if (glyphIndex >= glyphCount)
                 {
                     // Unsure why this happens but fixes #1213
                     continue; // TODO - Is there a better fix?
-                }
-
-                IGlyphDescription? childGlyph = glyphs[glyphIndex];
-
-                if (childGlyph is null)
-                {
-                    if (!compositeLocations.TryGetValue(glyphIndex, out var missingComposite))
-                    {
-                        throw new InvalidOperationException($"The composite glyph required a contour at index {glyphIndex} but there was no simple or composite glyph at this location.");
-                    }
-
-                    if (previousLocation?.Position == missingComposite.Position)
-                    {
-                        // Will go to the same position, prevent more recursions
-                        childGlyph = emptyGlyph;
-                    }
-                    else
-                    {
-                        var position = data.Position;
-                        childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs, emptyGlyph, previousLocation ?? missingComposite);
-                        data.Seek(position);
-                    }
-
-                    glyphs[glyphIndex] = childGlyph;
                 }
 
                 short arg1, arg2;
@@ -323,27 +347,55 @@
                 }
             } while (HasFlag(flags, CompositeGlyphFlags.MoreComponents));
 
-            // Now build the final glyph from the components.
-            IGlyphDescription builderGlyph = null;
+            return components;
+        }
+
+        private static IGlyphDescription BuildCompositeGlyph(TemporaryComposite composite, IGlyphDescription[] glyphs, IGlyphDescription emptyGlyph, long pointBudget)
+        {
+            var components = composite.Components;
+
+            if (components.Count == 0)
+            {
+                return new Glyph(false, emptyGlyph.Instructions, emptyGlyph.EndPointsOfContours, emptyGlyph.Points, composite.Bounds);
+            }
+
+            var pointCount = 0;
+            var contourCount = 0;
             foreach (var component in components)
             {
                 var glyph = glyphs[component.Index];
+                pointCount += glyph.Points.Length;
+                contourCount += glyph.EndPointsOfContours.Length;
 
-                var transformed = glyph.Transform(component.Transformation);
-
-                if (builderGlyph == null)
+                if (pointCount > MaxGlyphPoints || contourCount > MaxGlyphPoints || pointCount + contourCount > pointBudget)
                 {
-                    builderGlyph = transformed;
-                }
-                else
-                {
-                    builderGlyph = builderGlyph.Merge(transformed);
+                    return emptyGlyph;
                 }
             }
 
-            builderGlyph ??= emptyGlyph;
+            // Fill the arrays once, writing each component's transformed points straight into them.
+            var points = new GlyphPoint[pointCount];
+            var endPointsOfContours = new ushort[contourCount];
+            var pointOffset = 0;
+            var contourOffset = 0;
+            foreach (var component in components)
+            {
+                var glyph = glyphs[component.Index];
+                var matrix = component.Transformation;
 
-            return new Glyph(false, builderGlyph.Instructions, builderGlyph.EndPointsOfContours, builderGlyph.Points, compositeLocation.Bounds);
+                foreach (var endPoint in glyph.EndPointsOfContours)
+                {
+                    endPointsOfContours[contourOffset++] = (ushort)(endPoint + pointOffset);
+                }
+
+                foreach (var point in glyph.Points)
+                {
+                    var transformed = matrix.Translate(matrix.ScaleAndRotate(new PdfPoint(point.X, point.Y)));
+                    points[pointOffset++] = new GlyphPoint((short)transformed.X, (short)transformed.Y, point.IsOnCurve, point.IsEndOfContour);
+                }
+            }
+
+            return new Glyph(false, glyphs[components[0].Index].Instructions, endPointsOfContours, points, composite.Bounds);
         }
 
         private static SimpleGlyphFlags[] ReadFlags(TrueTypeDataBytes data, int pointCount)
@@ -427,24 +479,21 @@
         /// Stores the composite glyph information we read when initially scanning the glyph table.
         /// Once we have all composite glyphs we can start building them from simple glyphs.
         /// </summary>
-        private readonly struct TemporaryCompositeLocation
+        private readonly struct TemporaryComposite
         {
-            /// <summary>
-            /// Stores the position after reading the contour count and bounds.
-            /// </summary>
-            public long Position { get; }
-
             public PdfRectangle Bounds { get; }
 
-            public TemporaryCompositeLocation(long position, PdfRectangle bounds, short contourCount)
+            public List<CompositeComponent> Components { get; }
+
+            public TemporaryComposite(PdfRectangle bounds, short contourCount, List<CompositeComponent> components)
             {
                 if (contourCount >= 0)
                 {
                     throw new ArgumentException($"A composite glyph should not have a positive contour count. Got: {contourCount}.", nameof(contourCount));
                 }
 
-                Position = position;
                 Bounds = bounds;
+                Components = components;
             }
         }
 
