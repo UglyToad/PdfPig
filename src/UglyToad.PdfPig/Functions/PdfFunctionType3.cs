@@ -30,6 +30,7 @@ namespace UglyToad.PdfPig.Functions
             Encode = encode;
             boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
             encodeValuesCache = Encode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            MaxOutputComponentCount = ComputeMaxOutputComponentCount();
         }
 
         /// <summary>
@@ -47,25 +48,29 @@ namespace UglyToad.PdfPig.Functions
             Encode = encode;
             boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
             encodeValuesCache = Encode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            MaxOutputComponentCount = ComputeMaxOutputComponentCount();
         }
 
         public override FunctionTypes FunctionType => FunctionTypes.Stitching;
 
-        protected internal override int MaxOutputComponentCount
+        /// <summary>
+        /// Computed once from the sub-functions, which are built before this function. A sub-function can be
+        /// shared by several functions, so computing it on each call would visit it once per path to it.
+        /// </summary>
+        protected internal override int MaxOutputComponentCount { get; }
+
+        private int ComputeMaxOutputComponentCount()
         {
-            get
+            int max = NumberOfOutputParameters;
+            for (int i = 0; i < FunctionsArray.Count; i++)
             {
-                int max = NumberOfOutputParameters;
-                for (int i = 0; i < FunctionsArray.Count; i++)
+                int sub = FunctionsArray[i].MaxOutputComponentCount;
+                if (sub > max)
                 {
-                    int sub = FunctionsArray[i].MaxOutputComponentCount;
-                    if (sub > max)
-                    {
-                        max = sub;
-                    }
+                    max = sub;
                 }
-                return max > 0 ? max : 1;
             }
+            return max > 0 ? max : 1;
         }
 
         public override int Eval(ReadOnlySpan<double> input, Span<double> output)

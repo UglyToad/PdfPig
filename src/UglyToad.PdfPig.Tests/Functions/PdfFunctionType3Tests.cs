@@ -70,6 +70,40 @@
                 () => PdfFunctionParser.Create(Nested(PdfFunctionParser.MaxFunctionDepth + 1), new TestPdfTokenScanner(), new TestFilterProvider()));
         }
 
+        [Fact]
+        public void SubFunctionNamedTwiceAtEveryLevelIsBuiltOnce()
+        {
+            // Function i (object i + 1) stitches function i + 1 twice, 40 levels deep, around a type 2 function.
+            // Built again each time it is named, that would be 2^40 sub-functions.
+            const int levels = 40;
+            var scanner = new TestPdfTokenScanner();
+            for (var i = 0; i < levels; i++)
+            {
+                var reference = new IndirectReference(i + 1, 0);
+                var next = new IndirectReferenceToken(new IndirectReference(i + 2, 0));
+                scanner.Objects[reference] = new ObjectToken(XrefLocation.File(0), reference, Type3(next, next));
+            }
+
+            var leaf = new IndirectReference(levels + 1, 0);
+            scanner.Objects[leaf] = new ObjectToken(XrefLocation.File(0), leaf, Type2(0, 1));
+
+            var result = (PdfFunctionType3)PdfFunctionParser.Create(
+                new IndirectReferenceToken(new IndirectReference(1, 0)), scanner, new TestFilterProvider());
+
+            Assert.Same(result.FunctionsArray[0], result.FunctionsArray[1]);
+
+            // Each level maps its half of [0, 1] onto [0, 1], and the type 2 function returns its input.
+            var expected = 0.3;
+            for (var i = 0; i < levels; i++)
+            {
+                expected = expected < 0.5
+                    ? (expected - 0) * (1 - 0) / (0.5 - 0)
+                    : (expected - 0.5) * (1 - 0) / (1 - 0.5);
+            }
+
+            Assert.Equal(expected, result.Eval(0.3)[0]);
+        }
+
         // Type 3 functions nested inline, each wrapping the next, around a type 2 function at the given depth.
         private static DictionaryToken Nested(int depth)
         {

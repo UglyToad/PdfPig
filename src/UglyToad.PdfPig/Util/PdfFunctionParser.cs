@@ -14,17 +14,20 @@
     internal static class PdfFunctionParser
     {
         /// <summary>
-        /// How deeply type 3 functions may nest. They name their sub-functions by indirect reference, so a file can
-        /// describe a cycle and lead to a stack overflow.
+        /// How deeply type 3 functions may nest. Building and evaluating a type 3 function both recurse into its
+        /// sub-functions, and every evaluation goes down one sub-function per level.
         /// </summary>
         internal const int MaxFunctionDepth = 50;
 
         public static PdfFunction Create(IToken function, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
-            return Create(function, scanner, filterProvider, 0);
+            return Create(function, scanner, filterProvider, 0, new Dictionary<IndirectReference, PdfFunction?>());
         }
 
-        private static PdfFunction Create(IToken function, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider, int depth)
+        // built holds the sub-functions named by indirect reference that have been built so far, or null while
+        // they are still being built. A sub-function named more than once is built once and shared.
+        private static PdfFunction Create(IToken function, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider, int depth,
+            Dictionary<IndirectReference, PdfFunction?> built)
         {
             if (depth > MaxFunctionDepth)
             {
@@ -70,7 +73,7 @@
                     return CreatePdfFunctionType2(functionDictionary, domain, range, scanner);
 
                 case 3:
-                    return CreatePdfFunctionType3(functionDictionary, domain, range, scanner, filterProvider, depth);
+                    return CreatePdfFunctionType3(functionDictionary, domain, range, scanner, filterProvider, depth, built);
 
                 case 4:
                     if (functionStream is null)
@@ -155,25 +158,46 @@
             ArrayToken? range,
             IPdfTokenScanner scanner,
             ILookupFilterProvider filterProvider,
-            int depth)
+            int depth,
+            Dictionary<IndirectReference, PdfFunction?> built)
         {
+            PdfFunction CreateSubFunction(IToken token)
+            {
+                if (DirectObjectFinder.TryGet<StreamToken>(token, scanner, out var strTk))
+                {
+                    return Create(strTk, scanner, filterProvider, depth + 1, built);
+                }
+
+                if (DirectObjectFinder.TryGet<DictionaryToken>(token, scanner, out var dicTk))
+                {
+                    return Create(dicTk, scanner, filterProvider, depth + 1, built);
+                }
+
+                throw new ArgumentException($"Could not find function for token '{token}' inside type 3 function.");
+            }
+
             var functions = new List<PdfFunction>();
             if (functionDictionary.TryGet<ArrayToken>(NameToken.Functions, scanner, out var functionsToken))
             {
                 foreach (IToken token in functionsToken.Data)
                 {
-                    if (DirectObjectFinder.TryGet<StreamToken>(token, scanner, out var strTk))
+                    if (token is not IndirectReferenceToken reference)
                     {
-                        functions.Add(Create(strTk, scanner, filterProvider, depth + 1));
+                        functions.Add(CreateSubFunction(token));
+                        continue;
                     }
-                    else if (DirectObjectFinder.TryGet<DictionaryToken>(token, scanner, out var dicTk))
+
+                    if (built.TryGetValue(reference.Data, out var existing))
                     {
-                        functions.Add(Create(dicTk, scanner, filterProvider, depth + 1));
+                        functions.Add(existing ?? throw new PdfDocumentFormatException(
+                            $"The type 3 function sub-function {reference.Data} is one of the functions containing it."));
+                        continue;
                     }
-                    else
-                    {
-                        throw new ArgumentException($"Could not find function for token '{token}' inside type 3 function.");
-                    }
+
+                    built[reference.Data] = null;
+                    var subFunction = CreateSubFunction(token);
+                    built[reference.Data] = subFunction;
+                    functions.Add(subFunction);
                 }
             }
             else
