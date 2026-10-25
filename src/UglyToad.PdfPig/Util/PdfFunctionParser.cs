@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Filters;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Parser.Parts;
@@ -12,8 +13,24 @@
 
     internal static class PdfFunctionParser
     {
+        /// <summary>
+        /// How deeply type 3 functions may nest. They name their sub-functions by indirect reference, so a file can
+        /// describe a cycle and lead to a stack overflow.
+        /// </summary>
+        internal const int MaxFunctionDepth = 50;
+
         public static PdfFunction Create(IToken function, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
+            return Create(function, scanner, filterProvider, 0);
+        }
+
+        private static PdfFunction Create(IToken function, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider, int depth)
+        {
+            if (depth > MaxFunctionDepth)
+            {
+                throw new PdfDocumentFormatException($"Type 3 functions are nested more than {MaxFunctionDepth} deep.");
+            }
+
             DictionaryToken functionDictionary;
             StreamToken? functionStream = null;
 
@@ -53,7 +70,7 @@
                     return CreatePdfFunctionType2(functionDictionary, domain, range, scanner);
 
                 case 3:
-                    return CreatePdfFunctionType3(functionDictionary, domain, range, scanner, filterProvider);
+                    return CreatePdfFunctionType3(functionDictionary, domain, range, scanner, filterProvider, depth);
 
                 case 4:
                     if (functionStream is null)
@@ -137,7 +154,8 @@
             ArrayToken domain,
             ArrayToken? range,
             IPdfTokenScanner scanner,
-            ILookupFilterProvider filterProvider)
+            ILookupFilterProvider filterProvider,
+            int depth)
         {
             var functions = new List<PdfFunction>();
             if (functionDictionary.TryGet<ArrayToken>(NameToken.Functions, scanner, out var functionsToken))
@@ -146,11 +164,11 @@
                 {
                     if (DirectObjectFinder.TryGet<StreamToken>(token, scanner, out var strTk))
                     {
-                        functions.Add(Create(strTk, scanner, filterProvider));
+                        functions.Add(Create(strTk, scanner, filterProvider, depth + 1));
                     }
                     else if (DirectObjectFinder.TryGet<DictionaryToken>(token, scanner, out var dicTk))
                     {
-                        functions.Add(Create(dicTk, scanner, filterProvider));
+                        functions.Add(Create(dicTk, scanner, filterProvider, depth + 1));
                     }
                     else
                     {
