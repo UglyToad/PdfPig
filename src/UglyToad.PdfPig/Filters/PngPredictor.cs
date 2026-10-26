@@ -32,6 +32,10 @@
     {
         private const int TiffPredictor = 2;
 
+        // PDFBOX-6265: match PDFBox's default row limit before allocating or padding a row.
+        // https://github.com/apache/pdfbox/blob/3bac8e5ccae91216dd38d39f39fd7bfe9d4bca37/pdfbox/src/main/java/org/apache/pdfbox/filter/Predictor.java
+        private const int MaximumRowLength = 10_000_000;
+
         /// <summary>Predictors from this value on are the PNG filters, chosen per row.</summary>
         private const int FirstPngPredictor = 10;
 
@@ -93,11 +97,11 @@
         /// reading the rows where they are and writing the decoded rows to the result. For data that
         /// has to leave a buffer anyway this is <see cref="Decode"/> folded into the copy.
         /// </summary>
-        public static byte[] DecodeToArray(ReadOnlySpan<byte> data, int predictor, int colors, int bitsPerComponent, int columns)
+        public static byte[] DecodeToArray(ReadOnlySpan<byte> data, int predictor, int colors, int bitsPerComponent, int columns, int maximumCapacity = DecodeBuffer.MaximumCapacity)
         {
             if (predictor <= 1 || data.Length == 0)
             {
-                var copy = NewArray(data.Length);
+                var copy = NewArray(data.Length, maximumCapacity);
                 data.CopyTo(copy);
 
                 return copy;
@@ -106,7 +110,7 @@
             var decoder = new Decoder(predictor, colors, bitsPerComponent, columns);
 
             // Every byte of every row is written, including the padding of a short last row.
-            var decoded = NewArray(decoder.FinalLength(data.Length));
+            var decoded = NewArray(decoder.FinalLength(data.Length), maximumCapacity);
 
             decoder.Advance(data, data.Length, decoded);
             decoder.Finish(data, data.Length, decoded);
@@ -115,8 +119,9 @@
         }
 
         /// <summary>An array whose every byte the caller is about to write.</summary>
-        private static byte[] NewArray(int length)
+        private static byte[] NewArray(int length, int maximumCapacity)
         {
+            DecodeBuffer.CheckLength(length, maximumCapacity);
 #if NET
             return GC.AllocateUninitializedArray<byte>(length);
 #else
@@ -284,6 +289,11 @@
                 this.compact = compact;
 
                 rowLength = CalculateRowLength(colors, bitsPerComponent, columns);
+                if (rowLength > MaximumRowLength)
+                {
+                    throw new DecodeBuffer.LimitExceededException(
+                        $"Calculated predictor row length is too high: {rowLength} (colors: {colors}, bitsPerComponent: {bitsPerComponent}, columns: {columns}); maximum: {MaximumRowLength}.");
+                }
                 bytesPerPixel = ((colors * bitsPerComponent) + 7) / 8;
                 stride = predictor >= FirstPngPredictor ? rowLength + 1 : rowLength;
 

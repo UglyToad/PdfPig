@@ -2,6 +2,7 @@
 {
     using Content;
     using Graphics.Colors;
+    using Filters;
     using System;
     using System.Collections.Generic;
     using UglyToad.PdfPig.Graphics.Core;
@@ -45,6 +46,20 @@
                 return decoded;
             }
 
+            if (imageWidth <= 0 || imageHeight <= 0 || details.NumberOfColorComponents <= 0
+                || (bitsPerComponent != 1 && bitsPerComponent != 2 && bitsPerComponent != 4
+                    && bitsPerComponent != 8 && bitsPerComponent != 16))
+            {
+                throw new ArgumentException("Invalid image dimensions or bits per component.");
+            }
+
+            // Bound the declared output, but keep the existing handling of short image data.
+            long pixels = (long)imageWidth * imageHeight;
+            DecodeBuffer.CheckLength(pixels);
+            long samples = pixels * details.NumberOfColorComponents;
+            DecodeBuffer.CheckLength(samples);
+            var requiredSize = (int)samples;
+
             if (bitsPerComponent != 8)
             {
                 // Unpack components such that they occupy one byte each
@@ -56,11 +71,11 @@
             var strideWidth = decoded.Length / imageHeight / bytesPerPixel;
             if (strideWidth != imageWidth)
             {
-                if (bytesPerPixel > 1 && imageWidth * imageHeight * bytesPerPixel < decoded.Length)
+                if (bytesPerPixel > 1 && requiredSize < decoded.Length)
                 {
                     // Fixed thanks to / see discussion at https://github.com/UglyToad/PdfPig/issues/1183
                     // Unclear what should be done here, we assume we can just remove the trailing bytes
-                    decoded = decoded.Slice(0, imageWidth * imageHeight * bytesPerPixel);
+                    decoded = decoded.Slice(0, requiredSize);
                 }
                 else
                 {
@@ -192,7 +207,9 @@
 
             int end = 8 - bitsPerComponent;
 
-            Span<byte> unpacked = new byte[input.Length * (int)Math.Ceiling((end + 1) / (double)bitsPerComponent)];
+            long unpackedLength = (long)input.Length * (8 / bitsPerComponent);
+            DecodeBuffer.CheckLength(unpackedLength);
+            Span<byte> unpacked = new byte[(int)unpackedLength];
 
             int right = (int)Math.Pow(2, bitsPerComponent) - 1;
 
@@ -210,9 +227,16 @@
 
         private static Span<byte> RemoveStridePadding(Span<byte> input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
         {
-            int size = imageWidth * imageHeight * multiplier;
-            Span<byte> result = size < input.Length ? input.Slice(0, size) : new byte[size];
-            // See PDFBOX-492-4.jar-8.pdf, page 2 for size > input.Length
+            long size = (long)imageWidth * imageHeight * multiplier;
+            DecodeBuffer.CheckLength(size);
+            // Check the final source slice before allocating; earlier rows read no further.
+            if ((long)(imageHeight - 1) * strideWidth + imageWidth > input.Length)
+            {
+                throw new ArgumentException("The image data is too short to read the declared rows.");
+            }
+
+            // Preserve the larger-buffer path for PDFBOX-492-4.jar-8.pdf, page 2.
+            Span<byte> result = size < input.Length ? input.Slice(0, (int)size) : new byte[(int)size];
 
             for (int y = 0; y < imageHeight; y++)
             {
