@@ -66,6 +66,27 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType
             }
         }
 
+        [Fact]
+        public void SubsetKeepsTheLastByteOfCompositeGlyphs()
+        {
+            // A subset of Roboto-Regular without hinting, so its composite glyphs end with the offset of their last component.
+            var fontBytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular-Subset-NoHinting");
+            var font = Parse(fontBytes);
+
+            var characters = new[] { '\u00C2', '\u00E9' };
+
+            var subset = Parse(TrueTypeSubsetter.Subset(fontBytes, new TrueTypeSubsetEncoding(characters)));
+
+            for (var i = 0; i < characters.Length; i++)
+            {
+                var glyphIndex = i + 1;
+
+                Assert.True(font.TryGetPath(characters[i], out var expectedPath));
+                Assert.True(subset.TryGetPath(glyphIndex, _ => glyphIndex, out var actualPath));
+                Assert.Equal(expectedPath.SelectMany(x => x.Commands), actualPath.SelectMany(x => x.Commands));
+            }
+        }
+
         private static TrueTypeFont Parse(byte[] fontBytes)
         {
             return TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontBytes)));
