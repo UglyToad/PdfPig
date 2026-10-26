@@ -36,6 +36,36 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType
             }
         }
 
+        [Fact]
+        public void SubsetKeepsTheMetricsOfGlyphsAfterTheLastHorizontalMetric()
+        {
+            // A subset of Roboto-Regular with only the digits. They share an advance width, so the hmtx table has full
+            // metrics for .notdef and zero only, and left side bearings for the other digits.
+            var fontBytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular-Subset-Digits");
+            var font = Parse(fontBytes);
+
+            var characters = "0123456789".ToCharArray();
+
+            var subset = Parse(TrueTypeSubsetter.Subset(fontBytes, new TrueTypeSubsetEncoding(characters)));
+            var expectedMetrics = font.TableRegister.HorizontalMetricsTable;
+            var actualMetrics = subset.TableRegister.HorizontalMetricsTable;
+
+            for (var i = 0; i < characters.Length; i++)
+            {
+                var glyphIndex = i + 1;
+                var originalGlyphIndex = font.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(characters[i]);
+
+                Assert.True(font.TryGetAdvanceWidth(characters[i], out var expectedWidth));
+                Assert.True(subset.TryGetAdvanceWidth(glyphIndex, _ => glyphIndex, out var actualWidth));
+                Assert.Equal(expectedWidth, actualWidth);
+
+                var expectedLeftSideBearing = originalGlyphIndex < expectedMetrics.HorizontalMetrics.Count
+                    ? expectedMetrics.HorizontalMetrics[originalGlyphIndex].LeftSideBearing
+                    : expectedMetrics.AdditionalLeftSideBearings[originalGlyphIndex - expectedMetrics.HorizontalMetrics.Count];
+                Assert.Equal(expectedLeftSideBearing, actualMetrics.HorizontalMetrics[glyphIndex].LeftSideBearing);
+            }
+        }
+
         private static TrueTypeFont Parse(byte[] fontBytes)
         {
             return TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontBytes)));
