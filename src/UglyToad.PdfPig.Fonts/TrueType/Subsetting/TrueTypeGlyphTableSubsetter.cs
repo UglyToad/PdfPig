@@ -192,11 +192,10 @@
                 {
                     var glyphIndices = ReadCompositeGlyph(data);
 
-                    // Skip hinting instructions but include them in the output.
-                    var next = indexToLocationTable.GlyphOffsets[i + 1];
-                    data.Seek(glyphDirectory.Offset + next - 1);
+                    // Include any hinting instructions after the components in the output.
+                    var length = indexToLocationTable.GlyphOffsets[i + 1] - indexToLocationTable.GlyphOffsets[i];
 
-                    glyphRecords[i] = new GlyphRecord(glyphOffset, type, (int)(data.Position - glyphOffset), glyphIndices);
+                    glyphRecords[i] = new GlyphRecord(glyphOffset, type, (int)length, glyphIndices);
                 }
             }
 
