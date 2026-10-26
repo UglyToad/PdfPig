@@ -53,16 +53,11 @@
                 throw new ArgumentException("Invalid image dimensions or bits per component.");
             }
 
-            // Validate the actual packed rows before unpacking or allocating from declared dimensions.
+            // Bound the declared output, but keep the existing handling of short image data.
             long pixels = (long)imageWidth * imageHeight;
             DecodeBuffer.CheckLength(pixels);
             long samples = pixels * details.NumberOfColorComponents;
             DecodeBuffer.CheckLength(samples);
-            long rowBytes = ((long)imageWidth * details.NumberOfColorComponents * bitsPerComponent + 7) / 8;
-            if (rowBytes * imageHeight > decoded.Length)
-            {
-                throw new ArgumentException("The image data is shorter than its declared dimensions require.");
-            }
             var requiredSize = (int)samples;
 
             if (bitsPerComponent != 8)
@@ -232,8 +227,16 @@
 
         private static Span<byte> RemoveStridePadding(Span<byte> input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
         {
-            int size = imageWidth * imageHeight * multiplier;
-            Span<byte> result = input.Slice(0, size);
+            long size = (long)imageWidth * imageHeight * multiplier;
+            DecodeBuffer.CheckLength(size);
+            // Check the final source slice before allocating; earlier rows read no further.
+            if ((long)(imageHeight - 1) * strideWidth + imageWidth > input.Length)
+            {
+                throw new ArgumentException("The image data is too short to read the declared rows.");
+            }
+
+            // Preserve the larger-buffer path for PDFBOX-492-4.jar-8.pdf, page 2.
+            Span<byte> result = size < input.Length ? input.Slice(0, (int)size) : new byte[(int)size];
 
             for (int y = 0; y < imageHeight; y++)
             {
