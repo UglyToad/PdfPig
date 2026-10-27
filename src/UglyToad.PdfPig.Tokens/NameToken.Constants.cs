@@ -18,6 +18,8 @@
         public static readonly NameToken AdobePpklite = new NameToken("Adobe.PPKLite");
         public static readonly NameToken Aesv2 = new NameToken("AESV2");
         public static readonly NameToken Aesv3 = new NameToken("AESV3");
+        public static readonly NameToken Af = new NameToken("AF");
+        public static readonly NameToken AfRelationship = new NameToken("AFRelationship");
         public static readonly NameToken After = new NameToken("After");
         public static readonly NameToken Ais = new NameToken("AIS");
         public static readonly NameToken Alt = new NameToken("Alt");
@@ -204,6 +206,7 @@
         public static readonly NameToken Ef = new NameToken("EF");
         public static readonly NameToken EfOpen = new NameToken("EFOpen");
         public static readonly NameToken EmbeddedFdfs = new NameToken("EmbeddedFDFs");
+        public static readonly NameToken EmbeddedFile = new NameToken("EmbeddedFile");
         public static readonly NameToken EmbeddedFiles = new NameToken("EmbeddedFiles");
         public static readonly NameToken Empty = new NameToken("");
         public static readonly NameToken Encode = new NameToken("Encode");

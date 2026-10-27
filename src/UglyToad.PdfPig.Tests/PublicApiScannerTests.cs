@@ -337,6 +337,7 @@
                 "UglyToad.PdfPig.Util.DictionaryTokenExtensions",
                 "UglyToad.PdfPig.Util.Diacritics",
                 "UglyToad.PdfPig.Util.WhitespaceSizeStatistics",
+                "UglyToad.PdfPig.Writer.AssociatedFileRelationship",
                 "UglyToad.PdfPig.Writer.ITokenWriter",
                 "UglyToad.PdfPig.Writer.LinkAnnotation",
                 "UglyToad.PdfPig.Writer.PdfAStandard",
