@@ -94,6 +94,25 @@
         }
 
         [Fact]
+        public void CanReadUnencryptedMetadataWithCryptFilter()
+        {
+            // AESV2 document with /EncryptMetadata false: the XMP stream is stored in clear with /Filter [/Crypt].
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetSpecificTestDocumentPath("0000281.pdf")))
+            {
+                Assert.True(document.IsEncrypted);
+
+                Assert.True(document.TryGetXmpMetadata(out var metadata));
+
+                var xmp = metadata.GetXDocument();
+                Assert.Equal("xmpmeta", xmp.Root!.Name.LocalName);
+                Assert.Contains("Avis de situation au répertoire Sirene", xmp.ToString());
+
+                var page = document.GetPage(1);
+                Assert.StartsWith("REPUBLIQUE FRANCAISE", page.Text);
+            }
+        }
+
+        [Fact]
         public void CancellationIsNotWrappedForEncryptedDocument()
         {
             // A page factory that honours a cancellation token throws OperationCanceledException;

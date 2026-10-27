@@ -50,7 +50,7 @@
         /// Gets the metadata stream as an <see cref="XDocument"/>.
         /// <para>
         /// It is recommended to NOT use this method as it parses the XML document without security settings.
-        /// This method also converts the bytes into string before processing.
+        /// The encoding (UTF-8 or UTF-16) is detected by the XML reader from the byte order mark or XML declaration.
         /// </para>
         /// Instead, create your own XmlReader with the desired without settings (you can create a <see cref="System.IO.MemoryStream"/> based on <see cref="GetXmlMemory"/>),
         /// and then load the XDocument.
@@ -58,7 +58,11 @@
         /// <returns>The <see cref="XDocument"/> for the XMP XML.</returns>
         public XDocument GetXDocument()
         {
-            return XDocument.Parse(OtherEncodings.BytesAsLatin1String(GetXmlBytes()));
+            // XMP is Unicode (UTF-8 by default), so let the reader detect the encoding.
+            using (var stream = GetXmlMemory().AsReadOnlyMemoryStream())
+            {
+                return XDocument.Load(stream);
+            }
         }
     }
 }
