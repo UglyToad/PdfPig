@@ -156,8 +156,45 @@
                 throw new InvalidOperationException("Could not write empty cross reference table.");
             }
 
+            var identifier = new ArrayToken(new IToken[]
+            {
+                new HexToken(Guid.NewGuid().ToString("N").AsSpan()),
+                new HexToken(Guid.NewGuid().ToString("N").AsSpan())
+            });
+
+            var trailerDictionaryData = new Dictionary<NameToken, IToken>
+            {
+                // 1 for the free entry.
+                {NameToken.Size, new NumericToken(objectOffsets.Count + 1)},
+                {NameToken.Root, new IndirectReferenceToken(catalogToken)},
+                {NameToken.Id, identifier}
+            };
+
+            if (documentInformationReference.HasValue)
+            {
+                trailerDictionaryData[NameToken.Info] = new IndirectReferenceToken(documentInformationReference.Value);
+            }
+
+            if (prevXrefTableLocation.HasValue)
+            {
+                trailerDictionaryData[NameToken.Prev] = new NumericToken(prevXrefTableLocation.Value);
+            }
+
+            WriteCrossReferenceTable(objectOffsets, new DictionaryToken(trailerDictionaryData), outputStream, 0);
+        }
+
+        /// <summary>
+        /// Writes a cross-reference table followed by the trailer dictionary, startxref and the end-of-file marker.
+        /// The output stream starts at <paramref name="streamOffset"/> in the file.
+        /// </summary>
+        internal void WriteCrossReferenceTable(
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+            DictionaryToken trailerDictionary,
+            Stream outputStream,
+            long streamOffset)
+        {
             WriteLineBreak(outputStream);
-            var position = outputStream.Position;
+            var position = streamOffset + outputStream.Position;
             outputStream.Write(Xref);
             WriteLineBreak(outputStream);
 
@@ -245,32 +282,6 @@
 
             outputStream.Write(Trailer);
             WriteLineBreak(outputStream);
-
-            var identifier = new ArrayToken(new IToken[]
-            {
-                new HexToken(Guid.NewGuid().ToString("N").AsSpan()),
-                new HexToken(Guid.NewGuid().ToString("N").AsSpan())
-            });
-
-            var trailerDictionaryData = new Dictionary<NameToken, IToken>
-            {
-                // 1 for the free entry.
-                {NameToken.Size, new NumericToken(objectOffsets.Count + 1)},
-                {NameToken.Root, new IndirectReferenceToken(catalogToken)},
-                {NameToken.Id, identifier}
-            };
-
-            if (documentInformationReference.HasValue)
-            {
-                trailerDictionaryData[NameToken.Info] = new IndirectReferenceToken(documentInformationReference.Value);
-            }
-
-            if (prevXrefTableLocation.HasValue)
-            {
-                trailerDictionaryData[NameToken.Prev] = new NumericToken(prevXrefTableLocation.Value);
-            }
-
-            var trailerDictionary = new DictionaryToken(trailerDictionaryData);
 
             WriteDictionary(trailerDictionary, outputStream);
             WriteLineBreak(outputStream);

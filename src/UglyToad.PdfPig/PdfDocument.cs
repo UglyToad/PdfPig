@@ -49,6 +49,11 @@
         public Structure Structure { get; }
 
         /// <summary>
+        /// The bytes the document was read from.
+        /// </summary>
+        internal IInputBytes InputBytes => inputBytes;
+
+        /// <summary>
         /// Access to rare or advanced features of the PDF specification.
         /// </summary>
         public AdvancedPdfDocumentAccess Advanced { get; }
