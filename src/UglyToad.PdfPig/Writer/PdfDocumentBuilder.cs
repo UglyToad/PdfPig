@@ -653,6 +653,19 @@ namespace UglyToad.PdfPig.Writer
                 return [];
             }
 
+            // Reserved up front so /Popup, /Parent and /IRT links between annotations resolve to the copies.
+            var reserved = new Dictionary<IndirectReference, IndirectReferenceToken>();
+            var written = new HashSet<IndirectReference>();
+            foreach (var annotEntry in annotationsArray.Data)
+            {
+                if (annotEntry is IndirectReferenceToken annotRef && !reserved.ContainsKey(annotRef.Data))
+                {
+                    var reservedRef = context.ReserveObjectNumber();
+                    reserved[annotRef.Data] = reservedRef;
+                    refs[annotRef.Data] = reservedRef;
+                }
+            }
+
             var copiedAnnotations = new List<IToken>();
             foreach (var annotEntry in annotationsArray.Data)
             {
@@ -703,13 +716,7 @@ namespace UglyToad.PdfPig.Writer
                         }
                     }
 
-                    var copiedRef = WriterUtil.CopyToken(
-                        context,
-                        annotToCopy,
-                        sourceScanner,
-                        refs);
-
-                    copiedAnnotations.Add(copiedRef);
+                    copiedAnnotations.Add(CopyAnnotation(annotEntry, annotToCopy));
 
                     continue;
                 }
@@ -741,13 +748,7 @@ namespace UglyToad.PdfPig.Writer
                         continue;
                     }
 
-                    var copiedRef = WriterUtil.CopyToken(
-                        context,
-                        CopyWithSkippedKeys(annotDict, removedKeys),
-                        sourceScanner,
-                        refs);
-
-                    copiedAnnotations.Add(copiedRef);
+                    copiedAnnotations.Add(CopyAnnotation(annotEntry, CopyWithSkippedKeys(annotDict, removedKeys)));
 
                     continue;
                 }
@@ -760,16 +761,32 @@ namespace UglyToad.PdfPig.Writer
                 }
 
                 // If neither /A nor /Dest are present then I don't really know what this link does, so it should be safe to copy:
-                var finalCopiedRef = WriterUtil.CopyToken(
-                    context,
-                    CopyWithSkippedKeys(annotDict, removedKeys),
-                    sourceScanner,
-                    refs);
+                copiedAnnotations.Add(CopyAnnotation(annotEntry, CopyWithSkippedKeys(annotDict, removedKeys)));
+            }
 
-                copiedAnnotations.Add(finalCopiedRef);
+            // Skipped annotations still own a reserved number, which must be written.
+            foreach (var kvp in reserved)
+            {
+                if (!written.Contains(kvp.Key))
+                {
+                    context.WriteToken(NullToken.Instance, kvp.Value);
+                }
             }
 
             return copiedAnnotations;
+
+            // Annotations must be indirect objects for viewers to edit or delete them.
+            IToken CopyAnnotation(IToken annotEntry, DictionaryToken annotToCopy)
+            {
+                var copied = WriterUtil.CopyToken(context, annotToCopy, sourceScanner, refs);
+
+                if (annotEntry is IndirectReferenceToken annotRef && reserved.TryGetValue(annotRef.Data, out var reservedRef))
+                {
+                    return written.Add(annotRef.Data) ? context.WriteToken(copied, reservedRef) : reservedRef;
+                }
+
+                return context.WriteToken(copied);
+            }
         }
 
         private static DictionaryToken CopyWithSkippedKeys(
