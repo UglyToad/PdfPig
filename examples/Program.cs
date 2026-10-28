@@ -67,6 +67,10 @@
                 {10,
                     ("Generate document with a composite font for text with more than 255 distinct characters",
                     () => GenerateDocumentWithCompositeFont.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf")))
+                },
+                {11,
+                    ("Generate PDF/A-3 document with an embedded file",
+                    () => GenerateDocumentWithEmbeddedFile.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf")))
                 }
             };
 

@@ -388,6 +388,19 @@ if (document.Advanced.TryGetEmbeddedFiles(out IReadOnlyList<EmbeddedFile> files)
 }
 ```
 
+To embed a file in a document created by the `PdfDocumentBuilder` use:
+
+```cs
+var builder = new PdfDocumentBuilder { ArchiveStandard = PdfAStandard.A3B };
+builder.AddEmbeddedFile("invoice.xml", xmlBytes, new PdfDocumentBuilder.EmbeddedFileOptions
+{
+    MimeType = "text/xml",
+    Relationship = AssociatedFileRelationship.Alternative
+});
+```
+
+Of the PDF/A standards only PDF/A-3 allows embedded files. For a PDF/A-3 document the builder also writes the relationship of each file to the document and associates the file with the document, as PDF/A-3 requires.
+
 ### Merging
 
 You can merge 2 or more existing PDF files using the `PdfMerger` class:
