@@ -5,6 +5,7 @@
     using PdfPig.Actions;
     using PdfPig.Core;
     using PdfPig.Fonts.Standard14Fonts;
+    using PdfPig.Parser.Parts;
     using PdfPig.Tokens;
     using PdfPig.Writer;
     using Tests.Fonts.TrueType;
@@ -227,6 +228,36 @@
             var result = AddFirstPage(source);
 
             Assert.DoesNotContain("OTHER PAGE", OtherEncodings.BytesAsLatin1String(result));
+        }
+
+        [Fact]
+        public void AddPageKeepsAnnotationAndPopupLinkedToTheirAnnotsEntries()
+        {
+            // Acrobat cannot edit or delete an annotation that is not an indirect object.
+            var source = BuildRawPdf(
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 100 100] /Resources << >> >>",
+                "<< /Type /Page /Parent 2 0 R /Annots [4 0 R 5 0 R] >>",
+                "<< /Type /Annot /Subtype /Highlight /Rect [10 10 20 20] /QuadPoints [10 20 20 20 10 10 20 10] /P 3 0 R /Popup 5 0 R >>",
+                "<< /Type /Annot /Subtype /Popup /Rect [20 20 60 60] /Parent 4 0 R >>");
+
+            var result = AddFirstPage(source);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                var scanner = document.Structure.TokenScanner;
+                var annots = document.GetPage(1).Dictionary.Get<ArrayToken>(NameToken.Annots, scanner);
+
+                Assert.Equal(2, annots.Length);
+                var highlightRef = Assert.IsType<IndirectReferenceToken>(annots[0]);
+                var popupRef = Assert.IsType<IndirectReferenceToken>(annots[1]);
+
+                var highlight = DirectObjectFinder.Get<DictionaryToken>(highlightRef, scanner);
+                var popup = DirectObjectFinder.Get<DictionaryToken>(popupRef, scanner);
+
+                Assert.Equal(popupRef.Data, Assert.IsType<IndirectReferenceToken>(highlight.Data[NameToken.Popup]).Data);
+                Assert.Equal(highlightRef.Data, Assert.IsType<IndirectReferenceToken>(popup.Data[NameToken.Parent]).Data);
+            }
         }
 
         private static byte[] AddFirstPage(byte[] source)
