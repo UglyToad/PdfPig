@@ -202,7 +202,7 @@
                 filterProvider,
                 encodingReader,
                 cmapCache,
-                SystemFontFinder.Instance,
+                parsingOptions.SystemFontFinder ?? SystemFontFinder.Instance,
                 type1Handler);
 
             var fontFactory = new FontFactory(

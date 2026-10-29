@@ -40,6 +40,11 @@ public sealed class SystemFontFinder : ISystemFontFinder
     /// </summary>
     public static readonly ISystemFontFinder Instance = new SystemFontFinder();
 
+    /// <summary>
+    /// A finder that finds no font, so a document reads the same whatever fonts the machine has installed.
+    /// </summary>
+    public static ISystemFontFinder None { get; } = new NoSystemFontFinder();
+
     static SystemFontFinder()
     {
         var dict = new Dictionary<string, string[]>
@@ -604,5 +609,10 @@ public sealed class SystemFontFinder : ISystemFontFinder
                 AdditionalFontSearchDirectories.Add(directory);
             }
         }
+    }
+
+    private sealed class NoSystemFontFinder : ISystemFontFinder
+    {
+        public TrueTypeFont? GetTrueTypeFont(string name) => null;
     }
 }
