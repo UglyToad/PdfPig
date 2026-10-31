@@ -8,8 +8,8 @@
     public interface ISystemFontFinder
     {
         /// <summary>
-        /// Get the TrueType font with the specified name.
+        /// Get the TrueType font with the specified name, or <see langword="null"/> if there is none.
         /// </summary>
-        TrueTypeFont GetTrueTypeFont(string name);
+        TrueTypeFont? GetTrueTypeFont(string name);
     }
 }

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig
 {
     using Filters;
+    using Fonts.SystemFonts;
     using System.Collections.Generic;
     using Logging;
     using Graphics.Colors.Icc;
@@ -79,5 +80,14 @@
         /// ICC-based color spaces fall back silently to their declared alternate color space.
         /// </summary>
         public IIccProfileService? IccProfileService { get; set; } = null;
+
+        /// <summary>
+        /// Finds a font by name on the host, for a document that names a TrueType font it does not embed.
+        /// When <c>null</c> (default), <see cref="Fonts.SystemFonts.SystemFontFinder.Instance"/> is used: the fonts installed
+        /// on this machine, so the same document can be read differently on another.
+        /// Set <see cref="Fonts.SystemFonts.SystemFontFinder.None"/> for the same result on every machine: glyph boxes then
+        /// come from the Standard 14 metrics, and fonts with no Standard 14 equivalent have no outlines.
+        /// </summary>
+        public ISystemFontFinder? SystemFontFinder { get; set; } = null;
     }
 }
