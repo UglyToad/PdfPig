@@ -9,7 +9,7 @@
         {
             var names = Standard14.GetNames().Count;
 
-            Assert.Equal(39, names);
+            Assert.Equal(47, names);
         }
 
         [Theory]
@@ -25,6 +25,15 @@
         [InlineData("Times New Roman,Bold", Standard14Font.TimesBold)]
         [InlineData("TimesRoman", Standard14Font.TimesRoman)]
         [InlineData("Courier New", Standard14Font.Courier)]
+        [InlineData("CourierNewPSMT", Standard14Font.Courier)]
+        [InlineData("CourierNewPS-ItalicMT", Standard14Font.CourierOblique)]
+        [InlineData("CourierNewPS-BoldMT", Standard14Font.CourierBold)]
+        [InlineData("CourierNewPS-BoldItalicMT", Standard14Font.CourierBoldOblique)]
+        [InlineData("ABCDEF+TimesNewRomanPSMT", Standard14Font.TimesRoman)]
+        [InlineData("TimesNewRomanPSMT", Standard14Font.TimesRoman)]
+        [InlineData("TimesNewRomanPS-ItalicMT", Standard14Font.TimesItalic)]
+        [InlineData("TimesNewRomanPS-BoldMT", Standard14Font.TimesBold)]
+        [InlineData("TimesNewRomanPS-BoldItalicMT", Standard14Font.TimesBoldItalic)]
         public void TryGetStandard14FontMatchesNamesLoosely(string name, Standard14Font expected)
         {
             Assert.True(Standard14.TryGetStandard14Font(name, out var font));
@@ -38,7 +47,6 @@
         [InlineData("NotAFont")]
         [InlineData("ABCDEF+NotAFont")]
         [InlineData("Helvetica-Narrow")]
-        [InlineData("TimesNewRomanPSMT")]
         public void TryGetStandard14FontRejectsOtherNames(string name)
         {
             Assert.False(Standard14.TryGetStandard14Font(name, out _));

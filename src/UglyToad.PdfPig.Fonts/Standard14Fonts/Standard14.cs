@@ -90,6 +90,18 @@
             AddAdobeFontMetrics("Arial-BoldMT,Bold", "Helvetica-Bold");
             AddAdobeFontMetrics("Arial-BoldItalicMT", "Helvetica-BoldOblique");
 
+            // Additional names for Courier New
+            AddAdobeFontMetrics("CourierNewPSMT", "Courier");
+            AddAdobeFontMetrics("CourierNewPS-ItalicMT", "Courier-Oblique");
+            AddAdobeFontMetrics("CourierNewPS-BoldMT", "Courier-Bold");
+            AddAdobeFontMetrics("CourierNewPS-BoldItalicMT", "Courier-BoldOblique");
+
+            // Additional names for Times New Roman
+            AddAdobeFontMetrics("TimesNewRomanPSMT", "Times-Roman");
+            AddAdobeFontMetrics("TimesNewRomanPS-ItalicMT", "Times-Italic");
+            AddAdobeFontMetrics("TimesNewRomanPS-BoldMT", "Times-Bold");
+            AddAdobeFontMetrics("TimesNewRomanPS-BoldItalicMT", "Times-BoldItalic");
+
             foreach (var pair in Standard14Mapping)
             {
                 var key = NormalizeName(pair.Key);
