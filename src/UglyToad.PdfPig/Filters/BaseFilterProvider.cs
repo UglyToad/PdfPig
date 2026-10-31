@@ -81,6 +81,13 @@
         {
             if (!FilterInstances.TryGetValue(name, out var factory))
             {
+                // Decryption happens before the filters run, so every
+                // provider can handle Crypt without registering it.
+                if (name == NameToken.Crypt.Data)
+                {
+                    return CryptFilter.Instance;
+                }
+
                 throw new NotSupportedException($"The filter with the name {name} is not supported yet. Please raise an issue.");
             }
 

@@ -239,14 +239,14 @@
             var dictionary = new Dictionary<NameToken, IToken>();
 
             // Skip the operators "dup" etc to reach "begin".
-            while (scanner.MoveNext() && (!(scanner.CurrentToken is OperatorToken operatorToken) || operatorToken.Data != "begin"))
+            while (scanner.MoveNext() && (scanner.CurrentToken is not OperatorToken operatorToken || operatorToken.Data != "begin"))
             {
                 // Skipping.
             }
 
             for (int i = 0; i < keys; i++)
             {
-                if (!scanner.TryReadToken(out NameToken key))
+                if (!TryReadKey(scanner, out var key))
                 {
                     return new DictionaryToken(dictionary);
                 }
@@ -269,7 +269,7 @@
 
                     if (scanner.CurrentToken == OperatorToken.Dict)
                     {
-                        if (!(previousToken is NumericToken numeric))
+                        if (previousToken is not NumericToken numeric)
                         {
                             return new DictionaryToken(dictionary);
                         }
@@ -286,6 +286,10 @@
                     {
                         // skip
                     }
+                    else if (scanner.CurrentToken is CommentToken)
+                    {
+                        // skip
+                    }
                     else
                     {
                         previousToken = scanner.CurrentToken;
@@ -296,8 +300,31 @@
             return new DictionaryToken(dictionary);
         }
 
+        /// <summary>
+        /// Reads the next dictionary key, skipping comments. Fonts written by FontForge put the copyright
+        /// notice as comment lines between the keys of /FontInfo.
+        /// </summary>
+        private static bool TryReadKey(ISeekableTokenScanner scanner, out NameToken key)
+        {
+            while (scanner.MoveNext())
+            {
+                if (scanner.CurrentToken is CommentToken)
+                {
+                    continue;
+                }
+
+                key = scanner.CurrentToken as NameToken;
+                return key is not null;
+            }
+
+            key = null;
+            return false;
+        }
+
         private static (ArrayToken encoding, NameToken name) ReadEncoding(ISeekableTokenScanner scanner)
         {
+            // TODO: comments are not skipped here, unlike in ReadDictionary. A '%' comment inside the
+            // 'dup <code> <name> put' entries would throw or end the encoding early. Not seen in real fonts yet.
             var result = new List<IToken>();
 
             // Treat encoding differently, it's what we came here for!
@@ -319,9 +346,9 @@
 
             var stoppedOnDup = false;
 
-            while (scanner.MoveNext() && (!(scanner.CurrentToken is OperatorToken forOperator) || forOperator.Data != "for"))
+            while (scanner.MoveNext() && (scanner.CurrentToken is not OperatorToken forOperator || forOperator.Data != "for"))
             {
-                if (!(scanner.CurrentToken is OperatorToken operatorToken))
+                if (scanner.CurrentToken is not OperatorToken operatorToken)
                 {
                     continue;
                 }

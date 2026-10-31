@@ -119,6 +119,7 @@
                 RunLengthFilter => 1.5,
                 LzwFilter => 2,
                 FlateFilter => 10,
+                CryptFilter => 1,
                 _ => 1000
             };
         }
