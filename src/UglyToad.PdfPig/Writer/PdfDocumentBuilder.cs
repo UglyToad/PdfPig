@@ -16,16 +16,12 @@ namespace UglyToad.PdfPig.Writer
     using PdfPig.Fonts.TrueType.Parser;
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Runtime.CompilerServices;
-    using System.Security.Cryptography;
-    using System.Text.RegularExpressions;
     using System.Xml.Linq;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
     /// <summary>
     /// Provides methods to construct new PDF documents.
@@ -48,9 +44,6 @@ namespace UglyToad.PdfPig.Writer
             NameToken.ImageC,
             NameToken.ImageI
         });
-
-        // A type and a subtype, as PDF/A-3 requires for the MIME type of an embedded file (ISO 19005-3, 6.8).
-        private static readonly Regex MimeTypeRegex = new Regex(@"^[-A-Za-z0-9_+.]+/[-A-Za-z0-9_+.]+\z");
 
         /// <summary>
         /// The standard of PDF/A compliance of the generated document. Defaults to <see cref="PdfAStandard.None"/>.
@@ -243,7 +236,7 @@ namespace UglyToad.PdfPig.Writer
 
         /// <summary>
         /// Adds a file to the document as an embedded file, which readers show as an attachment of the document.
-        /// Of the PDF/A standards only PDF/A-3 allows embedded files, for the others <see cref="Build"/> throws a <see cref="NotSupportedException"/>.
+        /// Of the PDF/A standards embedded files are only supported for PDF/A-3, for the others <see cref="Build"/> throws a <see cref="NotSupportedException"/>.
         /// </summary>
         /// <param name="name">The name of the file, which must be unique in the document.</param>
         /// <param name="bytes">The bytes of the file.</param>
@@ -255,7 +248,7 @@ namespace UglyToad.PdfPig.Writer
 
         /// <summary>
         /// Adds a file to the document as an embedded file, which readers show as an attachment of the document.
-        /// Of the PDF/A standards only PDF/A-3 allows embedded files, for the others <see cref="Build"/> throws a <see cref="NotSupportedException"/>.
+        /// Of the PDF/A standards embedded files are only supported for PDF/A-3, for the others <see cref="Build"/> throws a <see cref="NotSupportedException"/>.
         /// </summary>
         /// <param name="name">The name of the file, which must be unique in the document.</param>
         /// <param name="bytes">The bytes of the file.</param>
@@ -263,95 +256,17 @@ namespace UglyToad.PdfPig.Writer
         /// <exception cref="ArgumentException">The name is empty or already used, or the MIME type is not a type and a subtype.</exception>
         public void AddEmbeddedFile(string name, ReadOnlyMemory<byte> bytes, EmbeddedFileOptions options)
         {
-            if (name is null)
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-
-            if (options is null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-
-            if (name.Length == 0)
-            {
-                throw new ArgumentException("The name of an embedded file must not be empty.", nameof(name));
-            }
+            EmbeddedFileFactory.Validate(name, options);
 
             if (embeddedFiles.Any(x => x.Name.Data == name))
             {
                 throw new ArgumentException($"An embedded file named '{name}' was already added.", nameof(name));
             }
 
-            if (options.MimeType is null || !MimeTypeRegex.IsMatch(options.MimeType))
-            {
-                throw new ArgumentException($"The MIME type of an embedded file must be a type and a subtype, such as text/xml, but was '{options.MimeType}'.", nameof(options));
-            }
-
-            var data = bytes.ToArray();
-
-            // The checksum is the MD5 hash of the uncompressed file (ISO 32000-1, Table 46).
-            byte[] checksum;
-            using (var md5 = MD5.Create())
-            {
-                checksum = md5.ComputeHash(data);
-            }
-
-            // PDF/A-3 requires ModDate for associated files (Arlington PDF Model, AFEmbeddedFileParameter),
-            // so without a date in the options the time the file is added is used.
-            var parameters = new Dictionary<NameToken, IToken>
-            {
-                {NameToken.Size, new NumericToken(data.Length)},
-                {NameToken.CheckSum, new HexToken(Hex.GetString(checksum).AsSpan())},
-                {NameToken.ModDate, new StringToken(ToPdfDate(options.ModifiedDate ?? DateTimeOffset.Now))}
-            };
-
-            var stream = new StreamToken(
-                new DictionaryToken(new Dictionary<NameToken, IToken>
-                {
-                    {NameToken.Type, NameToken.EmbeddedFile},
-                    {NameToken.Subtype, NameToken.Create(options.MimeType)},
-                    {NameToken.Filter, NameToken.FlateDecode},
-                    {NameToken.Params, new DictionaryToken(parameters)}
-                }),
-                DataCompressor.CompressBytes(data));
-
             var key = new StringToken(name);
-            var streamReference = context.WriteToken(stream);
-            var fileSpecification = new Dictionary<NameToken, IToken>
-            {
-                {NameToken.Type, NameToken.Filespec},
-                {NameToken.F, key},
-                {NameToken.Uf, key},
-                {NameToken.Ef, new DictionaryToken(new Dictionary<NameToken, IToken>
-                {
-                    {NameToken.F, streamReference},
-                    {NameToken.Uf, streamReference}
-                })}
-            };
+            var stream = context.WriteToken(EmbeddedFileFactory.CreateStream(bytes, options));
 
-            if (options.Description is not null)
-            {
-                fileSpecification[NameToken.Desc] = new StringToken(options.Description);
-            }
-
-            embeddedFiles.Add((key, fileSpecification, options.Relationship));
-        }
-
-        private static string ToPdfDate(DateTimeOffset date)
-        {
-            // D:YYYYMMDDHHmmSSOHH'mm (ISO 32000-1, 7.9.4).
-            var offset = date.Offset;
-            var zone = offset == TimeSpan.Zero
-                ? "Z"
-                : string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}{1:00}'{2:00}",
-                    offset < TimeSpan.Zero ? '-' : '+',
-                    Math.Abs(offset.Hours),
-                    Math.Abs(offset.Minutes));
-
-            return "D:" + date.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) + zone;
+            embeddedFiles.Add((key, EmbeddedFileFactory.CreateFileSpecification(key, stream, options.Description), options.Relationship));
         }
 
         private void WriteEmbeddedFiles(Dictionary<NameToken, IToken> catalogDictionary)
@@ -365,8 +280,7 @@ namespace UglyToad.PdfPig.Writer
                 var (_, fileSpecification, relationship) = embeddedFiles[i];
                 if (isPdfA3)
                 {
-                    // Each relationship is written as the name of its value, such as /Alternative.
-                    fileSpecification[NameToken.AfRelationship] = NameToken.Create(relationship.ToString());
+                    fileSpecification[NameToken.AfRelationship] = EmbeddedFileFactory.GetRelationship(relationship);
                 }
 
                 references[i] = context.WriteToken(new DictionaryToken(fileSpecification));
@@ -374,7 +288,7 @@ namespace UglyToad.PdfPig.Writer
 
             // The keys of a name tree are sorted byte by byte (ISO 32000-1, 7.9.6).
             var entries = embeddedFiles.Select((x, i) => (x.Name, Reference: references[i])).ToArray();
-            Array.Sort(entries, (x, y) => x.Name.Bytes.SequenceCompareTo(y.Name.Bytes));
+            Array.Sort(entries, (x, y) => EmbeddedFileFactory.CompareKeys(x.Name, y.Name));
             var names = entries.SelectMany(x => new IToken[] { x.Name, x.Reference }).ToArray();
 
             catalogDictionary[NameToken.Names] = new DictionaryToken(new Dictionary<NameToken, IToken>
