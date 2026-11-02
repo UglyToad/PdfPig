@@ -399,7 +399,23 @@ builder.AddEmbeddedFile("invoice.xml", xmlBytes, new EmbeddedFileOptions
 });
 ```
 
-Of the PDF/A standards only PDF/A-3 allows embedded files. For a PDF/A-3 document the builder also writes the relationship of each file to the document and associates the file with the document, as PDF/A-3 requires.
+Of the PDF/A standards embedded files are only supported for PDF/A-3. For a PDF/A-3 document the builder also writes the relationship of each file to the document and associates the file with the document, as PDF/A-3 requires.
+
+To add a file to an existing document use the `PdfIncrementalUpdateBuilder`, which keeps the embedded files of the document:
+
+```cs
+using var document = PdfDocument.Open(filePath);
+var builder = new PdfIncrementalUpdateBuilder(document);
+builder.AddEmbeddedFile("result.json", jsonBytes, new EmbeddedFileOptions
+{
+    MimeType = "application/json",
+    Relationship = AssociatedFileRelationship.Supplement
+});
+
+byte[] resultFileBytes = builder.Build();
+```
+
+A file with a name that the document already has must be removed first with `RemoveEmbeddedFile`. Its bytes stay in the original part of the file, which an incremental update does not change. The PDF/A standard of the document is taken from its XMP metadata.
 
 ### Merging
 
@@ -426,7 +442,7 @@ builder.ReplaceObject(document.Structure.Trailer.Root, catalog.With(NameToken.Me
 byte[] resultFileBytes = builder.Build();
 ```
 
-Encrypted documents and documents whose cross-reference had to be rebuilt by a brute-force search are not supported.
+Encrypted documents and documents whose cross-reference had to be rebuilt by a brute-force search are not supported. The builder can also add and remove embedded files, see [Embedded Files](#embedded-files).
 
 ## Wiki
 Check out our [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples and detailed guides on the API.

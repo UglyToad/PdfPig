@@ -75,6 +75,10 @@
                 {12,
                     ("Generate PDF/A-3 document with an embedded file",
                     () => GenerateDocumentWithEmbeddedFile.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf")))
+                },
+                {13,
+                    ("Add an embedded file to an existing document with an incremental update",
+                    () => AddEmbeddedFileWithIncrementalUpdate.Run(Path.Combine(filesDirectory, "data.pdf")))
                 }
             };
 
