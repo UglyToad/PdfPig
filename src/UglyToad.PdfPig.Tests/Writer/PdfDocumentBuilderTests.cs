@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
+    using System.Globalization;
+    using System.Text.RegularExpressions;
     using Content;
     using Integration;
     using PdfPig.Actions;
@@ -1199,7 +1201,6 @@
                 Assert.Equal(
                     new byte[] { 0x8B, 0x1A, 0x99, 0x53, 0xC4, 0x61, 0x12, 0x96, 0xA8, 0x27, 0xAB, 0xF8, 0xC4, 0x78, 0x04, 0xD7 },
                     parameters.Get<HexToken>(NameToken.CheckSum, scanner).Bytes.ToArray());
-                Assert.False(parameters.ContainsKey(NameToken.ModDate));
             }
         }
 
@@ -1209,7 +1210,7 @@
             var builder = new PdfDocumentBuilder();
             builder.AddPage(PageSize.A4);
 
-            builder.AddEmbeddedFile("invoice.xml", "<Invoice/>"u8.ToArray(), new PdfDocumentBuilder.EmbeddedFileOptions
+            builder.AddEmbeddedFile("invoice.xml", "<Invoice/>"u8.ToArray(), new EmbeddedFileOptions
             {
                 MimeType = "text/xml",
                 Description = "Invoice data"
@@ -1239,7 +1240,7 @@
             var builder = new PdfDocumentBuilder();
             builder.AddPage(PageSize.A4);
 
-            builder.AddEmbeddedFile("hello.txt", "Hello"u8.ToArray(), new PdfDocumentBuilder.EmbeddedFileOptions
+            builder.AddEmbeddedFile("hello.txt", "Hello"u8.ToArray(), new EmbeddedFileOptions
             {
                 ModifiedDate = new DateTimeOffset(2026, 10, 27, 15, 30, 0, TimeSpan.FromMinutes(offsetMinutes))
             });
@@ -1256,6 +1257,35 @@
             }
         }
 
+        [Fact]
+        public void EmbeddedFileWithoutModifiedDateHasTheTimeItWasAdded()
+        {
+            var builder = new PdfDocumentBuilder();
+            builder.AddPage(PageSize.A4);
+
+            // The date is written to the second.
+            var before = DateTimeOffset.Now.AddSeconds(-1);
+            builder.AddEmbeddedFile("hello.txt", "Hello"u8.ToArray());
+            var after = DateTimeOffset.Now;
+
+            var bytes = builder.Build();
+
+            using (var pdf = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+            {
+                var scanner = pdf.Structure.TokenScanner;
+                Assert.True(pdf.Advanced.TryGetEmbeddedFiles(out var files));
+                var parameters = Assert.Single(files).Stream.StreamDictionary.Get<DictionaryToken>(NameToken.Params, scanner);
+
+                // D:YYYYMMDDHHmmSSOHH'mm (ISO 32000-1, 7.9.4), with Z for Universal Time.
+                var date = Regex.Match(parameters.Get<StringToken>(NameToken.ModDate, scanner).Data, @"^D:(\d{14})(Z|([+-]\d{2})'(\d{2}))$");
+                Assert.True(date.Success);
+
+                var offset = date.Groups[2].Value == "Z" ? "+00:00" : $"{date.Groups[3].Value}:{date.Groups[4].Value}";
+                var modifiedDate = DateTimeOffset.ParseExact(date.Groups[1].Value + offset, "yyyyMMddHHmmsszzz", CultureInfo.InvariantCulture);
+                Assert.InRange(modifiedDate, before, after);
+            }
+        }
+
         [Theory]
         [InlineData(PdfAStandard.A3B)]
         [InlineData(PdfAStandard.A3A)]
@@ -1268,7 +1298,7 @@
 
             builder.AddPage(PageSize.A4);
 
-            builder.AddEmbeddedFile("invoice.xml", "<Invoice/>"u8.ToArray(), new PdfDocumentBuilder.EmbeddedFileOptions
+            builder.AddEmbeddedFile("invoice.xml", "<Invoice/>"u8.ToArray(), new EmbeddedFileOptions
             {
                 MimeType = "text/xml",
                 Relationship = AssociatedFileRelationship.Alternative
@@ -1309,7 +1339,7 @@
             page.AddText("Invoice 2026-001", 12, new PdfPoint(25, page.PageSize.Top - 50), font);
 
             var invoice = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Invoice><ID>2026-001</ID></Invoice>"u8.ToArray();
-            builder.AddEmbeddedFile("invoice.xml", invoice, new PdfDocumentBuilder.EmbeddedFileOptions
+            builder.AddEmbeddedFile("invoice.xml", invoice, new EmbeddedFileOptions
             {
                 MimeType = "text/xml",
                 Description = "The invoice as XML",
@@ -1341,7 +1371,7 @@
             var builder = new PdfDocumentBuilder();
             builder.AddPage(PageSize.A4);
 
-            builder.AddEmbeddedFile("invoice.xml", "<Invoice/>"u8.ToArray(), new PdfDocumentBuilder.EmbeddedFileOptions
+            builder.AddEmbeddedFile("invoice.xml", "<Invoice/>"u8.ToArray(), new EmbeddedFileOptions
             {
                 Relationship = AssociatedFileRelationship.Alternative
             });
@@ -1402,7 +1432,7 @@
         {
             var builder = new PdfDocumentBuilder();
 
-            Assert.Throws<ArgumentException>(() => builder.AddEmbeddedFile("hello.txt", "Hello"u8.ToArray(), new PdfDocumentBuilder.EmbeddedFileOptions
+            Assert.Throws<ArgumentException>(() => builder.AddEmbeddedFile("hello.txt", "Hello"u8.ToArray(), new EmbeddedFileOptions
             {
                 MimeType = mimeType
             }));

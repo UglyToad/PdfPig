@@ -22,7 +22,7 @@ namespace UglyToad.Examples
             page.AddText("Invoice 2026-001", 12, new PdfPoint(25, page.PageSize.Top - 50), font);
 
             var invoice = Encoding.UTF8.GetBytes("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Invoice><ID>2026-001</ID></Invoice>");
-            builder.AddEmbeddedFile("invoice.xml", invoice, new PdfDocumentBuilder.EmbeddedFileOptions
+            builder.AddEmbeddedFile("invoice.xml", invoice, new EmbeddedFileOptions
             {
                 MimeType = "text/xml",
                 Description = "The invoice as XML",
