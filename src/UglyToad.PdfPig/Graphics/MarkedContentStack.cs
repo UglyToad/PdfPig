@@ -24,6 +24,22 @@
         /// </summary>
         public int Depth => builderStack.Count;
 
+        /// <summary>
+        /// Whether any open marked-content sequence has the given tag.
+        /// </summary>
+        public bool IsOpen(NameToken name)
+        {
+            foreach (var builder in builderStack)
+            {
+                if (builder.Name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void Push(NameToken name, DictionaryToken properties)
         {
             if (builderStack.Count == 0) // only increase index if root
@@ -94,6 +110,8 @@
             private readonly List<IPdfImage> images = new List<IPdfImage>();
 
             public List<MarkedContentElement> Children { get; } = new List<MarkedContentElement>();
+
+            public NameToken Name => name;
 
             public MarkedContentElementActiveBuilder(int number, NameToken name, DictionaryToken properties)
             {
