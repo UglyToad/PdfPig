@@ -297,16 +297,14 @@ namespace UglyToad.PdfPig.Writer
                 checksum = md5.ComputeHash(data);
             }
 
+            // PDF/A-3 requires ModDate for associated files (Arlington PDF Model, AFEmbeddedFileParameter),
+            // so without a date in the options the time the file is added is used.
             var parameters = new Dictionary<NameToken, IToken>
             {
                 {NameToken.Size, new NumericToken(data.Length)},
-                {NameToken.CheckSum, new HexToken(Hex.GetString(checksum).AsSpan())}
+                {NameToken.CheckSum, new HexToken(Hex.GetString(checksum).AsSpan())},
+                {NameToken.ModDate, new StringToken(ToPdfDate(options.ModifiedDate ?? DateTimeOffset.Now))}
             };
-
-            if (options.ModifiedDate.HasValue)
-            {
-                parameters[NameToken.ModDate] = new StringToken(ToPdfDate(options.ModifiedDate.Value));
-            }
 
             var stream = new StreamToken(
                 new DictionaryToken(new Dictionary<NameToken, IToken>
@@ -1630,33 +1628,6 @@ namespace UglyToad.PdfPig.Writer
             /// Intercept how actions are copied from the source to destination page.
             /// </summary>
             public Func<PdfAction, PdfAction?>? CopyLinkFunc { get; set; }
-        }
-
-        /// <summary>
-        /// Information about a file added with <see cref="AddEmbeddedFile(string, ReadOnlyMemory{byte}, EmbeddedFileOptions)"/>.
-        /// </summary>
-        public class EmbeddedFileOptions
-        {
-            /// <summary>
-            /// The MIME type of the file, such as text/xml. Defaults to application/octet-stream.
-            /// </summary>
-            public string MimeType { get; set; } = "application/octet-stream";
-
-            /// <summary>
-            /// A description of the file, which readers show with the attachment.
-            /// </summary>
-            public string? Description { get; set; }
-
-            /// <summary>
-            /// The date and time when the file was last modified.
-            /// </summary>
-            public DateTimeOffset? ModifiedDate { get; set; }
-
-            /// <summary>
-            /// The relationship of the file to the document, which is only written to PDF/A-3 documents since they require it.
-            /// Defaults to <see cref="AssociatedFileRelationship.Unspecified"/>.
-            /// </summary>
-            public AssociatedFileRelationship Relationship { get; set; }
         }
     }
 }

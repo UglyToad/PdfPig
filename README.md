@@ -392,7 +392,7 @@ To embed a file in a document created by the `PdfDocumentBuilder` use:
 
 ```cs
 var builder = new PdfDocumentBuilder { ArchiveStandard = PdfAStandard.A3B };
-builder.AddEmbeddedFile("invoice.xml", xmlBytes, new PdfDocumentBuilder.EmbeddedFileOptions
+builder.AddEmbeddedFile("invoice.xml", xmlBytes, new EmbeddedFileOptions
 {
     MimeType = "text/xml",
     Relationship = AssociatedFileRelationship.Alternative
