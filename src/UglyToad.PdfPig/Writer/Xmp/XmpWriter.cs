@@ -36,7 +36,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
         private const string AdobePdfNamespace = "http://ns.adobe.com/pdf/1.3/";
 
         private const string PdfAIdentificationExtensionPrefix = "pdfaid";
-        private const string PdfAIdentificationExtensionNamespace = "http://www.aiim.org/pdfa/ns/id/";
+        internal const string PdfAIdentificationExtensionNamespace = "http://www.aiim.org/pdfa/ns/id/";
         
         public static StreamToken GenerateXmpStream(
             PdfDocumentBuilder.DocumentInformationBuilder builder, 
