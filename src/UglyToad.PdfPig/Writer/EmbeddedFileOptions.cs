@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Writer
     /// <summary>
     /// Information about a file added with <see cref="PdfDocumentBuilder.AddEmbeddedFile(string, ReadOnlyMemory{byte}, EmbeddedFileOptions)"/>.
     /// </summary>
-    public class EmbeddedFileOptions
+    public sealed class EmbeddedFileOptions
     {
         /// <summary>
         /// The MIME type of the file, such as text/xml. Defaults to application/octet-stream.
