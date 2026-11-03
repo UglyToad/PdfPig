@@ -180,10 +180,19 @@
 
             if (token is ArrayToken arr)
             {
-                var resolvedItems = new List<IToken>();
+                var resolvedItems = new List<IToken>(arr.Length);
                 for (int i = 0; i < arr.Length; i++)
                 {
-                    var value = arr.Data[i] is IndirectReferenceToken reference ? scanner.Get(reference.Data)?.Data : arr.Data[i];
+                    var value = arr.Data[i];
+                    if (value is IndirectReferenceToken reference)
+                    {
+                        if (!visited.Add(reference.Data))
+                        {
+                            resolvedItems.Add(ResolveInternal(reference, scanner, visited));
+                            continue;
+                        }
+                        value = scanner.Get(reference.Data)?.Data;
+                    }
                     resolvedItems.Add(ResolveInternal(value, scanner, visited));
                 }
                 return new ArrayToken(resolvedItems);
