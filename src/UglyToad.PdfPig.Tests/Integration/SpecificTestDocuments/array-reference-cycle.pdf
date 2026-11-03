@@ -1,0 +1,39 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> /Annots [6 0 R] >>
+endobj
+4 0 obj
+<< /Length 58 >>
+stream
+/Figure << /MCID 0 >> BDC q 10 0 0 10 0 0 cm /Im0 Do Q EMC
+endstream
+endobj
+5 0 obj
+<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8 /Matte 3 0 R /Length 1 >>
+stream
+ÿ
+endstream
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] /Dest [3 0 R /XYZ 0 10 0] >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000259 00000 n 
+0000000367 00000 n 
+0000000524 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+617
+%%EOF
