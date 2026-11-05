@@ -135,6 +135,29 @@
 
         private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner, HashSet<IndirectReference> visited)
         {
+            // As in DirectObjectFinder.TryGet, a token nested deeper than the maximum stack depth stays unresolved.
+            var entered = false;
+            try
+            {
+                scanner.StackDepthGuard.Enter();
+                entered = true;
+                return ResolveToken(token, scanner, visited);
+            }
+            catch (PdfDocumentStackDepthException)
+            {
+                return token;
+            }
+            finally
+            {
+                if (entered)
+                {
+                    scanner.StackDepthGuard.Exit();
+                }
+            }
+        }
+
+        private static IToken? ResolveToken(IToken? token, IPdfTokenScanner scanner, HashSet<IndirectReference> visited)
+        {
             if (token is StreamToken stream)
             {
                 return new StreamToken(Resolve(stream.StreamDictionary, scanner, visited), stream.Data);

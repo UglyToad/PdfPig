@@ -4,9 +4,11 @@ namespace UglyToad.PdfPig.Tests.Integration
     using System.Text;
     using UglyToad.PdfPig.AcroForms;
     using UglyToad.PdfPig.AcroForms.Fields;
+    using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Tokens;
 
     /// <summary>
-    /// Form field trees and marked-content sequences that nest deeply or refer back to themselves.
+    /// Form field trees, marked-content sequences and image dictionaries that nest deeply or refer back to themselves.
     /// </summary>
     public class NestedStructureTests
     {
@@ -148,6 +150,91 @@ namespace UglyToad.PdfPig.Tests.Integration
             var optionalContents = document.GetPage(1).GetOptionalContents();
 
             Assert.Single(optionalContents["Layer"]);
+        }
+
+        [Fact]
+        public void ImageWithDeeplyNestedReferences()
+        {
+            using var document = PdfDocument.Open(BuildImageWithReferenceChain(100_000));
+
+            var (arrays, end) = ReadMatteChain(Assert.Single(document.GetPage(1).GetImages()));
+
+            // Resolving stops at the maximum stack depth and leaves the rest of the chain unresolved.
+            Assert.InRange(arrays, 100, 256);
+            Assert.IsType<IndirectReferenceToken>(end);
+
+            // Reading the image again resolves as deep, so the depth used before was given back.
+            Assert.Equal(arrays, ReadMatteChain(Assert.Single(document.GetPage(1).GetImages())).Arrays);
+        }
+
+        [Fact]
+        public void ImageWithNestedReferencesIsResolved()
+        {
+            using var document = PdfDocument.Open(BuildImageWithReferenceChain(100));
+
+            var (arrays, end) = ReadMatteChain(Assert.Single(document.GetPage(1).GetImages()));
+
+            Assert.Equal(100, arrays);
+            Assert.Equal(0, Assert.IsType<NumericToken>(end).Int);
+        }
+
+        [Fact]
+        public void ImageWithNestedReferencesIsResolvedUpToMaxStackDepth()
+        {
+            var pdf = BuildImageWithReferenceChain(300);
+
+            using (var document = PdfDocument.Open(pdf))
+            {
+                Assert.IsType<IndirectReferenceToken>(ReadMatteChain(Assert.Single(document.GetPage(1).GetImages())).End);
+            }
+
+            using (var document = PdfDocument.Open(pdf, new ParsingOptions { MaxStackDepth = 1_000 }))
+            {
+                var (arrays, end) = ReadMatteChain(Assert.Single(document.GetPage(1).GetImages()));
+
+                Assert.Equal(300, arrays);
+                Assert.IsType<NumericToken>(end);
+            }
+        }
+
+        /// <summary>
+        /// A page with one image whose /Matte starts a chain of arrays, each referring to the next one.
+        /// </summary>
+        private static byte[] BuildImageWithReferenceChain(int length)
+        {
+            var objects = new List<string>
+            {
+                "<< /Type /Catalog /Pages 2 0 R >>",
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>",
+                Stream("q 100 0 0 100 0 0 cm /Im0 Do Q"),
+                "<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8 /Matte 6 0 R /Length 1 >>\nstream\n0\nendstream",
+            };
+
+            for (var i = 0; i < length - 1; i++)
+            {
+                objects.Add($"[{7 + i} 0 R]");
+            }
+
+            objects.Add("[0]");
+
+            return BuildPdf(objects.ToArray());
+        }
+
+        /// <summary>
+        /// Follows the resolved /Matte of the image and returns how many arrays it passes and the token it ends with.
+        /// </summary>
+        private static (int Arrays, IToken End) ReadMatteChain(IPdfImage image)
+        {
+            var token = image.ImageDictionary.Data[NameToken.Matte.Data];
+            var arrays = 0;
+            while (token is ArrayToken array)
+            {
+                arrays++;
+                token = Assert.Single(array.Data);
+            }
+
+            return (arrays, token);
         }
 
         private static string Stream(string content)
