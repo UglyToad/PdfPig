@@ -135,7 +135,7 @@
 
         private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner, HashSet<IndirectReference> visited)
         {
-            // As in DirectObjectFinder, a token nested deeper than the maximum stack depth stays unresolved.
+            // As in DirectObjectFinder.TryGet, a token nested deeper than the maximum stack depth stays unresolved.
             var entered = false;
             try
             {

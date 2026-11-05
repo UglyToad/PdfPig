@@ -6,7 +6,6 @@ namespace UglyToad.PdfPig.Tests.Integration
     using UglyToad.PdfPig.AcroForms.Fields;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Tokens;
-    using UglyToad.PdfPig.XObjects;
 
     /// <summary>
     /// Form field trees, marked-content sequences and image dictionaries that nest deeply or refer back to themselves.
@@ -161,7 +160,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             var (arrays, end) = ReadMatteChain(Assert.Single(document.GetPage(1).GetImages()));
 
             // Resolving stops at the maximum stack depth and leaves the rest of the chain unresolved.
-            Assert.InRange(arrays, 1, 256);
+            Assert.InRange(arrays, 100, 256);
             Assert.IsType<IndirectReferenceToken>(end);
 
             // Reading the image again resolves as deep, so the depth used before was given back.
@@ -214,7 +213,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
             for (var i = 0; i < length - 1; i++)
             {
-                objects.Add($"[{(7 + i).ToString(CultureInfo.InvariantCulture)} 0 R]");
+                objects.Add($"[{7 + i} 0 R]");
             }
 
             objects.Add("[0]");
@@ -227,7 +226,7 @@ namespace UglyToad.PdfPig.Tests.Integration
         /// </summary>
         private static (int Arrays, IToken End) ReadMatteChain(IPdfImage image)
         {
-            var token = Assert.IsType<XObjectImage>(image).ImageDictionary.Data[NameToken.Matte.Data];
+            var token = image.ImageDictionary.Data[NameToken.Matte.Data];
             var arrays = 0;
             while (token is ArrayToken array)
             {
