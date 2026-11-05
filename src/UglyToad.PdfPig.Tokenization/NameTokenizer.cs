@@ -39,7 +39,7 @@
             {
                 var b = inputBytes.CurrentByte;
 
-                if (b == '#')
+                if (b == '#' && !escapeActive)
                 {
                     escapeActive = true;
                 }
