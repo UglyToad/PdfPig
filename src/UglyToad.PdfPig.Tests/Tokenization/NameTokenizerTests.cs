@@ -111,6 +111,23 @@
             Assert.Equal(expected, AssertNameToken(token).Data);
         }
 
+        [Theory]
+        [InlineData("/#A#41", "#AA")]
+        [InlineData("/##41", "#A")]
+        [InlineData("/#A##41", "#A#A")]
+        [InlineData("/#A#4Z", "#A#4Z")]
+        [InlineData("/#m#41", "#mA")]
+        public void ResumesHexEscapeAfterInterruptedEscape(string s, string expected)
+        {
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(expected, AssertNameToken(token).Data);
+        }
+
         [Fact]
         public void IgnoredInvalidHex()
         {
