@@ -57,6 +57,28 @@
             }
         }
         
+        [Theory]
+        [InlineData("direct-RC4.pdf")]
+        [InlineData("direct-AES256.pdf")]
+        public void DecryptsStringsInDirectDictionariesOfTheCatalog(string fileName)
+        {
+            // The names tree is a direct dictionary in the catalog object, so its strings
+            // must be decrypted using the catalog object's key.
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetSpecificTestDocumentPath(fileName), new ParsingOptions
+            {
+                Password = "test"
+            }))
+            {
+                Assert.True(document.Advanced.TryGetEmbeddedFiles(out var files));
+
+                Assert.Equal(2, files.Count);
+                Assert.Equal("b.txt", files[0].Name);
+                Assert.Equal(3, files[0].Bytes.Length);
+                Assert.Equal("factur-x.xml", files[1].Name);
+                Assert.Equal(4, files[1].Bytes.Length);
+            }
+        }
+
         [Fact]
         public void CanReadDocumentWithEmptyStringEncryptedWithAESEncryptionAndOnlyIV()
         {
