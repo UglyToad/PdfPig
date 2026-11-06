@@ -166,6 +166,19 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
+            if (encryptionDictionary != null)
+            {
+                // The catalog was read before the encryption handler was available (the encryption dictionary
+                // has to be read first, and must not be decrypted), so strings directly inside the catalog object
+                // are still encrypted. Drop the cached object and read the catalog again, now with decryption.
+                locationProvider.RemoveFromCache(rootReference);
+
+                (rootReference, rootDictionary) = ReadRoot(
+                    trailer,
+                    parsingOptions.UseLenientParsing,
+                    pdfScanner);
+            }
+
             var crossReferenceTable = new CrossReferenceTable(
                 initialParse.Parts,
                 initialParse.XrefOffsets,
@@ -259,6 +272,16 @@
         {
             encryptionDictionary = GetEncryptionDictionary(trailer, pdfTokenScanner);
 
+            var (rootReference, rootDictionary) = ReadRoot(trailer, isLenientParsing, pdfTokenScanner);
+
+            return (rootReference, rootDictionary);
+        }
+
+        private static (IndirectReference, DictionaryToken) ReadRoot(
+            TrailerDictionary trailer,
+            bool isLenientParsing,
+            IPdfTokenScanner pdfTokenScanner)
+        {
             var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(trailer.Root, pdfTokenScanner)!;
 
             if (rootDictionary is null)
