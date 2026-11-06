@@ -3,7 +3,8 @@ namespace UglyToad.PdfPig.Writer
     using System;
 
     /// <summary>
-    /// Information about a file added with <see cref="PdfDocumentBuilder.AddEmbeddedFile(string, ReadOnlyMemory{byte}, EmbeddedFileOptions)"/>.
+    /// Information about a file added with <see cref="PdfDocumentBuilder.AddEmbeddedFile(string, ReadOnlyMemory{byte}, EmbeddedFileOptions)"/>
+    /// or <see cref="PdfIncrementalUpdateBuilder.AddEmbeddedFile(string, ReadOnlyMemory{byte}, EmbeddedFileOptions)"/>.
     /// </summary>
     public sealed class EmbeddedFileOptions
     {
