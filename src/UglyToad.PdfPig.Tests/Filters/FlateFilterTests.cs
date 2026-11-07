@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
+    using System.IO.Compression;
     using System.Text;
     using PdfPig.Core;
     using PdfPig.Filters;
@@ -22,6 +23,61 @@
                 var decoded = filter.Decode(result, parameters, TestFilterProvider.Instance, 0);
                 Assert.Equal(input, decoded.ToArray());
             }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void EncodeWritesAZlibStreamWithTheChecksumOfTheInput(bool readInPieces)
+        {
+            var input = Lines(200_000);
+
+            byte[] encoded;
+            using (Stream inputStream = readInPieces ? new ReadInPiecesStream(input, 1000) : new MemoryStream(input))
+            {
+                encoded = filter.Encode(inputStream, new DictionaryToken(new Dictionary<NameToken, IToken>()));
+            }
+
+            AssertZlibStream(input, encoded);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void EncodeOfMemoryWritesAZlibStreamWithTheChecksumOfTheInput(bool withoutArray)
+        {
+            var input = Lines(200_000);
+
+            byte[] encoded;
+            if (withoutArray)
+            {
+                using (var memory = new MemoryWithoutArray(input))
+                {
+                    encoded = FlateFilter.Encode(memory.Memory);
+                }
+            }
+            else
+            {
+                var padded = new byte[input.Length + 2];
+                input.CopyTo(padded, 1);
+                encoded = FlateFilter.Encode(padded.AsMemory(1, input.Length));
+            }
+
+            AssertZlibStream(input, encoded);
+        }
+
+        [Fact]
+        public void EncodeWritesAnEmptyFinalBlockForNoInput()
+        {
+            // The zlib header, a final block without data and the Adler-32 checksum of no data.
+            var expected = new byte[] { 0x78, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01 };
+
+            using (var inputStream = new MemoryStream())
+            {
+                Assert.Equal(expected, filter.Encode(inputStream, new DictionaryToken(new Dictionary<NameToken, IToken>())));
+            }
+
+            Assert.Equal(expected, FlateFilter.Encode(ReadOnlyMemory<byte>.Empty));
         }
 
         [Fact]
@@ -240,5 +296,86 @@
             return stream;
         }
 
+        private static byte[] Lines(int length)
+        {
+            var content = new StringBuilder();
+            for (var i = 0; content.Length < length; i++)
+            {
+                content.Append("Line ").Append(i).Append(" of a document compressed in one go.\n");
+            }
+
+            return OtherEncodings.StringAsLatin1Bytes(content.ToString());
+        }
+
+        private static void AssertZlibStream(byte[] input, byte[] encoded)
+        {
+            // The zlib header, the deflate data and the Adler-32 checksum of the input (RFC 1950).
+            Assert.Equal(new byte[] { 0x78, 0x01 }, encoded.AsSpan(0, 2).ToArray());
+
+            using (var deflated = new MemoryStream(encoded, 2, encoded.Length - 6))
+            using (var inflater = new DeflateStream(deflated, CompressionMode.Decompress))
+            using (var inflated = new MemoryStream())
+            {
+                inflater.CopyTo(inflated);
+                Assert.Equal(input, inflated.ToArray());
+            }
+
+            var checksum = Adler32(input);
+            Assert.Equal(
+                new[] { (byte)(checksum >> 24), (byte)(checksum >> 16), (byte)(checksum >> 8), (byte)checksum },
+                encoded.AsSpan(encoded.Length - 4).ToArray());
+        }
+
+        private static uint Adler32(byte[] data)
+        {
+            uint a = 1;
+            uint b = 0;
+
+            foreach (var value in data)
+            {
+                a = (a + value) % 65521;
+                b = (b + a) % 65521;
+            }
+
+            return (b << 16) | a;
+        }
+
+        /// <summary>A stream that hands out at most <paramref name="bytesPerRead"/> bytes per read.</summary>
+        private sealed class ReadInPiecesStream(byte[] data, int bytesPerRead) : Stream
+        {
+            private int position;
+
+            public override bool CanRead => true;
+
+            public override bool CanSeek => false;
+
+            public override bool CanWrite => false;
+
+            public override long Length => throw new NotSupportedException();
+
+            public override long Position
+            {
+                get => position;
+                set => throw new NotSupportedException();
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                var read = Math.Min(Math.Min(count, bytesPerRead), data.Length - position);
+                Array.Copy(data, position, buffer, offset, read);
+                position += read;
+                return read;
+            }
+
+            public override void Flush()
+            {
+            }
+
+            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+            public override void SetLength(long value) => throw new NotSupportedException();
+
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        }
     }
 }

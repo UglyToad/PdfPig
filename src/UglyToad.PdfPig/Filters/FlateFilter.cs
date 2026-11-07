@@ -4,9 +4,11 @@
     using System;
     using System.IO;
     using System.IO.Compression;
+    using System.Runtime.InteropServices;
     using Tokens;
     using Core;
     using Fonts;
+    using IO;
     using Util;
 
     /// <summary>
@@ -357,46 +359,66 @@
         /// <returns>The Flate encoded data.</returns>
         public byte[] Encode(Stream input, DictionaryToken streamDictionary)
         {
-            const int headerLength = 2;
-            const int checksumLength = 4;
+            return Encode(stream => input.CopyTo(stream));
+        }
 
-            byte[] data;
-            using (var temp = new MemoryStream())
+        /// <summary>
+        /// Encodes the data, handing it to the deflater in one write, since its output can depend on how the data is split.
+        /// </summary>
+        internal static byte[] Encode(ReadOnlyMemory<byte> input)
+        {
+            return Encode(stream => Write(stream, input));
+        }
+
+        private static byte[] Encode(Action<Stream> writeInput)
+        {
+            using (var result = new MemoryStream())
             {
-                input.CopyTo(temp);
-                data = temp.ToArray();
-            }
-
-            using (var compressStream = new MemoryStream())
-            using (var compressor = new DeflateStream(compressStream, CompressionLevel.Fastest))
-            using (var adlerStream = new Adler32ChecksumStream(compressor))
-            {
-                adlerStream.Write(data, 0, data.Length);
-                adlerStream.Close();
-
-                var compressed = compressStream.ToArray();
-
-                var result = new byte[headerLength + compressed.Length + checksumLength];
-
                 // Write the ZLib header.
-                result[0] = Deflate32KbWindow;
-                result[1] = ChecksumBits;
+                result.WriteByte(Deflate32KbWindow);
+                result.WriteByte(ChecksumBits);
 
-                // Write the compressed data.
-                Array.Copy(compressed, 0, result, headerLength, compressed.Length);
+                uint checksum;
+                using (var compressor = new DeflateStream(result, CompressionLevel.Fastest, true))
+                using (var adlerStream = new Adler32ChecksumStream(compressor))
+                {
+                    writeInput(adlerStream);
+                    checksum = adlerStream.Checksum;
+                }
+
+                // Given no data, the deflater may write nothing, not even the final block, so write an empty one (RFC 1951).
+                if (result.Length == 2)
+                {
+                    result.WriteByte(0x03);
+                    result.WriteByte(0x00);
+                }
 
                 // Write Checksum of raw data.
-                var checksum = adlerStream.Checksum;
+                result.WriteByte((byte)(checksum >> 24));
+                result.WriteByte((byte)(checksum >> 16));
+                result.WriteByte((byte)(checksum >> 8));
+                result.WriteByte((byte)(checksum >> 0));
 
-                var offset = headerLength + compressed.Length;
-
-                result[offset++] = (byte)(checksum >> 24);
-                result[offset++] = (byte)(checksum >> 16);
-                result[offset++] = (byte)(checksum >> 8);
-                result[offset] = (byte)(checksum >> 0);
-
-                return result;
+                return result.ToArray();
             }
+        }
+
+        private static void Write(Stream stream, ReadOnlyMemory<byte> input)
+        {
+            if (MemoryMarshal.TryGetArray(input, out var segment))
+            {
+                stream.Write(segment.Array!, segment.Offset, segment.Count);
+                return;
+            }
+
+#if NET
+            stream.Write(input.Span);
+#else
+            using (var memoryStream = new ReadOnlyMemoryStream(input))
+            {
+                memoryStream.CopyTo(stream);
+            }
+#endif
         }
     }
 }

@@ -6,6 +6,7 @@ namespace UglyToad.PdfPig.Writer
     using System.Security.Cryptography;
     using System.Text;
     using System.Text.RegularExpressions;
+    using IO;
     using Tokens;
     using Util;
 
@@ -50,21 +51,12 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         public static StreamToken CreateStream(ReadOnlyMemory<byte> bytes, EmbeddedFileOptions options)
         {
-            var data = bytes.ToArray();
-
-            // The checksum is the MD5 hash of the uncompressed file (ISO 32000-1, Table 46).
-            byte[] checksum;
-            using (var md5 = MD5.Create())
-            {
-                checksum = md5.ComputeHash(data);
-            }
-
             // PDF/A-3 requires ModDate for associated files (Arlington PDF Model, AFEmbeddedFileParameter),
             // so without a date in the options the time the file is added is used.
             var parameters = new Dictionary<NameToken, IToken>
             {
-                {NameToken.Size, new NumericToken(data.Length)},
-                {NameToken.CheckSum, new HexToken(Hex.GetString(checksum).AsSpan())},
+                {NameToken.Size, new NumericToken(bytes.Length)},
+                {NameToken.CheckSum, new HexToken(Hex.GetString(GetChecksum(bytes)).AsSpan())},
                 {NameToken.ModDate, new StringToken(ToPdfDate(options.ModifiedDate ?? DateTimeOffset.Now))}
             };
 
@@ -76,7 +68,23 @@ namespace UglyToad.PdfPig.Writer
                     {NameToken.Filter, NameToken.FlateDecode},
                     {NameToken.Params, new DictionaryToken(parameters)}
                 }),
-                DataCompressor.CompressBytes(data));
+                DataCompressor.CompressBytes(bytes));
+        }
+
+        /// <summary>
+        /// Gets the MD5 hash of the uncompressed file, which is its checksum (ISO 32000-1, Table 46).
+        /// </summary>
+        private static byte[] GetChecksum(ReadOnlyMemory<byte> bytes)
+        {
+#if NET
+            return MD5.HashData(bytes.Span);
+#else
+            using (var md5 = MD5.Create())
+            using (var stream = new ReadOnlyMemoryStream(bytes))
+            {
+                return md5.ComputeHash(stream);
+            }
+#endif
         }
 
         /// <summary>

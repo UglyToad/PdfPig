@@ -1205,6 +1205,32 @@
         }
 
         [Fact]
+        public void EmbeddedFileFromPartOfAnArrayHasOnlyThoseBytes()
+        {
+            var bytes = "--Hello--"u8.ToArray();
+
+            AssertEmbeddedFile(bytes.AsMemory(2, 5), "Hello"u8.ToArray());
+        }
+
+        [Fact]
+        public void EmbeddedFileFromMemoryWithoutAnArrayHasItsBytes()
+        {
+            // More than is read at a time.
+            var bytes = Enumerable.Range(0, 200_000).Select(x => (byte)(x % 251)).ToArray();
+
+            using (var memory = new MemoryWithoutArray(bytes))
+            {
+                AssertEmbeddedFile(memory.Memory, bytes);
+            }
+        }
+
+        [Fact]
+        public void EmbeddedFileCanBeEmpty()
+        {
+            AssertEmbeddedFile(ReadOnlyMemory<byte>.Empty, []);
+        }
+
+        [Fact]
         public void EmbeddedFileHasTheMimeTypeAndDescriptionOfTheOptions()
         {
             var builder = new PdfDocumentBuilder();
@@ -2324,6 +2350,30 @@
                 .Where((_, i) => i % 2 == 1)
                 .Select(x => (DictionaryToken)document.Structure.GetObject(((IndirectReferenceToken)x).Data).Data)
                 .ToArray();
+        }
+
+        private static void AssertEmbeddedFile(ReadOnlyMemory<byte> bytes, byte[] expected)
+        {
+            var builder = new PdfDocumentBuilder();
+            builder.AddPage(PageSize.A4);
+
+            builder.AddEmbeddedFile("file.txt", bytes);
+
+            using (var pdf = PdfDocument.Open(builder.Build(), ParsingOptions.LenientParsingOff))
+            {
+                var scanner = pdf.Structure.TokenScanner;
+                Assert.True(pdf.Advanced.TryGetEmbeddedFiles(out var files));
+                var file = Assert.Single(files);
+
+                Assert.Equal(expected, file.Bytes.ToArray());
+
+                var parameters = file.Stream.StreamDictionary.Get<DictionaryToken>(NameToken.Params, scanner);
+                Assert.Equal(expected.Length, parameters.Get<NumericToken>(NameToken.Size, scanner).Int);
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    Assert.Equal(md5.ComputeHash(expected), parameters.Get<HexToken>(NameToken.CheckSum, scanner).Bytes.ToArray());
+                }
+            }
         }
 
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
