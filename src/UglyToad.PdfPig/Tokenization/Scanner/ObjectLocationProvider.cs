@@ -63,9 +63,16 @@
             return cache.TryGetValue(reference, out objectToken);
         }
 
-        public void RemoveFromCache(IndirectReference reference)
+        public void ClearCache(IndirectReference? preserve = null)
         {
-            cache.Remove(reference);
+            if (preserve.HasValue && cache.TryGetValue(preserve.Value, out var preservedToken))
+            {
+                cache.Clear();
+                cache[preserve.Value] = preservedToken;
+                return;
+            }
+
+            cache.Clear();
         }
 
         public void Cache(ObjectToken objectToken, bool force = false)
