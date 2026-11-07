@@ -166,12 +166,10 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
-            if (encryptionDictionary != null)
+            if (encryptionDictionary is not null)
             {
-                // The catalog was read before the encryption handler was available (the encryption dictionary
-                // has to be read first, and must not be decrypted), so strings directly inside the catalog object
-                // are still encrypted. Drop the cached object and read the catalog again, now with decryption.
-                locationProvider.RemoveFromCache(rootReference);
+                // Objects read so far were not decrypted. Only the encryption dictionary must stay that way.
+                locationProvider.ClearCache((trailer.EncryptionToken as IndirectReferenceToken)?.Data);
 
                 (rootReference, rootDictionary) = ReadRoot(
                     trailer,
@@ -272,9 +270,7 @@
         {
             encryptionDictionary = GetEncryptionDictionary(trailer, pdfTokenScanner);
 
-            var (rootReference, rootDictionary) = ReadRoot(trailer, isLenientParsing, pdfTokenScanner);
-
-            return (rootReference, rootDictionary);
+            return ReadRoot(trailer, isLenientParsing, pdfTokenScanner);
         }
 
         private static (IndirectReference, DictionaryToken) ReadRoot(
