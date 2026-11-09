@@ -6856,5 +6856,42 @@
                 Assert.Equal(expectedDistance, distance, PreciseDoubleComparer);
             }
         }
+
+        [Fact]
+        public void FindNearestNeighboursMatchesBruteForce()
+        {
+            // Pivot point (End) differs from the tree point (Start). Small trees, so that fewer than k
+            // neighbours are held while the near side of a split is searched.
+            var random = new Random(42);
+            for (int iteration = 0; iteration < 5000; iteration++)
+            {
+                int count = random.Next(2, 13);
+                var segments = new List<Segment>();
+                for (int i = 0; i < count; i++)
+                {
+                    var start = new PdfPoint(random.NextDouble() * 100, random.NextDouble() * 100);
+                    var end = new PdfPoint(start.X + random.NextDouble() * 100, start.Y + random.NextDouble() * 100);
+                    segments.Add(new Segment(start, end));
+                }
+
+                var kdTree = new KdTree<Segment>(segments, s => s.Start);
+                int pivotIndex = random.Next(count);
+                int k = random.Next(1, 6);
+
+                double[] expected = Enumerable.Range(0, count)
+                    .Where(j => j != pivotIndex)
+                    .Select(j => Distances.Euclidean(segments[j].Start, segments[pivotIndex].End))
+                    .OrderBy(d => d)
+                    .Take(k)
+                    .ToArray();
+
+                // Random distances never tie
+                double[] actual = kdTree.FindNearestNeighbours(segments[pivotIndex], k, s => s.End, Distances.Euclidean)
+                    .Select(n => n.Item3)
+                    .ToArray();
+
+                Assert.Equal(expected, actual);
+            }
+        }
     }
 }
