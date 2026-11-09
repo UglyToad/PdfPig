@@ -3,6 +3,7 @@
     using Content;
     using Exceptions;
     using Outline.Destinations;
+    using PdfPig.Core;
     using PdfPig.Tokens;
 
     public class EncryptedDocumentTests
@@ -76,6 +77,32 @@
                 Assert.Equal(3, files[0].Bytes.Length);
                 Assert.Equal("factur-x.xml", files[1].Name);
                 Assert.Equal(4, files[1].Bytes.Length);
+            }
+        }
+
+        [Theory]
+        [InlineData("direct-RC4.pdf", "0000012564", "0000002865")]
+        [InlineData("direct-AES256.pdf", "0000013482", "0000003758")]
+        public void DecryptsObjectsCachedWhileSearchingADamagedFile(string fileName, string encryptionOffset, string otherOffset)
+        {
+            // The xref entry of the encryption dictionary, object 20, points to object 19, so the scanner
+            // searches the whole file and caches every object before the encryption handler is set.
+            var content = OtherEncodings.BytesAsLatin1String(File.ReadAllBytes(IntegrationHelpers.GetSpecificTestDocumentPath(fileName)));
+            var entry = encryptionOffset + " 00000 n";
+            Assert.Contains(entry, content);
+            var damaged = OtherEncodings.StringAsLatin1Bytes(content.Replace(entry, otherOffset + " 00000 n"));
+
+            using (var document = PdfDocument.Open(damaged, new ParsingOptions
+            {
+                Password = "test"
+            }))
+            {
+                Assert.True(document.Advanced.TryGetEmbeddedFiles(out var files));
+
+                Assert.Equal(new[] { "b.txt", "factur-x.xml" }, files.Select(x => x.Name));
+                Assert.Equal("bbb"u8.ToArray(), files[0].Bytes.ToArray());
+                Assert.Equal("<x/>"u8.ToArray(), files[1].Bytes.ToArray());
+                Assert.Equal("Siberix Report Writer 11.3.0", document.Information.Producer);
             }
         }
 
