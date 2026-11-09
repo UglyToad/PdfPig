@@ -352,7 +352,7 @@
             }
             else if (node.IsLeaf)
             {
-                if (node.Element.Equals(pivot))
+                if (EqualityComparer<T>.Default.Equals(node.Element, pivot))
                 {
                     return (null, double.NaN);
                 }
@@ -373,7 +373,7 @@
             {
                 var currentNearestNode = node;
                 var currentDistance = distance(node.Value, pivotPoint);
-                if ((!queue.IsFull || currentDistance <= queue.LastDistance) && !node.Element.Equals(pivot))
+                if ((!queue.IsFull || currentDistance <= queue.LastDistance) && !EqualityComparer<T>.Default.Equals(node.Element, pivot))
                 {
                     queue.Add(currentDistance, currentNearestNode);
                     currentDistance = queue.LastDistance;
@@ -390,7 +390,7 @@
                     // start left
                     (newNode, newDist) = FindNearestNeighbours(node.LeftChild, pivot, k, pivotPoint, distance, queue);
 
-                    if (!double.IsNaN(newDist) && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                    if (!double.IsNaN(newDist) && newDist <= currentDistance && !EqualityComparer<T>.Default.Equals(newNode.Element, pivot))
                     {
                         queue.Add(newDist, newNode);
                         currentDistance = queue.LastDistance;
@@ -407,7 +407,7 @@
                     // start right
                     (newNode, newDist) = FindNearestNeighbours(node.RightChild, pivot, k, pivotPoint, distance, queue);
 
-                    if (!double.IsNaN(newDist) && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                    if (!double.IsNaN(newDist) && newDist <= currentDistance && !EqualityComparer<T>.Default.Equals(newNode.Element, pivot))
                     {
                         queue.Add(newDist, newNode);
                         currentDistance = queue.LastDistance;
@@ -420,7 +420,7 @@
                     }
                 }
 
-                if (!double.IsNaN(newDist) && newDist <= currentDistance && !newNode.Element.Equals(pivot))
+                if (!double.IsNaN(newDist) && newDist <= currentDistance && !EqualityComparer<T>.Default.Equals(newNode.Element, pivot))
                 {
                     queue.Add(newDist, newNode);
                     currentDistance = queue.LastDistance;
