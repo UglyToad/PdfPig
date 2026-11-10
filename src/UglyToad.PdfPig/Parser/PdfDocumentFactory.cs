@@ -166,6 +166,17 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
+            if (encryptionDictionary is not null)
+            {
+                // Objects read so far were not decrypted. Only the encryption dictionary must stay that way.
+                locationProvider.ClearCache((trailer.EncryptionToken as IndirectReferenceToken)?.Data);
+
+                (rootReference, rootDictionary) = ReadRoot(
+                    trailer,
+                    parsingOptions.UseLenientParsing,
+                    pdfScanner);
+            }
+
             var crossReferenceTable = new CrossReferenceTable(
                 initialParse.Parts,
                 initialParse.XrefOffsets,
@@ -259,6 +270,14 @@
         {
             encryptionDictionary = GetEncryptionDictionary(trailer, pdfTokenScanner);
 
+            return ReadRoot(trailer, isLenientParsing, pdfTokenScanner);
+        }
+
+        private static (IndirectReference, DictionaryToken) ReadRoot(
+            TrailerDictionary trailer,
+            bool isLenientParsing,
+            IPdfTokenScanner pdfTokenScanner)
+        {
             var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(trailer.Root, pdfTokenScanner)!;
 
             if (rootDictionary is null)
