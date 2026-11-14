@@ -105,7 +105,8 @@ public sealed class ArrayPoolBufferWriter<T> : IBufferWriter<T>, IDisposable
 
         if (sizeHint > RemainingBytes)
         {
-            var newBuffer = ArrayPool<T>.Shared.Rent(Math.Max(position + sizeHint, 512));
+            var doubled = buffer.Length > int.MaxValue / 2 ? int.MaxValue : buffer.Length * 2;
+            var newBuffer = ArrayPool<T>.Shared.Rent(Math.Max(position + sizeHint, Math.Max(doubled, 512)));
 
             if (buffer.Length != 0)
             {
