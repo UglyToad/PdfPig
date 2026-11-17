@@ -13,9 +13,18 @@
     {
         private readonly IFilterProvider inner;
 
-        public FilterProviderWithLookup(IFilterProvider inner)
+        public int MaxDecompressedStreamBytes { get; }
+
+        public FilterProviderWithLookup(IFilterProvider inner, int maxDecompressedStreamBytes = ParsingOptions.DefaultMaxDecompressedStreamBytes)
         {
+            if (maxDecompressedStreamBytes <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxDecompressedStreamBytes), maxDecompressedStreamBytes,
+                    "The maximum decompressed stream size must be positive.");
+            }
+
             this.inner = inner;
+            MaxDecompressedStreamBytes = maxDecompressedStreamBytes;
         }
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
