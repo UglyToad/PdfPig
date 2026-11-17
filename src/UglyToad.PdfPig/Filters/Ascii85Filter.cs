@@ -29,10 +29,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
-            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
-
-        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary,
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary,
             IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             Span<byte> asciiBuffer = stackalloc byte[5];

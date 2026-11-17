@@ -63,10 +63,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
-            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
-
-        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -166,10 +163,7 @@
         public bool IsSupported { get; } = false;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
-            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
-
-        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             throw new NotSupportedException(
                 "The BrotliDecode filter is only supported on .NET Standard 2.1, .NET Core and .NET 5.0 or greater targets.");

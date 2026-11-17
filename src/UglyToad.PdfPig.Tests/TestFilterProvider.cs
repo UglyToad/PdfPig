@@ -27,5 +27,7 @@
         {
             return new List<IFilter>();
         }
+
+        public int MaxDecompressedStreamBytes => ParsingOptions.DefaultMaxDecompressedStreamBytes;
     }
 }

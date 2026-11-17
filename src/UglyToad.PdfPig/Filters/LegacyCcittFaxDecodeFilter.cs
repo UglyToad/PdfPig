@@ -29,9 +29,10 @@ namespace UglyToad.PdfPig.Filters
         public Memory<byte> Decode(Memory<byte> input,
             DictionaryToken streamDictionary,
             IFilterProvider filterProvider,
-            int filterIndex)
+            int filterIndex,
+            int outputLimit)
         {
-            return DecodeInto(input, streamDictionary, filterProvider, filterIndex, null);
+            return DecodeInto(input, streamDictionary, filterProvider, filterIndex, null, outputLimit);
         }
 
         /// <summary>Decodes with the original stream decoder, optionally reusing a bitmap from a failed fast attempt.</summary>
@@ -40,7 +41,8 @@ namespace UglyToad.PdfPig.Filters
             DictionaryToken streamDictionary,
             IFilterProvider filterProvider,
             int filterIndex,
-            byte[]? bitmap)
+            byte[]? bitmap,
+            int outputLimit = int.MaxValue)
         {
             var decodeParms = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -59,6 +61,7 @@ namespace UglyToad.PdfPig.Filters
             }
 
             var arraySize = GetDecodedBufferSize(cols, rows);
+            DecodeBuffer.CheckLength(arraySize, outputLimit);
             if (bitmap != null && bitmap.Length != arraySize)
             {
                 throw new ArgumentException("The bitmap length must match the resolved CCITT image size.",

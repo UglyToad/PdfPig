@@ -61,6 +61,18 @@
         public int MaxStackDepth { get; set; } = 256;
 
         /// <summary>
+        /// The default value of <see cref="MaxDecompressedStreamBytes"/>: 1 GiB.
+        /// </summary>
+        public const int DefaultMaxDecompressedStreamBytes = 1024 * 1024 * 1024;
+
+        /// <summary>
+        /// The most bytes a single stream or inline image may decode to. A stream which decodes to more is not decoded
+        /// and an exception is thrown instead, so that a small file cannot make the library allocate without bound.
+        /// The limit applies to the output of each filter of the stream. Defaults to 1 GiB.
+        /// </summary>
+        public int MaxDecompressedStreamBytes { get; set; } = DefaultMaxDecompressedStreamBytes;
+
+        /// <summary>
         /// Filter provider to use while parsing the document. The <see cref="DefaultFilterProvider"/> will be used if set to <c>null</c>.
         /// </summary>
         public IFilterProvider? FilterProvider { get; set; } = null;

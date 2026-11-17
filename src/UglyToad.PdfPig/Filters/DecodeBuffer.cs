@@ -11,8 +11,13 @@
     /// </summary>
     internal static class DecodeBuffer
     {
-        /// <summary>Caps each decode buffer at 1 GiB, including predictor and LZW scratch space.</summary>
-        public const int MaximumCapacity = 1024 * 1024 * 1024;
+        /// <summary>
+        /// The most a stream decodes to unless <see cref="ParsingOptions.MaxDecompressedStreamBytes"/> says otherwise: 1 GiB.
+        /// </summary>
+        public const int MaximumCapacity = ParsingOptions.DefaultMaxDecompressedStreamBytes;
+
+        /// <summary>The largest array the runtime will hand out, which no limit can raise a buffer above.</summary>
+        public const int MaximumArrayLength = 0x7FFFFFC7;
 
         // PDFBox Filter.decode() caps its estimated cache chunk size at 1 MiB.
         // https://github.com/apache/pdfbox/blob/3bac8e5ccae91216dd38d39f39fd7bfe9d4bca37/pdfbox/src/main/java/org/apache/pdfbox/filter/Filter.java
@@ -39,7 +44,7 @@
         // PNG predictors include a filter byte per row; LZW also keeps literals and copy slack.
         // Bound that working data separately from the bytes returned to the caller.
         public static int WorkingCapacity(int outputLimit, int predictor, int overhead = 0)
-            => (int)Math.Min(MaximumCapacity, (long)outputLimit * (predictor >= 10 ? 2 : 1) + 1 + overhead);
+            => (int)Math.Min(MaximumArrayLength, (long)outputLimit * (predictor >= 10 ? 2 : 1) + 1 + overhead);
 
         /// <summary>
         /// For a filter whose compression has no usable bound on how far it can expand, as Brotli

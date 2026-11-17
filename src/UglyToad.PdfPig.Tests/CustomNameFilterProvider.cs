@@ -119,7 +119,7 @@ namespace UglyToad.PdfPig.Tests
 
             public bool IsSupported => inner.IsSupported;
 
-            public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+            public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
             {
                 DecodeCount++;
                 return inner.Decode(input, streamDictionary, filterProvider, filterIndex);

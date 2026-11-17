@@ -34,5 +34,10 @@
         /// Get the filters specified in this dictionary, using the <see cref="IPdfTokenScanner"/>.
         /// </summary>
         IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner);
+
+        /// <summary>
+        /// The most bytes a stream of the document may decode to, see <see cref="ParsingOptions.MaxDecompressedStreamBytes"/>.
+        /// </summary>
+        int MaxDecompressedStreamBytes { get; }
     }
 }

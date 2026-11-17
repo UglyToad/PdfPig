@@ -32,8 +32,9 @@ namespace UglyToad.PdfPig.Filters
         public Memory<byte> Decode(Memory<byte> input,
             DictionaryToken streamDictionary,
             IFilterProvider filterProvider,
-            int filterIndex) =>
-            DecodeWithConsumption(input, streamDictionary, filterProvider, filterIndex, out _, out _);
+            int filterIndex,
+            int outputLimit) =>
+            DecodeWithConsumption(input, streamDictionary, filterProvider, filterIndex, out _, out _, outputLimit);
 
         /// <summary>Decodes pixels and, when the fast path succeeds, reports the verified encoded boundary.</summary>
         /// <remarks>Lookahead bytes are excluded. Offsets refer to this filter's input, not earlier
@@ -44,7 +45,8 @@ namespace UglyToad.PdfPig.Filters
             IFilterProvider filterProvider,
             int filterIndex,
             out int bytesConsumed,
-            out CcittFaxDecodeStatus status)
+            out CcittFaxDecodeStatus status,
+            int outputLimit = int.MaxValue)
         {
             bytesConsumed = 0;
             status = CcittFaxDecodeStatus.NotCompleted;
@@ -66,11 +68,12 @@ namespace UglyToad.PdfPig.Filters
                 ? maximumStoredRows > 0 ? Math.Min(rows, maximumStoredRows) : rows
                 : Math.Max(1, maximumStoredRows);
             var bitmapByteCount = GetDecodedBufferSize(columns, capacityRows);
+            DecodeBuffer.CheckLength(bitmapByteCount, outputLimit);
             // UInt16 cannot represent wider transition positions. Empty input also retains
             // the historical filter behavior without attempting to recognize a new boundary.
             if (columns > ushort.MaxValue || input.IsEmpty)
             {
-                return Legacy.Decode(input, streamDictionary, filterProvider, filterIndex);
+                return Legacy.Decode(input, streamDictionary, filterProvider, filterIndex, outputLimit);
             }
 
             var bitmap = new byte[bitmapByteCount];
@@ -111,7 +114,7 @@ namespace UglyToad.PdfPig.Filters
                 throw new CorruptCompressedDataException("CCITT legacy retry buffers exceed the allocation budget.");
             }
 
-            return Legacy.DecodeInto(input, streamDictionary, filterProvider, filterIndex, reuseBitmap ? bitmap : null);
+            return Legacy.DecodeInto(input, streamDictionary, filterProvider, filterIndex, reuseBitmap ? bitmap : null, outputLimit);
         }
 
         /// <summary>Validates the bitmap size against the shared allocation limit before allocating.</summary>

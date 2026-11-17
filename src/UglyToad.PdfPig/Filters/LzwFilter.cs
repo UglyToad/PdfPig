@@ -59,10 +59,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
-            => Decode(input, streamDictionary, filterProvider, filterIndex, DecodeBuffer.MaximumCapacity);
-
-        internal Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 

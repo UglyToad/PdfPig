@@ -94,7 +94,8 @@ namespace UglyToad.PdfPig.Tests.Filters
             var image = new PdfPig.Content.InlineImage(
                 new PdfRectangle(0, 0, 1, 1), 1, 1, 8, false,
                 PdfPig.Graphics.Core.RenderingIntent.RelativeColorimetric, false,
-                Array.Empty<double>(), Encode("RunLength", data), new LimitedProvider(),
+                Array.Empty<double>(), Encode("RunLength", data),
+                new FilterProviderWithLookup(DefaultFilterProvider.Instance, SmallLimit),
                 new[] { NameToken.RunLengthDecode }, Dictionary(),
                 PdfPig.Graphics.Colors.DeviceGrayColorSpaceDetails.Instance, null);
             Assert.Throws<DecodeBuffer.LimitExceededException>(() => image.TryGetBytesAsMemory(out _));
@@ -179,24 +180,77 @@ namespace UglyToad.PdfPig.Tests.Filters
             return output.ToArray();
         }
 
-        private sealed class LimitedProvider : BaseFilterProvider, ILookupFilterProvider
+        [Fact]
+        public void StreamsUseTheLimitOfTheirFilterProvider()
         {
-            public LimitedProvider() : base(new System.Collections.Generic.Dictionary<string, IFilter>
+            var data = Enumerable.Repeat((byte)42, SmallLimit + 1).ToArray();
+            var dictionary = new DictionaryToken(new System.Collections.Generic.Dictionary<NameToken, IToken>
             {
-                [NameToken.RunLengthDecode.Data] = new LimitedRunLength()
-            }) { }
+                [NameToken.Filter] = NameToken.FlateDecode
+            });
+            var stream = new StreamToken(dictionary, Compress(data));
 
-            public System.Collections.Generic.IReadOnlyList<IFilter> GetFilters(
-                DictionaryToken dictionary, PdfPig.Tokenization.Scanner.IPdfTokenScanner scanner)
-                => GetFilters(dictionary);
+            Assert.Equal(data, stream.Decode(new FilterProviderWithLookup(DefaultFilterProvider.Instance, SmallLimit + 1)).ToArray());
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                stream.Decode(new FilterProviderWithLookup(DefaultFilterProvider.Instance, SmallLimit)));
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                stream.Decode(new FilterProviderWithLookup(DefaultFilterProvider.Instance, SmallLimit), scanner: null!));
         }
 
-        private sealed class LimitedRunLength : IFilter
+        [Fact]
+        public void CustomFiltersAreGivenTheLimitAndHeldToIt()
         {
+            var filter = new IgnoresLimit(SmallLimit + 1);
+
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                FilterChainDecoder.Decode(new byte[1], Dictionary(), TestFilterProvider.Instance, new IFilter[] { filter }, SmallLimit));
+            Assert.Equal(SmallLimit, filter.LastOutputLimit);
+
+            // An intermediate stage is limited by the ratio estimate, and reports it as before.
+            var ex = Assert.Throws<PdfDocumentFormatException>(() =>
+                FilterChainDecoder.Decode(new byte[1], Dictionary(), TestFilterProvider.Instance,
+                    new IFilter[] { new IgnoresLimit(100_001), new MustNotDecode() }));
+            Assert.StartsWith("Decoded stream size exceeds the estimated maximum size.", ex.Message);
+        }
+
+        [Fact]
+        public void CcittChecksTheLimitBeforeAllocatingTheBitmap()
+        {
+            var dictionary = StreamDictionary(NameToken.CcittfaxDecode,
+                new[] { (NameToken.Columns, 8), (NameToken.Rows, SmallLimit + 1) });
+
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                new CcittFaxDecodeFilter().Decode(new byte[20], dictionary, TestFilterProvider.Instance, 0, SmallLimit));
+            Assert.Throws<DecodeBuffer.LimitExceededException>(() =>
+                new LegacyCcittFaxDecodeFilter().Decode(new byte[20], dictionary, TestFilterProvider.Instance, 0, SmallLimit));
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void RejectsALimitThatIsNotPositive(int limit)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new FilterProviderWithLookup(DefaultFilterProvider.Instance, limit));
+        }
+
+        private sealed class IgnoresLimit : IFilter
+        {
+            private readonly int length;
+
+            public IgnoresLimit(int length)
+            {
+                this.length = length;
+            }
+
+            public int LastOutputLimit { get; private set; }
+
             public bool IsSupported => true;
 
-            public Memory<byte> Decode(Memory<byte> input, DictionaryToken dictionary, IFilterProvider provider, int index)
-                => new RunLengthFilter().Decode(input, dictionary, provider, index, SmallLimit);
+            public Memory<byte> Decode(Memory<byte> input, DictionaryToken dictionary, IFilterProvider provider, int index, int outputLimit)
+            {
+                LastOutputLimit = outputLimit;
+                return new byte[length];
+            }
         }
 
 
@@ -284,7 +338,7 @@ namespace UglyToad.PdfPig.Tests.Filters
         {
             public bool IsSupported => true;
 
-            public Memory<byte> Decode(Memory<byte> input, DictionaryToken dictionary, IFilterProvider provider, int index)
+            public Memory<byte> Decode(Memory<byte> input, DictionaryToken dictionary, IFilterProvider provider, int index, int outputLimit)
                 => throw new InvalidOperationException("The rejected stage must stop the chain.");
         }
     }
