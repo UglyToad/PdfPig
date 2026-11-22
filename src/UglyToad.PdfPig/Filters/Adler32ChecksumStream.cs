@@ -57,9 +57,17 @@
             }
         }
 
+#if NET
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            underlyingStream.Write(buffer);
+            UpdateAdler(buffer);
+        }
+#endif
+
         public uint Checksum { get; private set; } = 1;
 
-        private void UpdateAdler(Span<byte> span)
+        private void UpdateAdler(ReadOnlySpan<byte> span)
         {
             const uint MOD_ADLER = 65521;
             uint a = Checksum & 0xFFFF;

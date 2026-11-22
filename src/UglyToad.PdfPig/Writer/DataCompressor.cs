@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
+    using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using Filters;
     using Tokens;
@@ -9,16 +9,12 @@
     internal static class DataCompressor
     {
         public static byte[] CompressBytes(IReadOnlyList<byte> bytes) => CompressBytes(bytes.ToArray());
-        public static byte[] CompressBytes(byte[] bytes)
-        {
-            using (var memoryStream = new MemoryStream(bytes))
-            {
-                var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
-                var flater = new FlateFilter();
-                var result = flater.Encode(memoryStream, parameters);
-                return result;
-            }
-        }
+        public static byte[] CompressBytes(byte[] bytes) => CompressBytes(bytes.AsMemory());
+
+        /// <summary>
+        /// Compresses the bytes without copying them.
+        /// </summary>
+        public static byte[] CompressBytes(ReadOnlyMemory<byte> bytes) => FlateFilter.Encode(bytes);
 
         public static StreamToken CompressToStream(IReadOnlyList<byte> bytes) => CompressToStream(bytes.ToArray());
         public static StreamToken CompressToStream(byte[] bytes)
