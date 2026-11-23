@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
-    using System.Globalization;
-    using System.Text.RegularExpressions;
     using Content;
     using Integration;
     using PdfPig.Actions;
@@ -9,6 +7,7 @@
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Parser.Parts;
     using PdfPig.Tokens;
+    using PdfPig.Util;
     using PdfPig.Writer;
     using Tests.Fonts.TrueType;
     using UglyToad.PdfPig.Graphics.Operations.General;
@@ -1276,12 +1275,7 @@
                 Assert.True(pdf.Advanced.TryGetEmbeddedFiles(out var files));
                 var parameters = Assert.Single(files).Stream.StreamDictionary.Get<DictionaryToken>(NameToken.Params, scanner);
 
-                // D:YYYYMMDDHHmmSSOHH'mm (ISO 32000-1, 7.9.4), with Z for Universal Time.
-                var date = Regex.Match(parameters.Get<StringToken>(NameToken.ModDate, scanner).Data, @"^D:(\d{14})(Z|([+-]\d{2})'(\d{2}))$");
-                Assert.True(date.Success);
-
-                var offset = date.Groups[2].Value == "Z" ? "+00:00" : $"{date.Groups[3].Value}:{date.Groups[4].Value}";
-                var modifiedDate = DateTimeOffset.ParseExact(date.Groups[1].Value + offset, "yyyyMMddHHmmsszzz", CultureInfo.InvariantCulture);
+                Assert.True(DateFormatHelper.TryParseDateTimeOffset(parameters.Get<StringToken>(NameToken.ModDate, scanner).Data, out var modifiedDate));
                 Assert.InRange(modifiedDate, before, after);
             }
         }
