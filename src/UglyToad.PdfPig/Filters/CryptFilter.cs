@@ -16,7 +16,7 @@ namespace UglyToad.PdfPig.Filters
         public bool IsSupported => true;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             return input;
         }

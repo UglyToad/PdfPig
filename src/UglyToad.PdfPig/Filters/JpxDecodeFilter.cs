@@ -13,7 +13,7 @@
         public bool IsSupported { get; } = false;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
             throw new NotSupportedException("The JPX Filter (JPEG2000) for image data is not currently supported. " +
                                             "Try accessing the raw compressed data directly.");

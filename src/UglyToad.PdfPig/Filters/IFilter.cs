@@ -20,7 +20,12 @@
         /// <param name="streamDictionary">The dictionary of the <see cref="StreamToken"/> (or other dictionary types, e.g. inline images) containing these bytes.</param>
         /// <param name="filterProvider">The filter provider.</param>
         /// <param name="filterIndex">The position of this filter in the pipeline used to encode data.</param>
+        /// <param name="outputLimit">
+        /// The most bytes this filter may decode to, see <see cref="ParsingOptions.MaxDecompressedStreamBytes"/>.
+        /// A filter whose output can be larger than its input should stop and throw as soon as its output would
+        /// exceed this, rather than decode in full first. The result is also checked by the caller.
+        /// </param>
         /// <returns>The decoded bytes.</returns>
-        Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex);
+        Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit);
     }
 }

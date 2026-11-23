@@ -421,7 +421,7 @@
         {
             public bool IsSupported => false;
 
-            public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+            public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
             {
                 throw new NotImplementedException();
             }

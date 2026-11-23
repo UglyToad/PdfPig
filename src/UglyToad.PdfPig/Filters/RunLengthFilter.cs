@@ -16,9 +16,9 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex, int outputLimit)
         {
-            using var output = new ArrayPoolBufferWriter<byte>(input.Length);
+            using var output = new ArrayPoolBufferWriter<byte>(Math.Min(input.Length, outputLimit));
 
             Span<byte> inputSpan = input.Span;
             
@@ -31,6 +31,9 @@
                 {
                     break;
                 }
+
+                // Check the entire run before requesting space or writing any of it.
+                DecodeBuffer.CheckLength((long)output.WrittenCount + (runLength <= 127 ? runLength + 1 : 257 - runLength), outputLimit);
 
                 // if length byte in range 0 - 127 copy the following length + 1 bytes literally to the output.
                 if (runLength <= 127)

@@ -35,6 +35,8 @@ namespace UglyToad.PdfPig.Tests
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner) => filters;
 
+        public int MaxDecompressedStreamBytes => ParsingOptions.DefaultMaxDecompressedStreamBytes;
+
         private sealed class CountingFilter : IFilter
         {
             private readonly CountingFilterProvider owner;
@@ -49,7 +51,7 @@ namespace UglyToad.PdfPig.Tests
             public bool IsSupported => true;
 
             public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary,
-                IFilterProvider filterProvider, int filterIndex)
+                IFilterProvider filterProvider, int filterIndex, int outputLimit)
             {
                 owner.DecodeCount++;
                 owner.OnDecode?.Invoke();

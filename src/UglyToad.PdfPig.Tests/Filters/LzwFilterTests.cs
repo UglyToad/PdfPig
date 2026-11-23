@@ -179,7 +179,7 @@
         /// A plain LZW encoder for the tests. It tracks the size of the table the decoder will have built
         /// after each code, because that, not the encoder's own table, decides the width of the next code.
         /// </summary>
-        private static class LzwEncoder
+        internal static class LzwEncoder
         {
             private const int ClearTable = 256;
             private const int EodMarker = 257;

@@ -123,7 +123,9 @@
             ParsingOptions parsingOptions,
             StackDepthGuard stackDepthGuard)
         {
-            var filterProvider = new FilterProviderWithLookup(parsingOptions.FilterProvider ?? DefaultFilterProvider.Instance);
+            var filterProvider = new FilterProviderWithLookup(
+                parsingOptions.FilterProvider ?? DefaultFilterProvider.Instance,
+                parsingOptions.MaxDecompressedStreamBytes);
 
             var version = FileHeaderParser.Parse(scanner, inputBytes, parsingOptions.UseLenientParsing, parsingOptions.Logger);
 
