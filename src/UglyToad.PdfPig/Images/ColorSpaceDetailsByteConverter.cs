@@ -31,6 +31,10 @@
         /// The Decode array (PDF 2.0, 8.9.5.10) maps each raw sample value to a value in the colour-space range
         /// before the colour space transform is applied. An empty or null <paramref name="decode"/> means "use the
         /// colour space default" (which is a no-op for the common case).
+        /// <para>
+        /// The bytes in <paramref name="decoded"/> are left as they are. When nothing needs converting, the
+        /// result is <paramref name="decoded"/> itself.
+        /// </para>
         /// </remarks>
         public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight,
             IReadOnlyList<double>? decode, RenderingIntent intent)
@@ -45,10 +49,16 @@
                 return decoded;
             }
 
+            // The caller's bytes are usually the image's own, which TryGetBytesAsMemory returns again on every
+            // call, so they are only read. Once a step has written the samples to a buffer of its own, the steps
+            // after it can work in place.
+            var ownsBuffer = false;
+
             if (bitsPerComponent != 8)
             {
                 // Unpack components such that they occupy one byte each
                 decoded = UnpackComponents(decoded, bitsPerComponent);
+                ownsBuffer = true;
             }
 
             // Remove padding bytes when the stride width differs from the image width
@@ -64,16 +74,21 @@
                 }
                 else
                 {
-                    decoded = RemoveStridePadding(decoded, strideWidth, imageWidth, imageHeight, bytesPerPixel);
+                    decoded = RemoveStridePadding(decoded, ownsBuffer, strideWidth, imageWidth, imageHeight, bytesPerPixel);
+                    ownsBuffer = true;
                 }
             }
 
-            ApplyDecode(decoded, details, decode, bitsPerComponent);
+            decoded = ApplyDecode(decoded, ownsBuffer, details, decode, bitsPerComponent);
 
-            return details.Transform(decoded, intent);
+            return ownsBuffer ? details.TransformInPlace(decoded, intent) : details.Transform(decoded, intent);
         }
 
-        private static void ApplyDecode(Span<byte> samples, ColorSpaceDetails details, IReadOnlyList<double>? decode, int bitsPerComponent)
+        /// <summary>
+        /// Returns <paramref name="samples"/> when the Decode array leaves them as they are. Otherwise the decoded
+        /// samples go to <paramref name="samples"/> if <paramref name="inPlace"/> is set, or to a new buffer.
+        /// </summary>
+        private static Span<byte> ApplyDecode(Span<byte> samples, bool inPlace, ColorSpaceDetails details, IReadOnlyList<double>? decode, int bitsPerComponent)
         {
             if (bitsPerComponent == 16)
             {
@@ -87,7 +102,7 @@
             int sampleMax = (1 << bitsPerComponent) - 1;
             if (sampleMax <= 0)
             {
-                return;
+                return samples;
             }
 
             Span<double> defaults = components <= 32 ? stackalloc double[2 * components] : new double[2 * components];
@@ -105,9 +120,11 @@
             {
                 if (isIndexed || bitsPerComponent == 8)
                 {
-                    return;
+                    return samples;
                 }
             }
+
+            Span<byte> target = inPlace ? samples : new byte[samples.Length];
 
             // Per PDF 2.0 8.9.5.10, for each component c with raw sample S in [0, sampleMax]:
             //     x_c = Dmin_c + S * (Dmax_c - Dmin_c) / sampleMax
@@ -156,8 +173,10 @@
                     rounded = outputMax;
                 }
 
-                samples[i] = (byte)rounded;
+                target[i] = (byte)rounded;
             }
+
+            return target;
         }
 
         private static bool IsDefaultDecode(IReadOnlyList<double> decode, int components, ReadOnlySpan<double> defaults)
@@ -173,12 +192,12 @@
             return true;
         }
 
-        private static Span<byte> UnpackComponents(Span<byte> input, int bitsPerComponent)
+        private static Span<byte> UnpackComponents(ReadOnlySpan<byte> input, int bitsPerComponent)
         {
             if (bitsPerComponent == 16) // Example with MOZILLA-3136-0.pdf (page 3)
             {
                 int size = input.Length / 2;
-                var unpacked16 = input.Slice(0, size); // In place
+                Span<byte> unpacked16 = new byte[size];
 
                 for (int b = 0; b < size; ++b)
                 {
@@ -208,10 +227,11 @@
             return unpacked;
         }
 
-        private static Span<byte> RemoveStridePadding(Span<byte> input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
+        private static Span<byte> RemoveStridePadding(Span<byte> input, bool inPlace, int strideWidth, int imageWidth, int imageHeight, int multiplier)
         {
             int size = imageWidth * imageHeight * multiplier;
-            Span<byte> result = size < input.Length ? input.Slice(0, size) : new byte[size];
+            // Rows only move towards the start, so with inPlace they can be moved within input.
+            Span<byte> result = inPlace && size < input.Length ? input.Slice(0, size) : new byte[size];
             // See PDFBOX-492-4.jar-8.pdf, page 2 for size > input.Length
 
             for (int y = 0; y < imageHeight; y++)

@@ -166,36 +166,26 @@
             return BaseColorSpace.Process(components, intent);
         }
 
-        internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input)
+        internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input, bool inPlace)
         {
             // ISO 32000-2 (PDF 2.0) 8.6.6.3: an index outside 0..hival is adjusted to the
             // nearest valid value. Indices arrive here as (unsigned) bytes (image samples, or
             // the already-clamped content-stream index), so only the upper bound can be
             // exceeded.
-            if (HiVal != byte.MaxValue)
-            {
-                for (int k = 0; k < input.Length; ++k)
-                {
-                    ref byte c = ref input[k];
-                    if (c > HiVal)
-                    {
-                        c = HiVal;
-                    }
-                }
-            }
-
+            byte hiVal = HiVal;
+            ReadOnlySpan<byte> table = colorTable;
             int components = BaseColorSpace.NumberOfColorComponents;
 
             if (components == 1)
             {
-                // One index byte becomes one colour byte, so the lookup is done in place.
+                // One index byte becomes one colour byte, so with inPlace the colours can go over the indices.
+                Span<byte> colours = inPlace ? input : new byte[input.Length];
                 for (var i = 0; i < input.Length; ++i)
                 {
-                    ref byte b = ref input[i];
-                    b = ColorTable[b];
+                    colours[i] = table[Math.Min(input[i], hiVal)];
                 }
 
-                return input;
+                return colours;
             }
 
             Span<byte> result = new byte[input.Length * components];
@@ -203,9 +193,10 @@
 
             foreach (var x in input)
             {
+                int entry = Math.Min(x, hiVal) * components;
                 for (var j = 0; j < components; ++j)
                 {
-                    result[index++] = ColorTable[x * components + j];
+                    result[index++] = table[entry + j];
                 }
             }
 
@@ -241,7 +232,19 @@
         /// </summary>
         internal override Span<byte> Transform(Span<byte> decoded, RenderingIntent intent)
         {
-            var unwraped = UnwrapIndexedColorSpaceBytes(decoded);
+            var unwraped = UnwrapIndexedColorSpaceBytes(decoded, false);
+            return BaseColorSpace.Transform(unwraped, intent);
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>
+        /// For a base colour space with one component, the colours are written over the indices.
+        /// </para>
+        /// </summary>
+        internal override Span<byte> TransformInPlace(Span<byte> decoded, RenderingIntent intent)
+        {
+            var unwraped = UnwrapIndexedColorSpaceBytes(decoded, true);
             return BaseColorSpace.Transform(unwraped, intent);
         }
     }
