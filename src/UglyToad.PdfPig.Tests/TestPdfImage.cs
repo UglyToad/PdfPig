@@ -38,7 +38,7 @@
 
         public Memory<byte> DecodedBytes { get; set; }
 
-        public IPdfImage? MaskImage { get; }
+        public IPdfImage? MaskImage { get; set; }
 
         public bool TryGetBytesAsMemory(out Memory<byte> bytes)
         {

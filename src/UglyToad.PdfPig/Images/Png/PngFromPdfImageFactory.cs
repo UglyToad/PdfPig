@@ -88,40 +88,34 @@
                 bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails!, bytesPure,
                     image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples, image.Decode, image.RenderingIntent);
 
-                var numberOfComponents = image.ColorSpaceDetails!.BaseNumberOfColorComponents;
-
-                ReadOnlySpan<byte> softMask = null;
-
-                bool hasMask = TryGenerateSoftMask(image, out softMask);
-                Func<int, byte> getAlphaChannel = _ => byte.MaxValue;
-
-                if (hasMask)
-                {
-                    byte[] softMaskBytes = softMask.ToArray();
-                    if (image.MaskImage!.NeedsReverseDecode())
-                    {
-                        getAlphaChannel = i => Convert.ToByte(255 - softMaskBytes[i]);
-                    }
-                    else
-                    {
-                        getAlphaChannel = i => softMaskBytes[i];
-                    }
-                }
-
-                var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, hasMask);
-
                 if (!IsCorrectlySized(image, bytesPure))
                 {
                     return false;
                 }
 
-                if (image.ColorSpaceDetails.BaseType == ColorSpace.DeviceCMYK || numberOfComponents == 4)
+                var numberOfComponents = image.ColorSpaceDetails!.BaseNumberOfColorComponents;
+                var isCmyk = image.ColorSpaceDetails.BaseType == ColorSpace.DeviceCMYK || numberOfComponents == 4;
+                var isRgb = !isCmyk && numberOfComponents == 3;
+
+                bool hasMask = TryGenerateSoftMask(image, out var softMask);
+                bool reverseMask = hasMask && image.MaskImage!.NeedsReverseDecode();
+
+                var width = image.WidthInSamples;
+                var height = image.HeightInSamples;
+
+                using var builder = PngBuilder.Create(width, height, hasMask);
+
+                var bytesPerPixel = hasMask ? 4 : 3;
+
+                int i = 0;
+                int sm = 0;
+                for (int y = 0; y < height; y++)
                 {
-                    int i = 0;
-                    int sm = 0;
-                    for (int col = 0; col < image.HeightInSamples; col++)
+                    var row = builder.NextRow();
+
+                    if (isCmyk)
                     {
-                        for (int row = 0; row < image.WidthInSamples; row++)
+                        for (int o = 0; o < row.Length; o += bytesPerPixel)
                         {
                             /*
                              * Where CMYK in 0..1
@@ -129,45 +123,51 @@
                              * G = 255 × (1-M) × (1-K)
                              * B = 255 × (1-Y) × (1-K)
                              */
-
-                            byte a = getAlphaChannel(sm++);
                             double c = (bytesPure[i++] / 255d);
                             double m = (bytesPure[i++] / 255d);
-                            double y = (bytesPure[i++] / 255d);
+                            double yellow = (bytesPure[i++] / 255d);
                             double k = (bytesPure[i++] / 255d);
-                            var r = (byte)(255 * (1 - c) * (1 - k));
-                            var g = (byte)(255 * (1 - m) * (1 - k));
-                            var b = (byte)(255 * (1 - y) * (1 - k));
-
-                            builder.SetPixel(new Pixel(r, g, b, a, false), row, col);
+                            row[o] = (byte)(255 * (1 - c) * (1 - k));
+                            row[o + 1] = (byte)(255 * (1 - m) * (1 - k));
+                            row[o + 2] = (byte)(255 * (1 - yellow) * (1 - k));
                         }
                     }
-                }
-                else if (numberOfComponents == 3)
-                {
-                    int i = 0;
-                    int sm = 0;
-                    for (int col = 0; col < image.HeightInSamples; col++)
+                    else if (isRgb && !hasMask)
                     {
-                        for (int row = 0; row < image.WidthInSamples; row++)
+                        // The samples are already laid out as a PNG row.
+                        bytesPure.Slice(i, row.Length).CopyTo(row);
+                        i += row.Length;
+                    }
+                    else if (isRgb)
+                    {
+                        for (int o = 0; o < row.Length; o += bytesPerPixel)
                         {
-                            byte a = getAlphaChannel(sm++);
-                            builder.SetPixel(new Pixel(bytesPure[i++], bytesPure[i++], bytesPure[i++], a, false), row, col);
+                            row[o] = bytesPure[i++];
+                            row[o + 1] = bytesPure[i++];
+                            row[o + 2] = bytesPure[i++];
                         }
                     }
-                }
-                else
-                {
-                    int i = 0;
-                    for (int col = 0; col < image.HeightInSamples; col++)
+                    else
                     {
-                        for (int row = 0; row < image.WidthInSamples; row++)
+                        for (int o = 0; o < row.Length; o += bytesPerPixel)
                         {
-                            byte a = getAlphaChannel(i);
                             byte pixel = bytesPure[i++];
-                            builder.SetPixel(new Pixel(pixel, pixel, pixel, a, false), row, col);
+                            row[o] = pixel;
+                            row[o + 1] = pixel;
+                            row[o + 2] = pixel;
                         }
                     }
+
+                    if (hasMask)
+                    {
+                        for (int o = 3; o < row.Length; o += 4)
+                        {
+                            row[o] = reverseMask ? (byte)(255 - softMask[sm]) : softMask[sm];
+                            sm++;
+                        }
+                    }
+
+                    builder.WriteRow();
                 }
 
                 bytes = builder.Save();
