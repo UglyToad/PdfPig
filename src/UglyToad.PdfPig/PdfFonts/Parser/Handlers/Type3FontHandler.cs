@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 {
     using System.Collections.Generic;
+    using System.Globalization;
     using Cmap;
     using Core;
     using Fonts;
@@ -119,11 +120,30 @@
 
             if (bboxObject is ArrayToken bboxArray)
             {
-                return new PdfRectangle(bboxArray.GetNumeric(0).Double, bboxArray.GetNumeric(1).Double,
-                    bboxArray.GetNumeric(2).Double, bboxArray.GetNumeric(3).Double);
+                return new PdfRectangle(GetBoundingBoxValue(bboxArray, 0), GetBoundingBoxValue(bboxArray, 1),
+                    GetBoundingBoxValue(bboxArray, 2), GetBoundingBoxValue(bboxArray, 3));
             }
 
             return new PdfRectangle(0, 0, 0, 0);
+        }
+
+        private static double GetBoundingBoxValue(ArrayToken bboxArray, int index)
+        {
+            if (index >= 0
+                && index < bboxArray.Length
+                && bboxArray[index] is OperatorToken op
+                && op.Data.Length > 1
+                && op.Data[0] == '$'
+                && double.TryParse(
+                    op.Data.Substring(1),
+                    NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
+                    CultureInfo.InvariantCulture,
+                    out var value))
+            {
+                return value;
+            }
+
+            return bboxArray.GetNumeric(index).Double;
         }
     }
 }
