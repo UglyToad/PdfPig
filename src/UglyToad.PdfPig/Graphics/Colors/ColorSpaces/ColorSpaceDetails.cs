@@ -123,9 +123,18 @@
         public abstract IColor? GetInitializeColor(RenderingIntent intent);
 
         /// <summary>
-        /// Transform image bytes.
+        /// Transform image bytes. The bytes in <paramref name="decoded"/> are only read.
         /// </summary>
         internal abstract Span<byte> Transform(Span<byte> decoded, RenderingIntent intent);
+
+        /// <summary>
+        /// Transform image bytes the caller no longer needs, so the result may be written over
+        /// <paramref name="decoded"/>.
+        /// </summary>
+        internal virtual Span<byte> TransformInPlace(Span<byte> decoded, RenderingIntent intent)
+        {
+            return Transform(decoded, intent);
+        }
 
         /// <summary>
         /// The Decode array this colour space implies when an image declares none (PDF 2.0, 8.9.5.10,
