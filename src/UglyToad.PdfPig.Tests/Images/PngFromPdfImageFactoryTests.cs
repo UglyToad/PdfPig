@@ -282,6 +282,83 @@
             Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("calgray.png"), bytes));
         }
 
+        [Theory]
+        [InlineData(1, false, false)]
+        [InlineData(1, true, false)]
+        [InlineData(1, true, true)]
+        [InlineData(3, false, false)]
+        [InlineData(3, true, false)]
+        [InlineData(3, true, true)]
+        [InlineData(4, false, false)]
+        [InlineData(4, true, false)]
+        [InlineData(4, true, true)]
+        public void PixelsAndSoftMaskReachThePng(int numberOfComponents, bool hasMask, bool reverseMask)
+        {
+            // Tall enough for the rows to reach the compressor in several pieces.
+            const int width = 150;
+            const int height = 300;
+
+            var samples = RandomBytes(width * height * numberOfComponents, 1);
+            var mask = RandomBytes(width * height, 2);
+
+            var image = new TestPdfImage
+            {
+                ColorSpaceDetails = numberOfComponents switch
+                {
+                    1 => DeviceGrayColorSpaceDetails.Instance,
+                    3 => DeviceRgbColorSpaceDetails.Instance,
+                    _ => DeviceCmykColorSpaceDetails.Instance
+                },
+                DecodedBytes = samples,
+                WidthInSamples = width,
+                HeightInSamples = height
+            };
+
+            if (hasMask)
+            {
+                image.MaskImage = new TestPdfImage
+                {
+                    ColorSpaceDetails = DeviceGrayColorSpaceDetails.Instance,
+                    DecodedBytes = mask,
+                    WidthInSamples = width,
+                    HeightInSamples = height,
+                    Decode = reverseMask ? [1.0, 0] : null
+                };
+            }
+
+            Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
+
+            var png = Png.Open(bytes);
+            Assert.Equal(hasMask, png.HasAlphaChannel);
+
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    var p = (y * width) + x;
+                    var s = p * numberOfComponents;
+                    var (r, g, b) = numberOfComponents switch
+                    {
+                        1 => (samples[s], samples[s], samples[s]),
+                        3 => (samples[s], samples[s + 1], samples[s + 2]),
+                        _ => (FromCmyk(samples[s], samples[s + 3]), FromCmyk(samples[s + 1], samples[s + 3]), FromCmyk(samples[s + 2], samples[s + 3]))
+                    };
+                    var a = !hasMask ? byte.MaxValue : reverseMask ? (byte)(255 - mask[p]) : mask[p];
+
+                    Assert.Equal(new Pixel(r, g, b, a, false), png.GetPixel(x, y));
+                }
+            }
+        }
+
+        private static byte FromCmyk(byte color, byte black) => (byte)(255 * (1 - (color / 255d)) * (1 - (black / 255d)));
+
+        private static byte[] RandomBytes(int length, int seed)
+        {
+            var bytes = new byte[length];
+            new Random(seed).NextBytes(bytes);
+            return bytes;
+        }
+
         private static byte[] LoadImage(string name)
         {
             return ImageHelpers.LoadFileBytes(name);
