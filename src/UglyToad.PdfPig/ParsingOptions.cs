@@ -26,6 +26,12 @@
         public bool ClipPaths { get; set; } = false;
 
         /// <summary>
+        /// Should the parser remove letters that are occluded, i.e. fully covered by opaque fills or solid strokes painted later on the page?
+        /// Defaults to <see langword="false"/>.
+        /// </summary>
+        public bool RemoveOccludedText { get; set; } = false;
+
+        /// <summary>
         /// Should the parser ignore issues where the document does not conform to the PDF specification?
         /// </summary>
         public bool UseLenientParsing { get; set; } = true;
