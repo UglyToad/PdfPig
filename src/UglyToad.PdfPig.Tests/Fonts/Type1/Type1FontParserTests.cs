@@ -86,12 +86,14 @@
             Assert.Equal("s", font.Encoding[115]);
         }
 
-        [Fact]
-        public void CanReadSubrsArrayWithoutEntries()
+        [Theory]
+        [InlineData("ND")]
+        [InlineData("|-")]
+        public void CanReadSubrsArrayWithoutEntries(string endOfDefinition)
         {
             // macOS Quartz (e.g. Preview's "Export as PDF") writes subset Type 1 fonts whose
-            // Subrs array is declared with a length but has no entries: "/Subrs 4 array ND",
-            // followed by "2 index/CharStrings" rather than the usual "dup/CharStrings".
+            // Subrs array is declared with a length but has no entries: "/Subrs 4 array ND".
+            // "|-" is the other common name for the procedure that ends the definition.
             const string clearText = "%!FontType1-1.0: TestFont 1.0\n"
                                      + "12 dict begin\n"
                                      + "/FontName /TestFont def\n"
@@ -123,7 +125,7 @@
             Append("dup/Private 8 dict dup begin/RD{string currentfile exch readstring pop}executeonly def"
                    + "/ND{noaccess def}executeonly def/NP{noaccess put}executeonly def/BlueValues[]def"
                    + "/MinFeature{16 16}def/password 5839 def\n"
-                   + "/Subrs 4 array\n ND\n"
+                   + $"/Subrs 4 array\n {endOfDefinition}\n"
                    + "2 index/CharStrings 2 dict dup begin\n");
             AppendCharString(".notdef", notdef);
             AppendCharString("A", square);
