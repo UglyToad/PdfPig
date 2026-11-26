@@ -668,6 +668,16 @@
                 var current = tokenizer.GetNext();
                 if (current.Type != Type1Token.TokenType.Name || !string.Equals(current.Text, "dup"))
                 {
+                    // Fewer entries than declared (e.g. macOS Quartz subsets write "/Subrs 4 array ND"
+                    // with no entries at all). If the array definition has already ended, don't read
+                    // past it looking for "def". A plain "def" is handled by ReadTillDef below.
+                    if (current.Type == Type1Token.TokenType.Name
+                        && (string.Equals(current.Text, "ND", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(current.Text, "|-", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return subroutines;
+                    }
+
                     break;
                 }
 
